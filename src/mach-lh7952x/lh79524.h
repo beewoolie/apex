@@ -162,7 +162,9 @@
 #define TIMER2_PHYS	(TIMER_PHYS + 0x50)
 
 #define TIMER_CTRL	(0x00)
-#define TIMER1_CNT	(0xc)
+#define TIMER_INTEN1	(0x04)
+#define TIMER_STATUS1	(0x08)
+#define TIMER_CNT1	(0xc)
 
 #define RTC_PHYS	(0xfffe0000)
 #define RTC_DR		(0x00)

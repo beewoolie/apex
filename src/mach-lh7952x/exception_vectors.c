@@ -67,6 +67,7 @@ void lh7952x_exception_init (void)
   __REG (VIC_PHYS | VIC_INTENCLEAR) = ~0;
   __REG (VIC_PHYS | VIC_SOFTINT_CLEAR) = ~0;
 
+		/* Initialize interrupt stack */
   __asm volatile ("mrs r2, cpsr\n\t"
 		  "mov r3, r2\n\t"
 		  "bic r3, r3, #0b11111\n\t"
@@ -90,6 +91,6 @@ void lh7952x_exception_release (void)
 }
 
 static __service_0 struct service_d lh7952x_exception_service = {
-  .init = lh7952x_exception_init,
+  .init    = lh7952x_exception_init,
   .release = lh7952x_exception_release,
 };

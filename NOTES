@@ -298,4 +298,11 @@ UART Initialization
     during startup and it may be possible to disable the serial driver
     in APEX in order to save space.
 
- 
+Interrupt Handling
+
+  o It should be possible to catch interrupts in the boot loader. 
+  o Most of the code is implemented (for one platform) and enabled
+    with CONFIG_INTERRUPTS.
+  o The key piece missing is that the interrupt vectors must either be
+    written to flash, or the MMU must be enabled so that the page with
+    the vectors is available at address zero.

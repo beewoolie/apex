@@ -56,8 +56,8 @@
 #include "hardware.h"
 #include <spinner.h>
 
-#define TALK
-#define EXTENDED
+//#define TALK
+//#define EXTENDED
 
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
