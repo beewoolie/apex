@@ -14,6 +14,20 @@
 
 #include <atag.h>
 #include <linux/string.h>
+#include <config.h>
+
+void build_atags (void)
+{
+	struct atag_d* d;
+	struct tag* p = (struct tag*) CONFIG_ATAG_PHYS;
+	extern char APEX_ATAG_START;
+	extern char APEX_ATAG_END;
+
+	for (d = (struct atag_d*) &APEX_ATAG_START;
+	     d < (struct atag_d*) &APEX_ATAG_END;
+	     ++d)
+		p = d->append_atag (p);
+}
 
 struct tag* atag_header (struct tag* p)
 {
