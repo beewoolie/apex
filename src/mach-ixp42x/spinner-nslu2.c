@@ -68,14 +68,15 @@ void nslu2_spinner (unsigned v)
 static void spinner_init (void)
 {
   hook_spinner = nslu2_spinner;
+  _L(LED0);			/* All off once we've init'd */
 }
 
 static void spinner_release (void)
 {
-  _L(LED2);
+  _L(LEDf);			/* All on while kernel decompresses */
 }
 
-static __service_3 struct service_d spinner_service = {
+static __service_7 struct service_d spinner_service = {
   .init    = spinner_init,
   .release = spinner_release,
 };
