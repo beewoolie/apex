@@ -50,10 +50,12 @@ CONFIG_CMD_GO=y
 
 CONFIG_ATAG=y
 CONFIG_ATAG_PHYS=0x00000100
-# ixdp425 arch number for LinkSys kernel
-CONFIG_ARCH_NUMBER=245
+# ixdp425 arch number for LinkSys kernel.  This is here for
+# information, only.  The Linksys kernels ignore the archid from the
+# bootloader, so there is no reason to pass it.  
+#CONFIG_ARCH_NUMBER=245
 # nslu2 arch number for slug kernel
-#CONFIG_ARCH_NUMBER=597
+CONFIG_ARCH_NUMBER=597
 
 CONFIG_DRIVER_NOR=y
 

@@ -42,7 +42,11 @@
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyS0,115200"
-		   " root=/dev/ram0"
+  /* Acording to dyoung, we need to use /dev/slug as the root device
+     to get the slug to boot properly.  I hope this will change. */
+//		   " root=/dev/ram0"
+		   " root=/dev/slug"
+		   " rootfstype=ext2,jffs"
 #if defined (CONFIG_RAMDISK_LMA)
 		   " initrd=" _t(CONFIG_RAMDISK_LMA) ",10m"
 #endif
