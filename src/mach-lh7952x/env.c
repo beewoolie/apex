@@ -29,9 +29,13 @@
 
 */
 
+#include <config.h>
 #include <environment.h>
 #include <driver.h>
 #include <service.h>
+
+#define _s(v) #v 
+#define _t(v) _s(v)
 
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
@@ -42,19 +46,25 @@ static __env struct env_d e_cmdline = {
 
 static __env struct env_d e_bootaddr = {
   .key = "bootaddr",
-  .default_value = "0x20008000",
+  .default_value = _t(CONFIG_KERNEL_LMA),
   .description = "Linux start address",
 };
 
 static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
-    "copy nor:256k#1536k mem:0x20008000;"
-    "wait 20 Autoboot in 2 seconds.;"
-    "boot",
+#if defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA)
+    "copy " _t(CONFIG_ENV_REGION_KERNEL) " " _t(CONFIG_KERNEL_LMA) ";"
+#endif
+#if defined (CONFIG_ENV_AUTOBOOT)
+# if CONFIG_ENV_AUTOBOOT != 0
+    "wait " _t(CONFIG_ENV_AUTOBOOT) " Press a key to cancel autoboot.;"
+# endif
+    "boot"
+#endif
+  ,
   .description = "Startup commands",
 };
-
 extern struct descriptor_d env_d;
 
 static void lh79524_env_init (void)
