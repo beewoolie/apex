@@ -24,6 +24,7 @@ static void timer_init (void)
 static void timer_release (void)
 {
   __REG (RTC_PHYS + RTC_CR) &= ~RTC_CR_EN;  
+  __REG (RCPC_PHYS + RCPC_PCLKSEL0) &= ~(3<<7); /* 1Hz RTC */
 }
 
 unsigned long timer_read (void)
