@@ -192,3 +192,6 @@ config USES_NAND_BOOTFLASH
 
 config RELOCATE_NAND
 	bool
+
+config BIGENDIAN
+	bool

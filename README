@@ -19,10 +19,9 @@ Linux kernel that recognizes the correct architecture number.
   Building APEX
   -------------
 
-Near the top of each config file is the declaration of the
-cross-compiler path.  This must be set to point to the prefix for the
-cross compiling toolchain, unless you are building on an ARM host
-platform.  For example,
+The config file has an option to define cross-compiler prefix.  It
+must be set unless you are building on an ARM host platform.  For
+example,
 
   CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 
@@ -42,15 +41,16 @@ vulnerable to the problem and may cause APEX to fail.  If you must use
 GCC 2.95.3, make sure that there are no DEBUG_LL calls in
 relocate_apex(). 
 
-Building requires a configuration file in the root called 'config'.
-To build using the default configuration for the LPD79524:
+Like the Linux kernel, building APEX requires a configuration file
+called '.config'.  To build using the default configuration for the
+LPD79524:
 
   # make lpd79524_config
 
-After executing this command, there will be a link in the root
-directory called 'config' that points to the configuration file for
-the LPD79524.  This file may be modified to include or exclude some
-features.
+To change the default configuration, use one of the configuration
+programs.
+
+  # make xconfig
 
 APEX uses the Linux kernel build scripts so that rebuilding is
 (nearly) optimal.  Changes to the configuration are automatically
