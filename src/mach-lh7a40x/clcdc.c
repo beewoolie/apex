@@ -96,6 +96,6 @@ static void clcdc_release (void)
 }
 
 static __service_7 struct service_d lpd7a40x_clcdc_service = {
-  .init = clcdc_init,
+  .init    = clcdc_init,
   .release = clcdc_release,
 };
