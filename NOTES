@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o There ought to be a target to release that increments the version
+    number, makes an SVN copy, and pushed the code to the ftp server.
+
   o I'd like to mode the CROSS_COMPILER assignment to the
     configuration file *and* allow the user to override it.  The ?=
     operator isn't working for some reason.  I'll leave it for now.
@@ -49,23 +52,19 @@ TODO:
     detecting device changes.  Trouble is, CIS info doesn't appear to
     be enough.  It may be possible to use the hardware to detect a
     device change and propagate that upward.
+    o This would probably require an extra hook in the driver.
 
   o APEX prints an error when the startup command doesn't have a trailing ';'
 
-  o Need to test the NAND booting.  Also, there seems to be some
-    trouble with the startup of the bootloader from nor flash and nand
-    when using a full sized loader.
-
   o We can write an erase function that can cope with erasing a
     portion of a flash block.  Actually, not really too hard.
+    o This could be used to erase the environment when it follows the
+      loader in the same flash block.
+    o This might be dangerous and, therefore, require some
+      precautionary words for the user.
 
   o Dump command needs a MORE mode.  Or, we need to limit the extent
     of the dump. 
-
-  o Let's add a target to build all
-    o We should be able to build all of the default configurations
-    o Then, output of each binary is proof that build works
-    o This needs a way to change the compiler without editing the makefile. 
 
   o Let's add a driver alias function.
     o once we get into the thick of driver-land, we may have some
@@ -112,7 +111,7 @@ TODO:
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole
     environment...there is already a configuration option for this. 
 
-  o Exceptions vectors at the start of the loader probably don't make
+  o Exception vectors at the start of the loader probably don't make
     sense.  
     o If we every enable interrupts, we won't be running this loader
       from the start of addressable memory.  I suppose we could, but
@@ -134,8 +133,6 @@ TODO:
     enable.  For example, CONFIG_SDRAM_BANK0=y and the rest comes from
     the platform.  Perhaps the config should specify info on the SDRAM
     chip(s).
-
-  o Replace # with + in regions.
 
 Goals
 
@@ -303,11 +300,6 @@ Code Size
    printf function and save some code.  It's about 4K right now.
    There is a smaller version online.  I'd like to review uClib before
    depending on code found on the net.
- o We can probably shrink all of the driver code by removing the fh
-   parameter and folding the descriptor functionality into a single
-   structure.  This also means that the open call can be global as can
-   seek.
-   o Done.
 
 Toolchain
 
@@ -402,6 +394,7 @@ Errors
     from NAND, but there is not NAND aware relocation function.
     Generally, I'm OK with little error handling since it is usually
     wasted space.
+    o DEBUG_LL
 
 Relocation
 
