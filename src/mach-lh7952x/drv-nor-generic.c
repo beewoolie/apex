@@ -656,8 +656,8 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_3 struct driver_d nor_driver = {
-  .name = "nor-generic",
-  .description = "NOR flash driver",
+  .name = "nor-cfi",
+  .description = "CFI NOR flash driver",
 #if defined (USE_BUFFERED_WRITE)
   .flags = DRIVER_WRITEPROGRESS(5),
 #else
@@ -671,6 +671,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_6 struct service_d generic_nor_service = {
+static __service_6 struct service_d cfi_nor_service = {
   .init = nor_init,
 };
