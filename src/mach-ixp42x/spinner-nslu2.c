@@ -1,10 +1,10 @@
-/* spinner.h
+/* spinner-nslu2.c
      $Id$
 
    written by Marc Singer
-   8 Nov 2004
+   11 Feb 2005
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2005 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -27,25 +27,44 @@
 
 */
 
-#if !defined (__SPINNER_H__)
-#    define   __SPINNER_H__
+#include <config.h>
+#include <apex.h>
+#include <service.h>
 
-/* ----- Includes */
+#include "hardware.h"
 
-/* ----- Types */
+#include <spinner.h>
 
-/* ----- Globals */
+void nslu2_spinner (unsigned v)
+{
+  static int step;
+  v = v%3;
+  if (v == step)
+    return;
 
-/* ----- Prototypes */
+  step = v;
+  switch (step) {
+  case 0:
+    _L(LED1); break;
+  case 1:
+    _L(LED4); break;
+  case 2:
+    _L(LED8); break;
+  }
+}
 
-#if defined (CONFIG_SPINNER)
-# define SPINNER_STEP spinner_step()
-#else
-# define SPINNER_STEP
-#endif
+static void spinner_init (void)
+{
+  hook_spinner = nslu2_spinner;
+}
 
-extern void (*hook_spinner) (unsigned value);
+static void spinner_release (void)
+{
+  _L(LED2);
+}
 
-void spinner_step (void);
+static __service_3 struct service_d spinner_service = {
+  .init    = spinner_init,
+  .release = spinner_release,
+};
 
-#endif  /* __SPINNER_H__ */

@@ -1,5 +1,8 @@
 2005-02-11  Marc Singer  <elf@buici.com>
 
+	* src/mach-ixp42x/spinner-nslu2.c (nslu2_spinner): Implemented a
+	spinner for the platform.  It uses the LEDs to show progress.
+
 	* Makefile: 1.0.22 for NSLU2 updates.
 
 	* src/mach-ixp42x/nslu2.h: Adding header specific to this target.
