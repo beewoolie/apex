@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   NOR flash IO driver for LPD 79524.  The is, in the sum, a CFI
+   NOR flash IO driver for LPD 7952x.  The is, in the sum, a CFI
    compliant driver.  Nothing has been done to make it a general
    solution since it is more important that the driver be small than
    there be much code sharing.  After all, the code isn't very large
@@ -93,13 +93,6 @@ struct nor_chip {
   int erase_count;		/* Number of erase blocks */
   int writebuffer_size;		/* Size (bytes) of buffered write buffer */
 };
-
-#if 0
-const static struct nor_chip chips[] = {
-  { 0xb0, 0x18, 16*1024*1024, 128*1024 }, /* LH28F128SPHTD */
-  { 0x89, 0x17, 16*1024*1024, 128*1024 }, /* I28F??? */
-};
-#endif
 
 const static struct nor_chip* chip;
 static struct nor_chip chip_probed;
@@ -400,7 +393,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_3 struct driver_d nor_driver = {
-  .name = "nor-79524",
+  .name = "nor-7952x",
   .description = "NOR flash driver",
   .open = nor_open,
   .close = close_helper,
@@ -410,6 +403,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_2 struct service_d lh79524_nor_service = {
+static __service_2 struct service_d lh7952x_nor_service = {
   .init = nor_init,
 };
