@@ -22,7 +22,6 @@ TODO:
     o Not much incentive to be small with 80k of SRAM
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole environment
   o Need to set an environment checksum into flash
-  o Dynamic arch id
 
 Goals
 

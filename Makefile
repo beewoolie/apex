@@ -774,10 +774,13 @@ endif
 # All the preparing..
 prepare-all: prepare0 prepare
 
-prepare-apex: include/asm include/linux/config.h
+prepare-apex: include/asm include/linux/config.h include/envmagic.h
 
 include/linux/config.h:
 	@touch include/linux/config.h
+
+include/envmagic.h: FORCE
+	@scripts/envmagic > include/envmagic.h
 
 #	Leave this as default for preprocessing apex.lds.S, which is now
 #	done in arch/$(ARCH)/kernel/Makefile

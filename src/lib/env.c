@@ -34,6 +34,16 @@
    values.  Instead, we'd rewrite the whole kit every time.
 
 
+   ENV_MAGIC
+   ---------
+
+   In order to prevent inadvertent crashes and hang-ups and mess-ups,
+   the environment is prefixed with a magic number that derives from
+   the environment variables in use.  It is checked only when reading
+   and writing the environment storage area.  The use may have the
+   opportunity to erase the whole area which would clobber an old
+   environment.
+
    TODO
    ----
 
@@ -54,6 +64,7 @@
 #include <environment.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
+#include <envmagic.h>
 #include <driver.h>
 
 extern char APEX_ENV_START;
@@ -73,28 +84,15 @@ extern char APEX_VMA_END;
 			/sizeof (struct env_d))
 #define ENVLIST(i)	(((struct env_d*) &APEX_ENV_START)[i])
 
-static const char* _env_find (int i);
-static int _env_index (const char* sz);
-
 struct descriptor_d env_d;	/* Environment storage region */
 
-/* _env_fetch
+#if defined (CONFIG_CMD_SETENV)
 
-   returns the index and value for an environment key.  If the user
-   has not set the key, the *pszValue will be NULL.  The return value
-   is the key index or -1 if the key is not found.n
-
-*/
-
-static int _env_fetch (const char* szKey, const char** pszValue)
+static ssize_t _env_read (void* pv, size_t cb)
 {
-  int i = _env_index (szKey);;
-  if (i != -1)
-    *pszValue = _env_find (i);
-  return i;
+  return env_d.driver->read (&env_d, pv, cb);
 }
 
-#if defined (CONFIG_CMD_SETENV)
 static ssize_t _env_write (const void* pv, size_t cb)
 {
   return env_d.driver->write (&env_d, pv, cb);
@@ -103,12 +101,6 @@ static ssize_t _env_write (const void* pv, size_t cb)
 static void _env_back (void)
 {
   env_d.driver->seek (&env_d, -1, SEEK_CUR);
-}
-#endif
-
-static ssize_t _env_read (void* pv, size_t cb)
-{
-  return env_d.driver->read (&env_d, pv, cb);
 }
 
 static void _env_rewind (void)
@@ -131,6 +123,27 @@ static char _env_locate (int i)
   return ch;
 }
 
+/* _env_check_magic
+
+   performs a rewind of the environment descriptor and checks for the
+   presence of the environment magic number at the start of the
+   region.  It returns 0 if the magic number is present.  If the
+   region is uninitialized, it returns 1.  The return value is -1 if
+   there is data in the environment that cannot be recognized.n
+
+*/
+
+static int _env_check_magic (void)
+{
+  unsigned short s;
+  _env_rewind ();
+  _env_read (&s, 2);
+  if (s == ENV_MAGIC)
+    return 0;
+  if (s == 0xffff)
+    return 1;
+  return -1;
+} 
 
 /* _env_find
 
@@ -147,7 +160,8 @@ static const char* _env_find (int i)
   if (!is_descriptor_open (&env_d))
     return NULL;
 
-  _env_rewind ();
+  if (_env_check_magic ())
+    return NULL;
 
   if (_env_locate (i) != ENV_END) {
     _env_read (rgb, sizeof (rgb));
@@ -156,7 +170,6 @@ static const char* _env_find (int i)
 
   return NULL;
 }
-
 
 static int _env_index (const char* sz) 
 {
@@ -169,6 +182,29 @@ static int _env_index (const char* sz)
   return -1;
 }
 
+
+/* _env_fetch
+
+   returns the index and value for an environment key.  If the user
+   has not set the key, the *pszValue will be NULL.  The return value
+   is the key index or -1 if the key is not found.n
+
+*/
+
+static int _env_fetch (const char* szKey, const char** pszValue)
+{
+  int i = _env_index (szKey);;
+  if (i != -1)
+    *pszValue = _env_find (i);
+  return i;
+}
+
+#else
+
+#define _env_find(i) NULL
+#define _env_fetch(s,p) -1
+
+#endif
 
 /* env_enumerate
 
@@ -252,7 +288,8 @@ void env_erase (const char* szKey)
   if (i < 0)
     return;
 
-  _env_rewind ();
+  if (_env_check_magic ())
+    return;
 
   if ((ch = _env_locate (i)) != ENV_END) {
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
@@ -282,7 +319,19 @@ int env_store (const char* szKey, const char* szValue)
   if (i < 0 || cch > ENV_CB_MAX - 1)
     return 1;
 
-  _env_rewind ();
+  switch (_env_check_magic ()) {
+  case 0:			/* magic present */
+    break;
+  case 1:			/* uninitialized */
+    {
+      unsigned short s = ENV_MAGIC;
+      _env_rewind ();
+      _env_write (&s, 2);
+    }
+    break;
+  case -1:			/* unrecognized */
+    return 1;
+  }
 
   while ((ch = _env_locate (i)) != ENV_END) {
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
@@ -298,7 +347,7 @@ int env_store (const char* szKey, const char* szValue)
 }
 #endif
 
-#if defined (CONFIG_CMD_ERASEENV)
+#if defined (CONFIG_CMD_ERASEENV) && defined (CONFIG_CMD_SETENV)
 
 void env_erase_all (void)
 {
