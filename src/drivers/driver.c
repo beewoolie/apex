@@ -25,6 +25,10 @@
    DESCRIPTION
    -----------
 
+   o Lower-case pathnames.
+
+     Until there is a strcasecmp, we need to locase pathnames.
+
 */
 
 #include <linux/string.h>
@@ -112,7 +116,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       case 0:
 	if (d->rgb[ib] == '/')
 	  ++state;
-	else if (d->rgb[ib] == '@') {
+	else if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -127,7 +131,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  ++d->iRoot;
 	  ++state;
 	}
-	else if (d->rgb[ib] == '@') {
+	else if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -140,7 +144,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       case 2:
 	if (d->rgb[ib] == '/')
 	  return ERROR_FAILURE;
-	if (d->rgb[ib] == '@') {
+	if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -149,7 +153,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	state = 9;
 	break;
       case 9:
-	if (d->rgb[ib] == '@') {
+	if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
