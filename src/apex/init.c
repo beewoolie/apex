@@ -67,6 +67,6 @@ void release_services (void)
 void init (void)
 {
   init_services ();
-  cmd_version (0, NULL);	/* Signon */
+  cmd_version (-1, NULL);	/* Signon */
   exec_monitor ();
 }

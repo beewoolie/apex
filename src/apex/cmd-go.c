@@ -64,10 +64,10 @@ static __command struct command_d c_go = {
   .func = cmd_go,
   COMMAND_HELP(
 "go ADDRESS\n"
-"  Transfers execution to the program at ADDRESS.\n"
-"  Unlike the boot command, go does not prepare to execute a Linux\n" 
-"  kernel.  Drivers are disabled and the MMU will be off before\n"
-"  jumping to ADDRESS\n"
+"  Transfer execution to the program at ADDRESS.\n"
+"  Unlike the boot command, go does not pass data to a Linux\n" 
+"  kernel.  Services and drivers will be disabled and the MMU\n"
+"  will be off before jumping to ADDRESS.\n\n"
 "  e.g.  xreceive 0xb0000000 ; go 0xb0000000\n"
   )
 };

@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o Need to test the NAND booting.  Also, there seems to be some
+    trouble with the startup of the bootloader from nor flash and nand
+    when using a full sized loader.
+
   o We can write an erase function that can cope with erasing a
     portion of a flash block.  Actually, not really too hard.
 

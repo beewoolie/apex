@@ -108,7 +108,7 @@ static __command struct command_d c_printenv = {
   .func = cmd_printenv,
   COMMAND_HELP(
 "printenv\n"
-"  Displays the environment.\n"
+"  Display the environment.\n"
 "  The output is KEY [*]= VALUE where KEY is an environment\n"
 "  variable name and VALUE is the current seting.  The '*'\n"
 "  denotes a variable set to the default value.\n"
@@ -163,7 +163,7 @@ static __command struct command_d c_setenv = {
 "setenv KEY VALUE\n"
 "  Set environment variable KEY to value VALUE.\n"
 "  The set of KEYs is fixed when APEX is built.  It will\n"
-"  only allow preexisting variables to be set.\n"
+"  only allow preexisting variables to be set.\n\n"
 "  e.g.  setenv cmdline console=ttyAM1 root=/dev/hda1\n"
   )
 };
@@ -193,7 +193,7 @@ static __command struct command_d c_unsetenv = {
   .func = cmd_unsetenv,
   COMMAND_HELP(
 "unsetenv KEY\n"
-"  Restore environment variable KEY to the default value.\n"
+"  Restore environment variable KEY to the default value.\n\n"
 "  e.g.  unsetenv cmdline\n"
   )
 };

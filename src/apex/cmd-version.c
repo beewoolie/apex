@@ -44,13 +44,15 @@ int cmd_version (int argc, const char** argv)
   printf (
 "\n\nAPEX Boot Loader " APEXRELEASE
 " -- Copyright (c) 2004,2005 Marc Singer\n\n"
-"APEX comes with ABSOLUTELY NO WARRANTY."
+"APEX comes with ABSOLUTELY NO WARRANTY.");
+
 #if !defined (CONFIG_SMALL)
+  printf (
 "  It is free software and you\n"
 "are welcome to redistribute it under certain circumstances.\n"
 "For details, refer to the file COPYING in the program source."
-#endif
-"\n\n"
+"\n\n");
+  printf (
 "  apex => mem:0x%p+0x%lx\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
@@ -58,24 +60,26 @@ int cmd_version (int argc, const char** argv)
 #if defined (CONFIG_ENV_REGION)
   printf ("  env  => %s\n", _t(CONFIG_ENV_REGION));
 #endif
+#endif
 
+  if (argc >= 0) {
 #if !defined (CONFIG_SMALL)
-  {
     extern char APEX_SERVICE_START;
     extern char APEX_SERVICE_END;
     struct service_d* service;
+
+    putchar ('\n');
 
     for (service = (struct service_d*) &APEX_SERVICE_START;
 	 service < (struct service_d*) &APEX_SERVICE_END;
 	 ++service)
       if (service->report)
 	service->report ();
-  }
 #endif
-  putchar ('\n');
+  }
 
 #if defined (CONFIG_ALLHELP)
-  printf ("Use the 'help .' command to get a list of help topics.\n\n");
+  printf ("\nUse the 'help .' command to get a list of help topics.\n\n");
 #endif
 
   return 0;
@@ -85,4 +89,8 @@ static __command struct command_d c_version = {
   .command = "version",
   .description = "show version and copyright",
   .func = cmd_version,
+  COMMAND_HELP(
+"version\n"
+"  Display version, copyright, and system summary information\n"
+)
 };

@@ -72,10 +72,10 @@ static __command struct command_d c_xreceive = {
   .description = "receive data over the serial line",
   .func = cmd_xreceive,
   COMMAND_HELP(
-"xreceive DST\n"
-"  Receives data over the console using the XModem protocol\n"
-"  and writes the data to DST region.\n"
-"  The length of the DST region is ignored.\n"
+"xreceive REGION\n"
+"  Receive binary data via the console using Xmodem protocol.\n"
+"  Data is written directly to REGION.\n"
+"  The length of the DST region is ignored.\n\n"
 "  e.g.  xreceive 0x2001000    # Receive and write to SDRAM\n"
 "        xreceive nor:0        # Receive and write to flash\n"
   )
