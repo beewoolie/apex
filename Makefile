@@ -2,7 +2,7 @@ ARCH ?= arm
 
 VERSION = 1
 PATCHLEVEL = 0
-SUBLEVEL = 26
+SUBLEVEL = 27
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -1061,7 +1061,7 @@ distclean: mrproper
 # rpm target kept for backward compatibility
 package-dir	:= $(srctree)/scripts/package
 
-.PHONY: %-pkg rpm tgz
+.PHONY: %-pkg rpm tgz complete_release
 
 %pkg: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
@@ -1070,6 +1070,9 @@ rpm: FORCE
 tgz: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 
+complete_release: tgz FORCE
+	cp apex-$(APEXRELEASE) ~ftp/pub/apex
+	svn cp -m "$(APEXRELEASE)" file:///svn/tool/trunk/apex file:///svn/tool/tags/apex/$(APEXRELEASE)
 
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------

@@ -1,5 +1,9 @@
 2005-02-16  Marc Singer  <elf@buici.com>
 
+	* src/apex/cmd-copy.c (cmd_copy): Added a -v switch to copy which
+	performs a double read of the source and a read after write of the
+	destination to make sure the copy is correct.
+
 	* src/mach-ixp42x/initialize.c (__section): Added DEBUG_LL
 	support.
 
