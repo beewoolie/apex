@@ -245,7 +245,7 @@ static void codec_unmute (void)
 static void codec_mute (void)
 {
   execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
-			    0
+			    (1<<3) /* Soft mute */
 			    |(2<<1) /* 44.1 kHz deemphasis */
 			    ), 16);
 }
