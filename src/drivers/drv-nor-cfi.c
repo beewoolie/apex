@@ -239,7 +239,7 @@ static unsigned long nor_unlock_page (unsigned long index)
   index &= ~ (nor_region (index)->size - 1);
 
   WRITE_ONE (index, CMD (ReadID));
-  PRINTF ("nor_unlock_page 0x%lx %x\n", index, 
+  PRINTF ("nor_unlock_page 0x%lx %lx\n", index, 
 	  REGA (index + (0x02 << WIDTH_SHIFT)));
   if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
     return STAT (Ready);
@@ -262,8 +262,16 @@ static void nor_init_chip (unsigned long phys)
 
   if (   REGA (phys + (0x10 << WIDTH_SHIFT)) != QRY('Q')
       || REGA (phys + (0x11 << WIDTH_SHIFT)) != QRY('R')
-      || REGA (phys + (0x12 << WIDTH_SHIFT)) != QRY('Y'))
+      || REGA (phys + (0x12 << WIDTH_SHIFT)) != QRY('Y')) {
+#if defined (TALK)
+    PRINTF ("%s: failed\n", __FUNCTION__);
+    dump ((void*) phys, 256, 0);
+#endif
     return;
+  }
+
+  PRINTF ("%s: success\n", __FUNCTION__);
+  dump ((void*) phys, 256, 0);
 
   start = chip_probed.total_size;
   i = chip_probed.regions;
