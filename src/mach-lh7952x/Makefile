@@ -10,3 +10,5 @@ obj-$(CONFIG_DRIVER_NOR) += drv-nor.o
 obj-y += env.o
 
 CFLAGS_initialize.o += -Os
+
+#CFLAGS_drv-nor.o += -Os

@@ -26,6 +26,11 @@
    perform the ReadArray and ClearStatus commands always for both
    banks.
 
+   Most of the small procedures at the top of this module exist to
+   shrink the overall size of this driver.  It is difficult to know
+   exactly which changes will help because of side effects and
+   constant caching within the bodies of each function.
+
 */
 
 #include <driver.h>
@@ -101,13 +106,36 @@ static void vpen_disable (void)
   __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
 }
 
+static unsigned short nor_read_one (unsigned long index)
+{
+  return __REG16 (index);
+}
+#define READ_ONE(i) nor_read_one (i)
+
+static void nor_write_one (unsigned long index, unsigned short v)
+{
+  __REG16 (index) = v;
+}
+#define WRITE_ONE(i,v) nor_write_one ((i), (v))
+
+#define CLEAR_STATUS(i) nor_write_one(i, ClearStatus)
+
 static unsigned short nor_status (unsigned long index)
 {
   unsigned short status; 
+  unsigned long time = timer_read ();
   do {
-    status = __REG16 (index);
-  } while ((status & Ready) == 0);
+    status = READ_ONE (index);
+  } while (   (status & Ready) == 0
+	   || timer_delta (time, timer_read ()) < 6*1000);
   return status;
+}
+
+static unsigned short nor_unlock_page (unsigned long index)
+{
+  WRITE_ONE (index, Configure);
+  WRITE_ONE (index, LockClear);
+  return nor_status (index);
 }
 
 static int nor_probe (void)
@@ -129,11 +157,11 @@ static int nor_probe (void)
   device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH_SHIFT));
 
   for (chip = &chips[0]; 
-       chip < chips + sizeof(chips)/sizeof (struct nor_chip);
+       chip < chips + sizeof (chips)/sizeof (struct nor_chip);
        ++chip)
     if (chip->manufacturer == manufacturer && chip->device == device)
       break;
-  if (chip >= chips + sizeof(chips)/sizeof (chips[0]))
+  if (chip >= chips + sizeof (chips)/sizeof (chips[0]))
       chip = NULL;
 
 #if defined (TALK)
@@ -180,7 +208,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     cbRead += available;
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
-    __REG16 (index) = ReadArray;
+    WRITE_ONE (index, ReadArray);
     memcpy (pv, (void*) index, available);
 
     pv += available;
@@ -196,11 +224,6 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
    bytes and odd addresses.  This implementation is coded for a 16 bit
    device.  It is probably OK for 32 bit devices, too, since most of
    those are really pairs of 16 bit devices.
-
-   The ReadArray command is sent after every byte because we would
-   otherwise need to check for bank changes.  This driver must always
-   leave the array in ReadArray mode so that the memory operators
-   work.
 
    The LH28F128 can perform buffered writes.  This routine only writes
    individual bytes because the logic is simpler and adequate.
@@ -231,14 +254,16 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     if (index & 1) {
       step = 1;
       index &= ~1;
-      __REG16 (d->index & ~1) = ReadArray;
-      data = __REG16 (index);
+      WRITE_ONE (d->index, ReadArray);
+      //      __REG16 (d->index & ~1) = ReadArray;
+      data = READ_ONE (index); //__REG16 (index);
       ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
     }
     else if (cb == 1) {
       step = 1;
-      __REG16 (d->index & ~1) = ReadArray;
-      data = __REG16 (index);
+      WRITE_ONE (d->index, ReadArray);
+      //      __REG16 (d->index) = ReadArray;
+      data = READ_ONE (index);// __REG16 (index);
       ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
     }
     else
@@ -246,23 +271,20 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     vpen_enable ();
     if (page != pageLast) {
-      __REG16 (index) = Configure;
-      __REG16 (index) = LockClear;
-      status =  nor_status (index);
-      if (status & ProgramError)
+      status = nor_unlock_page (index);
+      if (status & (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
       pageLast = page;
     }
-    __REG16 (index) = Program;
-    __REG16 (index) = data;
+    WRITE_ONE (index, Program);
+    WRITE_ONE (index, data);
     status = nor_status (index);
     vpen_disable ();
-    __REG16 (index) = ReadArray;
 
-    if (status & ProgramError) {
+    if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
     fail:
       printf ("Program failed at 0x%p (%x)\r\n", (void*) index, status);
-      __REG16 (index) = ClearStatus;
+      CLEAR_STATUS (index);
       return cbWrote;
     }
 
@@ -296,32 +318,29 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
     index &= ~(chip->erase_size - 1);
 
-    __REG16 (index) = ClearStatus;
+    CLEAR_STATUS (index);
     vpen_enable ();
     if (page != pageLast) {
-      __REG16 (index) = Configure;
-      __REG16 (index) = LockClear;
-      status =  nor_status (index);
-      if (status & ProgramError)
+      status = nor_unlock_page (index);
+      if (status & (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
+      CLEAR_STATUS (index);
       pageLast = page;
     }
-    __REG16 (index) = Erase;
-    __REG16 (index) = EraseConfirm;
+    WRITE_ONE (index, Erase);
+    WRITE_ONE (index, EraseConfirm);
     status = nor_status (index);
     vpen_disable ();
 
-    if (status & EraseError) {
+    if (status & (EraseError | VPEN_Low | DeviceProtected)) {
     fail:
       printf ("Erase failed at 0x%p (%x)\r\n", (void*) index, status);
-      __REG16 (index) = ClearStatus;
+      CLEAR_STATUS (index);
       return;
     }
 
     cb -= available;
     d->index += cb;
-
-    __REG16 (index) = ReadArray;
   }
 }
 
