@@ -32,12 +32,12 @@ int cmd_copy (int argc, const char** argv)
   if (argc != 3)
     return ERROR_PARAM;
 
-  if ((result = open_descriptor (argv[1], &din))) {
+  if ((result = parse_descriptor (argv[1], &din))) {
     printf ("Unable to open target %s (%d)\r\n", argv[1], result);
     return ERROR_OPEN;
   }
 
-  if ((result = open_descriptor (argv[2], &dout))) {
+  if ((result = parse_descriptor (argv[2], &dout))) {
     printf ("Unable to open target %s (%d)\r\n", argv[2], result);
     return ERROR_OPEN;
   }
@@ -48,12 +48,12 @@ int cmd_copy (int argc, const char** argv)
   if (!dout.length)
     dout.length = DRIVER_LENGTH_MAX;
 
-  fhIn = din.driver->open (&din);
+  fhIn = open_descriptor (&din);
   if (fhIn == -1)
     return ERROR_OPEN;
-  fhOut = dout.driver->open (&dout);
+  fhOut = open_descriptor (&dout);
   if (fhOut == -1) {
-    din.driver->close (fhIn);
+    close_descriptor (&din);
     return ERROR_OPEN;
   }
 
@@ -66,8 +66,8 @@ int cmd_copy (int argc, const char** argv)
       dout.driver->write (fhOut, rgb, cb);
   }
 
-  din.driver->close (fhIn);
-  dout.driver->close (fhOut);
+  close_descriptor (&din);
+  close_descriptor (&dout);
 
   printf ("%d bytes transferred\r\n", cbCopy);
 

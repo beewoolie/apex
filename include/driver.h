@@ -24,6 +24,7 @@
 struct driver_d;
 
 struct open_d {
+  int fh;			/* file handle */
   struct driver_d* driver;
   char driver_name[16];
   unsigned long start;
@@ -71,6 +72,8 @@ struct driver_d {
 
 /* ----- Prototypes */
 
-int open_descriptor (const char*, struct open_d*);
+extern int parse_descriptor (const char* sz, struct open_d* descriptor);
+extern int open_descriptor (struct open_d* descriptor);
+extern void close_descriptor (struct open_d* descriptor);
 
 #endif  /* __DRIVER_H__ */

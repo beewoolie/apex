@@ -52,7 +52,7 @@ Cf:
 */
 
 #define MS_TIMEOUT (10*1000)
-#define MAXERRORS 5
+#define ERROR_COUNT_MAX 5
 
 #define ERROR(...) do { } while (0)
 
@@ -88,7 +88,7 @@ static int _receive (unsigned int timeout)
   return -1;
 }
 
-int xmodem_receive (char *rgbReceive, int cbReceive)
+int xmodem_receive (struct open_d* d, int fh)
 {
   unsigned int errors = 0;
   unsigned int wantBlockNo = 1;
@@ -222,15 +222,24 @@ int xmodem_receive (char *rgbReceive, int cbReceive)
     wantBlockNo++;
     length += blockLength;
 
+#if 0
     if (length > cbReceive) {
       ERROR ("out of space\n");
       goto error;
     }
 
+    
+
     {
       int i;
       for (i = 0; i < blockLength; i++)
 	*rgbReceive++ = rgbXmodem[i];
+    }
+#endif
+
+    if (d->driver->write (fh, rgbXmodem, blockLength) < blockLength) {
+      ERROR ("out of space\n");
+      return -1;		/* There's nothing else we can do */
     }
 
   next:
@@ -241,7 +250,7 @@ int xmodem_receive (char *rgbReceive, int cbReceive)
   error:
   timeout:
 
-    if (++errors < MAXERRORS) {
+    if (++errors < ERROR_COUNT_MAX) {
       _read_flush ();
       _send (nak);
       continue;

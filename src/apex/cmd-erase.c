@@ -29,7 +29,7 @@ int cmd_erase (int argc, const char** argv)
   if (argc != 2)
     return ERROR_PARAM;
 
-  if ((result = open_descriptor (argv[1], &d))) {
+  if ((result = parse_descriptor (argv[1], &d))) {
     printf ("Unable to open target %s (%d)\r\n", argv[1], result);
     return ERROR_OPEN;
   }
@@ -40,12 +40,13 @@ int cmd_erase (int argc, const char** argv)
   if (!d.length)
     d.length = 1;
 
-  fh = d.driver->open (&d);
+  fh = open_descriptor (&d);
   if (fh == -1)
     return ERROR_OPEN;
 
   d.driver->erase (fh, d.length);
-  d.driver->close (fh);
+
+  close_descriptor (&d);
 
   return 0;
 }

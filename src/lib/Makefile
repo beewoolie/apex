@@ -4,6 +4,9 @@
 
 lib-y := vsprintf.o ctype.o udiv.o
 lib-y += strlen.o string.o
+lib-y += crc32.o
+lib-y += xmodem.o
 #lib-y += div64.o
 
 #CFLAGS_vsprintf.o += -mthumb
+#CFLAGS_crc32.o = -mthumb -mthumb-interwork

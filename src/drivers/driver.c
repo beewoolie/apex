@@ -18,12 +18,13 @@
 #include <error.h>
 #include <apex.h>
 
-int open_descriptor (const char* sz, struct open_d* descriptor)
+int parse_descriptor (const char* sz, struct open_d* descriptor)
 {
   size_t cb;
   size_t ib;
 
   memset (descriptor, 0, sizeof (*descriptor));
+  descriptor->fh = -1;
 
   ib = cb = strcspn (sz, ":");
   if (sz[ib] == ':') {
@@ -81,4 +82,15 @@ int open_descriptor (const char* sz, struct open_d* descriptor)
     }
   }
   return 0;
+}
+
+int open_descriptor (struct open_d* descriptor)
+{
+  return (descriptor->fh = descriptor->driver->open (descriptor));
+}
+
+void close_descriptor (struct open_d* descriptor)
+{
+  if (descriptor->fh != -1)
+    descriptor->driver->close (descriptor->fh);
 }
