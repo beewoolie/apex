@@ -230,15 +230,15 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 #endif
 
   do {
-    unsigned long block = (d->start + d->index)>>9;
+    unsigned long page = (d->start + d->index)/512;
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
-//    printf ("nand erase %ld, %ld\r\n", block, available);
+//    printf ("nand erase %ld, %ld\r\n", page, available);
 
     __REG8 (NAND_CLE) = Erase;
-    __REG8 (NAND_ALE) = (block & 0xff);
-    __REG8 (NAND_ALE) = ((block >> 8) & 0xff);
+    __REG8 (NAND_ALE) = ( page & 0xff);
+    __REG8 (NAND_ALE) = ((page >> 8) & 0xff);
     __REG8 (NAND_CLE) = EraseConfirm;
 
     wait_on_busy ();
@@ -247,7 +247,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
-      printf ("Erase failed at block %ld\r\n", block);
+      printf ("Erase failed at page %ld\r\n", page);
 //      goto fail;
       return;
     }
