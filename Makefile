@@ -447,7 +447,7 @@ config: scripts_basic FORCE
 	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
 	@ln -s src/mach-*/$@ config
-	@rm include/config.h
+	@if [ -e include/config.h ]; then rm include/config.h; fi
 
 #%config: scripts_basic FORCE
 #	$(Q)$(MAKE) $(build)=scripts/kconfig $@
