@@ -247,7 +247,7 @@ static void target_init (void)
   IOCON_MUXCTL7  = IOCON_MUXCTL7_V;   /* A23,A22 */
   IOCON_RESCTL7  = IOCON_RESCTL7_V;   /* pull-down */
   IOCON_MUXCTL14 = IOCON_MUXCTL14_V;  /* nCS0 normalize */
-else
+#else
   /* *** FIXME: I'm not sure why I need these.  It ought to default to
      *** these modes when not using NAND. */
   IOCON_MUXCTL7  = IOCON_MUXCTL7_V;   /* A23,A22 */

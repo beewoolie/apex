@@ -80,6 +80,11 @@ int cmd_copy (int argc, const char** argv)
 	 cbCopy += cb) {
       int report;
       size_t cbWrote;
+      if (cb == 0) {
+	result = ERROR_RESULT (ERROR_FAILURE, "premature end of input");
+	goto fail;
+      }
+
       SPINNER_STEP;
       cbWrote = dout.driver->write (&dout, rgb, cb);
       if (cbWrote != cb) {

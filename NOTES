@@ -5,6 +5,11 @@ APEX Boot Loader
 
 TODO:
 
+  o It would be nice if the fat/cf interface could be smart about
+    detecting device changes.  Trouble is, CIS info doesn't appear to
+    be enough.  It may be possible to use the hardware to detect a
+    device change and propagate that upward.
+
   o APEX prints an error when the startup command doesn't have a trailing ';'
 
   o Need to test the NAND booting.  Also, there seems to be some

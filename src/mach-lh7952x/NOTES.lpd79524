@@ -1,0 +1,12 @@
+==========
+  NOTES
+ LPD79524
+==========
+
+5.Feb.2005
+
+  o Cannot test NAND boot by copying a portion of the bootloader to
+    SRAM and jumping to it.  The relocation code doesn't (cannot)
+    perform any setup for NAND.  It must depend on the setups already
+    being in place.  This allows us to be flexible about how the
+    hardware was initalized.

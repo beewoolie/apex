@@ -44,6 +44,13 @@ struct descriptor_d {
   unsigned long start;
   unsigned long length;
   size_t index;
+				/* Paths */
+  unsigned char rgb[256];
+  unsigned char* pb[32];
+  int c;		/* Total elements in path */
+  int iRoot;		/* Index of root element */
+
+  unsigned long private;	/* Available to driver */
 };
 
 #define DRIVER_LENGTH_MAX	(0x7fffffff)
@@ -56,6 +63,10 @@ struct descriptor_d {
 #define DRIVER_CONSOLE	(1<<2)
 #define DRIVER_MEMORY	(1<<3)
 #define DRIVER_PRESENT	(1<<8)
+//#define DRIVER_DESCRIP_REGION	(1<<9)		/* Uses region descriptors */
+#define DRIVER_DESCRIP_FS	(1<<10) 	/* Uses filesystem descript. */
+#define DRIVER_DESCRIP_STREAM	(1<<11) 	/* Uses stresam descriptors */
+#define DRIVER_DESCRIP_NET	(1<<12) 	/* Uses network descriptors */
 #define DRIVER_WRITEPROGRESS_MASK (0xf)
 #define DRIVER_WRITEPROGRESS_SHIFT (24)
 #define DRIVER_WRITEPROGRESS(n) (((n)&0xf)<<24)	/* 2^(N+10) bytes per spin */
@@ -85,7 +96,7 @@ struct driver_d {
 #define __driver_0 __attribute__((used,section(".driver.0")))
 #define __driver_1 __attribute__((used,section(".driver.1")))
 #define __driver_2 __attribute__((used,section(".driver.2")))
-#define __driver_3 __attribute__((used,section(".driver.2")))
+#define __driver_3 __attribute__((used,section(".driver.3")))
 
 /* ----- Globals */
 

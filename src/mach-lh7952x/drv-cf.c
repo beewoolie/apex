@@ -57,7 +57,16 @@
 #include "hardware.h"
 #include "compactflash.h"
 
-//#define TALK
+#define TALK
+
+#if defined TALK
+# define PRINTF(v...)	printf (v)
+#else
+# define PRINTF(v...)	do {} while (0)
+#endif
+
+#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
+
 
 #if CF_WIDTH == 16
 #define REG __REG16
@@ -155,11 +164,11 @@ struct cf_info {
   int sectors_per_track;
   int total_sectors;
 
-  char bootsector[SECTOR_SIZE];	/* *** Superfluous */
-  struct directory root[32];
+  //  char bootsector[SECTOR_SIZE];	/* *** Superfluous */
+  //  struct directory root[32];
 
-  struct partition partition[4];
-  struct parameter parameter;	/* Parameter info for the partition */
+  //  struct partition partition[4];
+  //  struct parameter parameter;	/* Parameter info for the partition */
 
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
@@ -235,9 +244,7 @@ static void seek (unsigned sector)
   unsigned head;
   unsigned cylinder;
 
-#if defined (TALK)
-  printf ("[%d", sector);
-#endif
+  PRINTF ("[%d", sector);
 
 #if defined (USE_LBA)
   head      = (sector >> 24) & 0xf;
@@ -256,25 +263,26 @@ static void seek (unsigned sector)
 
   ready_wait ();
 
-#if defined (TALK)
-  printf (" %d %d %d]\n", head, cylinder, sector);
-#endif
+  PRINTF (" %d %d %d]\n", head, cylinder, sector);
 }
 
 static int cf_identify (void)
 {
+  ENTRY (0);
+
   cf_d.type = REG (CF_PHYS);
 
+#if 0
   {
     int index = 0;
     while (index < 1024) {
       unsigned short s = REG (CF_PHYS + index);
       if (s == 0xff)
 	break;
-      printf ("%03x: 0x%x", index, s);
+      PRINTF ("%03x: 0x%x", index, s);
       index += 2*CF_ADDR_MULT;
       s = REG (CF_PHYS + index);
-      printf (" 0x%x (%d)\n", s, s);
+      PRINTF (" 0x%x (%d)\n", s, s);
       index += 2*CF_ADDR_MULT;
       {
 	int i;
@@ -286,7 +294,7 @@ static int cf_identify (void)
       index += s*2*CF_ADDR_MULT;
     }
   }
-
+#endif
 
   if (cf_d.type != typeMemory)
     return 1;
@@ -327,6 +335,9 @@ static int cf_identify (void)
 
   cf_d.sector = -1;
 
+#if 0
+  /* *** FIXME: this cannot be done because it will cause infinite
+     *** recursion.  */
   {
     struct descriptor_d d;
     int result;
@@ -349,12 +360,20 @@ static int cf_identify (void)
 //      dump ((void*) cf_d.bootsector, 512, 0);
 //      dump ((void*) &cf_d.parameter, 25, 0);
     }
+
+
   }
+#endif
+
   return 0;
 }
 
 static int cf_open (struct descriptor_d* d)
 {
+  ENTRY (0);
+
+  if (cf_identify ())
+    return -1;
   if (cf_d.type != typeMemory)
     return -1;
 
@@ -383,9 +402,9 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
 		/* Read sector into buffer  */
     if (sector != cf_d.sector) {
       int i;
-#if defined (TALK)
-      printf ("cf reading %d\n", sector);
-#endif
+
+      PRINTF ("cf reading %d\n", sector);
+
       seek (sector);
       write8 (IDE_COMMAND, IDE_READSECTOR);
       ready_wait ();
@@ -406,10 +425,21 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
+//extern struct driver_d* fs_driver;
+//struct driver_d lh79524_cf_driver;
+
+static void cf_init (void)
+{
+  //  if (fs_driver == NULL)
+  //    fs_driver = &lh79524_cf_driver;
+}
+
 #if !defined (CONFIG_SMALL)
 
 static void cf_report (void)
 {
+  ENTRY (0);
+
   if (cf_identify ())
     return;
 
@@ -417,6 +447,7 @@ static void cf_report (void)
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
 	  cf_d.szFirmware, cf_d.szName);
+#if 0
   if (   cf_d.bootsector[SECTOR_SIZE - 2] == 0x55 
       && cf_d.bootsector[SECTOR_SIZE - 1] == 0xaa) {
     int i;
@@ -477,6 +508,7 @@ static void cf_report (void)
 		cf_d.root[i].length); 
     }
   }
+#endif
 }
 
 #endif
@@ -494,6 +526,7 @@ static __driver_3 struct driver_d cf_driver = {
 };
 
 static __service_6 struct service_d lpd79524_cf_service = {
+  .init = cf_init,
 #if !defined (CONFIG_SMALL)
   .report = cf_report,
 #endif
