@@ -1,5 +1,9 @@
 2005-02-16  Marc Singer  <elf@buici.com>
 
+	* src/mach-ixp42x/nslu2_config (CONFIG_ENV_REGION): Changed the
+	environment region for the nslu2 so that it can be written without
+	clobbering the second redboot block.
+
 	* src/apex/cmd-copy.c (cmd_copy): Added a -v switch to copy which
 	performs a double read of the source and a read after write of the
 	destination to make sure the copy is correct.
