@@ -60,10 +60,15 @@
    hand-coded assembler.  For some reason, the compiler would reload
    the TIMER1_PHYS at the top of the while loop.
 
+   Note that this function is neither __naked nor static.  It is
+   available to the rest of the application as is.
+
+   Keep in mind that it has a limit of about 32ms.  Anything longer
+   (and less than 16 bits) will return immediately.
+
  */
 
-static void __attribute__((naked, section(".bootstrap"))) 
-     usdelay (unsigned long us)
+void __attribute__((section(".bootstrap"))) usdelay (unsigned long us)
 {
   __asm ("str %1, [%0, #0]\n\t"
 	 "str %2, [%0, #0xc]\n\t"
@@ -71,7 +76,7 @@ static void __attribute__((naked, section(".bootstrap")))
       "0: ldr %2, [%0, #0xc]\n\t"
 	 "tst %2, %4\n\t"
 	 "beq 0b\n\t"
-	 "mov pc, lr"
+//	 "mov pc, lr"
 	 :
 	 : "r" (TIMER1_PHYS), 
 	   "r" (0),
