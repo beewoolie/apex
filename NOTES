@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o It looks like there is a conflict with using the name ./config for
+    the configuration file and all of the config targets.  I believe
+    this to be due to hidden dependencies within make.  Bad make.  So,
+    we're going to go back to the .config files for now.  I'd use
+    conf, but that is the name of the configuration program.  It may
+    take some time to sort this out and make it neat.
+
   o There is a need to be able to control the access width in the
     memory driver.  Sometimes, for the purpose of debugging, it is
     helpful to be able to read different widths.  The memcpy command

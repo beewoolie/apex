@@ -4,60 +4,62 @@
 
 .PHONY: oldconfig xconfig gconfig menuconfig config silentoldconfig
 
+CONF=src/arch-$(ARCH)/Kconfig
+
 xconfig: $(obj)/qconf
-	$< arch/$(ARCH)/Kconfig
+	$< $(CONF)
 
 gconfig: $(obj)/gconf
-	$< arch/$(ARCH)/Kconfig
+	$< $(CONF)
 
 menuconfig: $(obj)/mconf
 	$(Q)$(MAKE) $(build)=scripts/lxdialog
-	$< arch/$(ARCH)/Kconfig
+	$< $(CONF)
 
 config: $(obj)/conf
-	$< arch/$(ARCH)/Kconfig
+	$< $(CONF)
 
 oldconfig: $(obj)/conf
-	$< -o arch/$(ARCH)/Kconfig
+	$< -o $(CONF)
 
 silentoldconfig: $(obj)/conf
-	$< -s arch/$(ARCH)/Kconfig
+	$< -s $(CONF)
 
 .PHONY: randconfig allyesconfig allnoconfig allmodconfig defconfig
 
 randconfig: $(obj)/conf
-	$< -r arch/$(ARCH)/Kconfig
+	$< -r $(CONF)
 
 allyesconfig: $(obj)/conf
-	$< -y arch/$(ARCH)/Kconfig
+	$< -y $(CONF)
 
 allnoconfig: $(obj)/conf
-	$< -n arch/$(ARCH)/Kconfig
+	$< -n $(CONF)
 
 allmodconfig: $(obj)/conf
-	$< -m arch/$(ARCH)/Kconfig
+	$< -m $(CONF)
 
 defconfig: $(obj)/conf
 ifeq ($(KBUILD_DEFCONFIG),)
-	$< -d arch/$(ARCH)/Kconfig
+	$< -d $(CONF)
 else
 	@echo *** Default configuration is based on '$(KBUILD_DEFCONFIG)'
-	$(Q)$< -D arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG) arch/$(ARCH)/Kconfig
+	$(Q)$< -D arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG) $(CONF)
 endif
 
 %_defconfig: $(obj)/conf
-	$(Q)$< -D arch/$(ARCH)/configs/$@ arch/$(ARCH)/Kconfig
+	$(Q)$< -D arch/$(ARCH)/configs/$@ $(CONF)
 
 # Help text used by make help
 help:
 	@echo  '  oldconfig	  - Update current config utilising a line-oriented program'
 	@echo  '  menuconfig	  - Update current config utilising a menu based program'
 	@echo  '  xconfig	  - Update current config utilising a QT based front-end'
-	@echo  '  gconfig	  - Update current config utilising a GTK based front-end'
-	@echo  '  defconfig	  - New config with default answer to all options'
-	@echo  '  allmodconfig	  - New config selecting modules when possible'
-	@echo  '  allyesconfig	  - New config where all options are accepted with yes'
-	@echo  '  allnoconfig	  - New minimal config'
+#	@echo  '  gconfig	  - Update current config utilising a GTK based front-end'
+#	@echo  '  defconfig	  - New config with default answer to all options'
+#	@echo  '  allmodconfig	  - New config selecting modules when possible'
+#	@echo  '  allyesconfig	  - New config where all options are accepted with yes'
+#	@echo  '  allnoconfig	  - New minimal config'
 
 # ===========================================================================
 # Shared Makefile for the various kconfig executables:

@@ -406,7 +406,8 @@ scripts_basic:
 # of make so .config is not included in this case either (for *config).
 
 no-dot-config-targets := clean mrproper distclean tidy complete_release\
-			 cscope TAGS tags help %docs check% every
+			 cscope TAGS tags help %docs check% every\
+			 scripts_basic config
 
 config-targets := 0
 mixed-targets  := 0
@@ -444,7 +445,7 @@ ifeq ($(config-targets),1)
 config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
-%config: FORCE
+%_config: FORCE
 	@if [ -L config ]; then rm config ; fi
 	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
@@ -454,6 +455,9 @@ config: scripts_basic FORCE
 
 #%config: scripts_basic FORCE
 #	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+
+xconfig: scripts_basic FORCE
+	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 else
 # ===========================================================================
@@ -1083,7 +1087,9 @@ tgz: FORCE
 
 complete_release: tgz FORCE
 	cp apex-$(APEXRELEASE).tar.gz ~ftp/pub/apex
-	svn cp -m "$(APEXRELEASE)" file:///svn/tools/trunk/apex file:///svn/tools/tags/apex/$(APEXRELEASE)
+	svn cp -m "$(APEXRELEASE)" \
+	  file:///svn/tools/trunk/apex \
+	  file:///svn/tools/tags/apex/$(APEXRELEASE)
 
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
@@ -1096,9 +1102,9 @@ help:
 	@echo  '  clean		  - remove most generated files but keep the config'
 	@echo  '  mrproper	  - remove all generated files + config + various backup files'
 	@echo  ''
-#	@echo  'Configuration targets:'
-#	@-$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
-#	@echo  ''
+	@echo  'Configuration targets:'
+	@-$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
+	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* apex	          - Build the loader'
