@@ -187,8 +187,8 @@ static inline unsigned long read_long (void* pv)
 {
   unsigned char* pb = (unsigned char*) pv;
   return  ((unsigned long) pb[0])
-       + (((unsigned long) pb[1]) <<  8);
-       + (((unsigned long) pb[2]) << 16);
+       + (((unsigned long) pb[1]) <<  8)
+       + (((unsigned long) pb[2]) << 16)
        + (((unsigned long) pb[3]) << 24);
 }
 
