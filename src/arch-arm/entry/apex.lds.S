@@ -62,4 +62,5 @@ SECTIONS
 	}
 	. += 8192;
 	APEX_STACK_START = .;
+	APEX_END = .;
 }
