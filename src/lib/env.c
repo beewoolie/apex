@@ -79,10 +79,17 @@ static int _env_fetch (const char* szKey, const char** pszValue)
   return i;
 }
 
+#if defined (CONFIG_CMD_SETENV)
 static ssize_t _env_write (const void* pv, size_t cb)
 {
   return env_d.driver->write (&env_d, pv, cb);
 }
+
+static void _env_back (void)
+{
+  env_d.driver->seek (&env_d, -1, SEEK_CUR);
+}
+#endif
 
 static ssize_t _env_read (void* pv, size_t cb)
 {
@@ -92,11 +99,6 @@ static ssize_t _env_read (void* pv, size_t cb)
 static void _env_rewind (void)
 {
   env_d.driver->seek (&env_d, 0, SEEK_SET);
-}
-
-static void _env_back (void)
-{
-  env_d.driver->seek (&env_d, -1, SEEK_CUR);
 }
 
 static char _env_locate (int i)
@@ -217,6 +219,8 @@ int env_fetch_int (const char* szKey, int valueDefault)
 }
 
 
+#if defined (CONFIG_CMD_SETENV)
+
 /* env_erase
 
    removes a key from the environment.  
@@ -276,9 +280,14 @@ int env_store (const char* szKey, const char* szValue)
 
   return 0;
 }
+#endif
+
+#if defined (CONFIG_CMD_ERASEENV)
 
 void env_erase_all (void)
 {
   _env_rewind ();
   env_d.driver->erase (&env_d, env_d.length); 
 }
+
+#endif

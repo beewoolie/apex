@@ -86,6 +86,7 @@ int cmd_printenv (int argc, const char** argv)
   return 0;
 }
 
+#if defined (CONFIG_CMD_SETENV)
 static __command struct command_d c_printenv = {
   .command = "printenv",
   .description = "show the environment",
@@ -163,8 +164,9 @@ static __command struct command_d c_unsetenv = {
   .description = "Remove environment variable",
   .func = cmd_unsetenv,
 };
+#endif
 
-
+#if defined (CONFIG_CMD_ERASEENV)
 static int cmd_eraseenv (int argc, const char** argv)
 {
   if (!is_descriptor_open (&env_d))
@@ -183,4 +185,4 @@ static __command struct command_d c_eraseenv = {
   .description = "Erase environment",
   .func = cmd_eraseenv,
 };
-
+#endif
