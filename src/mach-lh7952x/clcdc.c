@@ -126,15 +126,31 @@ static void clcdc_init (void)
   ALI_TIMING2     = 0x00009ad0;
 
   CLCDC_CTRL     |= (1<<0); /* Enable CLCDC */
+#if defined CPLD_CTRL1_LCD_POWER_EN
+  MASK_AND_SET (CPLD_CTRL1, 
+		CPLD_CTRL1_LCD_POWER_EN | CPLD_CTRL1_LCD_OE,
+		CPLD_CTRL1_LCD_POWER_EN);
+#endif
   msleep (20);			/* Wait 20ms for digital signals  */
   CLCDC_CTRL     |= (1<<11); /* Apply power */
+#if defined CPLD_CTRL1_LCD_BACKLIGHT_EN
+  CPLD_CTRL1 |= CPLD_CTRL1_LCD_BACKLIGHT_EN;
+#endif
 }
 
 static void clcdc_release (void)
 {
+#if defined CPLD_CTRL1_LCD_BACKLIGHT_EN
+  CPLD_CTRL1 &= ~CPLD_CTRL1_LCD_BACKLIGHT_EN;
+#endif
   CLCDC_CTRL &= ~(1<<11); /* Remove power */
   msleep (20);			/* Wait 20ms */
   CLCDC_CTRL &= ~(1<<0); /* Disable CLCDC controller */
+#if defined CPLD_CTRL1_LCD_POWER_EN
+  MASK_AND_SET (CPLD_CTRL1, 
+		CPLD_CTRL1_LCD_POWER_EN | CPLD_CTRL1_LCD_OE,
+		CPLD_CTRL1_LCD_OE);
+#endif
 
 				/*  Shutdown all the clocks */
   RCPC_CTRL	  |=  (1<<9); /* Unlock */
