@@ -98,7 +98,7 @@ void ixp42x_serial_init (void)
 
 ssize_t ixp42x_serial_poll (struct descriptor_d* d, size_t cb)
 {
-  return cb ? ((UART_LSR & UART_LSR_DR) ? 0 : 1) : 0;
+  return cb ? ((UART_LSR & UART_LSR_DR) ? 1 : 0) : 0;
 }
 
 ssize_t ixp42x_serial_read (struct descriptor_d* d, void* pv, size_t cb)

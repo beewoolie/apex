@@ -38,6 +38,14 @@
 
 extern struct driver_d* console_driver;
 
+/* cmd_wait
+
+   prompts the user and waits a specified number of 10ths of a second.
+   If the user presses a key, the function returns 1.  Otherwise, it
+   returns 0.
+
+*/
+
 int cmd_wait (int argc, const char** argv)
 {
   int timeout;
@@ -53,8 +61,7 @@ int cmd_wait (int argc, const char** argv)
     puts (*argv++);
     putchar (' ');
   }
-  putchar ('\r');
-  putchar ('\n');
+  puts ("\r\n");
 
   /* *** FIXME: we may want to flush input */
 

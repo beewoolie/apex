@@ -43,7 +43,9 @@ int puts (const char* fmt)
 
 int putchar (int ch)
 {
-  return console_driver->write (0, &ch, 1);
+  char rgb[1];
+  rgb[0] = ch;
+  return console_driver->write (0, rgb, 1);
 }
 
 int read_command (const char* szPrompt, int* pargc, const char*** pargv)

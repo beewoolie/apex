@@ -42,16 +42,14 @@ unsigned long timer_read (void)
    returns the difference in time in milliseconds.
   
    The base counter rate is 66.66MHz or a 15ns cycle time.  1us takes
-   67 counts, 1ms takes 66660 counts
+   67 counts, 1ms takes 66660 counts.  It wraps at about 64 seconds.
+
+   The math works out such that wrapping around the end will return
+   the expected result.
 
 */
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
 {
-  if (end <= start)
-    end = end - start;
-  else
-    end = start - end;
-
-  return end/66660;
+  return (end - start)/66660;
 }
