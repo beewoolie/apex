@@ -23,6 +23,13 @@
 
 /* ----- Prototypes */
 
+typedef struct { volatile unsigned long  offset[4096]; } __regbase;
+# define __REG(x)	((__regbase   *)((x)&~4095))->offset[((x)&4095)>>2]
+typedef struct { volatile unsigned short offset[4096]; } __regbase16;
+# define __REG16(x)	((__regbase16 *)((x)&~4095))->offset[((x)&4095)>>1]
+typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
+# define __REG8(x)	((__regbase8  *)((x)&~4095))->offset[(x)&4095]
+
 	/* Registers */
 
 #define RCPC_PHYS	(0xfffe2000)

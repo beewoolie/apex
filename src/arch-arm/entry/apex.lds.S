@@ -9,7 +9,6 @@ ENTRY(reset)
 SECTIONS
 {
 	. = APEX_VMA;
-	APEX_LMA_START = APEX_LMA;
 	APEX_VMA_START = .;
 	.entry : {
 		*(.entry)
@@ -26,11 +25,16 @@ SECTIONS
 		*(.glue_7t)
 	}
 	. = ALIGN (8);
+	APEX_DATA_START = .;
 	.data . : {
-		APEX_DATA_START = .;
 		*(.data)
-		APEX_DATA_END = .;
 	}
+	.driver_init . : {
+		APEX_DRIVER_INIT_START = .;
+		*(.driver_init)
+		APEX_DRIVER_INIT_END = .;
+	}
+	APEX_DATA_END = .;
 	APEX_VMA_END = .;
 	. = ALIGN (8);
 	.bss . : {

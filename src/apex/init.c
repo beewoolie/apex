@@ -17,14 +17,20 @@ unsigned long value = 1023;
 
 #include <linux/types.h>
 
-extern int snprintf(char * buf, size_t size, const char * fmt, ...);
+extern int __attribute__ ((format (printf, 1, 2)))
+     printf (const char * fmt, ...);
 
-void init (void)
+extern void init_drivers (void);
+
+void signon (void)
 {
-  char sz[20];
-  
-  snprintf (sz, sizeof (sz), "Hello\n");
+  printf ("Hello\n");
 
   while (1)
     ;
+}
+
+void init (void)
+{
+  init_drivers ();
 }

@@ -46,17 +46,8 @@
 #define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
-#if 1
 #define __naked __attribute__((naked))
 #define __start __attribute__((section(".start")))
-
-typedef struct { volatile unsigned long  offset[4096]; } __regbase;
-# define __REG(x)	((__regbase   *)((x)&~4095))->offset[((x)&4095)>>2]
-typedef struct { volatile unsigned short offset[4096]; } __regbase16;
-# define __REG16(x)	((__regbase16 *)((x)&~4095))->offset[((x)&4095)>>1]
-typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
-# define __REG8(x)	((__regbase8  *)((x)&~4095))->offset[(x)&4095]
-#endif
 
 
 /* usdelay

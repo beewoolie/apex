@@ -85,9 +85,9 @@ void __naked __section (.bootstrap) exception_error (void)
 
 /* relocate_apex
 
-   performs a simple memory move of the whole loader, presumed to be
-   from NOR flash into SDRAM.  The controlling symbols come from the
-   loader link map.
+   performs a memory move of the whole loader, presumed to be from NOR
+   flash into SDRAM.  The LMA is determined at runtime.  The relocator
+   will put the loader at the VMA and then return to the relocated address.
 
    *** FIXME: it might be prudent to check for the VMA being greater
    *** than or less than the LMA.  As it stands, we depend on
@@ -98,17 +98,29 @@ void __naked __section (.bootstrap) exception_error (void)
 
 void __naked __section (.bootstrap) relocate_apex (void)
 {
-  __asm (
-      "0: ldmia %0!, {r3-r10}\n\t"
-	 "stmia %1!, {r3-r10}\n\t"
-	 "cmp %1, %2\n\t"
-	 "ble 0b\n\t"
-	 "add pc, lr, %3\n\t"
-	 : 
-      : "r" (&APEX_LMA_START), "r" (&APEX_VMA_START), "r" (&APEX_VMA_END),
-	"r" (&APEX_VMA_START - &APEX_LMA_START)
-      : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10" 
-	 );
+  extern char reloc;
+  __asm volatile ("mov r0, lr\n\t"
+		  "bl reloc\n\t"
+	   "reloc: sub ip, %0, lr\n\t"
+	   ".globl reloc\n\t"
+		  "mov lr, r0\n\t"
+		  :
+		  : "r" (&reloc)
+		  : "r0", "ip");
+
+  __asm volatile (
+		  "sub r0, r1, ip\n\t"
+	       "0: ldmia r0!, {r3-r10}\n\t"
+		  "stmia %0!, {r3-r10}\n\t"
+		  "cmp %0, %1\n\t"
+		  "ble 0b\n\t"
+		  "add pc, r11, lr\n\t"
+		  :
+		  : "r" (&APEX_VMA_START), "r" (&APEX_VMA_END)
+		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "ip"
+
+
+		  );		  
 }
 
 
