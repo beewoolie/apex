@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o Implement DEBUG_LL for lpd79524 so we can see what's happening to
+    the register allocation in relocate_apex.
+
   o There ought to be a target to release that increments the version
     number, makes an SVN copy, and pushed the code to the ftp server.
 

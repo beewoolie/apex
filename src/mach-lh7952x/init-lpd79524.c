@@ -124,6 +124,19 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+#if defined (CONFIG_DEBUG_LL)
+  /* *** Need to initialize the serial port here. */
+
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
+  UART_DLL  = 8;	// divisor_l;
+  UART_DLH  = 0;	// divisor_h;
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
+
+  UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
+				/* Clear interrupts? */
+  PUTC_LL('A');
+#endif
+
 	/* Setup HCLK, FCLK and peripheral clocks */
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
 
