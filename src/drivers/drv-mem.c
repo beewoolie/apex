@@ -150,7 +150,7 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 static __driver_0 struct driver_d memory_driver = {
   .name = "memory",
-  .description = "memory driver (SDRAM/DRAM/SRAM)",
+  .description = "generic RAM driver",
   .open = memory_open,
   .close = close_helper,
   .read = memory_read,

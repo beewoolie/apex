@@ -143,6 +143,7 @@ static int phy_address;
 
 #define C_BUFFER	2	/* Number of buffers for each rx/tx */
 #define CB_BUFFER	1536
+  /* Leave the descriptors in normal BSS so they get zeroed */
 static long // __attribute__((section(".ethernet.bss"))) 
      rgl_rx_descriptor[C_BUFFER*2];
 static long // __attribute__((section(".ethernet.bss"))) 
@@ -463,13 +464,31 @@ void emac_send_packet (void)
   rgl_tx_descriptor[0] = (unsigned long) rgbTxBuffer;
   rgl_tx_descriptor[1] = (1<<30)|(1<<15)|(length<<0);
   EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+
+  printf ("  preparing to send %lx %lx\r\n",   
+	  rgl_tx_descriptor[0], 
+	  rgl_tx_descriptor[1]);
   EMAC_NETCTL |= EMAC_NETCTL_STARTTX;
 }
 #endif
 
 #if defined (CONFIG_CMD_EMAC)
 
-int cmd_emac (int argc, const char** argv)
+static void show_tx_flags (unsigned long l)
+{
+  if (l & (1<<31))
+    printf (" used");
+  if (l & (1<<30))
+    printf (" wrap");
+  if (l & (1<<29))
+    printf (" retries");
+  if (l & (1<<28))
+    printf (" under");
+  if (l & (1<<27))
+    printf (" exhaust");
+} 
+
+static int cmd_emac (int argc, const char** argv)
 {
   int result = 0;
 
@@ -653,11 +672,17 @@ int cmd_emac (int argc, const char** argv)
       PRINTF ("emac_rxstatus 0x%lx\r\n", EMAC_RXSTATUS);
       PRINTF ("emac_txbqp 0x%lx\r\n", EMAC_TXBQP);
       PRINTF ("emac_rxbqp 0x%lx\r\n", EMAC_RXBQP);
-      printf ("emac:tx0 & %p 0 0x%lx  1 0x%lx\r\n", 
-	      rgl_tx_descriptor, rgl_tx_descriptor[0], rgl_tx_descriptor[1]);
-      printf ("emac:tx1 & %p 0 0x%lx  1 0x%lx\r\n", 
+      printf ("emac:tx0 & %p 0 0x%lx  1 0x%lx", 
+	      rgl_tx_descriptor, 
+	      rgl_tx_descriptor[0], 
+	      rgl_tx_descriptor[1]);
+      show_tx_flags (rgl_tx_descriptor[1]);
+      printf ("\r\n");
+      printf ("emac:tx1 & %p 0 0x%lx  1 0x%lx", 
 	      &rgl_tx_descriptor[2], rgl_tx_descriptor[2], 
 	      rgl_tx_descriptor[3]);
+      show_tx_flags (rgl_tx_descriptor[3]);
+      printf ("\r\n");
       printf ("emac:rx0 & %p 0 0x%lx  1 0x%lx\r\n", 
 	      rgl_rx_descriptor, rgl_rx_descriptor[0], rgl_rx_descriptor[1]);
       printf ("emac:rx1 & %p 0 0x%lx  1 0x%lx\r\n", 
@@ -733,9 +758,9 @@ int cmd_emac (int argc, const char** argv)
       }
 
       EMAC_SPECAD1BOT 
-	= (rgb[0]<<24)|(rgb[1]<<16)|(rgb[2]<<8)|(rgb[3]<<0);
+	= (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
       EMAC_SPECAD1TOP 
-	= (rgb[4]<<8)|(rgb[5]<<0);
+	= (rgb[0]<<8)|(rgb[1]<<0);
       printf ("emac: mac address\r\n"); 
       dump (rgb, 6, 0);
     }
