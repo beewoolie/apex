@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   Environment for the LH79524.
+   Environment for the LH7A40X.
 
 */
 
@@ -39,21 +39,27 @@
 
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
-  .default_value = "console=ttyAM0 root=/dev/hda1 "
-		   "mtdparts=lpd79524_flash:2m(boot),-(root)",
+  .default_value = "console=ttyAM1 root=/dev/hda1 "
+		   "mtdparts=lpd7a40x_flash:2m(boot),-(root)",
   .description = "Linux kernel command line",
+};
+
+static __env struct env_d e_bootaddr = {
+  .key = "bootaddr",
+  .default_value = _t(CONFIG_KERNEL_LMA),
+  .description = "Linux start address",
 };
 
 extern struct descriptor_d env_d;
 
-static void lh79524_env_init (void)
+static void lh7a40x_env_init (void)
 {
-  if (parse_descriptor ("nor:128K#16k", &env_d))
+  if (parse_descriptor ("nor:256K#16k", &env_d))
     return;
   if (env_d.driver->open (&env_d))
     env_d.driver->close (&env_d);
 }
 
-static __service_3 struct service_d lh79524_env_service = { 
-  .init = lh79524_env_init,
+static __service_3 struct service_d lh7a40x_env_service = { 
+  .init = lh7a40x_env_init,
 };
