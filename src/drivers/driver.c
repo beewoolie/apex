@@ -72,22 +72,33 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 
   while (sz[ib]) {
     char* pchEnd;
+    unsigned long* pl = 0;
+
     switch (sz[ib]) {
     case '@':
       ++ib;
     case '0'...'9':
-      d->start = simple_strtoul (sz + ib, &pchEnd, 0);
-      ib = pchEnd - sz;
+      pl = &d->start;
       break;
     case '#':
-      ++ib;
-      d->length = simple_strtoul (sz + ib, &pchEnd, 0);
-      ib = pchEnd - sz;
-      break;
+      pl = &d->length;
+      /* Fallthrough to get ++ib */
     default:
       ++ib;
       /* Skip over unknown bytes so that we always terminate */
       break;
+    }
+    if (pl) {
+      *pl = simple_strtoul (sz + ib, &pchEnd, 0);
+      ib = pchEnd - sz;
+      if (sz[ib] == 'k' || sz[ib] == 'K') {
+	*pl *= 1024;
+	++ib;
+      }
+      if (sz[ib] == 'm' || sz[ib] == 'M') {
+	*pl *= 1024*1024;
+	++ib;
+      }
     }
   }
   return 0;

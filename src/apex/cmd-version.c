@@ -18,7 +18,7 @@
 
 int cmd_version (int argc, const char** argv)
 {
-  printf ("\r\n\nAPEX Boot Loader\r\n"
+  printf ("\r\n\nAPEX Boot Loader " APEXRELEASE "\r\n"
 	  "Copyright (c) 2004, Marc Singer\r\n\n");
   return 0;
 }

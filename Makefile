@@ -3,9 +3,9 @@ ARCH=arm
 CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 #CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1t-glibc-2.3.3/bin/arm-linux-
 
-#VERSION = 2
-#PATCHLEVEL = 6
-#SUBLEVEL = 9
+VERSION = 1
+PATCHLEVEL = 0
+#SUBLEVEL = 0
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -164,7 +164,13 @@ LOCALVERSION = $(subst $(space),, \
 	       $(shell cat /dev/null $(localversion-files)) \
 	       $(subst ",,$(CONFIG_LOCALVERSION)))
 
-KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)$(LOCALVERSION)
+APEXRELEASE:=$(VERSION).$(PATCHLEVEL)
+ifneq ($(SUBLEVEL),)
+APEXRELEASE+=.$(SUBLEVEL)
+endif
+APEXRELEASE+=$(EXTRAVERSION)$(LOCALVERSION)
+
+
 
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
@@ -353,7 +359,7 @@ CFLAGS 		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-builtin-printf -g # -mthumb-interwork 
 AFLAGS		:= -D__ASSEMBLY__ # -mthumb-interwork
 
-export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION KERNELRELEASE \
+export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION APEXRELEASE \
 	ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC \
 	CPP AR NM STRIP OBJCOPY OBJDUMP MAKE AWK GENKSYMS PERL UTS_MACHINE \
 	HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS

@@ -20,3 +20,5 @@ obj-$(CONFIG_CMD_ENV) += cmd-env.o
 
 #CFLAGS += -mthumb
 #CFLAGS_xmodem.o += -mthumb
+
+CFLAGS_cmd-version.o += -DAPEXRELEASE=\"$(APEXRELEASE)\"
