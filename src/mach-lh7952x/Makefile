@@ -29,7 +29,7 @@ obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o adc.o
 obj-$(CONFIG_MACH_LPD79524)     += cmd-version-hook.o
 obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_DRIVER_NOR) += drv-nor.o
 obj-$(CONFIG_MACH_KEV79524)     += init-kev79524.o timer-lh79524.o
-obj-x$(CONFIG_MACH_KEV79524)$(CONFIG_DRIVER_NOR) += drv-nor-generic.o
+obj-x$(CONFIG_MACH_KEV79524)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
 obj-$(CONFIG_MACH_KEV79524)     += cmd-version-hook.o
 
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
