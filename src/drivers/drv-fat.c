@@ -458,6 +458,9 @@ static int fat_open (struct descriptor_d* d)
     fat.cluster_file = fat.file.cluster;
     fat.index_cluster_file = 0;
 
+    if (d->length == 0)		/* Defaulting to length of whole file */
+      d->length = fat.file.length;
+
     if (d->start > fat.file.length)
       d->start = fat.file.length;
     if (d->start + d->length > fat.file.length)

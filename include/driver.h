@@ -45,6 +45,9 @@ struct descriptor_d {
   unsigned long start;
   unsigned long length;
   size_t index;
+
+//  unsigned non_zero_length:1;	/* Set when the user specified a length */
+
 				/* Paths */
   unsigned char rgb[256];
   unsigned char* pb[32];

@@ -1,5 +1,10 @@
 2005-03-07  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-ext2.c: ext2 driver is working.  It supports
+	paths and following symlinks.
+
+	* scripts/envmagic: Grooming.  Properly fixed.
+
 	* src/mach-ixp42x/serial.c (ixp42x_serial_write): Waiting for all
 	data to write before returning.
 

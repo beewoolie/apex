@@ -46,35 +46,23 @@
    o The first superblock begins in the first sector, or in the third,
      depending on how the filesystem was initialized.  This skipped
      1KiB only occurs for the first superblock and is never accounted
-     any place else.
+     for any place else.
    o Filesystem blocks are counted from zero starting at the beginning
      of the filesystem partition.
    o The bitmaps for the inodes and the used blocks are not
-     replicated, but are specific to each block group.
-   o As a simplification, we may elect not to follow an indirect block
-     on a filesystem search...I don't know.  We have to do it to read
-     a file any way.  We need a good way to handle this.
-   o Since we know where we are going, it may be advantageous to only
-     read the superblock in it's entirety.  The other small
-     structures, e.g. block_group and inode, can be read individually,
-     letting the underlying driver deal with edge conditions.
-     Directories, probably need to be read in block sized chunks so
-     that we don't have to deal with boundary conditions.
+     replicated, but are specific to each block group. 
    o Thus, a file read is <DIR_MODE>inode = root; block_group; inode;
      <FILE_MODE> data_block[n]; search for path element; resolve; inode =
      new_inode; repeat; <DIR_MODE> if more path elements, <DATA_MODE>
      if file found. 
-   o Symlinks only introduce a slight change to the system in that
-     they may adjust the path we're searching for.
-   o Is it worth adding another layer to handle the path search logic?
-     Can it even be done? 
 
    o Need to make sure that the constant BLOCK_SIZE_MAX isn't smaller
      than the block size on disk.
+
    o Endianness.  We are careless about endianness.  We should make
      sure to use the appropriate macros before release.
 
-   o Verified direct and indirect inode blocks
+   o Verified direct, indirect, and double-indirect inode blocks
 
    o How do we handle files larger than 2^32?
    o What do we know that the directory contains file type info? Is
@@ -82,7 +70,15 @@
 
    o A path starting with ?i is interpreted as a direct request for an
      inode.  The number following the ?i prefix is parsed as a decimal
-     number and is used as the inode to open.
+     number and is used as the inode to open.  e.g. ext2://2/?i
+
+   o Symlinks
+     o Are chased with recursive calls.  This means that the
+       code could fail with a very deep linking path.  Be warned. 
+     o Very long links are not properly ready.  We only read links
+       that fit in the inode.  Links that require a block read are not
+       followed.  The main reason for this is that is must be tested
+       and I don't have a > 60 (15*4) character link to test.  
 
 */
 
@@ -97,6 +93,7 @@
 #include <error.h>
 
 //#define TALK
+//#define TALK_DIR
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -265,7 +262,6 @@ enum {
 #define S_ISREG(m)      (((m) & S_IFMT) == S_IFREG)
 #define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
 
-
 #define EXT2_FILENAME_LENGTH_MAX 255
 
 struct directory {
@@ -286,6 +282,7 @@ struct ext2_info {
   int rg_blocking[3];		/* Tier block counts */
 
   struct inode inode;		/* Current inode */
+  int inode_number;		/* Number of current inode */
   int blockCache;		/* Number of first block in cache */
   int cCache;			/* Count of cached block numbers */
   char rgbCache[BLOCK_SIZE_MAX]; /* Cache of block numbers from inode */
@@ -422,12 +419,23 @@ static int ext2_update_block_cache (int block_index)
   }
 }
 
+/* ext2_find_inode
+
+   reads an inode into the current inode structure.  The return value
+   is zero on success, non-zero on error. 
+
+*/
+
 int ext2_find_inode (int inode)
 {
   struct block_group group;
 
+  if (inode == ext2.inode_number)	/* Short circuit */
+    return 0;
+
   memset (&ext2.inode, 0, sizeof (ext2.inode));
-  ext2.cCache = 0;		/* Flush block cache */
+  ext2.cCache = 0;			/* Flush block cache */
+  ext2.inode_number = 0;
 
 	/* Fetch block_group structure for the inode  */
   ext2.d.driver->seek (&ext2.d, 
@@ -450,7 +458,10 @@ int ext2_find_inode (int inode)
       != sizeof (struct inode))
     return 1;
 
-  PRINTF ("inode: mode %07o  flags %x  size %d (0x%x)\n", 
+  ext2.inode_number = inode;
+
+  PRINTF ("inode %d: mode %07o  flags %x  size %d (0x%x)\n", 
+	  ext2.inode_number,
 	  ext2.inode.i_mode, ext2.inode.i_flags, 
 	  ext2.inode.i_size, ext2.inode.i_size); 
 
@@ -503,10 +514,9 @@ static int ext2_identify (void)
    structure for each successive call.  The return value is NULL at
    the end of the list.
 
-   *** The call interface could be simplified by passing the inode in
-   *** the handle, or by reading the inode before calling it.  In
-   *** either case, there isn't a compelling reason to make the
-   *** change.
+   The directory recursed should be read into the current inode.  If
+   not, this call will load the root directory inode and enumerate
+   from there.
 
    Note that the handle is only 0 at the start of the enumeration.
    Moreover, the returned value points to the next entry that will be
@@ -518,8 +528,7 @@ static int ext2_identify (void)
 
 */
 
-static void* ext2_enum_directory (int inode, void* h, 
-				  struct directory** pdir)
+static void* ext2_enum_directory (void* h, struct directory** pdir)
 {
   static int block_number;
   static char rgb[BLOCK_SIZE_MAX];
@@ -529,12 +538,11 @@ static void* ext2_enum_directory (int inode, void* h,
 
 //  ENTRY (0);
 
-  if (ib == 0) {
-    if (ext2_find_inode (inode))
-      return NULL;
-    if (!S_ISDIR (ext2.inode.i_mode))
-      return NULL;
-  }
+  if (ib == 0 && !ext2.inode_number && ext2_find_inode (EXT2_ROOT_INO))
+    return NULL;
+
+  if (!S_ISDIR (ext2.inode.i_mode))
+    return NULL;
 
   if (ib >= ext2.inode.i_size)
     return NULL;
@@ -559,18 +567,15 @@ static void* ext2_enum_directory (int inode, void* h,
 
 /* ext2_path_to_inode
 
-   follows the given path and returns the inode of the final path
-   element.  
+   follows a path, opening inodes along the way, and returns the inode
+   of the directory with the final inode of the last path element.
+   The passed inode is the starting node for the search.
+
+   This might seem like a peculiar way to traverse a path.  It is done
+   this way to simplify symlink traversal.  
 
    This is a core function of the driver.  It is what enabled the use
-   of pathnames to access files in the filesystem.  It should be
-   augmented to support symbolic links as these are likely to be
-   useful in configuring the boot kernel and rootfs.
-
-   The inode parameter is the starting directory for the search.
-
-   *** I think I need to keep track of the CDW as well as the current
-   *** inode.  Not sure.  Need to write out some scenarios.
+   of pathnames to access files in the filesystem.  
 
 */
 
@@ -580,67 +585,79 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
   void* h;
   struct directory* dir = NULL;
 
-#if 0
-	/* First, we have to find out what our starting point is. */
-  if (ext2_find_inode (inode))
-    return EXT2_NULL_INO;
-
-  if (S_ISLNK (ext2.inode.i_mode)) {
-    int cb = ext2.inode.i_size;
-    char sz[cb + 32];
-    struct descriptor d;
-    strcpy (sz, "ext2:"); /* *** FIXME: bad hack */
-    memcpy (sz + 5, (void*) &ext2.inode.i_block[0], cb);
-    sz[5 + cb] = 0;
-    if (parse_descriptor (sz, &d))
-      return EXT2_NULL_INO;
-    inode = ext2_path_to_inode (dir->inode, &d); /* Chase */
-  }
-
-#endif
+  ENTRY (0);
 
   if (!inode)
     inode = EXT2_ROOT_INO;
 
+  PRINTF ("%s: reading inode %d\n", __FUNCTION__, inode);
+
+  if (ext2_find_inode (inode))
+    return EXT2_NULL_INO;
+
+  PRINTF ("%s: searching\n", __FUNCTION__);
+
   for (; i < d->c; ++i) {
     int length = strlen (d->pb[i]);
     h = NULL;
-    while ((h = ext2_enum_directory (inode, h, &dir))) {
-      printf ("  '%s' '%*.*s'\n", d->pb[i], 
+    PRINTF ("%s: enumerating on inode %d\n", __FUNCTION__, ext2.inode_number);
+    inode = ext2.inode_number;
+    while ((h = ext2_enum_directory (h, &dir))) {
+      PRINTF ("  '%s' '%*.*s'\n", d->pb[i], 
 	      dir->name_len, dir->name_len, dir->name);
       if (length != dir->name_len)
 	continue;
       if (memcmp (d->pb[i], dir->name, length))
 	continue;
 
-#if 0
-		/* Chase the link */
-      if (dir->file_type == EXT2_FT_SYMLINK) {
-	if (ext2_find_inode (dir->inode))
-	  return EXT2_NULL_INO;
-	{
+      if (   dir->file_type != EXT2_FT_DIR
+	  && dir->file_type != EXT2_FT_SYMLINK
+	  && dir->file_type != EXT2_FT_REG_FILE)
+	return EXT2_NULL_INO;		/* Limited inode handling  */
+
+      if (ext2_find_inode (dir->inode))
+	return EXT2_NULL_INO;
+
+		/* Recurse into directory */
+      if (S_ISDIR (ext2.inode.i_mode))
+	break;
+
+		/* Chase symlink */
+      if (S_ISLNK (ext2.inode.i_mode)) {
+	while (1) {
 	  int cb = ext2.inode.i_size;
+	  int cbDriver;
 	  char sz[cb + 32];
 	  struct descriptor_d d2;
-	  strcpy (sz, "ext2:"); /* *** FIXME: bad hack */
-	  memcpy (sz + 5, (void*) &ext2.inode.i_block[0], cb);
-	  sz[5 + cb] = 0;
+		 /* Kindofa dumb hack to coerce the descriptor parser
+		    into parsing the symlink path */
+	  strcpy (sz, DRIVER_NAME);
+	  cbDriver = strlen (sz); sz[cbDriver++] = ':'; sz[cbDriver++] = 0;
+	  memcpy (sz + cbDriver, (void*) &ext2.inode.i_block[0], cb);
+	  sz[cbDriver + cb] = 0;
 	  if (parse_descriptor (sz, &d2))
 	    return EXT2_NULL_INO;
-	  inode = ext2_path_to_inode (dir->inode, &d2);
+	  inode = ext2_path_to_inode (inode, &d2);
+	  if (S_ISLNK (ext2.inode.i_mode))
+	    continue;		/* chase again */
+	  break;
 	}
+	break;
       }
-#endif
 
-		/* Name matches */
-      if (i + 1 < d->c && dir->file_type != EXT2_FT_DIR)
-	return EXT2_NULL_INO;	/* Can only follow paths via directories */
-      inode = dir->inode;
+		/* Detect filename within path */
+      if (i + 1 < d->c)
+	return EXT2_NULL_INO;
+
       break;
     }
-    if (h == NULL)
+    if (h == NULL)		/* file not found */
       return EXT2_NULL_INO;
   }
+
+  PRINTF ("%s: returning inode %d finding %d\n",
+	  __FUNCTION__, inode, ext2.inode_number); 
+
   return inode;
 }
 
@@ -648,7 +665,6 @@ static int ext2_open (struct descriptor_d* d)
 {
   int result = 0;
   char sz[128];
-  int inode_target = EXT2_ROOT_INO;
 
   ENTRY (0);
 
@@ -725,29 +741,39 @@ static int ext2_open (struct descriptor_d* d)
 
 	/* Parse an inode number */
   if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {
-    inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
+    int inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
+    if (ext2_find_inode (inode_target)) {
+      close_descriptor (&ext2.d); 
+      return ERROR_FILENOTFOUND;
+    }
   }
-  else
-    inode_target = ext2_path_to_inode (0, d);
+  else {
+    if (ext2_path_to_inode (0, d) == EXT2_NULL_INO) {
+      close_descriptor (&ext2.d);
+      return ERROR_FILENOTFOUND;
+    }
+  }
 
-  if (inode_target == 0)
-    return ERROR_FILENOTFOUND;
+  if (d->length == 0)		/* Defaulting to length of whole file */
+    d->length = ext2.inode.i_size;
 
+  if (d->start > ext2.inode.i_size)
+    d->start = ext2.inode.i_size;
+  if (d->start + d->length > ext2.inode.i_size)
+    d->length = ext2.inode.i_size - d->start;
+
+#if defined (TALK_DIR)
   /* Dump it as a dir if it is one */
   {
     void* h = NULL;
     struct directory* dir;
-    while ((h = ext2_enum_directory (inode_target, h, &dir))) {
+    while ((h = ext2_enum_directory (h, &dir))) {
       printf ("%5d: 0x%x %*.*s\n", 
 	      dir->inode, dir->file_type, 
 	      dir->name_len, dir->name_len, dir->name);
     }
   }      
-
-  if (ext2_find_inode (inode_target)) {
-    close_descriptor (&ext2.d); 
-    return -1;
-  }
+#endif
 
 #if 0
   dump ((void*) &ext2.inode, 0x80, 0);
@@ -766,6 +792,10 @@ static int ext2_open (struct descriptor_d* d)
 
 static void ext2_close (struct descriptor_d* d)
 {
+  ENTRY (0);
+
+  close_descriptor (&ext2.d);
+  close_helper (d);
 }
 
 static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
@@ -812,6 +842,7 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
+#if !defined (CONFIG_SMALL)
 static void ext2_report (void)
 {
   int i;
@@ -852,6 +883,7 @@ static void ext2_report (void)
 #endif
   }
 }
+#endif
 
 static __driver_6 struct driver_d ext2_driver = {
   .name = DRIVER_NAME,

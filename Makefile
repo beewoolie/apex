@@ -2,7 +2,7 @@ ARCH ?= arm
 
 VERSION = 1
 PATCHLEVEL = 1
-SUBLEVEL = 3
+SUBLEVEL = 4
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 

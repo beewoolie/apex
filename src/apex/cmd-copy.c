@@ -39,7 +39,7 @@
 
 
 #if !defined (CONFIG_SMALL)
-# define USE_COPY_VERIFY	/* Define to include verify feature */
+//# define USE_COPY_VERIFY	/* Define to include verify feature */
 #endif
 
 int cmd_copy (int argc, const char** argv)

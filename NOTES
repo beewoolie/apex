@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o It might be helpful to make the envmagic script more repeatable.
+    Need to look into this.  Seems like it changes when there are no
+    changes to the environment variables.
+
   o An erase confirmation might be helpful, but it requires that the
     driver participate.  It would be helpful to tell the user exactly
     what will be erased.  Note that BDI doesn't, and I don't think
