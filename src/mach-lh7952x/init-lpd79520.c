@@ -161,7 +161,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 
 	/* Setup HCLK, FCLK and peripheral clocks */
-  __REG (RCPC_PHYS | RCPC_CTRL) |= 0x200; /* Unlock */
+  __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS | RCPC_CPUCLKPRESCALE) = RCPC_CPUCLKPRESCALE_V;
   __REG (RCPC_PHYS | RCPC_HCLKCLKPRESCALE) = RCPC_HCLKCLKPRESCALE_V;
   __REG (RCPC_PHYS | RCPC_CORECLKCONFIG) = RCPC_CORECLKCONFIG_V;
@@ -169,7 +169,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   /* Enable timer clock so that we can handle SDRAM setup  */
   __REG (RCPC_PHYS | RCPC_PERIPHCLKCTRL) &= ~RCPC_PERIPHCLK_T01;
 
-  __REG (RCPC_PHYS | RCPC_CTRL) &= ~0x200; /* Lock */
+  __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 
   __REG (SDRC_PHYS | SDRC_REFTIMER) = SDRC_REFTIMER_V; /* Do this early */
 

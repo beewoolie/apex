@@ -44,6 +44,7 @@
 #define RCPC_CTRL			0x00
 #define RCPC_SOFTRESET			0x0c
 
+#define RCPC_CTRL_UNLOCK		(1<<9)
 #define RCPC_AHBCLK_SDC			(1<<1)
 #define RCPC_AHBCLK_DMA			(1<<0)
 #define RCPC_PERIPHCLK_T02		(1<<5)
@@ -125,7 +126,7 @@
 #define UART0_PHYS	(UART_PHYS + 0x0000)
 #define UART1_PHYS	(UART_PHYS + 0x1000)
 #define UART2_PHYS	(UART_PHYS + 0x2000)
-#define UART		(UART0_PHYS)
+#define UART		(UART1_PHYS)
 #define UART_DR		(0x00)
 #define UART_IBRD	(0x24)
 #define UART_FBRD	(0x28)
@@ -135,13 +136,14 @@
 #define UART_IMSC	(0x38)
 #define UART_ICR	(0x44)
 
-#define UART_FR_RXFE		(1<<4)
-#define UART_FR_TXFF		(1<<5)
 #define UART_FR_TXFE		(1<<7)
+#define UART_FR_RXFF		(1<<6)
+#define UART_FR_TXFF		(1<<5)
+#define UART_FR_RXFE		(1<<4)
+#define UART_FR_BUSY		(1<<3)
 #define UART_DR_PE		(1<<9)
 #define UART_DR_OE		(1<<11)
 #define UART_DR_FE		(1<<8)
-#define UART_FR_BUSY		(1<<3)
 #define UART_CR_EN		(1<<0)
 #define UART_CR_TXE		(1<<8)
 #define UART_CR_RXE		(1<<9)
