@@ -38,7 +38,7 @@
 extern void (*interrupt_handlers[32])(void);
 #endif
 
-#if defined (CONFIG_MACH_IXP42X)
+#if defined (CONFIG_ARCH_IXP42X)
 # include "ixp42x.h"
 #endif
 

@@ -78,7 +78,7 @@ config NOR_BANK0_START
 	depends on NOR_BANK0
 
 config NOR_BANK0_LENGTH
-	hex "Physical address of NOR flash bank 0"
+	hex "Size, in bytes, of NOR flash bank 0"
 	default "0x00800000" if MACH_LPD7952X
 	default "0x00400000" if MACH_KEV79524
 	depends on NOR_BANK0
@@ -94,7 +94,7 @@ config NOR_BANK1_START
 	depends on NOR_BANK1
 
 config NOR_BANK1_LENGTH
-	hex "Physical address of NOR flash bank 1"
+	hex "Size, in bytes, of NOR flash bank 1"
 	default "0x00800000"
 	depends on NOR_BANK1
 

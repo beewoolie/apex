@@ -498,9 +498,9 @@ every:
 	@rm config
 
 ifeq ($(dot-config),1)
-ifeq "$(wildcard config)" ""
+ifeq "$(wildcard .config)" ""
 #dot-config := 0
-config:
+.config:
 	$(error Nothing will happen without a config file.  Please refer to the documentation.)
 endif
 endif
