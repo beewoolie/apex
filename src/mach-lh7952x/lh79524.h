@@ -210,6 +210,7 @@
 #define IOCON_MUXCTL5_V		(0x0a00)	/* Enable UART0 */
 #define IOCON_MUXCTL6_V		(0x000a)	/* Enable UART0 */
 #define IOCON_MUXCTL7_V		(0x5555) 	/* Enable A23-A19 */
+#define IOCON_RESCTL7_V		(0x5555) 	/* Pull-down */
 #define IOCON_MUXCTL10_V	(0x5555)	/* Enable D25-D21, D15-D13 */
 #define IOCON_MUXCTL11_V	(0x5555) 	/* Enable D20-D17, D12-D9 */
 #define IOCON_MUXCTL12_V	(0x5000)	/* Enable D16, D8 */

@@ -36,6 +36,7 @@
 #include <asm/bootstrap.h>
 #include "nand.h"
 #include "lh79524.h"
+#include "lpd79524.h"
 
 
 /* wait_on_busy
@@ -47,7 +48,7 @@
 static __naked __section (bootstrap) void wait_on_busy (void)
 {
 #if defined CONFIG_NAND_LPD
-  while ((__REG8 (CPLD_REG_FLASH) & RDYnBSY) == 0)
+  while ((__REG8 (CPLD_FLASH) & CPLD_FLASH_RDYnBSY) == 0)
     ;
 #else
   do {
@@ -88,7 +89,7 @@ void __naked __section (bootstrap) relocate_apex (void)
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
     void* pv = &APEX_VMA_ENTRY;
 
-    char unsigned cAddr = NAM_DECODE (__REG (BOOT_PHYS | BOOT_PBC));
+    int cAddr = NAM_DECODE (__REG (BOOT_PHYS | BOOT_PBC));
 
     __REG8 (NAND_CLE) = Reset;
     wait_on_busy ();
@@ -102,19 +103,15 @@ void __naked __section (bootstrap) relocate_apex (void)
       int cb;
 
       __REG8 (NAND_CLE) = Read1;
-      for (cb = 512; cb--; ) {
-	unsigned char ch = __REG8 (NAND_DATA);
-	DISABLE_CE;
-	*((char*) pv++) = ch;
-	ENABLE_CE;
-      }
+      for (cb = 512; cb--; )
+	*((char*) pv++) = __REG8 (NAND_DATA);
       for (cb = 16; cb--; )
 	__REG8 (NAND_DATA);
       wait_on_busy ();
     }
   }
 
-  //  __asm volatile ("0: b 0b");
+  __asm volatile ("0: b 0b");
 
   __asm volatile ("mov pc, %0" :: "r" (lr));
 }

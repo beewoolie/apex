@@ -34,6 +34,7 @@
 #include <asm/bootstrap.h>
 
 #include "lh79524.h"
+#include "lpd79524.h"
 
 //#define USE_SLOW
 
@@ -150,10 +151,6 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;	/* D */
   __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;	/* D */
   __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;	/* D */
-#if defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;	/* nCS0 */
-#endif
   __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;	/* D */
   __REG (IOCON_PHYS | IOCON_MUXCTL20) = IOCON_MUXCTL20_V;	/* D */
 
@@ -165,12 +162,13 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 	/* CPLD, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG3)    = 0x81;
-  __REG (EMC_PHYS | EMC_SWAITWEN3)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITOEN3)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITRD3)    = 5;
-  __REG (EMC_PHYS | EMC_SWAITPAGE3)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR3)    = 5;
-  __REG (EMC_PHYS | EMC_STURN3)      = 2;
+
+#if defined (CONFIG_NAND_LPD)
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  = IOCON_RESCTL7_V;	/* no pull */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;     /* nCS0 normal */
+  __REG16 (CPLD_FLASH)		     &= ~(CPLD_FLASH_NANDSPD); /* Fast NAND */
+#endif
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
@@ -233,9 +231,10 @@ void __naked initialize_target (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 #if !defined (CONFIG_NAND_LPD)
-	/* IOCON to clear special NAND modes */
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V; /* A23,A22 */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V; /* nCS0 normalize */
+	/* IOCON to clear special NAND modes.  These modes must be
+	   controlled explicitly within driver code. */
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;   /* A23,A22 */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;  /* nCS0 normalize */
 #endif
 
 	/* NAND flash */
@@ -268,6 +267,14 @@ void __naked initialize_target (void)
   __REG (EMC_PHYS | EMC_SWAITPAGE2)  = 2;
   __REG (EMC_PHYS | EMC_SWAITWR2)    = 6;
   __REG (EMC_PHYS | EMC_STURN2)      = 1;
+
+	/* CPLD, 16 bit */
+  __REG (EMC_PHYS | EMC_SWAITWEN3)   = 2;
+  __REG (EMC_PHYS | EMC_SWAITOEN3)   = 2;
+  __REG (EMC_PHYS | EMC_SWAITRD3)    = 5;
+  __REG (EMC_PHYS | EMC_SWAITPAGE3)  = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR3)    = 5;
+  __REG (EMC_PHYS | EMC_STURN3)      = 2;
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }

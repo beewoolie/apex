@@ -42,12 +42,14 @@
 #include <spinner.h>
 
 #include "lh79524.h"
+#include "lpd79524.h"
 #include "nand.h"
 
 struct nand_chip {
   unsigned char device;
   unsigned long total_size;
   int erase_size;
+  //  int address_size;		/* Better than relying on Boot code */
 };
 
 const static struct nand_chip chips[] = {
@@ -59,7 +61,7 @@ const static struct nand_chip* chip;
 static void wait_on_busy (void)
 {
 #if defined CONFIG_NAND_LPD
-  while ((__REG8 (CPLD_REG_FLASH) & RDYnBSY) == 0)
+  while ((__REG8 (CPLD_FLASH) & CPLD_FLASH_RDYnBSY) == 0)
     ;
 #else
   do {
@@ -67,6 +69,32 @@ static void wait_on_busy (void)
   } while ((__REG8 (NAND_DATA) & Ready) == 0);
 #endif
 }
+
+
+static void nand_enable (void)
+{
+#if !defined (CONFIG_NAND_LPD)
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8); 
+  __REG (GPIO_MN_PHYS) &= ~(1<<0);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<24);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0xa<<24);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<24);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0xa<<24);
+#endif
+}
+
+static void nand_disable (void)
+{
+#if !defined (CONFIG_NAND_LPD)
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+  __REG (GPIO_MN_PHYS) |=   1<<0;
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<24);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0x5<<24);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<24);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0x5<<24);
+#endif
+}
+
 
 /* nand_init
 
@@ -83,16 +111,15 @@ static void nand_init (void)
   unsigned char manufacturer;
   unsigned char device;
 
-  printf ("nand init\r\n");
+  nand_enable ();
 
   __REG8 (NAND_CLE) = Reset;
   wait_on_busy ();
 
   __REG8 (NAND_CLE) = Status;
   wait_on_busy ();
-  if ((__REG8 (NAND_DATA) & Ready) == 0) {
-    return;
-  }
+  if ((__REG8 (NAND_DATA) & Ready) == 0)
+    goto exit;
 
   __REG8 (NAND_CLE) = ReadID;
   __REG8 (NAND_ALE) = 0;
@@ -119,7 +146,8 @@ static void nand_init (void)
     printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
 #endif
 
-  return;
+ exit:
+  nand_disable ();
 }
 
 static int nand_open (struct descriptor_d* d)
@@ -138,6 +166,8 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
 
   if (!chip)
     return cbRead;
+
+  nand_enable ();
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -171,6 +201,8 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
       *((char*) pv++) = __REG8 (NAND_DATA);
   }    
   
+  nand_disable ();
+
   return cbRead;
 }
 
@@ -180,6 +212,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   if (!chip)
     return cbWrote;
+
+  nand_enable ();
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -226,9 +260,12 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
       printf ("Write failed at page %ld\r\n", page);
-      return cbWrote;
+      goto exit;
     }
   }    
+
+ exit:
+  nand_disable ();
 
   return cbWrote;
 }
@@ -249,6 +286,8 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 {
   if (!chip)
     return;
+
+  nand_enable ();
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -282,8 +321,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
       printf ("Erase failed at page %ld\r\n", page);
-//      goto fail;
-      return;
+      goto exit;
     }
 
     if (available < cb) {
@@ -296,11 +334,8 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     }
   } while (cb > 0);
 
-#if 0
- fail:
-  __REG (GPIO_MN_PHYS | 0x00) |= (1<<0); /* PM0 high */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
-#endif
+ exit:
+  nand_disable ();
 }
 
 static __driver_3 struct driver_d nand_driver = {

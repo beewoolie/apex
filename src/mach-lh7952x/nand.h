@@ -58,33 +58,6 @@
 #define Ready		(1<<6)
 #define Writable	(1<<7)
 
-#define CPLD_REG_FLASH	(0x4c800000)
-#define RDYnBSY		(1<<2)
-
-
-#if !defined (CONFIG_NAND_LPD)
-
-#if 1
-
-# define DISABLE_CE\
-  do { __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); barrier (); } while (0)
-# define ENABLE_CE\
-  do { __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8); barrier (); } while (0)
-
-#else
-
-# define DISABLE_CE\
-  do { __REG (GPIO_MN_PHYS) |=   1<<0;  barrier (); } while (0)
-# define ENABLE_CE\
-  do { __REG (GPIO_MN_PHYS) &= ~(1<<0); barrier (); } while (0)
-
-#endif
-
-#else
-# define DISABLE_CE
-# define ENABLE_CE
-#endif
-
 
 /* The NAND address map converts the boot code from the CPU into the
    number of address bytes used by the device.  Refer to the LH79524
@@ -110,6 +83,6 @@
 #define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)\
 		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
 
-#define NAM_DECODE(bootcode) (NAND_ADDR_MAP >> ((bootcode)*2)) + 2;
+#define NAM_DECODE(bootcode) ((NAND_ADDR_MAP >> ((bootcode)*2)) + 2)
 
 #endif  /* __NAND_H__ */
