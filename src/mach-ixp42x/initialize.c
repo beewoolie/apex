@@ -41,7 +41,7 @@
  ({ unsigned long v; \
     __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
 		    "mov %0, %0\n\t" \
-		    "sub pc, pc,#4" : "=r" (v)); })
+		    "sub pc, pc, #4" : "=r" (v)); })
 
 /* sdram config constants should go here.  The Integrated Circuit
    Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
@@ -95,16 +95,6 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
-
-#if defined (CONFIG_BIGENDIAN)
-  {
-    unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (v));
-  }
-  COPROCESSOR_WAIT;
-#endif
 
   /* *** FIXME: this CPSR and CP15 manipulation should not be
      *** necessary as we don't reset the system through this code. */

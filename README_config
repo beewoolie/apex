@@ -23,6 +23,10 @@ CONFIG_MACH_* (y/n)
   Machine or board-level configuration.  This allows for
   board-specific initialization and drivers.
 
+CONFIG_BIGENDIAN (y/n)
+
+  Forces the CPU into BIGENDIAN mode when APEX begins execution.
+
 CONFIG_APEX_VMA (hex)
 
   Virtual memory address of APEX when it runs.  This is really a

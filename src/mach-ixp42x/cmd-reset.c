@@ -33,16 +33,16 @@
 #include "hardware.h"
 
 #define KEY 0x482e
-#define OTS_WDOG_ENABLE_RESET	(1<<0) /* Allow watchdog to reset CPU */
-#define OTS_WDOG_ENABLE_CNT_EN	(1<<2) /* Enable watchdog countdown */
+#define OST_WDOG_ENAB_RESET	(1<<0) /* Allow watchdog to reset CPU */
+#define OST_WDOG_ENAB_CNT_EN	(1<<2) /* Enable watchdog countdown */
 
 static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
-  OTS_WDOG_KEY = KEY;		/* Unlock watchdog registers */
-  OTS_WDOG = 1;			/* Short count */
-  OTS_WDOG_ENABLE = 0
-    | OTS_WDOG_ENABLE_RESET
-    | OTS_WDOG_ENABLE_CNT_EN;
+  OST_WDOG_KEY = KEY;		/* Unlock watchdog registers */
+  OST_WDOG = 1;			/* Short count */
+  OST_WDOG_ENAB = 0
+    | OST_WDOG_ENAB_RESET
+    | OST_WDOG_ENAB_CNT_EN;
 }
 
 static __command struct command_d c_reset = {

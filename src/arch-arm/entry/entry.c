@@ -63,6 +63,17 @@ void __naked __section (bootstrap) reset (void)
 		  "mcr p15, 0, r0, c1, c0, 0");
 #endif
 
+#if defined (CONFIG_BIGENDIAN)
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (v));
+    /* *** FIXME: the redboot code performed a read from the ttb
+       register as a delay.  Not sure why. */
+  }
+#endif
+
   initialize_bootstrap ();	/* Initialization critical to relocate */
   relocate_apex ();
   setup_c ();			/* Setups before executing C code */
