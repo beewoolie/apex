@@ -25,22 +25,39 @@
    DESCRIPTION
    -----------
 
+   This serial driver is nearly identitical for the lh79520 and the
+   lh79524.  Since the only real difference is in the setup, the code
+   is shared.
+
+   *** FIXME: the device selection should be part of the platform
+   *** header and not the CPU header.  The choice of the console
+   *** device is made with the board layout.
+
 */
 
+#include <config.h>
 #include <driver.h>
 #include <service.h>
-#include "lh79524.h"
+
+#if defined (CONFIG_MACH_LH79524)
+# include "lh79524.h"
+#endif
+
+#if defined (CONFIG_MACH_LH79520)
+# include "lh79520.h"
+#endif
 
 extern struct driver_d* console_driver;
 
-static struct driver_d lh79524_serial_driver;
+static struct driver_d lh7952x_serial_driver;
 
-void lh79524_serial_init (void)
+void lh7952x_serial_init (void)
 {
   u32 baudrate = 115200;
   u32 divisor_i = 0;
   u32 divisor_f = 0;
 
+#if defined (CONFIG_MACH_LH79524)
   switch (baudrate) {
   case 115200: 
     divisor_i = 6; divisor_f = 8; break;
@@ -48,9 +65,26 @@ void lh79524_serial_init (void)
   default:
     return;
   }
+#endif
 
-  while (__REG (UART + UART_FR) & UART_FR_BUSY)
-    ;
+#if defined (CONFIG_MACH_LH79520)
+  
+  /* Enable ALL uarts since we don't know which we're using */
+  __REG (IOCON_PHYS | IOCON_UARTMUX) = 0xf;
+  __REG (RCPC_PHYS | RCPC_PERIPHCLKCTRL) &= 
+    ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);    
+
+  switch (baudrate) {
+  case 115200: 
+    divisor_i = 8; divisor_f = 0; break;
+
+  default:
+    return;
+  }
+#endif
+
+//  while (__REG (UART + UART_FR) & UART_FR_BUSY)
+//    ;
   
   __REG (UART + UART_CR) = UART_CR_EN; /* Enable UART without drivers */
   
@@ -65,15 +99,15 @@ void lh79524_serial_init (void)
   __REG (UART + UART_CR) = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
 
   if (console_driver == 0)
-    console_driver = &lh79524_serial_driver;
+    console_driver = &lh7952x_serial_driver;
 }
 
-ssize_t lh79524_serial_poll (struct descriptor_d* d, size_t cb)
+ssize_t lh7952x_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb ? ((__REG (UART + UART_FR) & UART_FR_RXFE) ? 0 : 1) : 0;
 }
 
-ssize_t lh79524_serial_read (struct descriptor_d* d, void* pv, size_t cb)
+ssize_t lh7952x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cRead = 0;
   unsigned char* pb;
@@ -93,7 +127,7 @@ ssize_t lh79524_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t lh79524_serial_write (struct descriptor_d* d, 
+ssize_t lh7952x_serial_write (struct descriptor_d* d, 
 			      const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;
@@ -110,15 +144,15 @@ ssize_t lh79524_serial_write (struct descriptor_d* d,
   return cWrote;
 }
 
-static __driver_0 struct driver_d lh79524_serial_driver = {
-  .name = "serial-lh79524",
-  .description = "lh79524 serial driver",
+static __driver_0 struct driver_d lh7952x_serial_driver = {
+  .name = "serial-lh7952x",
+  .description = "lh7952x serial driver",
   .flags = DRIVER_SERIAL | DRIVER_CONSOLE,
-  .read = lh79524_serial_read,
-  .write = lh79524_serial_write,
-  .poll = lh79524_serial_poll,
+  .read = lh7952x_serial_read,
+  .write = lh7952x_serial_write,
+  .poll = lh7952x_serial_poll,
 };
 
-static __service_1 struct service_d lh79524_serial_service = {
-  .init = lh79524_serial_init,
+static __service_1 struct service_d lh7952x_serial_service = {
+  .init = lh7952x_serial_init,
 };

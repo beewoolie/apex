@@ -29,7 +29,14 @@
 
 #include <apex.h>
 #include <command.h>
+
+#if defined (CONFIG_MACH_LH79524)
 #include "lh79524.h"
+#endif
+
+#if defined (CONFIG_MACH_LH79520)
+# include "lh79520.h"
+#endif
 
 int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {

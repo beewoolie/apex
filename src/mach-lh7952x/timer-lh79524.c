@@ -1,4 +1,4 @@
-/* timer.c
+/* timer-lh79524.c
      $Id$
 
    written by Marc Singer

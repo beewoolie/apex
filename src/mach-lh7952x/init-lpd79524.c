@@ -59,7 +59,8 @@
 /* usleep
 
    this function accepts a count of microseconds and will wait at
-   least that long before returning.
+   least that long before returning.  The timer clock must be
+   activated by the initialization code before using usleep.
 
    When in C, this function was one instruction longer than the
    hand-coded assembler.  For some reason, the compiler would reload

@@ -30,6 +30,39 @@
 
 */
 
+/*
+	SDRAM configuration according to JEDEC spec
+
+	WAIT 200us
+	NOP->SDRAM
+	WAIT 200us
+	PRECHARGE_ALL->SDRAM
+	MODE_REGISTER_SET->SDRAM_EXTENDED_MODE
+	MODE_REGISTER_SET->SDRAM
+	WAIT 200 cycles 
+	PRECHARGE_ALL->SDRAM
+	AUTO_REFRESH->SDRAM *2
+	MODE_REGISTER_SET->SDRAM
+
+	SDRAM configuration according to u-boot code
+
+	NOP->SDRAM
+	WAIT 200us
+	PRECHARGE->SDRAM
+	AUTO_REFRESH->SDRAM *2
+	LOAD_MODE->SDRAM
+	AUTO_REFRESH->SDRAM *8
+	NORMAL->SDRAM
+
+	SDRAM initialization according to Sharp LH79520 documentation
+
+	WAIT 200ps
+	PRECHARGE_ALL->SDRAM
+	AUTO_REFRESH->SDRAM *2   [lh79520 has a auto-refresh mode]
+	LOAD_MODE->SDRAM (Program the SDRAM device's LOAD MODE register)
+
+*/
+
 #include <config.h>
 #include <asm/bootstrap.h>
 
@@ -39,9 +72,13 @@
 //#define USE_SLOW
 
 #if defined (USE_SLOW)
-# define SDRC_CFG_V	0x01a40088	// RAS3, REStoCAS3
+//RAS3 CAS3
+# define SDRC_CONFIG_V\
+	(1<<24)|(3<<22)|(3<<20)|(0<<19)|(1<<18)|(0<<17)|(1<<7)|(1<<3)
 #else
-# define SDRC_CFG_V	0x01f40088	// RAS2, RAStoCAS2
+//RAS2 CAS2
+# define SDRC_CONFIG_V\
+	(1<<24)|(2<<22)|(2<<20)|(0<<19)|(1<<18)|(0<<17)|(1<<7)|(1<<3)
 #endif
 
 #if defined (USE_SLOW)
@@ -50,28 +87,33 @@
 # define SDRAM_CHIP_MODE	(0x22<<12)	// CAS2 BURST4
 #endif
 
-#define SDRAM_NORMAL_COMMAND (SDRAM_INIT_NORMAL | SDRAM_WBE | SDRAM_RBE)
-
-	// SDRAM
-//#define SDRAM_RASCAS		SDRC_RASCAS_V
-//#define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
-//#define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
+#define SDRC_COMMAND_NORMAL	((0<<0)|(1<<3) |(1<<2))
+#define SDRC_COMMAND_PRECHARGE	(1<<0)
+#define SDRC_COMMAND_MODE	(2<<0)
+#define	SDRC_COMMAND_NOP	(3<<0)
+#define	SDRC_BUSY		(1<<5)
 
 
 /* usleep
 
    this function accepts a count of microseconds and will wait at
-   least that long before returning.  
+   least that long before returning.  The timer clock must be
+   activated by the initialization code before using usleep.
 
-   Note that this function is neither __naked nor static.  It is
-   available to the rest of the application as is.
+   Note that this function not static.  It is available to the rest of
+   the application as is.
 
-   The timer interval is (309657600/6)/256 which is about 4.96us.
+   The timer interval is (309657600/6)/256 which is about 4.96us.  We
+   approximate this by dividing by four which means we are about 5%
+   longer than requested.
 
  */
 
-void __section(bootstrap) usleep (unsigned long us)
+void __naked __section(bootstrap) usleep (unsigned long us)
 {
+  unsigned long lr;
+  __asm volatile ("mov %0, lr" : "=r" (lr));
+
   __asm ("str %1, [%0, #8]\n\t"	/* Stop timer */
 	 "str %2, [%0, #0]\n\t"
 	 "str %3, [%0, #8]\n\t"
@@ -81,10 +123,12 @@ void __section(bootstrap) usleep (unsigned long us)
 	 :
 	 : "r" (TIMER0_PHYS), 
 	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us/5)), /* timer counts up */
-	   "r" (TIMER_ENABLE | TIMER_PRESCALE_256)
+	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
+	   "r" (TIMER_ENABLE | TIMER_SCALE_256),
 	   "i" (0x8000)
 	 );
+
+  __asm volatile ("mov pc, %0" : : "r" (lr));
 }
 
 
@@ -106,7 +150,7 @@ void __section(bootstrap) usleep (unsigned long us)
 
    *** FIXME: The memory region 0x1000000-0x20000000 will be
    *** incorrectly detected as SDRAM with code below.  It is OK as
-   *** long as the loader never runs from high nCS0 memory.
+   *** long as the loader never runs from high BCR0 memory.
 
 */
 
@@ -122,106 +166,49 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (RCPC_PHYS | RCPC_HCLKCLKPRESCALE) = RCPC_HCLKCLKPRESCALE_V;
   __REG (RCPC_PHYS | RCPC_CORECLKCONFIG) = RCPC_CORECLKCONFIG_V;
   __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) &= ~RCPC_AHBCLK_SDC;
-  __REG (RCPC_PHYS | RCPC_PERIPHCLKCTRL) &= ~(  RCPC_PERPIHCLK_UART1
-					      | RCPC_PERIPHCLK_T01);
+  /* Enable timer clock so that we can handle SDRAM setup  */
+  __REG (RCPC_PHYS | RCPC_PERIPHCLKCTRL) &= ~RCPC_PERIPHCLK_T01;
 
   __REG (RCPC_PHYS | RCPC_CTRL) &= ~0x200; /* Lock */
 
+  __REG (SDRC_PHYS | SDRC_REFTIMER) = SDRC_REFTIMER_V; /* Do this early */
+
   /* Stop watchdog? */
 
+  /* *** 0x17ef was good enough for JTAG */
   __REG (IOCON_PHYS | IOCON_MEMMUX) = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
 
-  /* *** FIXME: move this? */
-  __REG (IOCON_PHYS | IOCON_UARTMUX) = 0xf; /* All UARTS available */
-
-#if 0
-	/* Setup IO pin multiplexers */
-  __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V; 	/* UART */
-  __REG (IOCON_PHYS | IOCON_MUXCTL6)  = IOCON_MUXCTL6_V;	/* UART */
-  __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;	/* D */
-  __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;	/* D */
-  __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;	/* D */
-  __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;	/* D */
-  __REG (IOCON_PHYS | IOCON_MUXCTL20) = IOCON_MUXCTL20_V;	/* D */
-
-	/* NAND flash, 8 bit */
-  __REG (EMC_PHYS | EMC_SCONFIG0)    = 0x80;
-  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
-  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
-  __REG (EMC_PHYS | EMC_STURN0)      = 2;
-  //  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  //  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
-  //  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
-  //  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  //  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
-  //  __REG (EMC_PHYS | EMC_STURN0)      = 1;
-
-	/* NOR flash, 16 bit */
-  __REG (EMC_PHYS | EMC_SCONFIG1)    = 0x81;
-  __REG (EMC_PHYS | EMC_SWAITWEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD1)    = 6;
-  __REG (EMC_PHYS | EMC_SWAITPAGE1)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR1)    = 6;
-  __REG (EMC_PHYS | EMC_STURN1)      = 1;
-
-	/* CPLD, 16 bit */
-  __REG (EMC_PHYS | EMC_SCONFIG3)    = 0x81;
-
-#if defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  = IOCON_RESCTL7_V;	/* no pull */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;     /* nCS0 normal */
-  __REG16 (CPLD_FLASH)		     &= ~(CPLD_FLASH_NANDSPD); /* Fast NAND */
-#endif
+  __REG (SMC_PHYS | SMC_BCR0) = 0x100020ef; /* NOR flash */
+  __REG (SMC_PHYS | SMC_BCR4) = 0x10007580; /* CompactFlash */
+  __REG (SMC_PHYS | SMC_BCR5) = 0x100034c0; /* CPLD */
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
 		  "cmp %0, %1\n\t"
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
 
-	/* SDRAM */
-  __REG (EMC_PHYS | EMC_READCONFIG)  = EMC_READCONFIG_CMDDELAY;
-  __REG (EMC_PHYS | EMC_DYNCFG0)     = SDRAM_CFG_SETUP;
-  __REG (EMC_PHYS | EMC_DYNRASCAS0)  = SDRAM_RASCAS;
-  __REG (EMC_PHYS | EMC_DYNCFG1)     = SDRAM_CFG_SETUP;
-  __REG (EMC_PHYS | EMC_DYNRASCAS1)  = SDRAM_RASCAS;
 
-  __REG (EMC_PHYS | EMC_PRECHARGE)   = NS_TO_HCLK(20);
-  __REG (EMC_PHYS | EMC_DYNM2PRE)    = NS_TO_HCLK(60);
-  __REG (EMC_PHYS | EMC_REFEXIT)     = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DOACTIVE)    = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DIACTIVE)    = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DWRT)	     = NS_TO_HCLK(40);
-  __REG (EMC_PHYS | EMC_DYNACTCMD)   = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DYNAUTO)     = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DYNREFEXIT)  = NS_TO_HCLK(120);
-  __REG (EMC_PHYS | EMC_DYNACTIVEAB) = NS_TO_HCLK(40);
-  __REG (EMC_PHYS | EMC_DYNAMICTMRD) = NS_TO_HCLK(40);
+  /* SDRAM Initialization
 
-  __REG (EMC_PHYS | EMC_DYNMCTRL)    = ((1<<1)|(1<<0));
+     I spent some time exploring what could be removed from the
+     initialization sequence.  Below is the result.  It appears that
+     the LH79520 handles all of the AUTO_REFRESH cycles.  I never
+     tried breaking it by clearing the AP bit in the CFG0 register.
+     Note that there are no delays, one and only one NOP is required,
+     and there is no precharge after setting the mode.
+  */
+
+  __REG (SDRC_PHYS | SDRC_CONFIG1) = SDRC_COMMAND_NOP;
   usleep (200);
-  __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(3<<7); /* NOP command */
+  __REG (SDRC_PHYS | SDRC_CONFIG1) = SDRC_COMMAND_PRECHARGE;
   usleep (200);
-  __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(2<<7); /* PRECHARGE ALL*/
-  __REG (EMC_PHYS | EMC_DYNMREF)     = NS_TO_HCLK(100)/16 + 1;
-  usleep (250);
-  __REG (EMC_PHYS | EMC_DYNMREF)     = NS_TO_HCLK(7812)/16;
-  __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(1<<7); /* MODE command */
-
+  __REG (SDRC_PHYS | SDRC_CONFIG1) = SDRC_COMMAND_MODE;
   __REG (SDRAM_BANK0_PHYS | SDRAM_CHIP_MODE);
   __REG (SDRAM_BANK1_PHYS | SDRAM_CHIP_MODE);
-
-  __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(0<<7); /* NORMAL */
-  __REG (EMC_PHYS | EMC_DYNCFG0)     = SDRAM_CFG;
-  __REG (EMC_PHYS | EMC_DYNCFG1)     = SDRAM_CFG;
-  
-#endif
+  __REG (SDRC_PHYS | SDRC_CONFIG0) = SDRC_CONFIG_V;
+  __REG (SDRC_PHYS | SDRC_CONFIG1) = SDRC_COMMAND_NORMAL;
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
@@ -239,32 +226,5 @@ void __naked initialize_target (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
-
-#if !defined (CONFIG_NAND_LPD)
-	/* IOCON to clear special NAND modes.  These modes must be
-	   controlled explicitly within driver code. */
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;   /* A23,A22 */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;  /* nCS0 normalize */
-#endif
-
-	/* CompactFlash, 16 bit */
-  __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;
-  __REG (EMC_PHYS | EMC_SWAITWEN2)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITOEN2)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITRD2)    = 6;
-  __REG (EMC_PHYS | EMC_SWAITPAGE2)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR2)    = 6;
-  __REG (EMC_PHYS | EMC_STURN2)      = 1;
-
-	/* CPLD, 16 bit */
-  __REG (EMC_PHYS | EMC_SWAITWEN3)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITOEN3)   = 2;
-  __REG (EMC_PHYS | EMC_SWAITRD3)    = 5;
-  __REG (EMC_PHYS | EMC_SWAITPAGE3)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR3)    = 5;
-  __REG (EMC_PHYS | EMC_STURN3)      = 2;
-
-  __REG (BOOT_PHYS | BOOT_CS1OV)    &= ~(1<<0);
-
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }

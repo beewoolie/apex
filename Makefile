@@ -441,8 +441,15 @@ ifeq ($(config-targets),1)
 
 config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
-%config: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+
+%config: FORCE
+	@if [ -L config ]; then rm config ; fi
+	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
+	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
+	@ln -s src/mach-*/$@ config
+
+#%config: scripts_basic FORCE
+#	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 else
 # ===========================================================================

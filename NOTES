@@ -289,3 +289,13 @@ Performance
   o The load time from flash to SDRAM is partially goverened by the
     EMC controller setup.  It may be desirable to make sure that the
     EMC is optimally configured before relocate_apex.
+
+UART Initialization
+
+  o It is OK to defer critical UART initializations to the serial
+    driver.
+  o However, the kernel usually expects that the UART is available
+    during startup and it may be possible to disable the serial driver
+    in APEX in order to save space.
+
+ 
