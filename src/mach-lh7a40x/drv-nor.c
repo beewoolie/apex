@@ -38,6 +38,9 @@
      control how it accesses the flash array.  We want to stay away
      from truly dynamic code in order to conserve memory.
 
+     *** buffered write code has not been fixed to handle the 32 bit
+     *** array width.
+
 */
 
 #include <driver.h>
@@ -66,7 +69,6 @@
 #define NOR_0_PHYS	(0x00000000)
 #define NOR_0_LENGTH	(16*1024*1024)
 #define WIDTH		(32)		/* Device width in bits */
-#define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 #define CHIP_MULTIPLIER	(2)		/* Number of chips at REGA */
 #define REGC		__REG16		/* Single chip I/O macro */
 #define REGA		__REG		/* Array I/O macro */
@@ -76,6 +78,8 @@
 #define QRY(v)		((v) | ((v)<<16))
 
 /* *** How do we hook the VPEN manipulation code? */
+
+#define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
 /* Here are the parameters that ought to remain constant for CFI
    compliant flash. */
@@ -313,6 +317,132 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 }
 
 
+#if defined (USE_BUFFERED_WRITE)
+
+/* nor_write
+
+   performs a buffered write to the flash device.  The unbuffered
+   write, below, is adequate but this version is much faster.  Like
+   the single short write method below, we fuss a bit with the
+   alignment so that we emit the data efficiently.  Moreover, we make
+   an attempt to align the write buffer to a write buffer aligned
+   boundary.
+
+*/
+
+static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  size_t cbWrote = 0;
+  int pageLast = -1;
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
+  while (cb > 0) {
+    unsigned long index = d->start + d->index;
+    int page = d->index/chip->erase_size;
+    unsigned short status;
+    int available
+      = chip->writebuffer_size - (index & (chip->writebuffer_size - 1));
+
+    if (available > cb)
+      available = cb;
+
+    index = phys_from_index (index);
+
+    PRINTF ("nor write: 0x%p 0x%08lx %d\n", pv, index, available);
+
+    vpen_enable ();
+
+    if (page != pageLast) {
+      status = nor_unlock_page (index);
+      if (status & (ProgramError | VPEN_Low | DeviceProtected))
+	goto fail;
+      pageLast = page;
+    }
+
+#if defined (NO_WRITE)
+    printf ("  available %d  cb %d\r\n", available, cb);
+    printf ("0x%lx <= 0x%x\r\n", index & ~(WIDTH/8 - 1), ProgramBuffered);
+#else
+    WRITE_ONE (index & ~(WIDTH/8 - 1), ProgramBuffered);
+#endif
+    status = nor_status (index & ~(WIDTH/8 - 1));
+    if (!(status & Ready)) {
+      PRINTF ("nor_write failed program start 0x%lx (0x%x)\r\n", 
+	      index & ~(WIDTH/8 - 1), status);
+      goto fail;
+    }
+    
+    {
+      int av = available + (index & (WIDTH/8 - 1));
+#if defined (NO_WRITE)
+      printf ("0x%lx <= 0x%02x\r\n", index & ~(WIDTH/8 - 1),
+	      /* *** FIXME for 32 bit  */
+	      av - av/2 - 1);
+#else
+      WRITE_ONE (index & ~(WIDTH/8 - 1), 
+	      /* *** FIXME for 32 bit  */
+		 av - av/2 - 1);
+#endif
+    }
+
+    if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
+      int i;
+      for (i = 0; i < available; i += 2)
+#if defined (NO_WRITE)
+	printf ("0x%lx := 0x%04x\r\n", index + i, ((unsigned short*)pv)[i/2]);
+#else
+	WRITE_ONE (index + i, ((unsigned short*)pv)[i/2]);
+#endif
+    }
+    else {
+      int i;
+      char rgb[chip->writebuffer_size];
+      rgb[0] = 0xff;						/* First */
+      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
+//      printf ("  last %ld\r\n", ((available + (index & 1) + 1)&~1) - 1);
+      memcpy (rgb + (index & (WIDTH/8 - 1)), pv, available);
+      for (i = 0; i < available + (index & 1); i += 2)
+#if defined (NO_WRITE)
+	printf ("0x%lx #= 0x%04x\r\n", 
+		(index & ~(WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
+#else
+	WRITE_ONE ((index & ~(WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
+#endif
+    }
+
+#if defined (NO_WRITE)
+    printf ("0x%lx <= 0x%x\r\n", index & ~(WIDTH/8 - 1), ProgramConfirm);
+#else
+    WRITE_ONE (index & ~(WIDTH/8 - 1), ProgramConfirm);
+#endif
+    SPINNER_STEP;
+    status = nor_status (index);
+
+    vpen_disable ();
+
+    SPINNER_STEP;
+
+    if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
+    fail:
+      printf ("Program failed at 0x%p (%x)\r\n", (void*) index, status);
+      CLEAR_STATUS (index);
+      return cbWrote;
+    }
+
+    d->index += available;
+    pv += available;
+    cb -= available;
+    cbWrote += available;
+    //    printf ("  cb %x  cbWrote 0x%x  pv %p\r\n", cb, cbWrote, pv);
+  }
+
+  return cbWrote;
+}
+
+#else
+
 /* nor_write
 
    does a little bit of fussing in order to handle writing single
@@ -388,6 +518,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   return cbWrote;
 }
+
+#endif
 
 static void nor_erase (struct descriptor_d* d, size_t cb)
 {

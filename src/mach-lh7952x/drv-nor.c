@@ -25,6 +25,10 @@
    DESCRIPTION
    -----------
 
+   *** Look to the LH7A40X NOR flash driver for some work about
+   *** generifiying the driver.  The goal is to make it general at
+   *** compile time and not (much) at run time.
+
    NOR flash IO driver for LPD 7952x.  The is, in the sum, a CFI
    compliant driver.  Nothing has been done to make it a general
    solution since it is more important that the driver be small than
