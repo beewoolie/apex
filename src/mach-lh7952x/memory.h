@@ -33,6 +33,7 @@
 /* ----- Includes */
 
 #include <config.h>
+#include <mach/hardware.h>
 
 /* ----- Constants */
 
