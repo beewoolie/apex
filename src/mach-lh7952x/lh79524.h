@@ -130,6 +130,7 @@
 #define IOCON_PHYS	(0xfffe5000)
 
 #define IOCON_MUXCTL1	(0x00)
+#define IOCON_RESCTL1	(0x04)
 #define IOCON_MUXCTL5	(0x20)
 #define IOCON_MUXCTL6	(0x28)
 #define IOCON_MUXCTL7	(0x30)
@@ -141,7 +142,9 @@
 #define IOCON_MUXCTL19	(0x90)
 #define IOCON_MUXCTL20	(0x98)
 #define IOCON_MUXCTL23	(0xb0)
+#define IOCON_RESCTL23	(0xb4)
 #define IOCON_MUXCTL24	(0xb8)
+#define IOCON_RESCTL24	(0xbc)
 
 #define UART_PHYS	(0xfffc0000)
 
@@ -309,6 +312,7 @@
 
 #define EMAC_NETCTL_TXHALT	(1<<10)
 #define EMAC_NETCTL_STARTTX	(1<<9)
+#define EMAC_NETCTL_MANGEEN	(1<<4)
 #define EMAC_NETCTL_TXEN	(1<<3)
 #define EMAC_NETCTL_RXEN	(1<<2)
 

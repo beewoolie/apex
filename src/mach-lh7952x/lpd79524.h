@@ -47,6 +47,9 @@
 #define CPLD_FLASH_FL_VPEN	(1<<0)
 #define CPLD_FLASH_STS1		(1<<1)
 
+#define CPLD_CONTROL		(0x4c100000)
+#define CPLD_CONTROL_WRLAN_ENABLE (1<<0)
+
 #define CPLD_SPI		(0x4c500000)
 #define CPLD_SPI_CS_NCODEC	(1<<5)
 #define CPLD_SPI_CS_MAC		(1<<4)

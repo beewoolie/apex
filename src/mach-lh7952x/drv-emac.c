@@ -50,26 +50,153 @@
 
 //#define TALK
 
-#if defined (TALK)
+//#define NOISY 
+
+#if defined (NOISY)
 #define PRINTF(f...)		printf (f)
 #else
 #define PRINTF(f...)		do {} while (0)
 #endif
 
+#define PHY_CONTROL	0
+#define PHY_STATUS	1
+#define PHY_ID1		2
+#define PHY_ID2		3
+
+#define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_RESTART_ANEN	(1<<12)
+#define PHY_STATUS_ANEN_COMPLETE	(1<<5)
+#define PHY_STATUS_LINK			(1<<2)
+
+static int phy_address;
+
+#define C_BUFFER	2
+#define CB_BUFFER	1536
+static long __attribute__((section("ethernet.bss"))) 
+     rlDescriptor[C_BUFFER*2];
+static char __attribute__((section("ethernet.bss")))
+     rgbBuffer[CB_BUFFER*C_BUFFER];	/* Memory for buffers */
+
+static void msleep (int ms)
+{
+  unsigned long time = timer_read ();
+	
+  do {
+  } while (timer_delta (time, timer_read ()) < ms);
+}
+
+static void emac_setup (void)
+{
+  int i;
+  for (i = 0; i < C_BUFFER; ++i) {
+    rlDescriptor[i*2] = ((unsigned long)(rgbBuffer + i*CB_BUFFER) & ~3)
+      | ((i == C_BUFFER - 1) ? (1<<1) : 0);
+    rlDescriptor[i*2 + 1] = 0;
+  }
+  printf ("rlDescriptor %p\r\n", rlDescriptor);
+  __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rlDescriptor;
+  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_RXEN; /* Enable RX */
+  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
+  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
+}
+
+static int emac_phy_read (int phy_address, int phy_register)
+{
+  PRINTF ("emac_phy_read %d %d\r\n", phy_address, phy_register);
+
+  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
+  __REG (EMAC_PHYS + EMAC_PHYMAINT)
+    = (1<<30)|(2<<28)
+    |((phy_address & 0x1f)<<23)
+    |((phy_register & 0x1f)<<18)
+    |(2<<16);
+
+  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  while ((__REG (EMAC_PHYS + EMAC_NETSTATUS) & (1<<2)) == 0)
+    ;
+
+  __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
+
+  PRINTF ("emac_phy_read => 0x%lx\r\n", __REG (EMAC_PHYS + EMAC_PHYMAINT));
+
+  return __REG (EMAC_PHYS + EMAC_PHYMAINT) & 0xffff;
+}
+
+static void emac_phy_write (int phy_address, int phy_register, int phy_data)
+{
+  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
+  __REG (EMAC_PHYS + EMAC_PHYMAINT)
+    = (1<<30)|(1<<28)
+    |((phy_address & 0x1f)<<23)
+    |((phy_register & 0x1f)<<18)
+    |(2<<16)
+    |(phy_data & 0xffff);
+
+  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  while ((__REG (EMAC_PHYS + EMAC_NETSTATUS) & (1<<2)) == 0)
+    ;
+  __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
+}
+
+static void emac_phy_reset (int phy_address)
+{
+  int v = 0;
+  printf ("reset phy\r\n");
+  emac_phy_write (phy_address, 0,
+		  PHY_CONTROL_RESET
+		  | emac_phy_read (phy_address, 0));
+  while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
+    ++v;
+#if 0
+  printf ("  reset %d\r\n", v);
+  emac_phy_write (phy_address, 0,
+		  PHY_CONTROL_RESTART_ANEN
+		  | emac_phy_read (phy_address, 0));
+#endif
+}
+
+/* emac_phy_detect
+
+   scans for a valid phy attached to the controller.
+
+*/
+
+static void emac_phy_detect (void)
+{
+				/* Scan PHYs, #1 first, #0 last */
+  for (phy_address = 1; phy_address < 33; ++phy_address) {
+    unsigned int id1;
+    unsigned int id2;
+    id1 = emac_phy_read (phy_address & 0x1f, PHY_ID1);
+    id2 = emac_phy_read (phy_address & 0x1f, PHY_ID2);
+
+    if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
+	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
+      printf ("0x%x  0x%x\r\n", phy_address & 0x1f, (id1 << 16) | id2);
+      break;
+    }
+  }
+
+  emac_phy_reset (phy_address);
+}
+
+
+
 static void enable_cs (void)
 {
-  PRINTF ("enable_cs 0x%x", __REG16 (CPLD_SPI));
+  //  PRINTF ("enable_cs 0x%x", __REG16 (CPLD_SPI));
   __REG16 (CPLD_SPI) |= CPLD_SPI_CS_MAC;
   usleep (T_CSS);
-  PRINTF (" -> 0x%x\r\n", __REG16 (CPLD_SPI));
+  //  PRINTF (" -> 0x%x\r\n", __REG16 (CPLD_SPI));
 }
 
 static void disable_cs (void)
 {
-  PRINTF ("disable_cs 0x%x", __REG16 (CPLD_SPI));
+  //  PRINTF ("disable_cs 0x%x", __REG16 (CPLD_SPI));
   __REG16 (CPLD_SPI) &= ~CPLD_SPI_CS_MAC;
-  PRINTF (" -> 0x%x\r\n", __REG16 (CPLD_SPI));
+  //  PRINTF (" -> 0x%x\r\n", __REG16 (CPLD_SPI));
 }
+
 
 /* wait_for_write
 
@@ -137,23 +264,39 @@ static void emac_init (void)
 #endif
   
 	/* Hardware setup */
+  __REG16 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
   __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
   __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
   __REG (IOCON_PHYS + IOCON_MUXCTL1) &= ~((3<<8)|(3<<6)|(3<<4));
   __REG (IOCON_PHYS + IOCON_MUXCTL1) |=   (1<<8)|(1<<6)|(1<<4);
+  __REG (IOCON_PHYS + IOCON_RESCTL1)  = (2<<8)|(2<<6)|(2<<4);
   __REG (IOCON_PHYS + IOCON_MUXCTL23)
-    &= ~((3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<2)|(3<<0));
+    &= ~((3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0));
   __REG (IOCON_PHYS + IOCON_MUXCTL23)
-    |=   (1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<2)|(1<<0);
+    |=   (1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0);
+  __REG (IOCON_PHYS + IOCON_RESCTL23)  
+     =   (2<<14)|(2<<12)|(2<<10)|(2<<8)|(2<<6)|(2<<4)|(2<<2)|(2<<0);
   __REG (IOCON_PHYS + IOCON_MUXCTL24)
-    &= ~((3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<2)|(3<<0));
+    &= ~((3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0));
   __REG (IOCON_PHYS + IOCON_MUXCTL24)
-    |=   (1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<2)|(1<<0);
+    |=   (1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0);
+  __REG (IOCON_PHYS + IOCON_RESCTL24)
+     =   (2<<12)|(2<<10)|(2<<8)|(2<<6)|(2<<4)|(2<<2)|(2<<0);
   __REG (EMAC_PHYS + EMAC_SPECAD1BOT) 
     = (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
   __REG (EMAC_PHYS + EMAC_SPECAD1TOP) 
     = (rgb[0]<<8)|(rgb[1]<<0);
+
+  emac_setup ();
+  emac_phy_detect ();
+
+  /* Disable advertisement except for 100Base-TX  */
+  {
+    unsigned long l = emac_phy_read (phy_address, 4);
+    emac_phy_write (phy_address, 4, l & ~((1<<8)|(1<<6)|(1<<5)));
+  }
+
 }
 
 static __service_6 struct service_d lh7952x_emac_service = {
@@ -179,6 +322,46 @@ int cmd_emac (int argc, const char** argv)
     }
 
     dump (rgb, 128, 0);
+
+    {
+      unsigned long l;
+      l = emac_phy_read (phy_address, 0);
+      printf ("phy_control 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 1);
+      printf ("phy_status 0x%lx %ld %ld\r\n",
+	      l,
+	      l&PHY_STATUS_ANEN_COMPLETE,
+	      l&PHY_STATUS_LINK);
+      l = emac_phy_read (phy_address, 4);
+      printf ("phy_advertisement 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 5);
+      printf ("phy_partner 0x%lx", l);
+      if (l & (1<<9))
+	printf ("  100Base-T4");
+      if (l & (1<<8))
+	printf ("  100Base-TX-full");
+      if (l & (1<<7))
+	printf ("  100Base-TX");
+      if (l & (1<<6))
+	printf ("  10Base-T-full");
+      if (l & (1<<5))
+	printf ("  10Base-T");
+      printf ("\r\n");
+      l = emac_phy_read (phy_address, 6);
+      printf ("phy_autoneg_expansion 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 7);
+      printf ("phy_autoneg_nextpage 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 16);
+      printf ("phy_bt_interrupt_level 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 17);
+      printf ("phy_interrupt_control 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 18);
+      printf ("phy_diagnostic 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 19);
+      printf ("phy_power 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 20);
+      printf ("phy_cable 0x%lx\r\n", l);
+    }
   }
   else {
     unsigned char rgb[6];
