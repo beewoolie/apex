@@ -126,12 +126,3 @@ void exec_monitor (void)
 
   } while (1);
 }
-
-static __env struct env_d e_startup = {
-  .key = "startup",
-  .default_value =
-    "copy nor:256k#1536k mem:0x20008000;"
-    "wait 30 Autoboot in 3 seconds.;"
-    "boot",
-  .description = "Startup command string",
-};
