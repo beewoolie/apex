@@ -38,11 +38,13 @@
 void nslu2_spinner (unsigned v)
 {
   static int step;
-  v = v%6;
-  if (v == step)
+  static int value;
+
+  v = v/128;
+  if (v == value)
     return;
 
-  step = v;
+  value = v;
   switch (step) {
   case 0:
     _L(LED1); break;
@@ -57,6 +59,10 @@ void nslu2_spinner (unsigned v)
   case 5:
     _L(LED0); break;
   }
+  //  step = (step + 1)%6;
+  ++step;
+  if (step > 5)
+    step = 0;
 }
 
 static void spinner_init (void)
