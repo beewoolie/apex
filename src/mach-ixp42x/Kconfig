@@ -13,6 +13,10 @@ endchoice
 
 endif
 
+config MACH
+	string
+	default "ixp42x"
+
 config ARCH_IXP420
 	bool
 

@@ -68,11 +68,11 @@
 #define UART1_PHYS	(UART_PHYS + 0x1000)
 #define UART2_PHYS	(UART_PHYS + 0x2000)
 
-#if defined (CONFIG_MACH_LH79520)
+#if defined (CONFIG_MACH_LPD79520)
 # define UART		(UART1_PHYS)
 #endif
 
-#if defined (CONFIG_MACH_LH79524)
+#if defined (CONFIG_MACH_LPD79524)
 # define UART		(UART0_PHYS)
 #endif
 

@@ -517,11 +517,19 @@ ifeq ($(dot-config),1)
 
 include .config
 
-ifeq '$(ENV_CROSS_COMPILE)' ''
- CROSS_COMPILE_=$(CROSS_COMPILE)
-else
+ifeq ($(CROSS_COMPILE_),)
  CROSS_COMPILE_=$(ENV_CROSS_COMPILE)
 endif
+
+ifeq ($(CROSS_COMPILE_),)
+ CROSS_COMPILE_=$(CROSS_COMPILE)
+endif
+
+ifeq ($(CROSS_COMPILE_),)
+ CROSS_COMPILE_=$(CONFIG_CROSS_COMPILE)
+endif
+
+#CONFIG_MACH:=$(subst ",,$(CONFIG_MACH))
 
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.

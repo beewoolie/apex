@@ -136,6 +136,10 @@ config CODEC
 
 endmenu
 
+config MACH
+	string
+	default "lh7952x"
+
 config ARCH_LH79520
 	bool
 

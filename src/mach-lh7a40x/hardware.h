@@ -34,7 +34,7 @@
 
 #include <config.h>
 
-#if defined (CONFIG_MACH_LH7A40X)
+#if defined (CONFIG_ARCH_LH7A40X)
 # include "lh7a40x.h"
 #endif
 

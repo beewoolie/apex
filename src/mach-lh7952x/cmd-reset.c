@@ -32,12 +32,12 @@
 #include <command.h>
 #include <service.h>
 
-#if defined (CONFIG_MACH_LH79524)
-#include "lh79524.h"
+#if defined (CONFIG_ARCH_LH79520)
+# include "lh79520.h"
 #endif
 
-#if defined (CONFIG_MACH_LH79520)
-# include "lh79520.h"
+#if defined (CONFIG_ARCH_LH79524)
+#include "lh79524.h"
 #endif
 
 static void cmd_reset (int argc, const char** argv)

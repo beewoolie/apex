@@ -79,7 +79,7 @@ void lh7952x_serial_init (void)
      *** name of the constants changed.  Also, the UARTMUX stuff.
      *** Clean it up. */
 
-#if defined (CONFIG_MACH_LH79520)
+#if defined (CONFIG_ARCH_LH79520)
   
   /* Enable ALL uarts since we don't know which we're using */
   IOCON_UARTMUX = 0xf;
@@ -98,7 +98,7 @@ void lh7952x_serial_init (void)
 
 #endif
 
-#if defined (CONFIG_MACH_LH79524)
+#if defined (CONFIG_ARCH_LH79524)
   
   /* Enable ALL uarts since we don't know which we're using */
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;

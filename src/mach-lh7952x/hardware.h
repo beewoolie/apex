@@ -38,11 +38,11 @@
 //#define IRQ_COUNT	32
 #endif
 
-#if defined (CONFIG_MACH_LH79520)
+#if defined (CONFIG_ARCH_LH79520)
 # include "lh79520.h"
 #endif
 
-#if defined (CONFIG_MACH_LH79524)
+#if defined (CONFIG_ARCH_LH79524)
 # include "lh79524.h"
 #endif
 

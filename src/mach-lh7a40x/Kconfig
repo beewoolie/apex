@@ -78,6 +78,10 @@ config CLCDC
 
 endmenu
 
+config MACH
+	string
+	default "lh7a40x"
+
 config ARCH_LH7A400
 	bool
 
