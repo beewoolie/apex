@@ -19,6 +19,7 @@
 #include <error.h>
 #include <linux/kernel.h>
 #include <config.h>
+#include <environment.h>
 
 #if defined (CONFIG_ATAG) 
 # include <atag.h>
@@ -30,16 +31,22 @@ extern void build_atags (void);
 
 int cmd_boot (int argc, const char** argv)
 {
-  unsigned long address;
+  unsigned long address = env_fetch_int ("bootaddr", 0xffffffff);
 
-  if (argc < 2)
-    return ERROR_PARAM;
+  if (argc > 2 && strcmp (argv[1], "-g") == 0) {
+    address = simple_strtoul (argv[2], NULL, 0);
+    argc -= 2;
+    argv += 2;
+  }
 
-  address = simple_strtoul (argv[1], NULL, 0);
+  if (address == 0xffffffff) {
+    printf ("No kernel start address\r\n");
+    return 0;
+  }
 
 #if defined (CONFIG_ATAG)
-  commandline_argc = argc - 2;
-  commandline_argv = argv + 2;
+  commandline_argc = argc - 1;
+  commandline_argv = argv + 1;
 
   build_atags ();
 #endif
@@ -66,27 +73,39 @@ static __command struct command_d c_boot = {
 #if defined (CONFIG_ATAG)
 struct tag* atag_commandline (struct tag* p)
 {
-  p->u.cmdline.cmdline[0] = '\0';
+  const char* szEnv = env_fetch ("cmdline");
+  int cb = 0;
 
-  if (commandline_argc > 0) {
-    char* pb = p->u.cmdline.cmdline;
-    int i;
-
-    for (i = 0; i < commandline_argc; ++i) {
-      strlcpy (pb, commandline_argv[i], COMMAND_LINE_SIZE);
-      pb += strlen (pb);
-      *pb++ = ' ';
-    }
-	
-    pb--;
-    *pb++ = 0;
-
-    if (pb > p->u.cmdline.cmdline)
-      p->hdr.tag = ATAG_CMDLINE;
-    p->hdr.size
-      = (sizeof (struct tag_header) + pb - p->u.cmdline.cmdline + 4) >> 2;
-    p = tag_next (p);
+  if (szEnv) {
+    strlcpy (p->u.cmdline.cmdline, szEnv, COMMAND_LINE_SIZE);
+    cb = strlen (szEnv);
   }
+  else {
+    p->u.cmdline.cmdline[0] = '\0';
+
+    if (commandline_argc > 0) {
+      char* pb = p->u.cmdline.cmdline;
+      int i;
+
+      for (i = 0; i < commandline_argc; ++i) {
+	strlcpy (pb, commandline_argv[i], COMMAND_LINE_SIZE);
+	pb += strlen (pb);
+	*pb++ = ' ';
+      }
+	
+      pb--;
+      *pb++ = 0;
+
+      cb = pb - p->u.cmdline.cmdline;
+    }
+  }
+
+  if (cb) {
+    p->hdr.tag = ATAG_CMDLINE;
+    p->hdr.size
+      = (sizeof (struct tag_header) + cb + 4) >> 2;
+    p = tag_next (p);
+  }    
 
   return p;
 }
