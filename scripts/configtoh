@@ -6,7 +6,7 @@
 echo "#if !defined (__CONFIG_H__)"
 echo "#    define   __CONFIG_H__"
 echo
-cat $1 | sed -e '/CONFIG_/!d' -e 's/^[ \t]*#.*//' -e 's/\([^=]*\)=\(\.*\)/#define \1 \2/'
+cat $1 | sed -e '/CONFIG_/!d' -e 's/^[ \t]*#.*//' -e 's/"//g' -e 's/\([^=]*\)=\(\.*\)/#define \1 \2/'
 echo
 echo
 echo "#endif /* __CONFIG_H__ */"
