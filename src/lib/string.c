@@ -519,7 +519,7 @@ void * memmove(void * dest,const void *src,size_t count)
 EXPORT_SYMBOL(memmove);
 #endif
 
-#if 0
+#if 1
 /**
  * memcmp - Compare two areas of memory
  * @cs: One area of memory
