@@ -125,6 +125,8 @@ int call_command (int argc, const char** argv)
 	  error_description = "bad partition"; break;
 	case ERROR_FILENOTFOUND:
 	  error_description = "file not found"; break;
+	case ERROR_IOFAILURE:
+	  error_description = "i/o failure"; break;
 	}
       }
 #endif

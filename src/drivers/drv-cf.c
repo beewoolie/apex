@@ -272,7 +272,7 @@ static int cf_identify (void)
 #endif
 
   if (cf_d.type != typeMemory)
-    return 1;
+    ERROR_RETURN (ERROR_UNSUPPORTED, "unsupported CF device");
 
   select (0, 0);
   ready_wait ();
@@ -290,7 +290,7 @@ static int cf_identify (void)
 
     if (rgs[0] != 0x848a) {
       cf_d.type = -1;
-      return 1;
+      ERROR_RETURN (ERROR_IOFAILURE, "unexpected data read from CF card");
     }
 
     cf_d.cylinders         = rgs[1];
@@ -315,12 +315,11 @@ static int cf_identify (void)
 
 static int cf_open (struct descriptor_d* d)
 {
+  int result;
   ENTRY (0);
 
-  if (cf_identify ())
-    return ERROR_OPEN;
-  if (cf_d.type != typeMemory)
-    return ERROR_OPEN;
+  if ((result = cf_identify ()))
+    return result;
 
   /* perform bounds check */
 

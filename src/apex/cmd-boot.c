@@ -94,8 +94,7 @@ int cmd_boot (int argc, const char** argv)
 
   release_services ();
 
-  ((void (*)(int, int, int)) address) 
-    (0, arch_number, CONFIG_ATAG_PHYS);
+  ((void (*)(int, int, int)) address) (0, arch_number, CONFIG_ATAG_PHYS);
 
   printf ("Uh, oh.  Linux returned.\n");
 
