@@ -5,6 +5,28 @@ APEX Boot Loader
 
 TODO:
 
+  o Pipes should work for streaming between drivers.  [g2] wants to be
+    able to specify a list of drivers/regions to try.  This may mean
+    I'll have to combine the parse and the open methods so that the
+    open can continue until it succeeds.  
+      E.g. nor:128k+1m|(ext2,vfat):/boot/zImage
+    Trouble ensues when the options are more complex, NxM.
+  o Aliases can be simple text substitutions.
+     alias flpart nor:128k+1m
+     alias kernel /boot/zImage
+     flpart|(ext2,vfat):kernel
+  o The splashscreen should be able to be read from a filesystem
+     copy ext2:/boot/splash fb:
+    This will also require that we be able to store an image in the
+    loader and copy it out.  Aliases make this possible
+      alias splashimage ...
+  o Aliases mean we can have references to 
+      alias env nor:128k+32k
+      alias apex mem:...
+    aliases must match exactly.  Always.  I'd like to make the
+    environment alias be environment, but partial alias matches might be
+    too much of a strain.  Perhaps near matches are OK if there are
+    no other near matches.
   o It looks like there is a conflict with using the name ./config for
     the configuration file and all of the config targets.  I believe
     this to be due to hidden dependencies within make.  Bad make.  So,
