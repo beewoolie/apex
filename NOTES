@@ -5,6 +5,11 @@ APEX Boot Loader
 
 TODO:
 
+  o I think that the partition logic needs to move to the CF driver
+    (and other block-level drivers) so that the filesystem code can be
+    cleaner.  It allows us to read from unpartitioned devices as well
+    as any other random-access, byte stream.
+
   o Looks like the ADC test driver may interfere with the kernel
     booting properly.  First I've seen of it.  It's OK, though, since
     we don't need it.

@@ -1,4 +1,12 @@
+2005-02-23  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c, src/apex/cmd-copy.c: Work-around
+	for gcc-2.95 preprocessor bug.
+
 2005-02-22  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-fat.c (fat_open): Typo prevented reading from
+	any partition other than 1.
 
 	* src/drivers/drv-mem.c (memory_init): Reorganized the
 	configuration of SDRAM s.t. it is cleaner in the configuration

@@ -254,13 +254,14 @@ struct ext2_info {
 static struct ext2_info ext2;
 static const char szBlockDriver[] = "cf"; /* Underlying block driver */
 
-inline int block_groups (struct ext2_info& ext2)
+inline int block_groups (struct ext2_info* ext2)
 {
-  return (ext2->s.s_blocks_count + ext2->s.s_blocks_per_group - 1)
-    /ext2->s.s_blocks_per_group;
+  return (ext2->superblock.s_blocks_count
+	  + ext2->superblock.s_blocks_per_group - 1)
+    /ext2->superblock.s_blocks_per_group;
 }
 
-inline int group_from_inode (struct ext2_info& ext2, int inode)
+inline int group_from_inode (struct ext2_info* ext2, int inode)
 {
   return (inode - 1)/ext2->superblock.s_inodes_per_group;
 }
@@ -361,6 +362,7 @@ static int ext2_open (struct descriptor_d* d)
   
   ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
 
+#if 0
 	/* Read block group control structures */
   ext2.d.driver->seek (&ext2.d, 2*BLOCK_SIZE, SEEK_SET);
   if (ext2.d.driver->read (&ext2.d, &ext2.block_group, 
@@ -369,6 +371,7 @@ static int ext2_open (struct descriptor_d* d)
     close_descriptor (&ext2.d); 
     return -1;
   }    
+#endif
 
   return 0;
 }
@@ -413,10 +416,12 @@ static void ext2_report (void)
 	  ext2.superblock.s_first_data_block, 
 	  ext2.block_size,
 	  block_groups (&ext2));
+#if 0
   printf ("          group 0: inode block %d  free %d/%d\n", 
 	  ext2.block_group[0].bg_inode_table,
 	  ext2.block_group[0].bg_free_inodes_count,
 	  ext2.block_group[0].bg_free_blocks_count);
+#endif
 }
 
 static __driver_6 struct driver_d ext2_driver = {

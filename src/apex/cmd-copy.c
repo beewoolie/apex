@@ -173,21 +173,28 @@ int cmd_copy (int argc, const char** argv)
   return result;
 }
 
+	/* Work-around for gcc-2.95 */
+#if defined (USE_DIAG)
+# define _USE_COPY_VERIFY(s) s
+#else
+# define _USE_COPY_VERIFY(s)
+#endif
+
 static __command struct command_d c_copy = {
   .command = "copy",
   .description = "copy data between devices",
   .func = cmd_copy,
   COMMAND_HELP(
 "copy"
-#if defined (USE_COPY_VERIFY)
+_USE_COPY_VERIFY(
 " [-v]"
-#endif
+)
 " SRC DST\n"
 "  Copy data from SRC region to DST region.\n"
-#if defined (USE_COPY_VERIFY)
+_USE_COPY_VERIFY(
 "  Adding the -v performs redundant reads of the data to verify that\n"
 "  what is read from SRC is correctly written to DST\n"
-#endif
+)
 "  The length of the DST region is ignored.\n\n"
 "  e.g.  copy mem:0x20200000+0x4500 nor:0\n"
   )

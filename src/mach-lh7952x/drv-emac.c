@@ -823,6 +823,13 @@ static int cmd_emac (int argc, const char** argv)
   return result;
 }
 
+	/* Work-around for gcc-2.95 */
+#if defined (USE_DIAG)
+# define _USE_DIAG(s) s
+#else
+# define _USE_DIAG(s)
+#endif
+
 static __command struct command_d c_emac = {
   .command = "emac",
   .description = "manage ethernet MAC address",
@@ -830,7 +837,7 @@ static __command struct command_d c_emac = {
   COMMAND_HELP(
 "emac [SUBCOMMAND [PARAMETER]]\n"
 "  Commands for the Ethernet MAC and PHY devices.\n"
-#if defined (USE_DIAG)
+_USE_DIAG(
 "  Without a SUBCOMMAND, it displays diagnostics about the EMAC\n"
 "    and PHY devices.  This information is for debugging the hardware.\n"
 "  clear - reset the EMAC.\n"
@@ -838,7 +845,7 @@ static __command struct command_d c_emac = {
 "  send  - send a test packet.\n"
 "  loop  - enable loopback mode.\n"
 "  force - force power-up and restart auto-negotiation.\n"
-#endif
+)
 "  mac   - set the MAC address to PARAMETER.\n"
 "    PARAMETER has the form XX:XX:XX:XX:XX:XX where each X is a\n"
 "    hexadecimal digit.  Be aware that MAC addresses must be unique for\n"
