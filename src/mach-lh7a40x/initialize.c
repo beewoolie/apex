@@ -131,9 +131,9 @@
 #endif
 
 // SRAM devices
-#define BCR0_MODE		(0x200039af)	// Bootflash
-#define BCR6_MODE		(0x1000fbe0)	// CompactFlash
-#define BCR7_MODE		(0x1000b2c2)	// CPLD & Ethernet
+#define SMC_BCR0_V		(0x200039af)	// Bootflash
+#define SMC_BCR6_V		(0x1000fbe0)	// CompactFlash
+#define SMC_BCR7_V		(0x1000b2c2)	// CPLD & Ethernet
 
 #if defined (CONFIG_SDRAM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
@@ -221,8 +221,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   {
     unsigned long l;
     __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
-//		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
-		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
+		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
+//		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
 		    "mcr	p15, 0, %0, c1, c0, 0"
 		    : "=r" (l));
   }
@@ -235,6 +235,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	   disabled which breaks the CPLD handling of chip
 	   selects. */
   SMC_PCMCIACON |= 0x3;		/* Enable both PCMCIA slots */
+  SMC_BCR0 = SMC_BCR0_V;
+  SMC_BCR6 = SMC_BCR6_V;
+  SMC_BCR7 = SMC_BCR7_V;
 
   __asm volatile ("cmp %0, %1\n\t"
 		  "movhi r0, #0\n\t"
