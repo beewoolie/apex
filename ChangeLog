@@ -1,5 +1,8 @@
 2005-03-20  Marc Singer  <elf@buici.com>
 
+	* Makefile (SUBLEVEL): Fixed the reset of the config hooks so that
+	the build is now optimal with respect to the configuration.
+
 	* Fixed menuconfig.  Still, I've never been able to edit strings,
 	hex's, or int's in menuconfig. It's there for the folks who want it.
 

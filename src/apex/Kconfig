@@ -26,6 +26,10 @@ config CMD_COMPARE
 config CMD_DRVINFO
 	bool "Driver Info"
 	default y
+	help
+	  Informational command that reports the status of APEX
+	  drivers and services.  This is a good command to omit when
+	  trying to make APEX small.
 
 config CMD_DUMP
 	bool "Dump Region"

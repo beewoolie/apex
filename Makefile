@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 2
-SUBLEVEL = 1
+SUBLEVEL = 2
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -837,9 +837,9 @@ include/envmagic.h: FORCE
 
 export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
-include/config.h: .config
-	@[ -f .config ] && echo "  CONFIG " `readlink .config` \
-		       && scripts/configtoh .config > include/config.h
+#include/config.h: .config
+#	@[ -f .config ] && echo "  CONFIG " `readlink .config` \
+#		       && scripts/configtoh .config > include/config.h
 
 # Single targets
 # ---------------------------------------------------------------------------

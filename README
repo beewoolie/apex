@@ -52,11 +52,9 @@ programs.
 
   # make xconfig
 
-APEX uses the Linux kernel build scripts so that rebuilding is
-(nearly) optimal.  Changes to the configuration are automatically
-propagated such that only affected source files are rebuilt.  It isn't
-as optimal as the kernel (yet) because it lacks the fancy config
-splitter that kbuild executes.
+APEX uses the Linux kernel build scripts so that rebuilding is as
+optimal as the kernel.  Changes to the configuration are automatically
+propagated such that only affected source files are rebuilt.
 
   # make
 
