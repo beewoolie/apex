@@ -40,7 +40,7 @@ int cmd_pause (int argc, const char** argv)
 {
   printf ("pausing for 2 seconds\n");
 
-#if 0
+#if 1
   {
     unsigned long time = timer_read ();
     while (timer_delta (time, timer_read ()) < 2*1000)
@@ -48,7 +48,7 @@ int cmd_pause (int argc, const char** argv)
   }
 #endif
 
-#if 1
+#if 0
   {
     int i = 2*1000*1000;
     i /= 32*1000;
