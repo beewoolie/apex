@@ -26,18 +26,23 @@ int open_descriptor (const char* sz, struct open_d* descriptor)
   memset (descriptor, 0, sizeof (*descriptor));
 
   ib = cb = strcspn (sz, ":");
-  if (sz[ib] == ':')
+  if (sz[ib] == ':') {
     cb = ++ib;
-  if (cb > sizeof (descriptor->driver_name))
-    cb = sizeof (descriptor->driver_name);
-  strlcpy (descriptor->driver_name, sz, cb);
+    if (cb > sizeof (descriptor->driver_name))
+      cb = sizeof (descriptor->driver_name);
+    strlcpy (descriptor->driver_name, sz, cb);
+  }
+  else {
+    strcpy (descriptor->driver_name, "memory");
+    ib = 0;
+  }
+  cb = strlen (descriptor->driver_name);
 
   {
     extern char APEX_DRIVER_START;
     extern char APEX_DRIVER_END;
     struct driver_d* d;
     struct driver_d* d_match = NULL;
-    cb = strlen (descriptor->driver_name);
     for (d = (struct driver_d*) &APEX_DRIVER_START;
 	 d < (struct driver_d*) &APEX_DRIVER_END;
 	 ++d) {
@@ -57,16 +62,20 @@ int open_descriptor (const char* sz, struct open_d* descriptor)
 
   while (sz[ib]) {
     char* pchEnd;
-    switch (sz[ib++]) {
+    switch (sz[ib]) {
     case '@':
+      ++ib;
+    case '0'...'9':
       descriptor->start = simple_strtoul (sz + ib, &pchEnd, 0);
       ib = pchEnd - sz;
       break;
     case '#':
+      ++ib;
       descriptor->length = simple_strtoul (sz + ib, &pchEnd, 0);
       ib = pchEnd - sz;
       break;
     default:
+      ++ib;
       /* Skip over unknown bytes so that we always terminate */
       break;
     }

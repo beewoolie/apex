@@ -51,7 +51,7 @@ Cf:
 
 */
 
-#define MS_TIMEOUT 10*1000
+#define MS_TIMEOUT (10*1000)
 #define MAXERRORS 5
 
 #define ERROR(...) do { } while (0)
@@ -61,12 +61,12 @@ extern struct driver_d* console_driver;
 
 static char rgbXmodem[1024];
 
-static inline void _send (char ch) 
+static inline void _send (char ch)
 { 
   console_driver->write (0, &ch, 1);
 }
 
-static inline void _read_flush (void) 
+static inline void _read_flush (void)
 {
   while (console_driver->poll (0, 1)) {
     char ch;
@@ -74,10 +74,11 @@ static inline void _read_flush (void)
   }
 }
   
-static int _receive (unsigned int timeout) {
-  unsigned long end = timer_read () + timeout;
+static int _receive (unsigned int timeout)
+{
+  unsigned long timeStart = timer_read ();
 
-  while (end > timer_read ())
+  while (timer_delta (timeStart, timer_read ()) < timeout)
     if (console_driver->poll (0, 1)) {
       unsigned char ch;
       console_driver->read (0, &ch, 1);
