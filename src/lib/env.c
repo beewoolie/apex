@@ -131,7 +131,7 @@ static int _env_index (const char* sz)
   int i;
 
   for (i = 0; i < C_ENV_KEYS; ++i)
-    if (strcmp (sz, ENVLIST(i).szKey) == 0)
+    if (strcmp (sz, ENVLIST(i).key) == 0)
       return i;
 
   return -1;
@@ -189,10 +189,10 @@ void* env_enumerate (void* pv, const char** pszKey,
   if (i - 1 >= C_ENV_KEYS) 
     return 0;
 
-  *pszKey = ENVLIST(i - 1).szKey;
+  *pszKey = ENVLIST(i - 1).key;
   *pszValue = _env_find (i - 1);
   if (*pszValue == NULL) {
-    *pszValue = ENVLIST(i - 1).szValueDefault;
+    *pszValue = ENVLIST(i - 1).default_value;
     *pfDefault = 1;
   }
   else
@@ -216,7 +216,7 @@ const char* env_fetch (const char* szKey)
   int i = _env_fetch (szKey, &szValue);
 
   if (i != -1 && szValue == NULL)
-    return ENVLIST(i).szValueDefault;
+    return ENVLIST(i).default_value;
   return szValue;
 }
 
