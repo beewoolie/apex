@@ -204,7 +204,11 @@ static void emac_phy_reset (int phy_address)
 {
   int v = 0;
   PRINTF ("emac: phy_reset\r\n");
+
+  //  PRINTF ("emac: forcing power-up\r\n");
   //  emac_phy_write (phy_address, 22, 0); /* Force power-up */
+
+#if 1
 #if 1
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESET
@@ -225,8 +229,9 @@ static void emac_phy_reset (int phy_address)
 		  & ~PHY_CONTROL_POWERDOWN); 
   printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
 #endif
+#endif
 
-#if 1
+#if 0
   printf ("  resetart anen %d\r\n", v);
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESTART_ANEN
@@ -332,8 +337,9 @@ void emac_init (void)
 	= (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
       __REG (EMAC_PHYS + EMAC_SPECAD1TOP) 
 	= (rgb[0]<<8)|(rgb[1]<<0);
+      printf ("emac: mac address\r\n"); 
+      dump (rgb, 6, 0);
     }
-    //    dump (rgb, 6, 0);
   }
 
   emac_setup ();
