@@ -14,8 +14,8 @@
 #endif
 
 extern char APEX_LMA_START;
-extern char APEX_VMA_START;
-extern char APEX_VMA_END;
+extern char APEX_VMA_COPY_START;
+extern char APEX_VMA_COPY_END;
 extern char APEX_STACK_START;
 extern char APEX_BSS_START;
 extern char APEX_BSS_END;
@@ -116,7 +116,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  "ble 0b\n\t"
 		  "add pc, ip, lr\n\t"
 		  :
-		  : "r" (&APEX_VMA_START), "r" (&APEX_VMA_END)
+		  : "r" (&APEX_VMA_COPY_START), "r" (&APEX_VMA_COPY_END)
 		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "ip"
 		  );		  
 }
