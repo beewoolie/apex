@@ -5,6 +5,16 @@ APEX Boot Loader
 
 TODO:
 
+  o Need to rectify the vpen_enable code in the flash drivers.  It
+    ought to be something defined in the hardware file s.t. it is not
+    compiled unless needed.  IIRC, it was smaller to put the vpen code
+    into functions that to put it inline.  However, it is easier to
+    code if it can be inlined.  Hmm.
+
+  o Would be nice if ^C could break into long-running functions.
+    Could be dangerous, though, e.g. writing to flash.  More thought
+    needed.
+
   o I am suspicious that the nor-cfi erase code isn't quite right.
     When asked to erase nor:0+120k, I think it erased the block at
     nor:120k.

@@ -1,3 +1,11 @@
+2005-02-20  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-nor-cfi.c (NOR_1_LENGTH): added logic
+	necessary to support the double bank of NOR flash on the LPD79524
+	boards.
+	(nor_init_chip): Changed initialization to properly cope with two
+	banks (or a pair of identical chips).
+
 2005-02-19  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/lib/lib1funcs.S: Imported this file from kernel in

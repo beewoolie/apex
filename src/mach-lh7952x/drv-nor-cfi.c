@@ -49,6 +49,20 @@
      time.  In other words, the generic elements of the driver are
      fixed at compile time.
 
+   o Banking support.  We take a few liberties with the banking
+     support in that we assume somethings.  Full generality comes at a
+     cost and, at this point, I am not willing to pay the full cost.
+     The driver can handle two chips, but not two completely different
+     chips.  Esentially, it can handle a pair of identical chips or
+     one chip with two banks.  It linearizes these chips for
+     convenience which is, in the case of writing large blocks of
+     data, an important convenience.  Improved flexbility would come
+     from always translating from the region structure.  What probably
+     needs to happen is the region structure needs to include the
+     physical offset of the region.  Handling disparate chips,
+     however, will probably never be done as the chips may require
+     different control constants.  Phooey.
+
 */
 
 #include <driver.h>
@@ -68,7 +82,7 @@
 # define PRINTF(v...)	do {} while (0)
 #endif
 
-#define ENTRY(l) printf ("%s\n", __FUNCTION__)
+#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
 //#define NO_WRITE		/* Disable writes, for debugging */
 
@@ -78,6 +92,12 @@
 #define WIDTH		CONFIG_NOR_BUSWIDTH
 #define NOR_0_PHYS	CONFIG_NOR_BANK0_START
 #define NOR_0_LENGTH	CONFIG_NOR_BANK0_LENGTH
+
+#if defined (CONFIG_NOR_BANK1_START)
+# define NOR_1_PHYS	CONFIG_NOR_BANK1_START
+# define NOR_1_LENGTH	CONFIG_NOR_BANK1_LENGTH
+#endif
+
 #define CHIP_MULTIPLIER	(1)		/* Number of chips at REGA */
 
 #if WIDTH == 32
@@ -93,14 +113,14 @@
 # define REGC		__REG16		/* Single chip I/O macro */
 #endif
 
-#if CHIP_MULTIPLIER == 1
-# define CMD(v)		(v)
-# define STAT(v)	(v)
-# define QRY(v)		(v)
-#else
+#if CHIP_MULTIPLIER == 2
 # define CMD(v)		((v) | ((v)<<16))
 # define STAT(v)	((v) | ((v)<<16))
 # define QRY(v)		((v) | ((v)<<16))
+#else
+# define CMD(v)		(v)
+# define STAT(v)	(v)
+# define QRY(v)		(v)
 #endif
 
 #if WIDTH == 16
@@ -144,8 +164,8 @@
 struct nor_region {
   int size;
   int count;
-  unsigned long start;
-  unsigned long next;
+  unsigned long start;		/* Relative offsets from 0 of the start of */
+  unsigned long next;		/*   this region and the start of the next */
 };
 
 #define C_REGIONS_MAX	16  /* Reasonable storage for erase region info */
@@ -162,7 +182,12 @@ static struct nor_chip chip_probed;
 
 static unsigned long phys_from_index (unsigned long index)
 {
+#if defined (NOR_1_PHYS)
+  return index 
+    + ((index < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
+#else
   return index + NOR_0_PHYS;
+#endif
 }
 
 static void vpen_enable (void)
@@ -246,50 +271,74 @@ static unsigned long nor_unlock_page (unsigned long index)
   return nor_status (index);
 }
 
-static void nor_init (void)
+static void nor_init_chip (unsigned long phys)
 {
-  ENTRY(0);
+  int iRegionFirst = chip_probed.regions;
+  int i;
+  unsigned long start;
 
-  vpen_disable ();
 
-  REGA (NOR_0_PHYS) = CMD (ReadArray);
-  REGA (NOR_0_PHYS) = CMD (ReadQuery);
+  PRINTF ("%s: probing %lx\n", __FUNCTION__, phys);
 
-  if (   REGA (NOR_0_PHYS + (0x10 << WIDTH_SHIFT)) != QRY('Q')
-      || REGA (NOR_0_PHYS + (0x11 << WIDTH_SHIFT)) != QRY('R')
-      || REGA (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != QRY('Y'))
+  REGA (phys) = CMD (ReadArray);
+  REGA (phys) = CMD (ReadQuery);
+
+  if (   REGA (phys + (0x10 << WIDTH_SHIFT)) != QRY('Q')
+      || REGA (phys + (0x11 << WIDTH_SHIFT)) != QRY('R')
+      || REGA (phys + (0x12 << WIDTH_SHIFT)) != QRY('Y'))
     return;
 
-  chip_probed.total_size 
-    = (1<<REGC (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)))
-    *CHIP_MULTIPLIER;
+  start = chip_probed.total_size;
+  i = chip_probed.regions;
+
+  chip_probed.regions += REGC (phys + (0x2c << WIDTH_SHIFT));
+  chip_probed.total_size
+    += (1<<REGC (phys + (0x27 << WIDTH_SHIFT)))*CHIP_MULTIPLIER;
 
   chip_probed.writebuffer_size
-    = (1<<(   REGC (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
-           | (REGC (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8)))
+    = (1<<(   REGC (phys + (0x2a << WIDTH_SHIFT))
+           | (REGC (phys + (0x2b << WIDTH_SHIFT)) << 8)))
     *CHIP_MULTIPLIER;
 
 	/* Discover erase regions.  Unfortunately, this has to be done
 	   so that the erase and unlock IO is reasonably efficient. */
-  {
-    int i;
-    unsigned long start = 0;
-    chip_probed.regions = REGC (NOR_0_PHYS + (0x2c << WIDTH_SHIFT));
-    for (i = 0; i < chip_probed.regions; ++i) {
-      chip_probed.region[i].size 
-	= 256*(   REGC (NOR_0_PHYS + ((0x2f + i*4) << WIDTH_SHIFT))
-	       | (REGC (NOR_0_PHYS + ((0x30 + i*4) << WIDTH_SHIFT)) << 8))
-	*CHIP_MULTIPLIER;
-      chip_probed.region[i].count
-	= 1 + (REGC (NOR_0_PHYS + ((0x2d + i*4) << WIDTH_SHIFT))
-	    | (REGC (NOR_0_PHYS + ((0x2e + i*4) << WIDTH_SHIFT)) << 8));
-      PRINTF ("  region %d %d %d\n", i,
-	      chip_probed.region[i].size, chip_probed.region[i].count);
-      chip_probed.region[i].start = start;
-      start += chip_probed.region[i].size*chip_probed.region[i].count;
-      chip_probed.region[i].next = start;
-    }
+
+  for (; i < chip_probed.regions; ++i) {
+    int offset = (i - iRegionFirst)*4;
+    PRINTF ("  ");
+    chip_probed.region[i].size 
+      = 256*(   REGC (phys + ((0x2f + offset) << WIDTH_SHIFT))
+	     | (REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) << 8))
+      *CHIP_MULTIPLIER;
+    chip_probed.region[i].count
+      = 1 + (   REGC (phys + ((0x2d + offset) << WIDTH_SHIFT))
+	     | (REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) << 8));
+    PRINTF ("  region %d %d %d\n", i,
+	    chip_probed.region[i].size, chip_probed.region[i].count);
+    chip_probed.region[i].start = start;
+    start += chip_probed.region[i].size*chip_probed.region[i].count;
+    chip_probed.region[i].next = start;
   }
+}
+
+
+
+static void nor_init (void)
+{
+  ENTRY (0);
+
+  vpen_disable ();
+
+  chip_probed.total_size = 0;	/* Should be redundant */
+  chip_probed.regions = 0;	/* Should be redundant */
+
+  nor_init_chip (NOR_0_PHYS);
+#if defined (NOR_1_PHYS)
+  nor_init_chip (NOR_1_PHYS);
+#endif
+
+  if (!chip_probed.total_size)
+    return;
 
   chip = &chip_probed;
 

@@ -101,12 +101,6 @@
 #define CPLD_EXGPIO_LED2	(1<<2)
 #endif
 
-//#define NOR_0_PHYS	(0x44000000)
-//#define NOR_0_LENGTH	(8*1024*1024)
-//#define NOR_1_PHYS	(0x45000000)
-//#define NOR_1_LENGTH	(8*1024*1024)
-//#define WIDTH		(16)	/* Device width in bits */
-
 #if defined (USE_NEW_CPLD)
 # define CF_PHYS	0x48200000
 #else
