@@ -256,7 +256,6 @@ void emac_init (void)
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));		
-
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
 		(3<<8)|(3<<6)|(3<<4),
 		(0<<8)|(0<<6)|(0<<4));
