@@ -27,6 +27,12 @@ H=`pwd`/src/mach-ixp42x/_intel
 all: unpack patch build
 
 build:
+	make -C $H/ixp_osal \
+	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
+	  IX_TARGET=linuxbe\
+	  IX_XSCALE_SW=$H/ixp400_xscale_sw\
+	  linuxbe_KERNEL_DIR=$H/linux\
+	  libosal
 	make -C $H/ixp400_xscale_sw \
 	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
 	  IX_TARGET=linuxbe\

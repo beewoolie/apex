@@ -55,4 +55,7 @@ obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)
 
+libs-$(CONFIG_NPE) += _intel/lib/libnpeDl.a
+newlibs += $(obj)/_intel/lib/libnpeDl.a
+
 #libs-$(CONFIG_NPE) := _intel/
