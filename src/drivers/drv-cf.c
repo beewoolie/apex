@@ -92,7 +92,6 @@
 
 #define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
-
 #if CF_WIDTH != 16
 # error Unable to build CF driver with specified CF_WIDTH
 #endif
@@ -117,8 +116,10 @@
 #define IDE_DATA	0x08
 
   /* IO_BARRIER_READ necessary on some platforms where the chip select
-     lines don't transition sufficiently.  Probably, it is only really
-     needed on writes, but we always perform the barrier read. */
+     lines don't transition sufficiently.  It is necessary on reads as
+     well as writes, however without a cache the code herein works
+     without a read barrier because the instruction fetches intervene.
+  */
 
 #if defined (CF_IOBARRIER_PHYS)
 # define IOBARRIER_READ	(*(volatile unsigned long*) CF_IOBARRIER_PHYS)
@@ -160,7 +161,7 @@ static unsigned char read8 (int reg)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-//  IOBARRIER_READ;
+  IOBARRIER_READ;
   return (reg & 1) ? (v >> 8) : (v & 0xff);
 }
 
@@ -177,7 +178,7 @@ static unsigned short read16 (int reg)
 {
   unsigned short value;
   value = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-//  IOBARRIER_READ;
+  IOBARRIER_READ;
   return value;
 }
 
@@ -240,20 +241,20 @@ static int cf_identify (void)
 
   cf_d.type = REG (CF_PHYS);
 
-  //  IOBARRIER_READ;
+  IOBARRIER_READ;
 
 #if 0
   {
     int index = 0;
     while (index < 1024) {
       unsigned short s = REG (CF_PHYS + index);
-//      IOBARRIER_READ;
+      IOBARRIER_READ;
       if (s == 0xff)
 	break;
       PRINTF ("%03x: 0x%x", index, s);
       index += 2*CF_ADDR_MULT;
       s = REG (CF_PHYS + index);
-//      IOBARRIER_READ;
+      IOBARRIER_READ;
       PRINTF (" 0x%x (%d)\n", s, s);
       index += 2*CF_ADDR_MULT;
       {
@@ -261,7 +262,7 @@ static int cf_identify (void)
 	unsigned char rgb[128];
 	for (i = 0; i < s; ++i) {
 	  rgb[i] = REG (CF_PHYS + index + i*2*CF_ADDR_MULT);
-//	  IOBARRIER_READ;
+	  IOBARRIER_READ;
 	}
 	dump (rgb, s, 0);
       }

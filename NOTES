@@ -5,6 +5,20 @@ APEX Boot Loader
 
 TODO:
 
+  o There is a need to be able to control the access width in the
+    memory driver.  Sometimes, for the purpose of debugging, it is
+    helpful to be able to read different widths.  The memcpy command
+    is probably too coarse in some cases as is evidenced by the fact
+    that dumping from the CF flash region on the 79520 does the wrong
+    thing.
+    o I believe the problem really has to do with the chip select
+      issue.  Without reads from system memory, the chip select
+      doesn't toggle and the CF fails to return a different memory
+      location.  Thus the real problem is that the memcpy performs too
+      many transfers at one time.    
+    o Finally, I don't know what the right solution to the problem
+      should be.
+
   o It might be helpful to make the envmagic script more repeatable.
     Need to look into this.  Seems like it changes when there are no
     changes to the environment variables.

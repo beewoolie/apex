@@ -168,7 +168,20 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+#if 0
+  /* *** Larger version of the memory read function which serves to
+     properly read from memories (e.g. broken CF interfaces) where the
+     chip select must toggle for every access.  This is a lowest
+     common denominator, and will tend to be pretty slow. */
+  {
+    int i = cb;
+    unsigned char* pbSrc = (unsigned char*) (d->start + d->index);
+    while (i--)
+      *(unsigned char*) pv = *pbSrc++, ++pv;
+  }
+#else
   memcpy (pv, (void*) (d->start + d->index), cb);
+#endif
   d->index += cb;
   
   return cb;

@@ -197,8 +197,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   IOCON_MEMMUX = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
 
   SMC_BCR0 = 0x100020ef; /* NOR flash */
-  SMC_BCR4 = 0x10007580; /* CompactFlash */
-  SMC_BCR5 = 0x100034c0; /* CPLD */
+
+//  SMC_BCR4 = 0x10007580; /* CompactFlash */
+//  SMC_BCR5 = 0x100034c0; /* CPLD */
+
+  SMC_BCR4 = (1<<28)|(1<<25)|(1<<24)|(4<<11)|(1<<10)|(4<<5)|(4<<0); /* CF */
+  SMC_BCR5 = (1<<28)|(1<<25)|(1<<24)|(4<<11)|(1<<10)|(4<<5)|(4<<0); /* CPLD */
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
@@ -263,6 +267,6 @@ static void target_release (void)
 }
 
 static __service_0 struct service_d lh79520_target_service = {
-//  .init    = target_init,
+  //  .init    = target_init,
   .release = target_release,
 };
