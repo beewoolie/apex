@@ -30,7 +30,8 @@ all:
 	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
 	  IX_TARGET=linuxbe\
 	  IX_XSCALE_SW=`pwd`/$HERE/ixp400_xscale_sw\
-	  linuxbe_KERNEL_DIR=`pwd`/$HERE/linux
+	  linuxbe_KERNEL_DIR=`pwd`/$HERE/linux\
+	  lib-all
 
 #	  linuxbe_KERNEL_DIR=$(HOME)/z/embedded/linux
 
