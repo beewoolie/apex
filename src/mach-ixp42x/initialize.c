@@ -82,7 +82,7 @@
 
  */
 
-void __section(bootstrap) usleep (unsigned long us)
+void __section (.bootstrap) usleep (unsigned long us)
 {
   unsigned long s;
   __asm volatile ("ldr %0, [%1]" : "=r" (s) : "r" (OST_TS_PHYS));
@@ -114,7 +114,7 @@ void __section(bootstrap) usleep (unsigned long us)
 
 */
 
-void __naked __section(bootstrap) initialize_bootstrap (void)
+void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));

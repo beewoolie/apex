@@ -21,7 +21,7 @@
 #include <apex.h>
 #include "hardware.h"
 
-static unsigned short __attribute__((section("clcdc.bss"))) 
+static unsigned short __attribute__((section(".clcdc.bss"))) 
      buffer[320*240];
 
 /* msleep

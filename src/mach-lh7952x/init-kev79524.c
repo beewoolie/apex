@@ -82,7 +82,7 @@
 
  */
 
-void __section(bootstrap) usleep (unsigned long us)
+void __section (.bootstrap) usleep (unsigned long us)
 {
   __asm ("str %1, [%0, #0]\n\t"
 	 "str %2, [%0, #0xc]\n\t"
@@ -122,7 +122,7 @@ void __section(bootstrap) usleep (unsigned long us)
 
 */
 
-void __naked __section(bootstrap) initialize_bootstrap (void)
+void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
@@ -163,7 +163,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (EMC_PHYS + EMC_STURN1)      = 1;
 
 	/* CPLD, 16 bit */
-//  __REG (EMC_PHYS + EMC_SCONFIG3)    = 0x81;
+  __REG (EMC_PHYS + EMC_SCONFIG3)    = 0x81;
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
@@ -233,7 +233,6 @@ static void target_init (void)
   __REG (EMC_PHYS + EMC_STURN2)      = 1;
 #endif
 
-#if 0
 	/* CPLD, 16 bit */
   __REG (EMC_PHYS + EMC_SWAITWEN3)   = 2;
   __REG (EMC_PHYS + EMC_SWAITOEN3)   = 2;
@@ -241,7 +240,6 @@ static void target_init (void)
   __REG (EMC_PHYS + EMC_SWAITPAGE3)  = 2;
   __REG (EMC_PHYS + EMC_SWAITWR3)    = 5;
   __REG (EMC_PHYS + EMC_STURN3)      = 2;
-#endif
 
   __REG (BOOT_PHYS + BOOT_CS1OV)    &= ~(1<<0);
 }

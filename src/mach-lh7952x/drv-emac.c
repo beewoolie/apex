@@ -143,13 +143,13 @@ static int phy_address;
 
 #define C_BUFFER	2	/* Number of buffers for each rx/tx */
 #define CB_BUFFER	1536
-static long // __attribute__((section("ethernet.bss"))) 
+static long // __attribute__((section(".ethernet.bss"))) 
      rgl_rx_descriptor[C_BUFFER*2];
-static long // __attribute__((section("ethernet.bss"))) 
+static long // __attribute__((section(".ethernet.bss"))) 
      rgl_tx_descriptor[C_BUFFER*2];
-static char __attribute__((section("ethernet.bss")))
+static char __attribute__((section(".ethernet.bss")))
      rgbRxBuffer[CB_BUFFER*C_BUFFER];
-static char __attribute__((section("ethernet.bss")))
+static char __attribute__((section(".ethernet.bss")))
      rgbTxBuffer[CB_BUFFER*C_BUFFER];
 
 struct ethernet_header {
@@ -342,9 +342,10 @@ static int emac_read_mac (char rgbResult[6])
   int result = 0;
 
   if (   parse_descriptor ("mac:0#8", &d)
-      || open_descriptor (&d))
+      || open_descriptor (&d)) {
+    printf ("ethernet mac eeprom unavailable\r\n");
     return -1;			/* No driver */
-
+  }
   if (d.driver->read (&d, rgb, 8) == 8 
       && rgb[0] == 0x94
       && rgb[1] == 0x01)
@@ -406,7 +407,9 @@ void emac_init (void)
 #if defined (USE_DIAG)
 
 //  msleep (1000);
+#if defined (CPLD_CONTROL_WRLAN_ENABLE)
   __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+#endif
 //  msleep (1000);
   //  msleep (500);
   //  phy_address = 1;
@@ -488,6 +491,9 @@ int cmd_emac (int argc, const char** argv)
 	{  5, "anpar" },
 	{  6, "anexp" },
 	{  7, "anpag" },
+
+#if 0
+	/* Altima */
 	{ 16, "btic" },
 	{ 17, "intr" },
 	{ 18, "diag" },
@@ -508,6 +514,16 @@ int cmd_emac (int argc, const char** argv)
 	{ 29|(1<<8)|(3<<12), "l2s2" },
 	{ 30|(1<<8)|(3<<12), "l3s1" },
 	{ 31|(1<<8)|(3<<12), "l3s2" },
+#else
+	/* NatSemi */
+	{ 16, "phsts" },
+	{ 20, "fcscr" },
+	{ 21, "recr" },
+	{ 22, "pcsr" },
+	{ 25, "phctl" },
+	{ 26, "100sr" },
+	{ 27, "cdtst" },
+#endif
       };
 #if 1
 #define WIDE 5
@@ -695,46 +711,65 @@ int cmd_emac (int argc, const char** argv)
 		      | emac_phy_read (phy_address, 0));
     }
 #endif
+
+    	/* Set mac address */
     if (strcmp (argv[1], "mac") == 0) {
-      unsigned char rgb[9];
+      unsigned char rgb[6];
       if (argc != 3)
 	return ERROR_PARAM;
-
-      rgb[0] = 0x94;		/* Signature */
-      rgb[1] = 0x01;		/* OP: MAC address */
-      rgb[8] = 0xff;		/* OP: end */
 
       {
 	int i;
 	char* pb = (char*) argv[2];
-	for (i = 2; i < 8; ++i) {
+	for (i = 0; i < 6; ++i) {
 	  if (!*pb)
-	    return ERROR_PARAM;
+	    ERROR_RETURN (ERROR_PARAM, "mac address too short");;
 	  rgb[i] = simple_strtoul (pb, &pb, 16);
 	  if (*pb)
 	    ++pb;
 	}
 	if (*pb)
-	  return ERROR_PARAM;
+	  ERROR_RETURN (ERROR_PARAM, "mac address too long");;
       }
 
-    //    dump (rgb, 9, 0);
+      EMAC_SPECAD1BOT 
+	= (rgb[0]<<24)|(rgb[1]<<16)|(rgb[2]<<8)|(rgb[3]<<0);
+      EMAC_SPECAD1TOP 
+	= (rgb[4]<<8)|(rgb[5]<<0);
+      printf ("emac: mac address\r\n"); 
+      dump (rgb, 6, 0);
+    }
 
+    	/* Save mac address */
+    if (strcmp (argv[1], "save") == 0) {
+      unsigned char rgb[9];
+
+      rgb[0] = 0x94;		/* Signature */
+      rgb[1] = 0x01;		/* OP: MAC address */
+      rgb[8] = 0xff;		/* OP: end */
+
+      rgb[2] = EMAC_SPECAD1BOT >> 24;
+      rgb[3] = EMAC_SPECAD1BOT >> 16;
+      rgb[4] = EMAC_SPECAD1BOT >>  8;
+      rgb[5] = EMAC_SPECAD1BOT >>  0;
+      rgb[6] = EMAC_SPECAD1TOP >>  8;
+      rgb[7] = EMAC_SPECAD1TOP >>  0;
+      
       {
 	struct descriptor_d d;
 	static const char sz[] = "mac:0#9";
 	if (   !parse_descriptor (sz, &d)
-	       && !open_descriptor (&d)) {
+	    && !open_descriptor (&d)) {
 	  d.driver->erase (&d, 9);
 	  d.driver->seek (&d, 0, SEEK_SET);
 	  if (d.driver->write (&d, rgb, 9) != 9)
-	    result = ERROR_FAILURE;
+	    result = ERROR_RESULT (ERROR_FAILURE, 
+				   "unable to write mac address");;
 	  close_descriptor (&d);
 	}
 	else
-	  result = ERROR_NODRIVER;
-	if (result)
-	  printf ("unable to write MAC address to <%s>\r\n", sz);
+	  ERROR_RETURN (ERROR_NODRIVER, 
+			"mac eeprom driver unavailable");;
       }
     }
   }

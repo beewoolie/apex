@@ -82,10 +82,10 @@ struct driver_d {
   void		(*info)  (void); /* User information request */
 };
 
-#define __driver_0 __attribute__((used,section("driver.0")))
-#define __driver_1 __attribute__((used,section("driver.1")))
-#define __driver_2 __attribute__((used,section("driver.2")))
-#define __driver_3 __attribute__((used,section("driver.2")))
+#define __driver_0 __attribute__((used,section(".driver.0")))
+#define __driver_1 __attribute__((used,section(".driver.1")))
+#define __driver_2 __attribute__((used,section(".driver.2")))
+#define __driver_3 __attribute__((used,section(".driver.2")))
 
 /* ----- Globals */
 

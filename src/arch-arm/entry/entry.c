@@ -49,15 +49,15 @@ extern void init (void);
 
 */
 
-void __naked __section (bootstrap) reset (void)
+void __naked __section (.reset) reset (void)
 {
 #if 0
   /* This would disable the MMU, but there is little reason to include
      it.  The only way this would be called would be if the CPU jumped
      to the loader while running something that needed the MMU.  In
      the unusual situation where the MMU maps the loader in a place
-     where it can execute, this might make things work.  I'd rather
-     wait for a legitimate use for this operation.  */
+     where it can execute, this might be necessary.  I'll leave it out
+     until there is a legitimate use.  */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #1\n\t"
 		  "mcr p15, 0, r0, c1, c0, 0");
@@ -85,8 +85,9 @@ void __naked __section (bootstrap) reset (void)
 
 /* setup_c
 
-   performs setup necessary to let standard C (APCS) function, a
-   stack, a clear BSS, data variables in RAM. 
+   performs setup necessary to make standard C (APCS) happy, a stack,
+   a clear BSS, and data variables in RAM.  The later is usually
+   handled by the relocate.
 
 */
 
@@ -108,6 +109,8 @@ void __naked setup_c (void)
 
 void __div0 (void)
 {
+  /* *** FIXME: perhaps we should reset */
+
   while (1)
     ;
 }

@@ -137,18 +137,18 @@ static void adc_setup (void)
 
   printf ("A2DCLK %d  SETTIME(US) %d\r\n", A2DCLK, SETTIME(US_SETTLING));
 
-  __REG (ADC_PHYS + ADC_IC) = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
+  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
 
 				/* Flush the results FIFO */
-  while ((__REG (ADC_PHYS + ADC_FS) & ADC_FS_FEMPTY) == 0)
+  while ((ADC_FS & ADC_FS_FEMPTY) == 0)
     ADC_RR;
 
-  MASK_AND_SET (__REG (ADC_PHYS + ADC_PC), 
+  MASK_AND_SET (ADC_PC, 
 		ADC_PC_NOC_MASK | ADC_PC_PWM_MASK,
 		(11<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_STANDBY)
 		|ADC_PC_REFEN);
 
-  MASK_AND_SET (__REG (ADC_PHYS + ADC_GC),
+  MASK_AND_SET (ADC_GC,
 		ADC_GC_SSM_MASK | ADC_GC_FIFOWMK_MASK,
 		ADC_GC_SSM_SSB
 		//		| (12<<ADC_GC_FIFOWMK_SHIFT)
@@ -160,51 +160,51 @@ static void adc_setup (void)
 #define _LO(f)	(f)
 
 	/* Idle */
-  __REG (ADC_PHYS + ADC_IHWCTRL) = _HI (0);
-  __REG (ADC_PHYS + ADC_ILWCTRL) = _LO (0);
+  ADC_IHWCTRL = _HI (0);
+  ADC_ILWCTRL = _LO (0);
     
 	/* Sampling */
   for (i = 0; i < 16; ++i) {
     switch (i) {
     case 0:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = _HI (ADC_HW_INP_AN0);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4) = _LO (ADC_LW_FET_AN0_VDD);
+      ADC_HWC_BASE + i*4 = _HI (ADC_HW_INP_AN0);
+      ADC_LWC_BASE + i*4 = _LO (ADC_LW_FET_AN0_VDD);
       break;
     case 1:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = _HI (ADC_HW_INP_AN0);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4)
+      ADC_HWC_BASE + i*4 = _HI (ADC_HW_INP_AN0);
+      ADC_LWC_BASE + i*4
 	= _LO (ADC_LW_FET_AN0_VDD100K | ADC_LW_FET_AN3_GND);
       break;
     case 2:
     case 3:
     case 4:
     case 5:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4)
+      ADC_HWC_BASE + i*4
 	= _HI (ADC_HW_INP_AN2 | ADC_HW_REFP_AN0);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4)
+      ADC_LWC_BASE + i*4
 	= _LO (ADC_LW_REFN_AN1 | ADC_LW_FET_AN0_VDD | ADC_LW_FET_AN1_GND);
       break;
     case 6:
     case 7:
     case 8:
     case 9:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) 
+      ADC_HWC_BASE + i*4 
 	= _HI (ADC_HW_INP_AN0 | ADC_HW_REFP_AN2);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4) 
+      ADC_LWC_BASE + i*4 
 	= _LO (ADC_LW_REFN_AN3 | ADC_LW_FET_AN2_VDD | ADC_LW_FET_AN3_GND);
       break;
     case 10:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = _HI (ADC_HW_INP_AN0);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4) = _LO (ADC_LW_FET_AN0_VDD);
+      ADC_HWC_BASE + i*4 = _HI (ADC_HW_INP_AN0);
+      ADC_LWC_BASE + i*4 = _LO (ADC_LW_FET_AN0_VDD);
       break;
     case 11:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = _HI (ADC_HW_INP_AN0);
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4)
+      ADC_HWC_BASE + i*4 = _HI (ADC_HW_INP_AN0);
+      ADC_LWC_BASE + i*4
 	= _LO (ADC_LW_FET_AN0_VDD100K | ADC_LW_FET_AN3_GND);
       break;
     default:
-      __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = 0;
-      __REG (ADC_PHYS + ADC_LWC_BASE + i*4) = 0;
+      ADC_HWC_BASE + i*4 = 0;
+      ADC_LWC_BASE + i*4 = 0;
       break;
     }
   }
@@ -215,36 +215,40 @@ static void adc_init (void)
   int i;
 
   __REG (RCPC_PHYS + RCPC_CTRL)      |=  (1<<9);	/* Unlock */
+  __REG (RCPC_PHYS + RCPC_ADCPRE)     =  RCPC_ADCPRE_V/2;
   __REG (RCPC_PHYS + RCPC_PCLKSEL1)  &= ~(1<<2);	/* ADC src HCLK */
 //  __REG (RCPC_PHYS + RCPC_PCLKSEL1)  |=  (1<<2);	/* ADC src sys-osc */
-  __REG (RCPC_PHYS + RCPC_ADCPRE)     =  RCPC_ADCPRE_V/2;
   __REG (RCPC_PHYS + RCPC_PCLKCTRL1) &= ~(1<<2);	/* Enable ADC clock */
   __REG (RCPC_PHYS + RCPC_CTRL)      &= ~(1<<9);	/* Lock */
 
-  __REG (ADC_PHYS + ADC_IM) = 0; /* Disable all interrupts */
 
-  __REG (ADC_PHYS + ADC_PC) = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF 
+  __REG (IOCON_PHYS + IOCON_MUXCTL25) = 0;
+  //  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL25),
+  //		(3<<6)|(3<<0),
+  //		(0<<6)|(0<<0));
+
+  ADC_IM = 0; /* Disable all interrupts */
+
+  ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF 
     | (1<<ADC_PC_NOC_SHIFT);
-  __REG (ADC_PHYS + ADC_GC) = ADC_GC_SSM_SSB | (1<<ADC_GC_FIFOWMK_SHIFT);
+  ADC_GC = ADC_GC_SSM_SSB | (1<<ADC_GC_FIFOWMK_SHIFT);
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL25),
-		(3<<6)|(3<<0),(0<<6)|(0<<0));
 
   for (i = 0; i < 15; ++i) {
-    __REG (ADC_PHYS + ADC_HWC_BASE + i*4) = (0x1ff << ADC_HW_SETTIME_SHIFT)
+    ADC_HWC_BASE + i*4 = (0x1ff << ADC_HW_SETTIME_SHIFT)
       | (i << ADC_HW_INP_SHIFT) | ADC_HW_INN_GND | ADC_HW_REFP_VREFP;
-    __REG (ADC_PHYS + ADC_LWC_BASE + i*4) = ADC_LW_REFN_VREFN;
+    ADC_LWC_BASE + i*4 = ADC_LW_REFN_VREFN;
   }
 
-  __REG (ADC_PHYS + ADC_IHWCTRL) = (0x1ff << ADC_HW_SETTIME_SHIFT)
+  ADC_IHWCTRL = (0x1ff << ADC_HW_SETTIME_SHIFT)
     | ADC_HW_INP_AN0 | ADC_HW_INN_GND | ADC_HW_REFP_VREFP;
-  __REG (ADC_PHYS + ADC_ILWCTRL) = ADC_LW_REFN_VREFN;
+  ADC_ILWCTRL = ADC_LW_REFN_VREFN;
   
-  __REG (ADC_PHYS + ADC_IC) = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
+  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
 
 				/* Flush the results FIFO */
-  while ((__REG (ADC_PHYS + ADC_FS) & ADC_FS_FEMPTY) == 0)
-    __REG (ADC_PHYS + ADC_RR);
+  while ((ADC_FS & ADC_FS_FEMPTY) == 0)
+    ADC_RR;
 
   adc_setup ();
 }

@@ -40,6 +40,12 @@ extern const char* error_description;
 #define ERROR_NODRIVER	(-12)
 #define ERROR_UNSUPPORTED (-13)
 
-#define ERROR_RETURN(v,m) ({ error_description = m; return v; })
+#if defined (CONFIG_SMALL)
+# define ERROR_RETURN(v,m) return (v)
+# define ERROR_RESULT(v,m) (v)
+#else
+# define ERROR_RETURN(v,m) ({ error_description = (m); return (v); })
+# define ERROR_RESULT(v,m) ({ error_description = (m); (v); })
+#endif
 
 #endif  /* __ERROR_H__ */

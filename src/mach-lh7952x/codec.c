@@ -470,7 +470,7 @@ typedef unsigned short buffer_t;
 #else
 typedef unsigned char buffer_t;
 #endif
-static buffer_t __attribute__((section("pcm.data"))) buffer[128*1024];
+static buffer_t __attribute__((section(".pcm.data"))) buffer[128*1024];
 
 /* convert_source
    

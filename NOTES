@@ -9,6 +9,7 @@ TODO:
     o I think this should be done with a service hook instead of a
       driver hook so that the environment can report describe it's
       descriptor.
+    o started.
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
   o command history
@@ -23,6 +24,30 @@ TODO:
   o Command hooks need some thinking.  Does it make sense to
     generalize the feature?  Or would it be better to make a special
     handler for a mach-level info report?
+    o Probably can rid ourselves of the hooks and just use
+      service.report.    
+
+  o Exceptions vectors at the start of the loader probably don't make
+    sense.  
+    o If we every enable interrupts, we won't be running this loader
+      from the start of addressable memory.  I suppose we could, but
+      that hasn't been the way.  The kernel needs to load at
+      0xc0008000 or 32K from the start, and the parameters load at
+      0xc0000100 which is even worse.  Just not a good plan with
+      linux.
+    o Instead, we'll map some kind of RAM at 0, tell the CPU to map
+      exceptions to zero, and well write vectors there.
+    o This way, we can have interrupts in the loader without the MMU.
+  o Simple interrupts
+    o 32 entry function table
+    o irq disabled if the function is empty.
+    o no priorities
+
+  o Need to regularize the sdram and nor flash config parameters.  The
+    arch determines some of these parameters.  Config should only
+    enable.  For example, CONFIG_SDRAM_BANK0=y and the rest comes from
+    the platform.  Perhaps the config should specify info on the SDRAM
+    chip.
 
 Goals
 
@@ -35,15 +60,21 @@ Goals
   o Driver self-discovery when relevent
   o Small image, less than 16K for basic loader
     o This will be hard when using the kernel's printf
+    o CONFIG_SMALL helps 
   o Reasonably configurable at ./configure time
   o Good command line support
   o Code sharing among targets is *not* of the highest priority
   o No assembler files
     o There is some hand assembly in the start-up, but that's probably
       unavoidable.
+    o Still, no .s files 
   o No external dependencies aside from a tool chain
   o Staged execution (see below)
   o Support for over-the-wire and NAND booting--teeny tiny bootstrap
+    o relocate function
+    o Presently, there is only one relocate supported.  We may want to
+      let it be flexible so that the loader can be common for several
+      configurations.
   o Multiple targets
   o May execute from FLASH, XIP
   o Stack storage will be required
@@ -316,6 +347,7 @@ Interrupt Handling
   o The key piece missing is that the interrupt vectors must either be
     written to flash, or the MMU must be enabled so that the page with
     the vectors is available at address zero.
+  o Untrue, we can use the RCPC to put SDRAM (or SRAM) at 0x00000000. 
 
 Console
 

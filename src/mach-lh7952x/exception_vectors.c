@@ -14,6 +14,15 @@
    machine implementation may override them by defining the
    exception_vectors() function.
 
+   NOTES
+   -----
+
+   Since we are loaded at some arbitrary address and we don't like
+   hard-coding things, we have to do a little work to get the vectors
+   to work.
+
+   We map SDRAM at 0 and create vectors there.
+
 */
 
 #include <config.h>
@@ -22,15 +31,42 @@
 #include <service.h>
 #include "hardware.h"
 
+extern void reset (void);
+extern void irq_handler (void);
+
 void (*interrupt_handlers[32])(void);
 
-void __naked __section (bootstrap) exception_error (void)
+void __naked __section(.vector.0) exception_vectors (void)
+{
+  __asm ("b v_reset\n\t"		/* reset */
+	 "b v_exception_error\n\t"	/* undefined instruction */
+	 "b v_exception_error\n\t"	/* software interrupt (SWI) */
+	 "b v_exception_error\n\t"	/* prefetch abort */
+	 "b v_exception_error\n\t"	/* data abort */
+	 "b v_exception_error\n\t"	/* (reserved) */
+	 "b v_irq_handler\n\t"		/* irq (interrupt) */
+	 "b v_exception_error\n\t"	/* fiq (fast interrupt) */
+	 );
+}
+
+void __naked __section(.vector.1) v_reset (void)
+{
+  __asm volatile ("mov pc, %0" :: "r" (reset));
+}
+
+void __naked __section(.vector.1) v_exception_error (void)
 {
   while (1)
     ;
+  //  __asm volatile ("mov pc, %0" :: "r" (exception_error));
 }
 
-void __irq_handler __section (bootstrap) irq_handler (void)
+void __naked __section(.vector.1) v_irq_handler (void)
+{
+  __asm volatile ("mov pc, %0" :: "r" (irq_handler));
+}
+
+void __irq_handler __section (.bootstrap) irq_handler (void)
 {
   int i;
   unsigned long v = __REG (VIC_PHYS + VIC_IRQSTATUS);
@@ -47,21 +83,18 @@ void __irq_handler __section (bootstrap) irq_handler (void)
   }
 }
 
-void __naked __section(entry) exception_vectors (void)
-{
-  __asm ("b reset\n\t"			/* reset */
-	 "b exception_error\n\t"	/* undefined instruction */
-	 "b exception_error\n\t"	/* software interrupt (SWI) */
-	 "b exception_error\n\t"	/* prefetch abort */
-	 "b exception_error\n\t"	/* data abort */
-	 "b exception_error\n\t"	/* (reserved) */
-	 "b irq_handler\n\t"		/* irq (interrupt) */
-	 "b exception_error\n\t"	/* fiq (fast interrupt) */
-	 );
-}
-
 void lh7952x_exception_init (void)
 {
+  __REG (RCPC_PHYS + RCPC_REMAP) = 0x1;	/* SDRAM at 0x0 */
+
+  /* Clear V for exception vectors at 0x0 */
+  { 
+    unsigned long l;
+    __asm volatile ("mrs %0, cpsr\n\t"
+		    "bic %0, %0, #(1<<13)\n\t"
+		    "msr cpsr, %0" :: "r" (l));
+  }
+
   __REG (VIC_PHYS + VIC_INTSELECT) = 0;
   __REG (VIC_PHYS + VIC_INTENABLE) = 0;
   __REG (VIC_PHYS + VIC_INTENCLEAR) = ~0;

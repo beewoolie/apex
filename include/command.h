@@ -44,7 +44,7 @@ struct command_d {
   command_func_t func;
 };
 
-#define __command __attribute__((used,section("command")))
+#define __command __attribute__((used,section(".command")))
 
 /* ----- Globals */
 

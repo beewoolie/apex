@@ -43,21 +43,21 @@
 	/* Registers */
 
 #define ADC_PHYS	(0xfffc3000)
-#define ADC_HW		(0x00)	/* High Word (RO) */
-#define ADC_LW		(0x04)	/* Low Word (RO) */
-#define ADC_RR		(0x08)	/* Results (RO) */
-#define ADC_IM		(0x0c)	/* Interrupt Masking */
-#define ADC_PC		(0x10)	/* Power Configuration */
-#define ADC_GC		(0x14)	/* General Configuration */
-#define ADC_GS		(0x18)	/* General Status */
-#define ADC_IS		(0x1c)	/* Interrupt Status */
-#define ADC_FS		(0x20)	/* FIFO Status */
-#define ADC_HWC_BASE	(0x24)	/* High Word Control (0-15) */
-#define ADC_LWC_BASE	(0x64)	/* Low Word Control (0-15) */
-#define ADC_IHWCTRL	(0xa4)	/* Idle High Word Control */
-#define ADC_ILWCTRL	(0xa8)	/* Idle Low word Control */
-#define ADC_MIS		(0xac)	/* Masked Interrupt Status  */
-#define ADC_IC		(0xb0)	/* Interrupt clear */
+#define ADC_HW		__REG(ADC_PHYS + 0x00)	/* High Word (RO) */
+#define ADC_LW		__REG(ADC_PHYS + 0x04)	/* Low Word (RO) */
+#define ADC_RR		__REG(ADC_PHYS + 0x08)	/* Results (RO) */
+#define ADC_IM		__REG(ADC_PHYS + 0x0c)	/* Interrupt Masking */
+#define ADC_PC		__REG(ADC_PHYS + 0x10)	/* Power Configuration */
+#define ADC_GC		__REG(ADC_PHYS + 0x14)	/* General Configuration */
+#define ADC_GS		__REG(ADC_PHYS + 0x18)	/* General Status */
+#define ADC_IS		__REG(ADC_PHYS + 0x1c)	/* Interrupt Status */
+#define ADC_FS		__REG(ADC_PHYS + 0x20)	/* FIFO Status */
+#define ADC_HWC_BASE	__REG(ADC_PHYS + 0x24)	/* High Word Control (0-15) */
+#define ADC_LWC_BASE	__REG(ADC_PHYS + 0x64)	/* Low Word Control (0-15) */
+#define ADC_IHWCTRL	__REG(ADC_PHYS + 0xa4)	/* Idle High Word Control */
+#define ADC_ILWCTRL	__REG(ADC_PHYS + 0xa8)	/* Idle Low word Control */
+#define ADC_MIS		__REG(ADC_PHYS + 0xac)	/* Masked Interrupt Status  */
+#define ADC_IC		__REG(ADC_PHYS + 0xb0)	/* Interrupt clear */
 
 #define BOOT_PHYS	(0xfffe6000)
 
@@ -69,6 +69,7 @@
 
 #define RCPC_CTRL	(0x00)
 #define RCPC_CHIPID	(0x04)
+#define RCPC_REMAP	(0x08)
 #define RCPC_SOFTRESET	(0x0c)
 #define RCPC_SYSCLKPRE	(0x18)
 #define RCPC_CPUCLKPRE	(0x1c)
