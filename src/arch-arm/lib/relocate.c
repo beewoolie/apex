@@ -36,6 +36,8 @@
 
 #include <debug_ll.h>
 
+//#define USE_LDR_COPY		/* Simpler copy loop  */
+
 
 /* relocate_apex
 
@@ -48,6 +50,8 @@
    *** than or less than the LMA.  As it stands, we depend on
    *** twos-complement arithmetic to make sure that offset works out
    *** when we jump to the relocated code.
+
+   This function does not check for source overlapping destination.
 
 */
 
@@ -69,6 +73,23 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
   PUTC_LL ('c');
 
+#if defined USE_LDR_COPY
+ {
+   unsigned long index = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 3) & ~3;
+   __asm volatile (
+		   "sub r0, %0, %1\n\t"
+		"0: sub %2, %2, #4\n\t"
+		   "ldr r3, [r0, %2]\n\t"
+		   "str r3, [%0, %2]\n\t"
+		   "cmp %2, #0\n\t"
+		   "bne 0b\n\t"
+		   :
+		   : "r" (&APEX_VMA_COPY_START),
+		     "r" (offset), "r" (index)
+		  : "r0", "r3"
+		  );		  
+ }
+#else
   __asm volatile (
 		  "sub r0, %0, %2\n\t"
 	       "0: ldmia r0!, {r3-r10}\n\t"
@@ -80,6 +101,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		    "r" (offset)
 		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"
 		  );		  
+#endif
 
   PUTHEX_LL (offset);
   PUTC_LL ('+');
