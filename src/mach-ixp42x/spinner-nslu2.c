@@ -38,7 +38,7 @@
 void nslu2_spinner (unsigned v)
 {
   static int step;
-  v = v%3;
+  v = v%6;
   if (v == step)
     return;
 
@@ -47,9 +47,15 @@ void nslu2_spinner (unsigned v)
   case 0:
     _L(LED1); break;
   case 1:
-    _L(LED4); break;
+    _L(LED5); break;
   case 2:
+    _L(LEDd); break;
+  case 3:
+    _L(LEDc); break;
+  case 4:
     _L(LED8); break;
+  case 5:
+    _L(LED0); break;
   }
 }
 
