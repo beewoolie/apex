@@ -61,19 +61,23 @@ extern struct driver_d* console_driver;
 
 static char rgbXmodem[1024];
 
-static inline void xmodem_send (char ch) 
+static inline void _send (char ch) 
 { 
   console_driver->write (0, &ch, 1);
 }
 
-static inline void xmodem_read_flush (void) {
-//	serial_flush_input();
+static inline void _read_flush (void) 
+{
+  while (console_driver->poll (0, 1)) {
+    char ch;
+    console_driver->read (0, &ch, 1);
+  }
 }
   
-int xmodem_receive (unsigned int timeout) {
-  unsigned long start = timer_read ();
+static int _receive (unsigned int timeout) {
+  unsigned long end = timer_read () + timeout;
 
-  while (start + timeout < timer_read ())
+  while (end > timer_read ())
     if (console_driver->poll (0, 1)) {
       unsigned char ch;
       console_driver->read (0, &ch, 1);
@@ -83,7 +87,7 @@ int xmodem_receive (unsigned int timeout) {
   return -1;
 }
 
-int XModemReceive (char *bufBase, int bufLen)
+int xmodem_receive (char *rgbReceive, int cbReceive)
 {
   unsigned int errors = 0;
   unsigned int wantBlockNo = 1;
@@ -91,12 +95,12 @@ int XModemReceive (char *bufBase, int bufLen)
   int crc = 1;
   char nak = 'C';
 
-  xmodem_read_flush();
+  _read_flush ();
 
 	/* Ask for CRC; if we get errors, we will go with checksum */
-  xmodem_send(nak);
+  _send (nak);
 
-  for (;;) {
+  while (1) {
     int blockBegin;
     int blockNo, blockNoOnesCompl;
     int blockLength;
@@ -104,7 +108,7 @@ int XModemReceive (char *bufBase, int bufLen)
     int crcHi = 0;
     int crcLo = 0;
 
-    blockBegin = xmodem_receive (MS_TIMEOUT);
+    blockBegin = _receive (MS_TIMEOUT);
     if (blockBegin < 0)
       goto timeout;
     
@@ -116,7 +120,7 @@ int XModemReceive (char *bufBase, int bufLen)
       break;
 
     case EOT:
-      xmodem_send(ACK);
+      _send (ACK);
       goto done;
 
     default:
@@ -124,17 +128,17 @@ int XModemReceive (char *bufBase, int bufLen)
     }
 
 		/* block no */
-    blockNo = xmodem_receive (MS_TIMEOUT);
+    blockNo = _receive (MS_TIMEOUT);
     if (blockNo < 0)
       goto timeout;
 
 		/* block no one's compliment */
-    blockNoOnesCompl = xmodem_receive (MS_TIMEOUT);
+    blockNoOnesCompl = _receive (MS_TIMEOUT);
     if (blockNoOnesCompl < 0)
       goto timeout;
 
     if (blockNo != (255 - blockNoOnesCompl)) {
-      ERROR("bad block ones compl\n");
+      ERROR ("bad block ones compl\n");
       goto error;
     }
 
@@ -144,23 +148,23 @@ int XModemReceive (char *bufBase, int bufLen)
       int i;
       
       for (i = 0; i < blockLength; i++) {
-	int cc = xmodem_receive (MS_TIMEOUT);
-	if (cc < 0)
+	int ch = _receive (MS_TIMEOUT);
+	if (ch < 0)
 	  goto timeout;
-	rgbXmodem[i] = cc;
+	rgbXmodem[i] = ch;
       }
     }
 
     if (crc) {
-      crcHi = xmodem_receive (MS_TIMEOUT);
+      crcHi = _receive (MS_TIMEOUT);
       if (crcHi < 0)
 	goto timeout;
       
-      crcLo = xmodem_receive (MS_TIMEOUT);
+      crcLo = _receive (MS_TIMEOUT);
       if (crcLo < 0)
 	goto timeout;
     } else {
-      cksum = xmodem_receive (MS_TIMEOUT);
+      cksum = _receive (MS_TIMEOUT);
       if (cksum < 0)
 	goto timeout;
     }
@@ -171,7 +175,7 @@ int XModemReceive (char *bufBase, int bufLen)
 			/* meta data. */
       goto next;
     } else if (blockNo != (wantBlockNo & 0xff)) {
-      ERROR("unexpected block no, 0x%08x, expecting 0x%08x\n", 
+      ERROR ("unexpected block no, 0x%08x, expecting 0x%08x\n", 
 	    blockNo, wantBlockNo);
       goto error;
     }
@@ -196,7 +200,7 @@ int XModemReceive (char *bufBase, int bufLen)
 
       if ((crcHi != expectedCrcHi) ||
 	  (crcLo != expectedCrcLo)) {
-	ERROR("crc error, expected 0x%02x 0x%02x, got 0x%02x 0x%02x\n", 
+	ERROR ("crc error, expected 0x%02x 0x%02x, got 0x%02x 0x%02x\n", 
 	      expectedCrcHi, expectedCrcLo, crcHi, crcLo);
 	goto error;
       }
@@ -208,7 +212,7 @@ int XModemReceive (char *bufBase, int bufLen)
 	expectedCksum += rgbXmodem[i];
 
       if (cksum != expectedCksum) {
-	ERROR("checksum error, expected 0x%02x, got 0x%02x\n", 
+	ERROR ("checksum error, expected 0x%02x, got 0x%02x\n", 
 	      expectedCksum, cksum);
 	goto error;
       }
@@ -217,47 +221,47 @@ int XModemReceive (char *bufBase, int bufLen)
     wantBlockNo++;
     length += blockLength;
 
-    if (length > bufLen) {
-      ERROR("out of space\n");
+    if (length > cbReceive) {
+      ERROR ("out of space\n");
       goto error;
     }
 
     {
       int i;
       for (i = 0; i < blockLength; i++)
-	*bufBase++ = rgbXmodem[i];
+	*rgbReceive++ = rgbXmodem[i];
     }
 
   next:
     errors = 0;
-    xmodem_send(ACK);
+    _send (ACK);
     continue;
 
   error:
   timeout:
-    errors++;
-    if (errors == MAXERRORS) {
-      /* Abort */
-      int i;
-      
-			// if using crc, try again w/o crc
-      if (nak == 'C') {
-	nak = NAK;
-	errors = 0;
-	crc = 0;
-	goto timeout;
-      }
 
-      ERROR("too many errors; giving up\n");
-      for (i = 0; i < 5; i ++)
-	xmodem_send(CAN);
-      for (i = 0; i < 5; i ++)
-	xmodem_send(BS);
-      return -1;
+    if (++errors < MAXERRORS) {
+      _read_flush ();
+      _send (nak);
+      continue;
     }
 
-    xmodem_read_flush();
-    xmodem_send(nak);
+    if (nak == 'C') {		/* Fall back to checksum */
+      nak = NAK;
+      errors = crc = 0;
+      goto timeout;
+    }
+
+    {
+      int i;
+
+      ERROR ("too many errors; giving up\n");
+      for (i = 0; i < 5; i ++)
+	_send (CAN);
+      for (i = 0; i < 5; i ++)
+	_send (BS);
+      return -1;
+    }
   }
   
  done:
