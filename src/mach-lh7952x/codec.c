@@ -15,7 +15,11 @@
    You can dump an 8 bit file with hexdump.  This one skips to the
    0x2c'th byte before dumping.
 
-     /usr/bin/hexdump -v -s 0x2c -e '8 1 "0x%02x, " "\n\t"' k3b_success1.wav
+     /usr/bin/hexdump -v -s 0x2c -n 32768 -e '8 1 "0x%02x, " "\n\t"' k3b_success1.wav
+
+   A 16 bit stereo file:   
+
+     /usr/bin/hexdump -v -s 0x108b0 -n 32768 -e '8 2 "0x%04x, " "\n\t"' track01.wav
 
 */
 
@@ -27,15 +31,22 @@
 #include <command.h>
 #include "hardware.h"
 
-#include "pcm.h"
-
-#define USE_I2S
+//#define USE_I2S
 //#define USE_CPU_MASTER
 #define USE_DMA
 //#define USE_DMA_CAP
 #define USE_16
-//#define USE_STEREO
-#define USE_LOOPBACK
+//#define USE_STEREO_CONVERT
+//#define USE_LOOPBACK
+#define USE_8KHZ
+
+#if defined (USE_8KHZ)
+# include "pcm8-8.h"
+typedef unsigned char sample_t;
+#else
+# include "pcm441-16.h"
+typedef unsigned short sample_t;
+#endif
 
 #define T_SKH	1		/* Clock time high (us) */
 #define T_SKL	1		/* Clock time low (us) */
@@ -189,6 +200,16 @@ static void execute_spi_command (int v, int cwrite)
 //  return l;
 }
 
+static void codec_enable (void)
+{
+  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
+}
+
+static void codec_disable (void)
+{
+  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (0<<0)), 16);
+}
+
 static void codec_unmute (void)
 {
   execute_spi_command (CMD (CODEC_POWER_CTRL, 0
@@ -200,7 +221,6 @@ static void codec_unmute (void)
 			    | (1<<4) /* Enable DAC */
 			    | (1<<1) /* Mute Microphone */
 			    ), 16);
-  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
 }
 
 static void codec_mute (void)
@@ -209,8 +229,6 @@ static void codec_mute (void)
 			    | (0<<4) /* Disable DAC */
 			    | (1<<1) /* Mute Microphone */
 			    ), 16);
-  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, 
-			    (0<<0)), 16);
 }
 
 static void codec_configure (int frequency, int sample_size)
@@ -283,6 +301,10 @@ static void codec_init (void)
   SSP_CPSR = 16;
 #else
   SSP_CPSR = 2; /* Smallest prescalar is 2 */
+#endif
+
+#if defined (USE_I2S)
+  I2S_CTRL = 0;
 #endif
 
   SSP_CTRL1 |= (1<<1); /* Enable */
@@ -410,10 +432,10 @@ static void codec_init (void)
     | (1<<1);			/* Source incremented */
 
   DMA_CLR   = 0xff;
-//  DMA_MASK |= (1<<1);		/* Enable of DMA channel 1 */
+  DMA_MASK |= (1<<1);		/* Enable of DMA channel 1 */
 #endif
   
-  //  SSP_IMSC = (1<<3);		/* Allow TX interrupts */
+  SSP_IMSC = (1<<3);		/* Allow TX interrupts */
 
 #if defined (USE_DMA)
   SSP_DCR = 0
@@ -422,15 +444,6 @@ static void codec_init (void)
     ;
 #else
   SSP_DCR = 0;
-#endif
-
-#if defined (USE_I2S)
-  __REG (I2S_PHYS + I2S_CTRL)
-    = I2S_CTRL_I2SEN
-#if defined (USE_LOOPBACK)
-    | I2S_CTRL_I2SLBM
-#endif
-    ;
 #endif
 
 //  codec_mute ();
@@ -450,7 +463,7 @@ static void codec_init (void)
 //			    | (1<<4) /* LRP: right channel on LRC low */
 			    | (0<<2) /* 16 bit */
 //			    | (3<<2) /* 32 bit */
-#if defined (USE_I2S) && 0
+#if defined (USE_I2S)
 			    | (2<<0) /* I2S format */
 #else
 			    | (3<<0) /* DSP format */
@@ -484,37 +497,62 @@ static int cmd_codec_test (int argc, const char** argv)
   int cSampleMax = sizeof (buffer)/sizeof (buffer[0]);
   static unsigned long cap;
 
-#if defined (USE_16)
+#if defined (USE_8KHZ)
+# if defined (USE_16)
   codec_configure (FREQUENCY_8K, 16);
-#else
+# else
   codec_configure (FREQUENCY_8K, 8);
+# endif
+#else
+# if defined (USE_16)
+  codec_configure (FREQUENCY_44K1, 16);
+# else
+  codec_configure (FREQUENCY_44K1, 8);
+# endif
 #endif
 
-  codec_unmute ();
-
-#if defined (USE_STEREO)
+#if defined (USE_STEREO_CONVERT)
   cSampleMax /= 2;
 #endif
 
-  if (cSampleMax > sizeof (rgbPCM))
-    cSampleMax = sizeof (rgbPCM);
+  if (cSampleMax > sizeof (rgbPCM)/sizeof (rgbPCM[0]))
+    cSampleMax = sizeof (rgbPCM)/sizeof (rgbPCM[0]);
 
   for (i = 0; i < cSampleMax; ++i) {
-#if defined (USE_16)
+#if defined (USE_8KHZ)
+
+# if defined (USE_16)
     unsigned short v = (rgbPCM[i]<<8) | rgbPCM[i];
-#else
+# else
     unsigned char  v = rgbPCM[i];
-#endif
+# endif
     v = v/2; // + 0x8000/2; /* soften */
-#if defined (USE_STEREO)
+# if defined (USE_STEREO_CONVERT)
     buffer[i*2] = v;
     buffer[i*2 + 1] = v;
-#else
+# else
     buffer[i] = v;
+# endif
+
+#else
+
+# if defined (USE_16)
+    unsigned short v = rgbPCM[i];
+# else
+    unsigned char  v = rgbPCM[i]>>8;
+# endif
+    //    v = v/2; // + 0x8000/2; /* soften */
+# if defined (USE_STEREO_CONVERT) && 0 /* already stereo */
+    buffer[i*2] = v;
+    buffer[i*2 + 1] = v;
+# else
+    buffer[i] = v;
+# endif
+
 #endif
   }
 
-#if defined (USE_STEREO)
+#if defined (USE_STEREO_CONVERT)
   cSampleMax *= 2;
 #endif
 
@@ -523,7 +561,7 @@ static int cmd_codec_test (int argc, const char** argv)
 //  __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) &= ~(1<<0); /* Enable DMA AHB clock */
 //  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 
-  //  SSP_IMSC) |= 0
+  //  SSP_IMSC |= 0
   //    | (1<<3)
   //    | (1<<2);			/* Interrupts needed for DMA */
 //  SSP_DCR  |= 0
@@ -571,11 +609,25 @@ static int cmd_codec_test (int argc, const char** argv)
 
 //  return 0;			/* *** FIXME */
 
+  codec_unmute ();
+
   SSP_CTRL1 |= (1<<1);		/* Enable SSP  */
+
+#if defined (USE_I2S)
+  I2S_CTRL
+    = I2S_CTRL_I2SEN
+#if defined (USE_LOOPBACK)
+    | I2S_CTRL_I2SLBM
+#endif
+    ;
+#endif
+
 #if defined (USE_DMA_CAP)
   DMA0_CTRL |= (1<<0);		/* Enable RX DMA */
 #endif
   DMA1_CTRL |= (1<<0);		/* Enable TX DMA */
+
+  codec_enable ();
 
 				/* Wait for completion */
   while ((DMA_STATUS & (1<<1)) == 0)
@@ -583,9 +635,19 @@ static int cmd_codec_test (int argc, const char** argv)
 
 #else
 
-#if defined (USE_16)
+  codec_unmute ();
 
-  SSP_CTRL1 |= (1<<1); /* Enable SSP */
+  SSP_CTRL1 |= (1<<1);		/* Enable SSP */
+#if defined (USE_I2S)
+  I2S_CTRL
+    = I2S_CTRL_I2SEN
+#if defined (USE_LOOPBACK)
+    | I2S_CTRL_I2SLBM
+#endif
+    ;
+#endif
+
+  codec_enable ();
 
   for (i = 0; i < cSampleMax; ++i) {
 				/* Wait for room in the FIFO */
@@ -593,10 +655,10 @@ static int cmd_codec_test (int argc, const char** argv)
       ;
     SSP_DR = buffer[i];
   }
-#endif
 
 #endif /* !USE_DMA */
 
+  codec_disable ();
   codec_mute ();
   return 0;
 }

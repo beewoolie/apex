@@ -248,12 +248,12 @@ static void emac_phy_reset (int phy_address)
 #endif
 #endif
 
-#if 1
+#if 0
   PRINTF ("emac: forcing power-up\r\n");
   emac_phy_write (phy_address, 22, 0); /* Force power-up */
 #endif
 
-#if 1
+#if 0
   printf ("emac: resetart anen\r\n");
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
@@ -462,45 +462,62 @@ int cmd_emac (int argc, const char** argv)
 #endif
   }
   else {
-    unsigned char rgb[9];
-    if (argc != 2)
-      return ERROR_PARAM;
-
-    rgb[0] = 0x94;		/* Signature */
-    rgb[1] = 0x01;		/* OP: MAC address */
-    rgb[8] = 0xff;		/* OP: end */
-
-    {
-      int i;
-      char* pb = (char*) argv[1];
-      for (i = 2; i < 8; ++i) {
-	if (!*pb)
-	  return ERROR_PARAM;
-	rgb[i] = simple_strtoul (pb, &pb, 16);
-	if (*pb)
-	  ++pb;
-      }
-      if (*pb)
-	return ERROR_PARAM;
+    if (strcmp (argv[1], "anen") == 0) {
+      emac_phy_reset (phy_address);
+      printf ("emac: restart anen\r\n");
+      emac_phy_write (phy_address, 0,
+		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
+		      | emac_phy_read (phy_address, 0));
     }
+    else if (strcmp (argv[1], "force") == 0) {
+      emac_phy_reset (phy_address);
+      PRINTF ("emac: forcing power-up and restarting anen\r\n");
+      emac_phy_write (phy_address, 22, 0); /* Force power-up */
+      emac_phy_write (phy_address, 0, /* restart anen */
+		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
+		      | emac_phy_read (phy_address, 0));
+    }
+    else if (strcmp (argv[1], "mac") == 0) {
+      unsigned char rgb[9];
+      if (argc != 3)
+	return ERROR_PARAM;
+
+      rgb[0] = 0x94;		/* Signature */
+      rgb[1] = 0x01;		/* OP: MAC address */
+      rgb[8] = 0xff;		/* OP: end */
+
+      {
+	int i;
+	char* pb = (char*) argv[2];
+	for (i = 2; i < 8; ++i) {
+	  if (!*pb)
+	    return ERROR_PARAM;
+	  rgb[i] = simple_strtoul (pb, &pb, 16);
+	  if (*pb)
+	    ++pb;
+	}
+	if (*pb)
+	  return ERROR_PARAM;
+      }
 
     //    dump (rgb, 9, 0);
 
-    {
-      struct descriptor_d d;
-      static const char sz[] = "mac:0#9";
-      if (   !parse_descriptor (sz, &d)
-	  && !open_descriptor (&d)) {
-	d.driver->erase (&d, 9);
-	d.driver->seek (&d, 0, SEEK_SET);
-	if (d.driver->write (&d, rgb, 9) != 9)
-	  result = ERROR_FAILURE;
-	close_descriptor (&d);
+      {
+	struct descriptor_d d;
+	static const char sz[] = "mac:0#9";
+	if (   !parse_descriptor (sz, &d)
+	       && !open_descriptor (&d)) {
+	  d.driver->erase (&d, 9);
+	  d.driver->seek (&d, 0, SEEK_SET);
+	  if (d.driver->write (&d, rgb, 9) != 9)
+	    result = ERROR_FAILURE;
+	  close_descriptor (&d);
+	}
+	else
+	  result = ERROR_NODRIVER;
+	if (result)
+	  printf ("unable to write MAC address to <%s>\r\n", sz);
       }
-      else
-	result = ERROR_NODRIVER;
-      if (result)
-	printf ("unable to write MAC address to <%s>\r\n", sz);
     }
   }
 
