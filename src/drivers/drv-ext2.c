@@ -51,14 +51,19 @@
 
 #define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
+#define DRIVER_NAME	"ext2fs"
+
 #define MAGIC_EXT2	0xef53
 
+#if 0
+/* Defined in kernel headers */
 typedef __signed__ char  __s8;
 typedef unsigned   char  __u8;
 typedef __signed__ short __s16;
 typedef unsigned   short __u16;
 typedef __signed__ int	 __s32;
 typedef unsigned   int	 __u32;
+#endif
 
 struct superblock {
   __u32 s_inodes_count;		/* Total inodes */
@@ -177,3 +182,38 @@ struct directory {
   char name[EXT2_FILENAME_LENGTH_MAX];
 };
 
+static int ext2_open (struct descriptor_d* d)
+{
+  return 0;
+}
+
+static void ext2_close (struct descriptor_d* d)
+{
+}
+
+static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  return 0;
+}
+
+static void ext2_report (void)
+{
+}
+
+static __driver_6 struct driver_d ext2_driver = {
+  .name = DRIVER_NAME,
+  .description = "Ext2 filesystem driver",
+  .flags = DRIVER_DESCRIP_FS,
+  .open = ext2_open,
+  .close = ext2_close,
+  .read = ext2_read,
+//  .write = cf_write,
+//  .erase = cf_erase,
+  .seek = seek_helper,
+};
+
+static __service_6 struct service_d ext2_service = {
+#if !defined (CONFIG_SMALL)
+  .report = ext2_report,
+#endif
+};
