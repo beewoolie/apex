@@ -590,7 +590,7 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
   if (!inode)
     inode = EXT2_ROOT_INO;
 
-  PRINTF ("%s: reading inode %d\n", __FUNCTION__, inode);
+  PRINTF ("%s: start, reading inode %d\n", __FUNCTION__, inode);
 
   if (ext2_find_inode (inode))
     return EXT2_NULL_INO;
@@ -619,11 +619,15 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
 	return EXT2_NULL_INO;
 
 		/* Recurse into directory */
-      if (S_ISDIR (ext2.inode.i_mode))
+      if (S_ISDIR (ext2.inode.i_mode)) {
+	PRINTF ("%s: following directory %d\n",
+		__FUNCTION__, ext2.inode_number);
 	break;
+      }
 
 		/* Chase symlink */
       if (S_ISLNK (ext2.inode.i_mode)) {
+	PRINTF ("%s: chasing symlink %d\n", __FUNCTION__, ext2.inode_number);
 	while (1) {
 	  int cb = ext2.inode.i_size;
 	  int cbDriver;
@@ -632,14 +636,16 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
 		 /* Kindofa dumb hack to coerce the descriptor parser
 		    into parsing the symlink path */
 	  strcpy (sz, DRIVER_NAME);
-	  cbDriver = strlen (sz); sz[cbDriver++] = ':'; sz[cbDriver++] = 0;
+	  cbDriver = strlen (sz); sz[cbDriver++] = ':';
 	  memcpy (sz + cbDriver, (void*) &ext2.inode.i_block[0], cb);
 	  sz[cbDriver + cb] = 0;
+	  PRINTF ("%s: chasing '%s'\n", __FUNCTION__, sz);
 	  if (parse_descriptor (sz, &d2))
 	    return EXT2_NULL_INO;
 	  inode = ext2_path_to_inode (inode, &d2);
 	  if (S_ISLNK (ext2.inode.i_mode))
 	    continue;		/* chase again */
+	  PRINTF ("%s: end of symlink %d\n", __FUNCTION__, ext2.inode_number);
 	  break;
 	}
 	break;
@@ -803,6 +809,7 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   ssize_t cbRead = 0;
 
   //  ENTRY (0);
+  PRINTF ("%s: inode %d\n", __FUNCTION__, ext2.inode_number);
 
   while (cb) {
     size_t available = cb;

@@ -1,5 +1,11 @@
 2005-03-10  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-cf.c: Moved Compact Flash code to live among
+	generic drivers.
+	
+	* src/drivers/drv-ext2.c (ext2_path_to_inode): Fixed dump error in
+	the symlink traversal code.
+
 	* src/drivers/drv-nor-cfi.c: Improved TALK for troubleshooting
 	flash.
 
