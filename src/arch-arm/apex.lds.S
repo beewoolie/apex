@@ -10,8 +10,10 @@ SECTIONS
 {
 	APEX_LMA_START = .;
 	APEX_VMA_START = .;
-	.bootstrap : {
+	.entry : {
 		*(.entry)
+	}
+	.bootstrap : {
 		*(.bootstrap)		
 	}		
 	.text : {
@@ -27,12 +29,12 @@ SECTIONS
 		*(.data)
 		APEX_DATA_END = .;
 	}
+	APEX_LMA_END = .;
 	.bss : {
 		APEX_BSS_START = .;
 		*(.bss)
 		APEX_BSS_END = .;
 	}
-	APEX_LMA_END = .;
-	. = ALIGN(8192);
+	. += 8192;
 	APEX_STACK_START = .;
 }

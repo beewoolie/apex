@@ -19,7 +19,8 @@
 # include <blob/config.h>
 #endif
 
-#include <blob/arch.h>
+//#include <blob/arch.h>
+#include "lh79524.h"
 
 //#define USE_SLOW
 
@@ -45,7 +46,7 @@
 #define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
-#if 0
+#if 1
 #define __naked __attribute__((naked))
 #define __start __attribute__((section(".start")))
 

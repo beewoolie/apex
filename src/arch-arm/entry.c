@@ -119,11 +119,12 @@ void __naked __section (.text) setup_c (void)
   __asm ("mov sp, %0" :: "r" (&APEX_STACK_START));
 
 	/* Clear BSS */
-  __asm (
-	 "0: stmia %0!, {%2}\n\t"
-	 "   cmp %0, %1\n\t"
-	 "   ble 0b\n\t"
-	 : : "r" (&APEX_BSS_START), "r" (&APEX_BSS_END), "r" (0));
+  if (&APEX_BSS_START != APEX_BSS_END)
+    __asm (
+	   "0: stmia %0!, {%2}\n\t"
+	   "   cmp %0, %1\n\t"
+	   "   ble 0b\n\t"
+	   : : "r" (&APEX_BSS_START), "r" (&APEX_BSS_END), "r" (0));
 
   __asm ("mov pc, lr");
 }

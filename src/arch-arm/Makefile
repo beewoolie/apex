@@ -2,12 +2,17 @@
 # Makefile for APEX loader
 #
 
-obj-y := entry.o
+obj-y := entry.o apex.lds
 
-apex-t := apex apex.lds
+#CPPFLAGS_apex.lds = -DVMA=$(APEX_VMA)
 
-targets := obj-y apex-t
+core-y += src/mach-lh7952x/ src/arch-arm/
+extra-y=apex.lds
+#subdir-y += src/arch-arm
 
-apex:
-	touch apex
+#targets := apex
 
+## Override target
+#.PHONY: all
+#all:
+#	echo all
