@@ -57,7 +57,7 @@
 #include "hardware.h"
 #include "compactflash.h"
 
-#define TALK
+//#define TALK
 
 #if CF_WIDTH == 16
 #define REG __REG16
@@ -319,7 +319,7 @@ static void cf_init (void)
       d.driver->read (&d, cf_d.root, sizeof (cf_d.root));
       close_descriptor (&d);
 //      dump ((void*) cf_d.bootsector, 512, 0);
-      dump ((void*) &cf_d.parameter, 25, 0);
+//      dump ((void*) &cf_d.parameter, 25, 0);
     }
   }
 }
