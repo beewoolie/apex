@@ -175,8 +175,8 @@ static int next_chunk (struct png* png)
 void* open_png (const void* pv, size_t cb)
 {
   heap_allocated = 0;		/* Completely clobber heap */
-  png->pbThis = NULL;		/* In lieu of free */
-  png->pbPrev = NULL;		/* In lieu of free */
+  png.pbThis = 0;		/* In lieu of free */
+  png.pbPrev = 0;		/* In lieu of free */
 
 //  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
 
