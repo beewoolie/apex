@@ -45,7 +45,7 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
-#include "lh7a40x.h"
+#include "hardware.h"
 #include <spinner.h>
 
 //#define TALK
@@ -97,11 +97,6 @@
 #define LockClear	0xd0
 #define ProgramOTP	0xc0
 
-#define CPLD_FLASH	(0x71000000)
-#define FPEN		(1<<0)
-#define FST1		(1<<1)
-#define FST2		(1<<2)
-
 #define Ready		(1<<7)
 #define EraseSuspended	(1<<6)
 #define EraseError	(1<<5)
@@ -129,12 +124,12 @@ static unsigned long phys_from_index (unsigned long index)
 
 static void vpen_enable (void)
 {
-  __REG16 (CPLD_FLASH) |= FPEN;
+  __REG16 (CPLD_FLASH) |= CPLD_FLASH_FL_VPEN;
 }
 
 static void vpen_disable (void)
 {
-  __REG16 (CPLD_FLASH) &= ~FPEN;
+  __REG16 (CPLD_FLASH) &= ~CPLD_FLASH_FL_VPEN;
 }
 
 static unsigned long nor_read_one (unsigned long index)

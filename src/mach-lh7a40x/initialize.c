@@ -32,8 +32,9 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <service.h>
 
-#include "lh7a40x.h"
+#include "hardware.h"
 
 /* Static Memory Controller
    ------------------------
@@ -177,11 +178,6 @@ void __section(bootstrap) usleep (unsigned long us)
    controller initializations.  It will perform no work if we are
    already running from SDRAM. 
 
-   The assembly output of this implementation of the initialization is
-   more dense than the assembler version using a table of
-   initializations.  This is primarily due to the compiler's ability
-   to keep track of the register set offsets and value being output.
-
    The return value is true if SDRAM has been initialized and false if
    this initialization has already been performed.  Note that the
    non-SDRAM initializations are performed regardless of whether or
@@ -232,17 +228,30 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 }
 
 
-/* initialize
+/* target_init
 
    performs the rest of the hardware initialization that didn't have
    to be performed during the bootstrap phase.
 
 */
 
-void __naked initialize_target (void)
+#if 0
+void __naked target_init (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
+#endif
+
+static void target_release (void)
+{
+  /* Flash is enabled for the kernel */
+  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+}
+
+static __service_0 struct service_d lh7a40x_target_service = {
+//  .init    = target_init,
+  .release = target_release,
+};
