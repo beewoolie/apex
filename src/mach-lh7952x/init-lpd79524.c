@@ -139,7 +139,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (RCPC_PHYS | RCPC_CPUCLKPRE)  = RCPC_CPUCLKPRE_V;
   __REG (RCPC_PHYS | RCPC_CORECONFIG) = RCPC_CORECONFIG_V;
 
-  __REG (RCPC_PHYS | RCPC_CTRL)       &= ~RCPC_CTRL_LOCK;
+  __REG (RCPC_PHYS | RCPC_CTRL)       &= ~RCPC_CTRL_UNLOCK;
 
 	/* Setup IO pin multiplexers */
   __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V; 	/* UART */
