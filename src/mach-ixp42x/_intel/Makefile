@@ -23,11 +23,10 @@
 
 H=`pwd`/src/mach-ixp42x/_intel
 
-#export CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
+.PHONY: all build unpack patch quilt prep
+all: unpack patch build
 
-#CROSS_COMPILE ?= /usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
-
-all:
+build:
 	make -C $H/ixp400_xscale_sw \
 	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
 	  IX_TARGET=linuxbe\
