@@ -1,8 +1,8 @@
-/* error.h
+/* dump.c
      $Id$
 
    written by Marc Singer
-   3 Nov 2004
+   16 Nov 2004
 
    Copyright (C) 2004 Marc Singer
 
@@ -27,15 +27,35 @@
 
 */
 
-#if !defined (__ERROR_H__)
-#    define   __ERROR_H__
+#include <linux/types.h>
+#include <linux/ctype.h>
+#include <apex.h>
+#include <command.h>
+#include <driver.h>
+#include <error.h>
 
-#define ERROR_FAILURE	(-7)
-#define ERROR_NOCOMMAND (-8)
-#define ERROR_PARAM	(-9)
-#define ERROR_OPEN	(-10)
-#define ERROR_AMBIGUOUS (-11)
-#define ERROR_NODRIVER	(-12)
-#define ERROR_UNSUPPORTED (-13)
+void dump (const unsigned char* rgb, int cb, unsigned long index)
+{
+  int i;
 
-#endif  /* __ERROR_H__ */
+  while (cb > 0) {
+    printf ("%08lx: ", index);
+    for (i = 0; i < 16; ++i) {
+      if (i < cb)
+	printf ("%02x ", rgb[i]);
+      else
+	printf ("   ");
+      if (i%8 == 7)
+	putchar (' ');
+    }
+    for (i = 0; i < 16; ++i) {
+      if (i == 8)
+	putchar (' ');
+      putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
+    }
+    printf ("\r\n");
+
+    cb -= 16;
+    index += 16;
+  }
+}

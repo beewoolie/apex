@@ -1,3 +1,11 @@
+2004-11-16  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c (cmd_emac): Ethernet MAC maintenance
+	function as well as interface initialization.
+
+	* src/lib/dump.c (dump): Factored the dump code into a library
+	function.
+
 2004-11-15  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-nor.c (nor_write): Implementing buffered

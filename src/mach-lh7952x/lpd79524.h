@@ -42,10 +42,19 @@
 #define CPLD_REVISION		(0x4ca00000)
 
 #define CPLD_FLASH		(0x4c800000)
+#define CPLD_FLASH_NANDSPD	(1<<6)
 #define CPLD_FLASH_RDYnBSY	(1<<2)
 #define CPLD_FLASH_FL_VPEN	(1<<0)
 #define CPLD_FLASH_STS1		(1<<1)
-#define CPLD_FLASH_NANDSPD	(1<<6)
+
+#define CPLD_SPI		(0x4c500000)
+#define CPLD_SPI_CS_NCODEC	(1<<5)
+#define CPLD_SPI_CS_MAC		(1<<4)
+#define CPLD_SPI_CS_EEPROM	(1<<3)
+#define CPLD_SPI_SCLK		(1<<2)
+#define CPLD_SPI_TX		(1<<1)
+#define CPLD_SPI_RX		(1<<0)
+#define CPLD_SPI_RX_SHIFT	(0)
 
 #define NOR_0_PHYS	(0x44000000)
 #define NOR_0_LENGTH	(8*1024*1024)

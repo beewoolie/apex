@@ -65,23 +65,8 @@ int cmd_dump (int argc, const char** argv)
   while (index < d.start + d.length) {
     char rgb[16];
     int cb = d.driver->read (&d, rgb, sizeof (rgb));
-    int i;
 
-    printf ("%08lx: ", index);
-    for (i = 0; i < 16; ++i) {
-      if (i < cb)
-	printf ("%02x ", rgb[i]);
-      else
-	printf ("   ");
-      if (i%8 == 7)
-	putchar (' ');
-    }
-    for (i = 0; i < 16; ++i) {
-      if (i == 8)
-	putchar (' ');
-      putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
-    }
-    printf ("\r\n");
+    dump (rgb, cb, index);
     index += cb;
   }
 

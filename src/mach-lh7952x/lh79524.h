@@ -129,6 +129,7 @@
 
 #define IOCON_PHYS	(0xfffe5000)
 
+#define IOCON_MUXCTL1	(0x00)
 #define IOCON_MUXCTL5	(0x20)
 #define IOCON_MUXCTL6	(0x28)
 #define IOCON_MUXCTL7	(0x30)
@@ -139,6 +140,8 @@
 #define IOCON_MUXCTL14	(0x68)
 #define IOCON_MUXCTL19	(0x90)
 #define IOCON_MUXCTL20	(0x98)
+#define IOCON_MUXCTL23	(0xb0)
+#define IOCON_MUXCTL24	(0xb8)
 
 #define UART_PHYS	(0xfffc0000)
 
@@ -193,6 +196,56 @@
 #define VIC_VECTADDR0	0x100
 #define VIC_VECTCTRL0	0x200
 
+
+	/* -- Registers */
+
+#define EMAC_PHYS		0xfffc7000
+#define EMAC_NETCTL		0x00
+#define EMAC_NETCONFIG		0x04
+#define EMAC_NETSTATUS		0x08
+#define EMAC_TXSTATUS		0x14
+#define EMAC_RXBQP		0x18
+#define EMAC_TXBQP		0x1c
+#define EMAC_RXSTATUS		0x20
+#define EMAC_INTSTATUS		0x24
+#define EMAC_ENABLE		0x28
+#define EMAC_DISABLE		0x2c
+#define EMAC_MASK		0x30
+#define EMAC_PHYMAINT		0x34
+#define EMAC_PAUSETIME		0x38
+#define EMAC_TXPAUSEQUAN	0xbc
+#define EMAC_PAUSERRX		0x3c
+#define EMAC_FRMTXOK		0x40
+#define EMAC_SINGLECOL		0x44
+#define EMAC_MULTFRM		0x48
+#define EMAC_FRMRXOK		0x4c
+#define EMAC_FRCHK		0x50
+#define EMAC_ALIGNERR		0x54
+#define EMAC_DEFTXFRM		0x58
+#define EMAC_LATECOL		0x5c
+#define EMAC_EXCOL		0x60
+#define EMAC_TXUNDER		0x64
+#define EMAC_SENSERR		0x68
+#define EMAC_RXRERR		0x6c
+#define EMAC_RXOVERR		0x70
+#define EMAC_RXSYMERR		0x74
+#define EMAC_LENERR		0x78
+#define EMAC_RXJAB		0x7c
+#define EMAC_UNDERFRM		0x80
+#define EMAC_SQERR		0x84
+#define EMAC_RXLEN		0x88
+#define EMAC_TXPAUSEFM		0x8c
+#define EMAC_HASHBOT		0x90
+#define EMAC_HASHTOP		0x94
+#define EMAC_SPECAD1BOT		0x98
+#define EMAC_SPECAD1TOP		0x9c
+#define EMAC_SPECAD2BOT		0xa0
+#define EMAC_SPECAD2TOP		0xa4
+#define EMAC_SPECAD3BOT		0xa8
+#define EMAC_SPECAD3TOP		0xac
+#define EMAC_SPECAD4BOT		0xb0
+#define EMAC_SPECAD4TOP		0xb4
+#define EMAC_IDCHK		0xb8
 
  /* -- */
 
@@ -253,6 +306,40 @@
 #define UART_DR_DATAMASK	(0xff)
 
 #define RTC_CR_EN	(1)
+
+#define EMAC_NETCTL_TXHALT	(1<<10)
+#define EMAC_NETCTL_STARTTX	(1<<9)
+#define EMAC_NETCTL_TXEN	(1<<3)
+#define EMAC_NETCTL_RXEN	(1<<2)
+
+#define EMAC_NETCONFIG_RECBYTE	(1<<8) /* Large frames */
+#define EMAC_NETCONFIG_CPYFRM	(1<<4) /* Promiscuous mode */
+#define EMAC_NETCONFIG_FULLDUPLEX (1<<1)
+
+#define EMAC_TXSTATUS_TXUNDER	(1<<6)
+#define EMAC_TXSTATUS_TXCOMPLETE (1<<5)
+#define EMAC_TXSTATUS_BUFEX	(1<<4)
+#define EMAC_TXSTATUS_TXGO	(1<<3)
+#define EMAC_TXSTATUS_RETRYLIMIT (1<<2)
+#define EMAC_TXSTATUS_COLLISION (1<<1)
+#define EMAC_TXSTATUS_USEDBIT	(1<<0)
+
+#define EMAC_RXSTATUS_RXCOVERRUN (1<<2)
+#define EMAC_RXSTATUS_FRMREC	(1<<1)
+#define EMAC_RXSTATUS_BUFNOTAVAIL (1<<0)
+
+#define EMAC_INT_PAUSEZERO	(1<<13)
+#define EMAC_INT_PAUSERRX	(1<<12)
+#define EMAC_INT_NOTOK		(1<<11)
+#define EMAC_INT_RECOVERRUN	(1<<10)
+#define EMAC_INT_TXCOMPLETE	(1<<7)
+#define EMAC_INT_TXBUFEXH	(1<<6)
+#define EMAC_INT_RETRYLIM	(1<<5)
+#define EMAC_INT_ETHTXBUFUR	(1<<4)
+#define EMAC_INT_TXUSDBITRD	(1<<3)
+#define EMAC_INT_RXUSDBITRD	(1<<2)
+#define EMAC_INT_RXCOMP		(1<<1)
+#define EMAC_INT_MNGFRMSENT	(1<<0)
 
 
 #endif  /* __LH79524_H__ */

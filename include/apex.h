@@ -62,4 +62,6 @@ extern unsigned long timer_read (void);
 extern unsigned long timer_delta (unsigned long, unsigned long);
 extern void usleep (unsigned long); 
 
+extern void dump (const unsigned char* rgb, int cb, unsigned long index);
+
 #endif  /* __INIT_H__ */
