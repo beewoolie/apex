@@ -53,9 +53,9 @@
 #include <service.h>
 #include <linux/string.h>
 #include <spinner.h>
+#include <asm/reg.h>
 
-#include "hardware.h"
-#include "compactflash.h"
+#include <mach/drv-cf.h>
 
 //#define TALK
 
