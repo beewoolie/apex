@@ -1028,7 +1028,7 @@ help:
 	@echo  '  mrproper	  - remove all generated files + config + various backup files'
 	@echo  ''
 	@echo  'Configuration targets:'
-	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
+	@-$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
@@ -1048,10 +1048,10 @@ help:
 	@echo  '  namespacecheck  - Name space analysis on compiled kernel'
 	@echo  ''
 	@echo  'Kernel packaging:'
-	@$(MAKE) -f $(package-dir)/Makefile help
+	@-$(MAKE) -f $(package-dir)/Makefile help
 	@echo  ''
 	@echo  'Documentation targets:'
-	@$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
+	@-$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
 	@echo  ''
 	@echo  'Architecture specific targets ($(ARCH)):'
 	@$(if $(archhelp),$(archhelp),\
