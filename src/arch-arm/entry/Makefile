@@ -1,9 +1,6 @@
 #
 # Makefile for APEX loader
 #
-#
-# Makefile for APEX loader
-#
 #   Copyright (C) 2004 Marc Singer
 #
 #   This program is free software; you can redistribute it and/or

@@ -1,3 +1,11 @@
+/* xmodem.c
+
+   implements an Xmodem protocol receive function.  This code comes
+   from the Blob source code.  It is modified slightly to work with
+   the IO infrastructure of the APEX boot loader.
+
+*/
+
 /*-------------------------------------------------------------------------
  * Filename:      xmodem.c
  * Version:       $Id: xmodem.c,v 1.2 2002/01/06 19:02:29 erikm Exp $

@@ -1,7 +1,4 @@
-/* ld script for apex
-
-
-*/
+/* Linking loader script for APEX Boot Loader */
 
 
 OUTPUT_ARCH(arm)
