@@ -22,18 +22,18 @@
 obj-y := init.o console.o console-printf.o env.o
 obj-y += command.o cmd-version.o cmd-help.o cmd-boot.o
 
-obj-$(CONFIG_CMD_COPY)		+= cmd-copy.o
 obj-$(CONFIG_CMD_CHECKSUM)	+= cmd-checksum.o
+obj-$(CONFIG_CMD_COMPARE)	+= cmd-compare.o
+obj-$(CONFIG_CMD_COPY)		+= cmd-copy.o
 obj-$(CONFIG_CMD_DRVINFO)	+= cmd-drvinfo.o
 obj-$(CONFIG_CMD_DUMP)		+= cmd-dump.o
-obj-$(CONFIG_CMD_ERASE)		+= cmd-erase.o
-obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
-obj-$(CONFIG_CMD_COMPARE)	+= cmd-compare.o
-obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 obj-$(CONFIG_CMD_ENV)		+= cmd-env.o
-obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
-obj-$(CONFIG_CMD_GO)		+= cmd-go.o
+obj-$(CONFIG_CMD_ERASE)		+= cmd-erase.o
 obj-$(CONFIG_CMD_FILL)		+= cmd-fill.o
+obj-$(CONFIG_CMD_GO)		+= cmd-go.o
+obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
+obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
+obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 
 #CFLAGS += -mthumb
 #CFLAGS_xmodem.o += -mthumb
