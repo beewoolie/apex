@@ -41,7 +41,8 @@
 
    performs a memory move of the whole loader, presumed to be from NOR
    flash into SDRAM.  The LMA is determined at runtime.  The relocator
-   will put the loader at the VMA and then return to the relocated address.
+   will put the loader at the VMA and then return to the newly
+   relocated return address.
 
    *** FIXME: it might be prudent to check for the VMA being greater
    *** than or less than the LMA.  As it stands, we depend on
@@ -64,7 +65,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  "moveq pc, %1\n\t"	/* Return when already reloc'd  */
 		  : "=r" (offset), "=r" (lr)
 		  : "r" (&reloc)
-		  : "r0", "lr");
+		  : "lr");
 
   PUTC_LL ('c');
 

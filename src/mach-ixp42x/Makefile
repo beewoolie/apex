@@ -23,12 +23,14 @@ obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o
 
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_SPINNER) += spinner-nslu2.o
-
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 #obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
 obj-$(CONFIG_DRIVER_NOR)	+= drv-nor-cfi.o
+
+obj-$(CONFIG_NPE)	+= npe.o
 
 obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)
 
+libs-$(CONFIG_NPE) := intel/

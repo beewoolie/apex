@@ -33,6 +33,8 @@ init-y += src/arch-arm/entry/
 core-y += src/mach-$(CONFIG_MACH)/ src/drivers/ src/arch-arm/linux/
 libs-y += src/arch-arm/lib/
 
+-include src/mach-$(CONFIG_MACH)/Makefile.libs
+
 rom := src/arch-arm/rom
 
 apex.bin apex.srec : include/config.h apex

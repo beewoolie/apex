@@ -5,6 +5,8 @@ APEX Boot Loader
 
 TODO:
 
+  o Add a -v option to copy to make sure the copy is successful.
+
   o Implement DEBUG_LL for lpd79524 so we can see what's happening to
     the register allocation in relocate_apex.
 

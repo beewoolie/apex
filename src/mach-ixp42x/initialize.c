@@ -160,9 +160,10 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
 //		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
-		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
+//		  "orr r0, r0, #(1<<4)\n\t" /* Enable write buffer */
+//		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
 //		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
-		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
+//		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
 		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
   COPROCESSOR_WAIT;
 

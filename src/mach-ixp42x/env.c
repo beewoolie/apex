@@ -46,7 +46,7 @@ static __env struct env_d e_cmdline = {
      to get the slug to boot properly.  I hope this will change. */
 //		   " root=/dev/ram0"
 		   " root=/dev/slug"
-		   " rootfstype=ext2,jffs"
+		   " rootfstype=ext2,jffs2"
 #if defined (CONFIG_RAMDISK_LMA)
 		   " initrd=" _t(CONFIG_RAMDISK_LMA) ",10m"
 #endif

@@ -1,3 +1,16 @@
+2005-02-16  Marc Singer  <elf@buici.com>
+
+	* src/mach-ixp42x/initialize.c (__section): Added DEBUG_LL
+	support.
+
+	* src/apex/cmd-compare.c (cmd_compare): Added -c switch to compare
+	so we can see more than one difference in a block.
+
+2005-02-15  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/serial.c Errors in the UART macros prevented
+	serial output on the 79520.
+
 2005-02-14  Marc Singer  <elf@buici.com>
 
 	* Makefile 1.0.25: for good measure

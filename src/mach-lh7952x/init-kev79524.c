@@ -36,6 +36,8 @@
 
 #include "hardware.h"
 
+#include <debug_ll.h>
+
 //#define USE_SLOW
 
 #if defined (USE_SLOW)
@@ -126,6 +128,27 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
+
+#if defined (CONFIG_DEBUG_LL)
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKCTRL0 &= ~RCPC_PCLKCTRL0_U0;
+  RCPC_PCLKSEL0  &= ~(1<<0);
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
+
+  MASK_AND_SET (IOCON_MUXCTL5, (3<<10)|(3<<8), (2<<10)|(2<<8));
+  MASK_AND_SET (IOCON_MUXCTL6, (3<<2)|(3<<0), (2<<2)|(2<<0));
+
+  UART_CR = UART_CR_EN; /* Enable UART without drivers */
+  
+  UART_IBRD = 6;
+  UART_FBRD = 8;
+  UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
+  UART_IMSC = 0x00; /* Mask interrupts */
+  UART_ICR  = 0xff; /* Clear interrupts */
+  UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
+
+  PUTC_LL('A');
+#endif
 
 	/* Setup HCLK, FCLK and peripheral clocks */
   RCPC_CTRL       |= RCPC_CTRL_UNLOCK;

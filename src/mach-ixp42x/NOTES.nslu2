@@ -3,6 +3,19 @@
   NSLU2
 ==========
 
+2005.Feb.16
+
+  o There appears to be an unresolved issue with the boot process.  In
+    one case, a user found that the startup copy command was copying
+    the kernel to RAM incorrectly.  There has been no resolution of
+    the issue, but it turns out that copying a second time works
+    correctly.  
+
+2005.Feb.14
+
+  o Need to tell people how to download the intel libraries to link in
+    the NPE code.
+
 2005.Feb.03
 
   o Byte accesses to flash will generate an unaligned access fault

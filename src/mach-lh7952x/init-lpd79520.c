@@ -164,6 +164,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
   RCPC_PERIPHCLKCTRL &= ~RCPC_PERIPHCLK_U1;
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
+  IOCON_UARTMUX |= 0xc;		/* Activate U1 MUX */
 
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
   
