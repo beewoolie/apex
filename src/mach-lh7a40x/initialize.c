@@ -91,8 +91,16 @@
 
 */
 
+/* USE_SROMLL - This bit changes the way that the SDRAM controller
+   maps SDRAM to physical addresses.  In systems with 32MiB of RAM,
+   this will make it contguous.  In systems with more memory, the
+   memory is not all contiguous though it is supposed to be
+   accessible. */
+
 
 //#define USE_SLOW
+#define USE_SROMLL		/* Coerce SDRAM to be contiguously mapped */
+
 
 #define KHZ			(100000)
 
@@ -127,15 +135,25 @@
 #define BCR6_MODE		(0x1000fbe0)	// CompactFlash
 #define BCR7_MODE		(0x1000b2c2)	// CPLD & Ethernet
 
+#if defined (USE_SROMLL)
+#define SDRAM_MODE_SROMLL	(1<<5)
+#else
+#define SDRAM_MODE_SROMLL	(0)
+#endif
+
 // SDRAM
 #if defined (USE_SLOW)
-# define SDRAM_SETUP_MODE	(0x00320008)	// CAS3, RAStoCAS3, 32 bit
-# define SDRAM_MODE		(0x01320008)	// Add autoprecharging
+# define _SDRAM_MODE_SETUP	(0x00320008)	// CAS3, RAStoCAS3, 32 bit
+# define _SDRAM_MODE		(0x01320008)	// Add autoprecharging
 #else
-# define SDRAM_SETUP_MODE	(0x00210008)	// CAS2, RAStoCAS2, 32 bit
-# define SDRAM_MODE		(0x01210008)	// Add autoprecharging
+# define _SDRAM_MODE_SETUP	(0x00210008)	// CAS2, RAStoCAS2, 32 bit
+# define _SDRAM_MODE		(0x01210008)	// Add autoprecharging
 //# define SDRAM_MODE		(0x01210028)	// Add autoprecharging SROMLL
 #endif
+
+#define SDRAM_MODE_SETUP	_SDRAM_MODE_SETUP | SDRAM_MODE_SROMLL
+#define SDRAM_MODE		_SDRAM_MODE	  | SDRAM_MODE_SROMLL
+
 
 
 /* usleep
@@ -209,7 +227,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 
 	/* Initialize SDRAM */
-  __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_SETUP_MODE;
+  __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE_SETUP;
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NOP;
   usleep (200);
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_PRECHARGEALL;

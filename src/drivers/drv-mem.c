@@ -39,7 +39,7 @@
 # include <atag.h>
 #endif
 
-//#define TALK
+#define TALK
 
 struct mem_region {
   unsigned long start;

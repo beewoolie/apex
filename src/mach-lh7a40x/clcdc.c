@@ -60,9 +60,9 @@ static void clcdc_init (void)
     }
   }
 
-  __REG(GPIO_PHYS + 0x2c) |= (1<<1) | (1<<0); /* Muxing for LCD */
-  __REG(GPIO_PHYS + 0x10) |= (1<<2);
-  __REG(GPIO_PHYS + 0x00) |= (1<<2);
+  __REG(GPIO_PHYS + GPIO_PINMUX) |= (1<<1) | (1<<0); /* LCDVD[15:4] */
+  __REG(GPIO_PHYS + GPIO_PADD)	 |= (1<<2);	     /* PA2 output */
+  __REG(GPIO_PHYS + GPIO_PAD)	 |= (1<<2);	     /* PA2 high */
 
   __REG(CLCDC_PHYS + CLCDC_TIMING0)   = 0x0e143c38;
   __REG(CLCDC_PHYS + CLCDC_TIMING1)   = 0x075f013f;
@@ -93,6 +93,9 @@ static void clcdc_release (void)
   __REG(CLCDC_PHYS + CLCDC_CTRL) &= ~(1<<0); /* Disable CLCDC controller */
 
   __REG(HRTFTC_PHYS + HRTFTC_SETUP) &= ~(1<<13); /* Disable HRTFT controller */
+
+//  printf ("clcdc %x %x\r\n", 
+//	  __REG(CLCDC_PHYS + CLCDC_CTRL), __REG(HRTFTC_PHYS + HRTFTC_SETUP));
 }
 
 static __service_7 struct service_d lpd7a40x_clcdc_service = {

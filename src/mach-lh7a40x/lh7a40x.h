@@ -147,6 +147,7 @@
 #define CLCDC_TIMING0		(0x00)
 #define CLCDC_TIMING1		(0x04)
 #define CLCDC_TIMING2		(0x08)
+#define CLCDC_TIMING3		(0x0c)
 #define CLCDC_UPBASE		(0x10)
 #define CLCDC_LPBASE		(0x14)
 #define CLCDC_INTREN		(0x18)
@@ -161,5 +162,10 @@
 #define HRTFTC_CON		(0x04)
 #define HRTFTC_TIMING1		(0x08)
 #define HRTFTC_TIMING2		(0x0c)
+
+#define GPIO_PINMUX		(0x2c)
+#define GPIO_PADD		(0x10)
+#define GPIO_PAD		(0x00)
+
 
 #endif  /* __LH7A40X_H__ */
