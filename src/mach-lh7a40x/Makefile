@@ -20,7 +20,4 @@
 #
 
 obj-y := arch.o initialize.o serial.o timer.o env.o cpuinfo.o
-#obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
-obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
-#obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o

@@ -29,8 +29,38 @@
 
 #include <driver.h>
 #include <service.h>
+#include <apex.h>		/* printf, only */
 #include "lh7a40x.h"
 
+#define UART_DATA		__REG(UART + 0x00)
+#define UART_FCON		__REG(UART + 0x04)
+#define UART_BRCON		__REG(UART + 0x08)
+#define UART_CON		__REG(UART + 0x0c)
+#define UART_STATUS		__REG(UART + 0x10)
+#define UART_RAWISR		__REG(UART + 0x14)
+#define UART_INTEN		__REG(UART + 0x18)
+#define UART_ISR		__REG(UART + 0x1c)
+
+#define UART_DATA_FE		(1<<8)
+#define UART_DATA_PE		(1<<9)
+#define UART_DATA_DATAMASK	(0xff)
+
+#define UART_STATUS_TXFE	(1<<7)
+#define UART_STATUS_RXFF	(1<<6)
+#define UART_STATUS_TXFF	(1<<5)
+#define UART_STATUS_RXFE	(1<<4)
+#define UART_STATUS_BUSY	(1<<3)
+#define UART_STATUS_DCD		(1<<2)
+#define UART_STATUS_DSR		(1<<1)
+#define UART_STATUS_CTS		(1<<0)
+
+#define UART_FCON_WLEN8		(3<<5)
+#define UART_FCON_FEN		(1<<4)
+
+#define UART_CON_SIRDIS		(1<<1)
+#define UART_CON_ENABLE		(1<<0)
+
+//#include <debug_ll.h>
 
 extern struct driver_d* console_driver;
 
@@ -49,22 +79,22 @@ void lh7a40x_serial_init (void)
     return;
   }
 
-  __REG (UART_PHYS + UART_BRCON) = divisor;
-  
-  __REG (UART_PHYS + UART_FCON) = UART_FCON_FEN | UART_FCON_WLEN8;
-    
-  __REG (UART_PHYS + UART_INTEN) = 0x00; /* Mask interrupts */
-
-  __REG (UART_PHYS + UART_CON) = UART_CON_ENABLE;
+  UART_BRCON = divisor;
+  UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
+  UART_INTEN = 0x00; /* Mask interrupts */
+  UART_CON = UART_CON_ENABLE;
 
   if (console_driver == 0)
     console_driver = &lh7a40x_serial_driver;
+
+//  lh7a40x_serial_driver.write (NULL, "serial console initialized\r\n", 28);
+//  printf ("Really, it is\n");
 }
 
 ssize_t lh7a40x_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb
-    ? ((__REG (UART_PHYS + UART_STATUS) & UART_STATUS_RXFE) ? 0 : 1) 
+    ? ((UART_STATUS & UART_STATUS_RXFE) ? 0 : 1) 
     : 0;
 }
 
@@ -75,10 +105,10 @@ ssize_t lh7a40x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   for (pb = (unsigned char*) pv; cb--; ++pb) {
     u32 v;
 
-    while (__REG (UART_PHYS + UART_STATUS) & UART_STATUS_RXFE)
+    while (UART_STATUS & UART_STATUS_RXFE)
       ;				/* block until character is available */
 
-    v = __REG (UART_PHYS + UART_DATA);
+    v = UART_DATA;
     if (v & (UART_DATA_FE | UART_DATA_PE))
       return -1;		/* -ESERIAL */
     *pb = v & UART_DATA_DATAMASK;
@@ -95,10 +125,10 @@ ssize_t lh7a40x_serial_write (struct descriptor_d* d,
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
-    while ((__REG (UART_PHYS + UART_STATUS) & UART_STATUS_TXFF))
+    while (UART_STATUS & UART_STATUS_TXFF)
       ;
 
-    __REG (UART_PHYS + UART_DATA) = *pb;
+    UART_DATA = *pb;
 
     ++cWrote;
   }

@@ -64,6 +64,8 @@
 #define DMAC_PHYS	(0x80002800)	/* DMA Controller */
 #define CLCDC_PHYS	(0x80003000)	/* Color LCD Controller */
 
+#define UART		(UART2_PHYS)
+
 	/* Physical registers of the LH7A404 */
 
 #define VIC1_PHYS	(0x80008000)	/* Vectored Interrupt Controller 1 */
@@ -113,36 +115,6 @@
 #define TIMER_LOAD		(0x00)
 #define TIMER_VALUE		(0x04)
 #define TIMER_CONTROL		(0x08)
-
-#define UART_DATA		(0x00)
-#define UART_FCON		(0x04)
-#define UART_BRCON		(0x08)
-#define UART_CON		(0x0c)
-#define UART_STATUS		(0x10)
-#define UART_RAWISR		(0x14)
-#define UART_INTEN		(0x18)
-#define UART_ISR		(0x1c)
-
-#define UART_DATA_FE		(1<<8)
-#define UART_DATA_PE		(1<<9)
-#define UART_DATA_DATAMASK	(0xff)
-
-#define UART_STATUS_TXFE	(1<<7)
-#define UART_STATUS_RXFF	(1<<6)
-#define UART_STATUS_TXFF	(1<<5)
-#define UART_STATUS_RXFE	(1<<4)
-#define UART_STATUS_BUSY	(1<<3)
-#define UART_STATUS_DCD		(1<<2)
-#define UART_STATUS_DSR		(1<<1)
-#define UART_STATUS_CTS		(1<<0)
-
-#define UART_FCON_WLEN8		(3<<5)
-#define UART_FCON_FEN		(1<<4)
-
-#define UART_CON_SIRDIS		(1<<1)
-#define UART_CON_ENABLE		(1<<0)
-
-#define UART_PHYS		UART2_PHYS
 
 #define CLCDC_TIMING0		(0x00)
 #define CLCDC_TIMING1		(0x04)

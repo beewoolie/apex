@@ -131,27 +131,11 @@ struct cf_info {
 
 static struct cf_info cf_d; 
 
-static inline unsigned short read_short (void* pv)
-{
-  unsigned char* pb = (unsigned char*) pv;
-  return  ((unsigned short) pb[0])
-       + (((unsigned short) pb[1]) << 8);
-}
-
-static inline unsigned long read_long (void* pv)
-{
-  unsigned char* pb = (unsigned char*) pv;
-  return  ((unsigned long) pb[0])
-       + (((unsigned long) pb[1]) <<  8)
-       + (((unsigned long) pb[2]) << 16)
-       + (((unsigned long) pb[3]) << 24);
-}
-
 static unsigned char read8 (int reg)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-  IOBARRIER_READ;
+//  IOBARRIER_READ;
   return (reg & 1) ? (v >> 8) : (v & 0xff);
 }
 
@@ -159,7 +143,6 @@ static void write8 (int reg, unsigned char value)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-  IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = v;
   IOBARRIER_READ;
@@ -169,7 +152,7 @@ static unsigned short read16 (int reg)
 {
   unsigned short value;
   value = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-  IOBARRIER_READ;
+//  IOBARRIER_READ;
   return value;
 }
 
@@ -195,7 +178,6 @@ static void select (int drive, int head)
 #endif
 	   | (drive ? (1<<4) : 0) 
 	   | (IDE_IDLE << 8)); 
-  IOBARRIER_READ;
 
   ready_wait ();
 }
@@ -232,20 +214,21 @@ static int cf_identify (void)
   ENTRY (0);
 
   cf_d.type = REG (CF_PHYS);
-  IOBARRIER_READ;
+
+  //  IOBARRIER_READ;
 
 #if 0
   {
     int index = 0;
     while (index < 1024) {
       unsigned short s = REG (CF_PHYS + index);
-      IOBARRIER_READ;
+//      IOBARRIER_READ;
       if (s == 0xff)
 	break;
       PRINTF ("%03x: 0x%x", index, s);
       index += 2*CF_ADDR_MULT;
       s = REG (CF_PHYS + index);
-      IOBARRIER_READ;
+//      IOBARRIER_READ;
       PRINTF (" 0x%x (%d)\n", s, s);
       index += 2*CF_ADDR_MULT;
       {
@@ -253,7 +236,7 @@ static int cf_identify (void)
 	unsigned char rgb[128];
 	for (i = 0; i < s; ++i) {
 	  rgb[i] = REG (CF_PHYS + index + i*2*CF_ADDR_MULT);
-	  IOBARRIER_READ;
+//	  IOBARRIER_READ;
 	}
 	dump (rgb, s, 0);
       }
@@ -325,7 +308,7 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  PRINTF ("%s: @ 0x%x\n", __FUNCTION__, d->start + d->index);
+  PRINTF ("%s: @ 0x%lx\n", __FUNCTION__, d->start + d->index);
   
   while (cb) {
     unsigned long index = d->start + d->index;

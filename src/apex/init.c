@@ -52,6 +52,7 @@ static void init_services (void)
 //    printf ("init # %d %p\n", i, service->init);
     if (service->init)
       service->init ();
+    PUTC_LL ('|');
   }
   PUTC_LL ('s');
   //  printf ("init complete\n");

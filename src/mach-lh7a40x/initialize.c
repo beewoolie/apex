@@ -35,6 +35,7 @@
 #include <service.h>
 
 #include "hardware.h"
+#include <debug_ll.h>
 
 /* Static Memory Controller
    ------------------------
@@ -207,6 +208,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+#if defined (CONFIG_DEBUG_LL)
+  UART_BRCON = 0x3;
+  UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
+  UART_INTEN = 0x00; /* Mask interrupts */
+  UART_CON = UART_CON_ENABLE;
+
+  PUTC_LL('A');
+#endif
+
 	/* Enable Asynchronous Bus mode, NotFast and iA bits */
   {
     unsigned long l;
@@ -225,6 +235,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "movhi pc, %0\n\t"
 		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS));
 
+  PUTC_LL ('S');
 
 	/* Initialize SDRAM */
   __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE_SETUP;
@@ -247,6 +258,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NORMAL;
   __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE;
   
+  PUTC_LL ('s');
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
 }

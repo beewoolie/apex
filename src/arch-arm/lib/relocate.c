@@ -36,7 +36,9 @@
 
 #include <debug_ll.h>
 
-//#define USE_LDR_COPY		/* Simpler copy loop  */
+#if defined (CONFIG_DEBUG_LL)
+# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+#endif
 
 
 /* relocate_apex
@@ -103,11 +105,16 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  );		  
 #endif
 
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
   PUTHEX_LL (offset);
   PUTC_LL ('+');
   PUTHEX_LL (lr);
   PUTC_LL ('=');
+  PUTC_LL ('>');
   PUTHEX_LL (*(unsigned long*) (offset + lr));
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
 
   PUTC_LL ('j');
 

@@ -37,6 +37,8 @@
 #include <linux/string.h>
 #include <apex.h>
 
+#include <debug_ll.h>
+
 extern struct driver_d* console_driver;
 
 int printf (const char* fmt, ...)
@@ -45,15 +47,21 @@ int printf (const char* fmt, ...)
   ssize_t cb;
   va_list ap;
 
+  //  PUTC_LL ('P');
+
   if (console_driver == NULL)
     return 0;
 
+  //  PUTC_LL ('P');
+
   va_start (ap, fmt);
 
+  //  PUTC_LL ('P');
   cb = vsnprintf (rgb, sizeof (rgb) - 1, fmt, ap);
   va_end (ap);
   rgb[cb] = 0;
   
+  //  PUTC_LL ('P');
   {
     char* pb = rgb;
     for (; *pb; ++pb) {
