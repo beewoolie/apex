@@ -19,6 +19,10 @@
 #include <apex.h>
 #include <config.h>
 
+#if defined (CONFIG_ATAG)
+# include <atag.h>
+#endif
+
 struct mem_descriptor {
   void* pv;
   size_t cb;
@@ -26,8 +30,8 @@ struct mem_descriptor {
 };
 
 struct mem_region {
-  void* pv;
-  size_t cb;
+  unsigned long start;
+  size_t length;
 };
 
 static struct mem_region regions[32];
@@ -56,12 +60,13 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
     //    if (testram ((u32) pl) != 0)
     //      continue;
     if (*pl == (unsigned long) pl) {
-      if (regions[i].cb == 0)
-	regions[i].pv = (void*) pl - (&APEX_VMA_END - &APEX_VMA_START);
-      regions[i].cb += CB_BLOCK;
+      if (regions[i].length == 0)
+	regions[i].start
+	  = (unsigned long) pl - (&APEX_VMA_END - &APEX_VMA_START);
+      regions[i].length += CB_BLOCK;
     }
     else
-      if (regions[i].cb)
+      if (regions[i].length)
 	++i;
   }
   return i;
@@ -181,3 +186,30 @@ static __driver_0 struct driver_d memory_driver = {
   .seek = memory_seek,
 };
 
+
+#if defined (CONFIG_ATAG)
+
+static struct tag* atag_memory (struct tag* p)
+{
+  int i;
+
+  for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i) {
+    if (!regions[i].length)
+      break;
+
+    p->hdr.tag = ATAG_MEM;
+    p->hdr.size = tag_size (tag_mem32);
+
+    p->u.mem.start = regions[i].start;
+    p->u.mem.size  = regions[i].length;
+			
+    p = tag_next (p);
+  }
+
+  return p;
+}
+
+static __atag_1 struct atag_d _atag_memory = { atag_memory };
+
+
+#endif

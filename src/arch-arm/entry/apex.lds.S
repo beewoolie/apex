@@ -48,6 +48,14 @@ SECTIONS
 		*(.driver)
 		APEX_DRIVER_END = .;
 	}
+	.atag . : {
+		APEX_ATAG_START = .;
+		*(.atag_0)
+		*(.atag_1)
+		*(.atag_2)
+		*(.atag_3)
+		APEX_ATAG_END = .;
+	}
 	.command . : {
 		APEX_COMMAND_START = .;
 		*(.command)
