@@ -2,9 +2,9 @@
      $Id$
 
    written by Marc Singer
-   12 Nov 2004
+   14 Jan 2005
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2005 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@
    DESCRIPTION
    -----------
 
+   Perform system reset using the watchdog timer.
+
 */
 
 #include <config.h>
@@ -32,7 +34,7 @@
 #include <command.h>
 #include "hardware.h"
 
-#define KEY 0x482e
+#define KEY			0x482e
 #define OST_WDOG_ENAB_RESET	(1<<0) /* Allow watchdog to reset CPU */
 #define OST_WDOG_ENAB_CNT_EN	(1<<2) /* Enable watchdog countdown */
 

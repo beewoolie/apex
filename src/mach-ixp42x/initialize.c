@@ -28,6 +28,10 @@
    Hardware initializations for the ixp42x.  Some initializations may
    be left to drivers, such as the serial interface and timer.
 
+   The COPROCESSOR_WAIT macro comes from redboot.  It isn't clear to
+   me that we need to do this, though the cache and tlb flushing might
+   require it.
+
 */
 
 #include <config.h>
@@ -43,8 +47,8 @@
 		    "mov %0, %0\n\t" \
 		    "sub pc, pc, #4" : "=r" (v)); })
 
-/* sdram config constants should go here.  The Integrated Circuit
-   Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
+/* *** FIXME: sdram config constants should go here.  The Integrated
+   Circuit Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
 
 /* usleep
 
@@ -97,7 +101,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
   /* *** FIXME: this CPSR and CP15 manipulation should not be
-     *** necessary as we don't reset the system through this code. */
+     *** necessary as we don't allow warm resets. */
 
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
@@ -126,7 +130,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
-     *** flash.*/
+     *** flash.  Moreover, I'd rather make it fast instead of slow. */
   EXP_TIMING_CS0 = 0
     | (( 3 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
     | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
@@ -149,16 +153,16 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
     COPROCESSOR_WAIT;
   }
 
+#if 0
 	  /* Check for running from SDRAM */ 
 
-#if 0
-		/* Revise */
-  __asm volatile ("tst %0, #0xf0000000\n\t"
-		  "beq 1f\n\t"
-		  "cmp %0, %1\n\t"
-		  "movls r0, #0\n\t"
-		  "movls pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+  /* This implementation is flawed because we could be running from
+     the start of SDRAM.  The only way to do this reliably is to also
+     check the value of the EXP mapping register.  */
+  __asm volatile ("cmp %0, %1\n\t"
+		  "movhi r0, #0\n\t"
+		  "movhi pc, %0\n\t"
+		  "1:" :: "r" (lr), "i" (CONFIG_APEX_VMA));
 #endif
 
 
@@ -170,8 +174,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   usleep (200);			/* datasheet: maintain 200us of NOP */
 
   /* 133MHz timer cycle count, 0x81->969ns == ~1us */
-  /* datasheet: the Tref is 64ms which means that we are refreshing
-     way too often, or there is something wrong in my calc.  */
+  /* datasheet: not clear what the refresh requirement is.  */
   SDR_REFRESH = 0x81;		/* *** FIXME: calc this */
 
   SDR_IR = SDR_IR_PRECHARGE_ALL;
@@ -179,16 +182,13 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   usleep (1);			/* datasheet: wait for Trp (<=20ns) 
 				   before starting AUTO REFRESH */
 
-  /* datasheet: needs at least 8 refresh cycles.  Timing diagram shows
-     only two AUTO_REFRESH commands, each is Trc (20ns) long. */
+  /* datasheet: needs at least 8 refresh (bus) cycles.  Timing diagram
+     shows only two AUTO_REFRESH commands, each is Trc (20ns) long. */
 
-  {
-    int i;
-    for (i = 8; i--; ) {
-      SDR_IR = SDR_IR_AUTO_REFRESH;
-      usleep (1);
-    }
-  }
+  SDR_IR = SDR_IR_AUTO_REFRESH;
+  usleep (1);
+  SDR_IR = SDR_IR_AUTO_REFRESH;
+  usleep (1);
 
   SDR_IR = SDR_IR_MODE_CAS3;
   SDR_IR = SDR_IR_NORMAL;
@@ -218,7 +218,7 @@ static void target_release (void)
 }
 #endif
 
-static __service_0 struct service_d lh79524_target_service = {
+static __service_0 struct service_d ixp42x_target_service = {
   .init    = target_init,
   //  .release = target_release,
 };
