@@ -181,8 +181,7 @@
 
     /* Register values and bits */
 
-#define RCPC_CTRL_UNLOCK	(0x263)	/* Unlock; CLKOUT <= HCLK; Active */
-#define RCPC_CTRL_LOCK		(0x63)	/* Lock; CLKOUT <= HCLK; Active */
+#define RCPC_CTRL_UNLOCK	(1<<9)
 #define RCPC_CORECONFIG_FASTBUS	(3)
 
 #if 1 // run the CPU at 50.8032 MHz, and the bus at 50.8032 MHz

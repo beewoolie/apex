@@ -125,8 +125,9 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 	/* Setup HCLK, FCLK and peripheral clocks */
-  __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS | RCPC_CTRL)       |= RCPC_CTRL_UNLOCK;
 
+  /* *** We may want to move the UART stuff into the serial driver */
   __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) = RCPC_AHBCLKCTRL_V;
   __REG (RCPC_PHYS | RCPC_PCLKCTRL0)  = RCPC_PCLKCTRL0_V;
   __REG (RCPC_PHYS | RCPC_PCLKCTRL1)  = RCPC_PCLKCTRL1_V;
@@ -138,7 +139,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (RCPC_PHYS | RCPC_CPUCLKPRE)  = RCPC_CPUCLKPRE_V;
   __REG (RCPC_PHYS | RCPC_CORECONFIG) = RCPC_CORECONFIG_V;
 
-  __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_LOCK;
+  __REG (RCPC_PHYS | RCPC_CTRL)       &= ~RCPC_CTRL_LOCK;
 
 	/* Setup IO pin multiplexers */
   __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V; 	/* UART */
