@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   Environment for the LH79524.
+   Environment for the IXP42x.
 
 */
 
@@ -37,36 +37,16 @@
 #define _s(v) #v 
 #define _t(v) _s(v)
 
-#if defined (CONFIG_MACH_LPD79520)
+#if defined (CONFIG_MACH_NSLU2)
 
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
-  .default_value = "console=ttyAM1"
-		   " root=/dev/hda1"
-  //		   " root=/dev/mtdblock1 rootfstype=jffs2"
+  .default_value = "console=ttyAM0,115200"
+		   " root=/dev/mtdblock1 rootfstype=jffs2"
 		   " mtdparts="
-		   "lpd79520_norflash:2m(boot)ro,-(root)"
+		   "physmappedflash:2m(boot)ro,-(root)"
   ,
   .description = "Linux kernel command line",
 };
 
 #endif
-
-#if defined (CONFIG_MACH_LPD79524)
-
-static __env struct env_d e_cmdline = {
-  .key = "cmdline",
-  .default_value = "console=ttyAM0"
-  //		   " root=/dev/hda1"
-  //		   " root=/dev/mtdblock1 rootfstype=jffs2"
-		   " root=/dev/mtdblock3 rootfstype=jffs2"
-		   " mtdparts="
-		   "lpd79524_norflash:2m(boot)ro,-(root)"
-		   ";" 
-		   "lpd79524_nandflash:2m(boot)ro,-(root)"
-  ,
-  .description = "Linux kernel command line",
-};
-
-#endif
-

@@ -119,7 +119,12 @@ int call_command (int argc, const char** argv)
 
 void exec_monitor (void)
 {
-  const char* szStartup = env_fetch ("startup");
+  const char* szStartup;
+
+//  printf ("exec_monitor\n");
+  szStartup = env_fetch ("startup");
+//  printf (" startup %s\n", szStartup);
+
   if (szStartup) {
     char sz[strlen (szStartup) + 1];
     char* pch = sz;

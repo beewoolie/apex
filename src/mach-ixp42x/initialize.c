@@ -41,25 +41,6 @@
 #include "hardware.h"
 
 
-#define LED0	((0<<0)|(0<<1)|(1<<2)|(1<<3))
-#define LED1	((1<<0)|(0<<1)|(1<<2)|(1<<3))
-#define LED2	((0<<0)|(1<<1)|(1<<2)|(1<<3))
-#define LED3	((1<<0)|(1<<1)|(1<<2)|(1<<3))
-#define LED4	((0<<0)|(0<<1)|(0<<2)|(1<<3))
-#define LED5	((1<<0)|(0<<1)|(0<<2)|(1<<3))
-#define LED6	((0<<0)|(1<<1)|(1<<2)|(1<<3))
-#define LED7	((1<<0)|(1<<1)|(1<<2)|(1<<3))
-
-#define LED8	((0<<0)|(0<<1)|(1<<2)|(0<<3))
-#define LED9	((1<<0)|(0<<1)|(1<<2)|(0<<3))
-#define LEDa	((0<<0)|(1<<1)|(1<<2)|(0<<3))
-#define LEDb	((1<<0)|(1<<1)|(1<<2)|(0<<3))
-#define LEDc	((0<<0)|(0<<1)|(0<<2)|(0<<3))
-#define LEDd	((1<<0)|(0<<1)|(0<<2)|(0<<3))
-#define LEDe	((0<<0)|(1<<1)|(1<<2)|(0<<3))
-#define LEDf	((1<<0)|(1<<1)|(1<<2)|(0<<3))
-
-
 #define COPROCESSOR_WAIT\
  ({ unsigned long v; \
     __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
@@ -68,6 +49,7 @@
 
 /* *** FIXME: sdram config constants should go here.  The Integrated
    Circuit Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
+
 
 /* usleep
 
@@ -117,11 +99,11 @@ void __section (.bootstrap) usleep (unsigned long us)
 void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
+
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-  GPIO_ER &= 0xf;
-  GPIO_OUTR = LED0;
-  GPIO_OUTR = LED1;
+  GPIO_ER &= ~0xf;
+  _L(LEDf);			/* Start with all on */
 
   /* *** FIXME: this CPSR and CP15 manipulation should not be
      *** necessary as we don't allow warm resets. */
@@ -129,25 +111,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
-  GPIO_OUTR = LED1;
-
 	/* Invalidate caches (I&D) and BTB (?) */
   __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
-
-  GPIO_OUTR = LED2;
 
 	/* Invalidate TLBs (I&D) */
   __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
 
-  GPIO_OUTR = LED3;
-
 	/* Drain write buffer */
   __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
   COPROCESSOR_WAIT;
-
-  GPIO_OUTR = LED4;
 
 	/* Disable write buffer coalescing */
   {
@@ -158,7 +132,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    : "=r" (v));
     COPROCESSOR_WAIT;
   }		
-
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
@@ -185,7 +158,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     COPROCESSOR_WAIT;
   }
 
-
 	  /* Exit now if executing in SDRAM */ 
   if (EXP_CNFG0 & (1<<31)) {
     /* Boot mode */
@@ -203,7 +175,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "movls pc, %0\n\t"
 		    : : "r" (lr), "i" (0x40000000));
   }
-
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 

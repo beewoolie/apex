@@ -69,6 +69,7 @@ void __naked __section (.reset) reset (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (v));
+    __asm volatile ("mov r0, r0");
     /* *** FIXME: the redboot code performed a read from the ttb
        register as a delay.  Not sure why. */
   }
@@ -101,7 +102,7 @@ void __naked setup_c (void)
     __asm volatile (
 	   "0: stmia %0!, {%2}\n\t"
 	   "   cmp %0, %1\n\t"
-	   "   ble 0b\n\t"
+	   "   bls 0b\n\t"
 	   : : "r" (&APEX_VMA_BSS_START), "r" (&APEX_VMA_BSS_END), "r" (0));
 
   __asm volatile ("mov pc, lr");

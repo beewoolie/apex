@@ -47,6 +47,8 @@
 #define UART_LSR	__REG(UART_PHYS + 0x14)	/* Line status */
 #define UART_ISR	__REG(UART_PHYS + 0X20)	/* Interrupt status */
 
+#define UART_IER_UUE	(1<<6)
+
 #define UART_LCR_DLAB	(1<<7)
 #define UART_LCR_WLS_8	(0x3<<0)
 #define UART_LCR_STB_1	(0<<2)
@@ -80,16 +82,18 @@ void ixp42x_serial_init (void)
     return;
   }
 
-  UART_LCR  =  UART_LCR_DLAB | UART_LCR_WLS_8 | UART_LCR_STB_1;
-  UART_DLL  =  divisor_l;
-  UART_DLH  =  divisor_h;
-  UART_LCR &= ~UART_LCR_DLAB;
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
+  UART_DLL  = divisor_l;
+  UART_DLH  = divisor_h;
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
 
-  UART_IER  = 0;		/* Mask all interrupts */
+  UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
 
   if (console_driver == 0)
     console_driver = &ixp42x_serial_driver;
+
+//  console_driver->write (0, "Console initialized\r\n", 21);
 }
 
 ssize_t ixp42x_serial_poll (struct descriptor_d* d, size_t cb)

@@ -44,6 +44,9 @@ int printf (const char* fmt, ...)
   static char rgb[1024];
   ssize_t cb;
 
+  if (console_driver == NULL)
+    return 0;
+
   va_list ap;
   va_start (ap, fmt);
 

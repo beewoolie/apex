@@ -39,6 +39,14 @@
 # include <atag.h>
 #endif
 
+//#define TALK
+
+#if defined (TALK)
+# define PRINTF(f,a...) printf (f, a)
+#else
+# define PRINTF(f,a...) do {} while (0)
+#endif
+
 struct mem_region {
   unsigned long start;
   size_t length;
@@ -54,14 +62,14 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   extern char APEX_VMA_COPY_END;
   unsigned long* pl;
 
-  //  printf ("  marking\n");
+  PRINTF ("  marking\n");
 
 	/* Mark */
   for (pl = (unsigned long*) (start + length - CB_BLOCK
 			      + (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
        1;
        pl -= CB_BLOCK/sizeof (*pl)) {
-    //    printf ("   %p\n", pl);
+    PRINTF ("   %p\n", pl);
     *pl = (unsigned long) pl;
 
 				/* Prevents integer wrapping at zero */
@@ -69,7 +77,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
       break;
   }
 
-//  printf ("  identifying\n");
+  PRINTF ("  identifying\n");
 
 	/* Identify */
   for (pl = (unsigned long*) (start 
@@ -77,6 +85,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
        pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
        pl += CB_BLOCK/sizeof (*pl)) {
+    PRINTF ("   %p\n", pl);
     //    if (testram ((u32) pl) != 0)
     //      continue;
     if (*pl == (unsigned long) pl) {
@@ -98,14 +107,15 @@ static void memory_init (void)
 
   i = 0;
 #if defined (CONFIG_MEM_BANK0_START)
-//  printf ("Scanning bank 0 %x %x\n", 
-//	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
+  PRINTF ("Scanning bank 0 %x %x\n", 
+	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
+  PRINTF ("  %d blocks\n", i);
 #endif
 
 #if defined (CONFIG_MEM_BANK1_START)
-//  printf ("Scanning bank 1 %x %x\n", 
-//	  CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
+  PRINTF ("Scanning bank 1 %x %x\n", 
+	  CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
 #endif
 

@@ -40,12 +40,16 @@ static void init_services (void)
   extern char APEX_SERVICE_START;
   extern char APEX_SERVICE_END;
   struct service_d* service;
+  int i = 0;
 
   for (service = (struct service_d*) &APEX_SERVICE_START;
        service < (struct service_d*) &APEX_SERVICE_END;
-       ++service)
+       ++service, ++i) {
+//    printf ("init # %d %p\n", i, service->init);
     if (service->init)
       service->init ();
+  }
+//  printf ("init complete\n");
 }
 
 void release_services (void)

@@ -55,6 +55,7 @@
 */
 
 #include <config.h>
+//#include <apex.h>		/* printf */
 #include <linux/types.h>
 #include <environment.h>
 #include <linux/string.h>
@@ -131,6 +132,9 @@ static char _env_locate (int i)
 static int _env_check_magic (void)
 {
   unsigned short s;
+
+  //  printf ("env_check_magic\n");
+
   _env_rewind ();
   _env_read (&s, 2);
   if (s == ENV_MAGIC)
@@ -244,7 +248,9 @@ void* env_enumerate (void* pv, const char** pszKey,
 const char* env_fetch (const char* szKey)
 {
   const char* szValue = NULL;
-  int i = _env_fetch (szKey, &szValue);
+  int i;
+  //  printf ("env_fetch %s\n", szKey);
+  i = _env_fetch (szKey, &szValue);
 
   if (i != -1 && szValue == NULL)
     return ENVLIST(i).default_value;

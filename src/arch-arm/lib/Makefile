@@ -19,6 +19,8 @@
 #   USA.
 #
 
-lib-y := div64.o memcpy.o memchr.o memzero.o
+lib-y := div64.o memchr.o memzero.o
+#lib-y += memcpy2.o
+lib-y += memcpy.o
 lib-y += relocate.o
 lib-y += exception_vectors.o

@@ -109,7 +109,7 @@
 
 #define UART0_PHYS	(0xc8000000)
 #define UART1_PHYS	(0xc8001000)
-#define UART_PHYS	(UART1_PHYS) /* Console */
+#define UART_PHYS	(UART0_PHYS) /* Console */
 
 #define GPIO_PHYS	(0xc8004000)
 #define GPIO_OUTR	__REG(GPIO_PHYS + 0x00)
@@ -118,5 +118,28 @@
 #define GPIO_IT1R	__REG(GPIO_PHYS + 0x10)
 #define GPIO_IT2R	__REG(GPIO_PHYS + 0x14)
 #define GPIO_CLKR	__REG(GPIO_PHYS + 0x18)
+
+#define LED_MASK (0xf)
+
+#define LED0	((0<<1)|(0<<0)|(1<<2)|(1<<3))
+#define LED1	((1<<1)|(0<<0)|(1<<2)|(1<<3))
+#define LED2	((0<<1)|(1<<0)|(1<<2)|(1<<3))
+#define LED3	((1<<1)|(1<<0)|(1<<2)|(1<<3))
+#define LED4	((0<<1)|(0<<0)|(0<<2)|(1<<3))
+#define LED5	((1<<1)|(0<<0)|(0<<2)|(1<<3))
+#define LED6	((0<<1)|(1<<0)|(0<<2)|(1<<3))
+#define LED7	((1<<1)|(1<<0)|(0<<2)|(1<<3))
+
+#define LED8	((0<<1)|(0<<0)|(1<<2)|(0<<3))
+#define LED9	((1<<1)|(0<<0)|(1<<2)|(0<<3))
+#define LEDa	((0<<1)|(1<<0)|(1<<2)|(0<<3))
+#define LEDb	((1<<1)|(1<<0)|(1<<2)|(0<<3))
+#define LEDc	((0<<1)|(0<<0)|(0<<2)|(0<<3))
+#define LEDd	((1<<1)|(0<<0)|(0<<2)|(0<<3))
+#define LEDe	((0<<1)|(1<<0)|(0<<2)|(0<<3))
+#define LEDf	((1<<1)|(1<<0)|(0<<2)|(0<<3))
+
+#define _L(l) MASK_AND_SET(GPIO_OUTR, LED_MASK, l)
+
 
 #endif  /* __IXP42X_H__ */
