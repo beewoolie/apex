@@ -21,8 +21,6 @@
 
 targets += apex.bin apex.srec
 
-OBJCOPYFLAGS_apex.bin := -Rethernet.bss
-
 $(obj)/apex.bin: apex FORCE
 	$(call if_changed,objcopy)
 

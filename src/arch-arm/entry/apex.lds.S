@@ -4,6 +4,7 @@
 OUTPUT_ARCH(arm)
 EXTERN(exception_vectors)
 ENTRY(exception_vectors)
+
 SECTIONS
 {
 	. = APEX_VMA;
@@ -72,17 +73,13 @@ SECTIONS
 	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
-	. = ALIGN (4);
-	ethernet.bss . : {
-		APEX_ETHERNET_START = .;
-		*(ethernet.bss)
-		APEX_ETHERNET_END = .;
-	}
 	. = ALIGN (8);
 	.bss . : {
 		APEX_VMA_BSS_START = .;
 		*(.bss)
 		APEX_VMA_BSS_END = .;
+		. = ALIGN (4);
+		*(ethernet.bss)
 	}
 	. += 8192;
 	APEX_VMA_STACK_START = .;
