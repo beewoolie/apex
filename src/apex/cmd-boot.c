@@ -41,7 +41,7 @@ int cmd_boot (int argc, const char** argv)
   }
 
   if (address == 0xffffffff) {
-    printf ("Kernel address needed.\r\n");
+    printf ("Kernel address required.\r\n");
     return 0;
   }
 
