@@ -476,13 +476,9 @@ core-y		:= # usr/
 endif # KBUILD_EXTMOD
 
 ifeq "$(wildcard config)" ""
-# *** FIXME: this stuff doesn't yet work.  I'll need to spend some
-# time with the .config stuff.  
 dot-config := 0
-.PHONY: config
-config: FORCE
-	@echo "Nothing will happen without a config file."
-	@echo "Please refer to the documentation."
+config:
+	$(error Nothing will happen without a config file.  Please refer to the documentation.)
 endif
 
 ifeq ($(dot-config),1)
@@ -803,7 +799,7 @@ include/envmagic.h: FORCE
 export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
 include/config.h: config
-	scripts/configtoh < config > include/config.h
+	@-[ -f config ] && scripts/configtoh < config > include/config.h
 
 # Single targets
 # ---------------------------------------------------------------------------
