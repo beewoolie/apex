@@ -27,8 +27,8 @@
 
 */
 
-#if !defined (__COMPACTFLASH_H__)
-#    define   __COMPACTFLASH_H__
+#if !defined (__MACH_DRV_CF_H__)
+#    define   __MACH_DRV_CF_H__
 
 /* ----- Includes */
 
@@ -69,4 +69,4 @@
 #endif
 
 
-#endif  /* __COMPACTFLASH_H__ */
+#endif  /* __MACH_DRV_CF_H__ */

@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   CompactFlash flash IO driver for LPD79524.
+   Generic CompactFlash IO driver
 
    o Byte-Swapping
 
@@ -34,16 +34,40 @@
      given access to a big-endian machine.  The hard part is that the
      CF standard has some built-in ordering.
 
-   o FAT
-
-     Some of the work here is to support FAT.  This will be moved to a
-     driver on its own before it is fully functional.
-
    o Parameter Alignment
 
      The 3 byte padding in the parameter structure is added because it
      keeps the enclosing structure from misaligning.  This deserves
      more exploration.
+
+   o This driver can be complicated on platforms where access to the
+     CF device is challenged by the hardware design.  
+
+     o The LPD boards tend to require an IO_BARRIER after writes to
+       latch the written data.  The need for an IO_BARRIER on read is
+       less clear.  
+
+     o The Sharp LH79524 has a feature where the address lines to 16
+       bit accessed devices are shifted one, granting a larger address
+       space, but also changing the alignment of address lines to the
+       CF slot on the LPD SDK board.
+
+     o Early LPD SDK boards drive the low address line which may
+       confuse some CF cards.  The LPD behavior is not compliant.  It
+       appears that SanDisk CF cards are tolerant of the behavior and
+       will perform in spite of A0 being driven.  (IIRC)
+
+   o 16 bit addressing.
+
+     This driver presently only allows for 16 bit access to the CF
+     slot.  Other bus widths will be implemented when the hardware is
+     available.
+
+   o Timeout on status read
+
+     It is imperative that a timeout be implemented in the status
+     read.  As the code stands, it will hang if the CF card
+     identifies, but the interface fails to show a ready status.   
 
 */
 
@@ -77,7 +101,7 @@
 # define REG __REG16
 #endif
 
-#define DRIVER_NAME	"cf-lpd79524"
+#define DRIVER_NAME	"cf-generic"
 
 #define SECTOR_SIZE	512
 
@@ -346,15 +370,6 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
-//extern struct driver_d* fs_driver;
-//struct driver_d lh79524_cf_driver;
-
-static void cf_init (void)
-{
-  //  if (fs_driver == NULL)
-  //    fs_driver = &lh79524_cf_driver;
-}
-
 #if !defined (CONFIG_SMALL)
 
 static void cf_report (void)
@@ -385,7 +400,7 @@ static __driver_3 struct driver_d cf_driver = {
 };
 
 static __service_6 struct service_d lpd79524_cf_service = {
-  .init = cf_init,
+//  .init = cf_init,
 #if !defined (CONFIG_SMALL)
   .report = cf_report,
 #endif
