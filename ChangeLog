@@ -1,5 +1,8 @@
 2005-03-20  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/initialize.c (__section): initializing the SMC
+	control so that flash works correctly. 
+
 	* Makefile (SUBLEVEL): Fixed the reset of the config hooks so that
 	the build is now optimal with respect to the configuration.
 
