@@ -28,6 +28,7 @@
 */
 
 #include <linux/string.h>
+#include <linux/ctype.h>
 #include <driver.h>
 #include <linux/kernel.h>
 #include <error.h>
@@ -112,6 +113,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	if (d->rgb[ib] == '/')
 	  ++state;
 	else {
+	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
 	  state = 9;
 	}
@@ -122,6 +124,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  ++state;
 	}
 	else {
+	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
 	  state = 9;
 	}
@@ -129,12 +132,15 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       case 2:
 	if (d->rgb[ib] == '/')
 	  return ERROR_FAILURE;
+	d->rgb[ib] = tolower (d->rgb[ib]);
 	d->pb[d->c++] = &d->rgb[ib];
 	state = 9;
 	break;
       case 9:
-	if (d->rgb[ib] != '/')
+	if (d->rgb[ib] != '/') {
+	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  continue;
+	}
 	d->rgb[ib] = 0;
 	state = 2;
       }

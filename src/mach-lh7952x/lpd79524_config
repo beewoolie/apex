@@ -28,13 +28,13 @@ CONFIG_SPINNER=y
 CONFIG_ALLHELP=y
 
 # Test code for the LCD display
-#CONFIG_CLCDC=y
+CONFIG_CLCDC=y
 
 # Test code for the audio codec
 #CONFIG_CODEC=y
 
 # Test code for ADC
-#CONFIG_ADC=y
+CONFIG_ADC=y
 
 CONFIG_CMD_CHECKSUM=y
 CONFIG_CMD_COPY=y

@@ -68,6 +68,7 @@ static __command struct command_d c_go = {
 "  Unlike the boot command, go does not pass data to a Linux\n" 
 "  kernel.  Services and drivers will be disabled and the MMU\n"
 "  will be off before jumping to ADDRESS.\n\n"
-"  e.g.  xreceive 0xb0000000 ; go 0xb0000000\n"
+/* Cannot use this example until the ; works on the command line */
+//"  e.g.  xreceive 0xb0000000 ; go 0xb0000000\n"
   )
 };

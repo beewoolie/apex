@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o Need a function like ls or info that can list the contents of a
+    directory or give data on a device.  Perhaps we can overload the
+    info function to allow a complete descriptor instead of just a
+    driver.  Not a bad idea.  This, then because a function of a
+    driver to allow a describe, info, catalog, or whatever on a
+    descriptor.
+
   o It would be nice if the fat/cf interface could be smart about
     detecting device changes.  Trouble is, CIS info doesn't appear to
     be enough.  It may be possible to use the hardware to detect a

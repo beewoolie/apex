@@ -41,6 +41,8 @@ extern const char* error_description;
 #define ERROR_AMBIGUOUS (-11)
 #define ERROR_NODRIVER	(-12)
 #define ERROR_UNSUPPORTED (-13)
+#define ERROR_BADPARTITION (-14)
+#define ERROR_FILENOTFOUND (-15)
 
 #if defined (CONFIG_SMALL)
 # define ERROR_RETURN(v,m) return (v)

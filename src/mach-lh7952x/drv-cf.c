@@ -57,7 +57,7 @@
 #include "hardware.h"
 #include "compactflash.h"
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
