@@ -19,6 +19,9 @@
    It's important that the driver leave the memory array in ReadArray
    mode so that the memory driver can be used to read from the device.
 
+   *** FIXME: must unlock before erasing/writing.  There might be a
+   *** function to lock after writing, too.
+
 */
 
 #include <driver.h>
@@ -33,7 +36,8 @@
 #define NOR_0_LENGTH	(8*1024*1024)
 #define NOR_1_PHYS	(0x45000000)
 #define NOR_1_LENGTH	(8*1024*1024)
-#define WIDTH		(1)	/* Bit shift for device width */
+#define WIDTH		(16)	/* Device width in bits */
+#define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
 #define ReadArray	(0xff)
 #define ReadID		(0x90)
@@ -110,13 +114,13 @@ static int nor_probe (void)
   __REG16 (NOR_0_PHYS) = ReadArray;
   __REG16 (NOR_0_PHYS) = ReadID;
 
-  if (   __REG16 (NOR_0_PHYS + (0x10 << WIDTH)) != 'Q'
-      || __REG16 (NOR_0_PHYS + (0x11 << WIDTH)) != 'R'
-      || __REG16 (NOR_0_PHYS + (0x12 << WIDTH)) != 'Y')
+  if (   __REG16 (NOR_0_PHYS + (0x10 << WIDTH_SHIFT)) != 'Q'
+      || __REG16 (NOR_0_PHYS + (0x11 << WIDTH_SHIFT)) != 'R'
+      || __REG16 (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != 'Y')
     return 0;
 
-  manufacturer = __REG16 (NOR_0_PHYS + (0x00 << WIDTH));
-  device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH));
+  manufacturer = __REG16 (NOR_0_PHYS + (0x00 << WIDTH_SHIFT));
+  device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH_SHIFT));
 
   for (chip = &chips[0]; 
        chip < chips + sizeof(chips)/sizeof (struct nor_chip);

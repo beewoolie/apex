@@ -32,7 +32,7 @@ Goals
       Afterward, absolute symbols may be used.  Note that weak
       symbols, at the moment, cannot be used until after relocation.
 
-  o IO descriptor: "device:path"
+  o IO descriptor (region): "device:path"
     o "nor:@0x44000000#0x20000"
     o "nand:@0#0x20000"
     o "serial:xmodem", "serial:binary"
@@ -42,6 +42,9 @@ Goals
       o copy "tftp://192.168.8.1/zImage" to "mem:@0x20000000"
       o copy "http://192.168.8.1/zImage" to "nor:@0"
       o erase "nor:@0#0x200000"
+    o Should support for suffixes, m,k
+    o Relaxed the @ requirement.  memory driver is the default which
+      means that 1m#1k specifies 1KiB from the 1MiB boundary
 
   o devices are self descriptive to the extent that they can be in
     terms of erase block sizes and so on
@@ -198,3 +201,21 @@ NOR
    banking.  Perhaps it would be good to limit all operations to
    blocks so that the code can be identical in all cases.
 
+Environment and Startup
+
+ o There is a single environment variable that contains a startup
+   command.  This will be executed when the loader starts.
+ o There is a timed delay function that will wait the specified number
+   of seconds (tenths) before continuing to execute the script
+   command line.
+
+     copy nor:0x400000#0x100000 0x20008000 ; \
+     wait 50 Automatic boot in 5 seconds ; \
+     boot
+
+ o Pressing a key will discontinue the script execution
+
+Spinner/Progress
+
+ o would be nice to have a standard UI call to emit progress
+   feedback.  Erasing, for example, takes quite a bit of time.
