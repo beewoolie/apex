@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Mar 20 18:55:21 2005
+# Sun Mar 20 19:30:10 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -77,3 +77,4 @@ CONFIG_ENV_REGION_KERNEL="nor:0x60010+0xffff0"
 CONFIG_ENV_STARTUP_RAMDISK_COPY=y
 CONFIG_ENV_REGION_RAMDISK="nor:0x160010+0x69fff0"
 CONFIG_USES_NOR_BOOTFLASH=y
+CONFIG_BIGENDIAN=y
