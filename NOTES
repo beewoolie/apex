@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o Checksum function doesn't appear to work over fat read files.  It
+    needs to clever about summing in the case that the descriptor
+    itself knows the length.
+
   o Wonder if I need, before performing reset, do a shutdown s.t. I
     can put the nor flash in the right state.  This might be why reset
     sometimes fails.

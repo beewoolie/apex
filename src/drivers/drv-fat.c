@@ -52,6 +52,10 @@
      one FAT sector is cached to make it somewhat efficient to read
      through a file.  
 
+     It used to be one sector, but now it is three.  We do this
+     because the FAT12 cluster values may span sectors.  It is far
+     easier to cache three sectors than to deal with this anomaly.
+
    o Filename handling
 
      It is cheaper, overall to put the user's filename in the same
@@ -67,8 +71,9 @@
 
    o FAT formats
 
-     Only FAT16 is supported.  Others may be, but only when we have a
-     sample to test.  FAT12 on the way.
+     Only FAT16 and FAT12 are supported.  Others may be, but only when
+     we have a sample to test.  Fortunately, the details are
+     concentrated mostly in the next_cluster function.
 
    o FILE I/O
 
@@ -92,7 +97,7 @@
 #include <linux/kernel.h>
 #include <error.h>
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -118,6 +123,9 @@ enum {
   fat12 = 1,
   fat16 = 2,
 };
+
+#define CLUSTERS_PER_3FAT_FAT12	(SECTOR_SIZE*4)
+#define CLUSTERS_PER_3FAT_FAT16	(SECTOR_SIZE*3/2)
 
 struct partition {
   unsigned char boot;
@@ -178,7 +186,7 @@ struct fat_info {
 //unsigned cluster_dir;		/* Current directory cluster being read  */
 
   int fat_type;			/* Decided FAT format */
-  char fat[SECTOR_SIZE];	/* Cached FAT sector  */
+  char fat[SECTOR_SIZE*3];	/* Cached FAT sectors */
   int sector_fat;		/* Sector number of the cached FAT */
 
   struct directory file;	/* Directory entry for the current file */
@@ -260,10 +268,9 @@ static int fat_identify (void)
 
 /* fat_next_cluster 
    
-   performs a read of the FAT to determine the next cluster in the
-   chain.
+   searches the FAT for the next cluster in the chain.  
 
-   *** FIXME: this implementation only works for FAT16.
+   *** This implementation works only for FAT12 and FAT16
 
    *** The cheat is there to save and restore the index pointer of the
    *** descriptor being used to read from the CF.  It isn't heinous,
@@ -272,26 +279,38 @@ static int fat_identify (void)
 
 static unsigned fat_next_cluster (unsigned cluster)
 {
-  int sector = fat.parameter.reserved_sectors + cluster/(SECTOR_SIZE/2);
+  int sector = 0;
+
+  if (fat.fat_type == fat12)
+    sector = cluster/CLUSTERS_PER_3FAT_FAT12;
+  if (fat.fat_type == fat16)
+    sector = cluster/CLUSTERS_PER_3FAT_FAT16;
+
+  //  PRINTF ("fnc: clus %x  sec %d", cluster, sector);
+  sector -= sector%3;	      /* We only care about groups of three */
+  sector += fat.parameter.reserved_sectors;
+  //  PRINTF ("->sec %d", sector);
 
   if (sector != fat.sector_fat) {
     size_t index = fat.d.index;	/* *** FIXME: This is a cheat */
     fat.d.driver->seek (&fat.d, SECTOR_SIZE*sector, SEEK_SET);
-    fat.d.driver->read (&fat.d, &fat.fat, SECTOR_SIZE);
+    fat.d.driver->read (&fat.d, &fat.fat, SECTOR_SIZE*3);
     fat.sector_fat = sector;
     fat.d.index = index;	/* *** FIXME: This is a cheat */
   }
 
   if (fat.fat_type == fat12) {
-    int index = cluster%(SECTOR_SIZE*2/3);
+    int index = cluster%CLUSTERS_PER_3FAT_FAT12;
     unsigned short v = read_short (fat.fat + index*3/2);
-    PRINTF ("next_cluster %x %x %x\n", cluster, index, v);
+    //    PRINTF ("ind %x v %x\n", index, v);
     return (index & 1) ? ((v >> 4) & 0xfff): (v & 0xfff);
   }
 
-  //read_short (fat.fat + (cluster%(SECTOR_SIZE/2))*2);
-  if (fat.fat_type == fat16)
-    return read_short (fat.fat + (cluster%(SECTOR_SIZE/2))*2);
+  if (fat.fat_type == fat16) {
+    //    PRINTF ("\n");
+    return read_short (fat.fat + (cluster%CLUSTERS_PER_3FAT_FAT16)*2);
+  }
+
   return 0;			/* an error, really */
 }
 
