@@ -22,7 +22,7 @@
 #if defined (CONFIG_DEBUG_LL)
 # include <mach/debug_ll.h>
 
-# define PUTHEX_LL(value) ({ unsigned long v = (unsigned long) value; \
+# define PUTHEX_LL(value) ({ unsigned long v = (unsigned long) (value); \
 			     int i; unsigned char ch; \
 			     for (i = 8; i--; ) {\
 			     ch = ((v >> (i*4)) & 0xf);\

@@ -80,6 +80,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
   PUTHEX_LL (offset);
   PUTC_LL ('+');
   PUTHEX_LL (lr);
+  PUTC_LL ('=');
+  PUTHEX_LL (*(unsigned long*) (offset + lr));
 
   PUTC_LL ('j');
 				/* Return to SDRAM */

@@ -108,8 +108,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
   PUTC_LL('A');
-  PUTHEX_LL (0x12345678);
-  PUTC_LL(' ');
 #endif
 
   GPIO_ER &= ~0xf;
@@ -141,14 +139,14 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   COPROCESSOR_WAIT;
 
 	/* Disable interrupts and set supervisor mode */
-  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
+  //  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
 	/* Drain write buffer */
-  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-  COPROCESSOR_WAIT;
+//  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+//  COPROCESSOR_WAIT;
 
 	/* Invalidate caches (I&D) and branch buffer (BTB) */
-  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+  //  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   //  COPROCESSOR_WAIT;
 
 	/* Invalidate TLBs (I&D) */
