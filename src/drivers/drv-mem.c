@@ -54,12 +54,22 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   extern char APEX_VMA_COPY_END;
   unsigned long* pl;
 
+  //  printf ("  marking\n");
+
 	/* Mark */
   for (pl = (unsigned long*) (start + length - CB_BLOCK
 			      + (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
-       pl >= (unsigned long*) start;
-       pl -= CB_BLOCK/sizeof (*pl))
+       1;
+       pl -= CB_BLOCK/sizeof (*pl)) {
+    //    printf ("   %p\n", pl);
     *pl = (unsigned long) pl;
+
+				/* Prevents integer wrapping at zero */
+    if ((((unsigned long) pl) & ~(CB_BLOCK - 1)) <= start)
+      break;
+  }
+
+//  printf ("  identifying\n");
 
 	/* Identify */
   for (pl = (unsigned long*) (start 
@@ -88,10 +98,14 @@ static void memory_init (void)
 
   i = 0;
 #if defined (CONFIG_MEM_BANK0_START)
+//  printf ("Scanning bank 0 %x %x\n", 
+//	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
 #endif
 
 #if defined (CONFIG_MEM_BANK1_START)
+//  printf ("Scanning bank 1 %x %x\n", 
+//	  CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
 #endif
 
