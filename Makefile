@@ -780,7 +780,11 @@ include/linux/config.h:
 	@touch include/linux/config.h
 
 include/envmagic.h: FORCE
-	@scripts/envmagic > include/envmagic.h
+	$(Q)scripts/envmagic > include/envmagic.h_new
+	$(Q)if [ ! -f include/envmagic.h ] \
+                 || ! cmp -s include/envmagic.h_new include/envmagic.h ;\
+	    then mv include/envmagic.h_new include/envmagic.h ;\
+	    else rm include/envmagic.h_new ; fi
 
 #	Leave this as default for preprocessing apex.lds.S, which is now
 #	done in arch/$(ARCH)/kernel/Makefile
