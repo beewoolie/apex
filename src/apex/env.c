@@ -37,6 +37,14 @@
 #define _s(v) #v 
 #define _t(v) _s(v)
 
+#if defined (CONFIG_KERNEL_LMA)
+static __env struct env_d e_bootaddr = {
+  .key = "bootaddr",
+  .default_value = _t(CONFIG_KERNEL_LMA),
+  .description = "Linux start address",
+};
+#endif
+
 #if (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
     || defined (CONFIG_ENV_AUTOBOOT)
 static __env struct env_d e_startup = {
