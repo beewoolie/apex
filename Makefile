@@ -761,7 +761,7 @@ export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
 %.s: %.c scripts FORCE
 	$(Q)$(MAKE) $(build)=$(@D) $@
-%.i: %.c scripts FORCE
+%.i: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %.o: %.c scripts FORCE
 	$(Q)$(MAKE) $(build)=$(@D) $@
