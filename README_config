@@ -162,7 +162,6 @@ CONFIG_ENV_REGION_KERNEL (string)
   
   CONFIG_ENV_REGION_KERNEL=nor:256k#1536k
 
-
 CONFIG_INTERRUPTS (y/n)
 
   Enables support for handling interrupts within the bootloader.  This
