@@ -198,7 +198,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   {
     unsigned long l;
     __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
-		    "orr	%0, %0, #(3<<30)\n\t"	// set nF and iA bits
+		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
 		    "mcr	p15, 0, %0, c1, c0, 0"
 		    : "=r" (l));
   }
@@ -207,8 +207,8 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (CSC_PHYS | CSC_CLKSET) = CSC_CLKSET_V;
 
   __asm volatile ("cmp %0, %1\n\t"
-		  "movls r0, #0\n\t"
-		  "movls pc, %0\n\t"
+		  "movge r0, #0\n\t"
+		  "movge pc, %0\n\t"
 		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS));
 
 
