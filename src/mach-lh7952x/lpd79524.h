@@ -43,15 +43,15 @@
 /* ----- Prototypes */
 
 
-#define CPLD_INTR		(0x4c600000)
-#define CPLD_CONTROL		(0x4c100000)
-#define CPLD_SPI		(0x4c500000)
-#define CPLD_INTERRUPT		(0x4c600000)
-#define CPLD_FLASH		__REG16 (0x4c800000)
-#define CPLD_REVISION		__REG16 (0x4ca00000)
-#define CPLD_EXGPIO		(0x4cb00000)
-#define CPLD_GPIODATA		(0x4cc00000)
-#define CPLD_GPIODIR		(0x4cd00000)
+#define CPLD_INTR		__REG8(0x4c600000)
+#define CPLD_CONTROL		__REG8(0x4c100000)
+#define CPLD_SPI		__REG8(0x4c500000)
+#define CPLD_INTERRUPT		__REG8(0x4c600000)
+#define CPLD_FLASH		__REG8(0x4c800000)
+#define CPLD_REVISION		__REG8(0x4ca00000)
+#define CPLD_EXGPIO		__REG8(0x4cb00000)
+#define CPLD_GPIODATA		__REG8(0x4cc00000)
+#define CPLD_GPIODIR		__REG8(0x4cd00000)
 
 #define CPLD_FLASH_NANDSPD	(1<<6)
 #define CPLD_FLASH_RDYnBSY	(1<<2)

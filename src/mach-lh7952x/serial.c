@@ -70,11 +70,11 @@ void lh7952x_serial_init (void)
 #if defined (CONFIG_MACH_LH79520)
   
   /* Enable ALL uarts since we don't know which we're using */
-  __REG (IOCON_PHYS + IOCON_UARTMUX) = 0xf;
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_PERIPHCLKCTRL) &= 
+  IOCON_UARTMUX = 0xf;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_PERIPHCLKCTRL &= 
     ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);    
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   switch (baudrate) {
   case 115200: 

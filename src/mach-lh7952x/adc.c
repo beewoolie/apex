@@ -241,15 +241,15 @@ static void adc_init (void)
 
   ENTRY (0);
 
-  __REG (RCPC_PHYS + RCPC_CTRL)      |=  (1<<9);	/* Unlock */
-  __REG (RCPC_PHYS + RCPC_ADCPRE)     =  RCPC_ADCPRE_V/2;
-  __REG (RCPC_PHYS + RCPC_PCLKSEL1)  &= ~(1<<2);	/* ADC src HCLK */
-//  __REG (RCPC_PHYS + RCPC_PCLKSEL1)  |=  (1<<2);	/* ADC src sys-osc */
-  __REG (RCPC_PHYS + RCPC_PCLKCTRL1) &= ~(1<<2);	/* Enable ADC clock */
-  __REG (RCPC_PHYS + RCPC_CTRL)      &= ~(1<<9);	/* Lock */
+  RCPC_CTRL      |=  (1<<9);	/* Unlock */
+  RCPC_ADCPRE     =  RCPC_ADCPRE_V/2;
+  RCPC_PCLKSEL1  &= ~(1<<2);	/* ADC src HCLK */
+//  RCPC_PCLKSEL1  |=  (1<<2);	/* ADC src sys-osc */
+  RCPC_PCLKCTRL1 &= ~(1<<2);	/* Enable ADC clock */
+  RCPC_CTRL      &= ~(1<<9);	/* Lock */
 
 
-  __REG (IOCON_PHYS + IOCON_MUXCTL25) = 0;	/* Take all of the ADC pins */
+  IOCON_MUXCTL25  = 0;	/* Take all of the ADC pins */
 
   ADC_IM = 0; /* Disable all interrupts */
 

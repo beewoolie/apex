@@ -64,118 +64,118 @@
 #define BOOT_PHYS	(0xfffe6000)
 
 #define BOOT_PBC	__REG(BOOT_PHYS + 0x00)
-#define BOOT_CS1OV	(0x04)
-#define BOOT_EPM	(0x08)
+#define BOOT_CS1OV	__REG(BOOT_PHYS + 0x04)
+#define BOOT_EPM	__REG(BOOT_PHYS + 0x08)
 
 #define RCPC_PHYS	(0xfffe2000)
 
-#define RCPC_CTRL	(0x00)
-#define RCPC_CHIPID	(0x04)
-#define RCPC_REMAP	(0x08)
-#define RCPC_SOFTRESET	(0x0c)
-#define RCPC_SYSCLKPRE	(0x18)
-#define RCPC_CPUCLKPRE	(0x1c)
-#define RCPC_CPUCLKPRE	(0x1c)
-#define RCPC_PCLKCTRL0	(0x24)
-#define RCPC_PCLKCTRL1	(0x28)
-#define RCPC_AHBCLKCTRL	(0x2c)
-#define RCPC_PCLKSEL0	(0x30)
-#define RCPC_PCLKSEL1	(0x34)
-#define RCPC_LCDPRE	(0x40)
-#define RCPC_SSPPRE	(0x44)
-#define RCPC_ADCPRE	(0x48)
-#define RCPC_INTCONFIG	(0x80)
-#define RCPC_INTCLR	(0x84)
-#define RCPC_CORECONFIG	(0x88)
-#define RCPC_SYSPLLCNTL	(0xc0)
+#define RCPC_CTRL	__REG(RCPC_PHYS + 0x00)
+#define RCPC_CHIPID	__REG(RCPC_PHYS + 0x04)
+#define RCPC_REMAP	__REG(RCPC_PHYS + 0x08)
+#define RCPC_SOFTRESET	__REG(RCPC_PHYS + 0x0c)
+#define RCPC_SYSCLKPRE	__REG(RCPC_PHYS + 0x18)
+#define RCPC_CPUCLKPRE	__REG(RCPC_PHYS + 0x1c)
+#define RCPC_CPUCLKPRE	__REG(RCPC_PHYS + 0x1c)
+#define RCPC_PCLKCTRL0	__REG(RCPC_PHYS + 0x24)
+#define RCPC_PCLKCTRL1	__REG(RCPC_PHYS + 0x28)
+#define RCPC_AHBCLKCTRL	__REG(RCPC_PHYS + 0x2c)
+#define RCPC_PCLKSEL0	__REG(RCPC_PHYS + 0x30)
+#define RCPC_PCLKSEL1	__REG(RCPC_PHYS + 0x34)
+#define RCPC_LCDPRE	__REG(RCPC_PHYS + 0x40)
+#define RCPC_SSPPRE	__REG(RCPC_PHYS + 0x44)
+#define RCPC_ADCPRE	__REG(RCPC_PHYS + 0x48)
+#define RCPC_INTCONFIG	__REG(RCPC_PHYS + 0x80)
+#define RCPC_INTCLR	__REG(RCPC_PHYS + 0x84)
+#define RCPC_CORECONFIG	__REG(RCPC_PHYS + 0x88)
+#define RCPC_SYSPLLCNTL	__REG(RCPC_PHYS + 0xc0)
 
 #define EMC_PHYS	(0xffff1000)
 
-#define EMC_CONTROL	(0x00)
-#define EMC_STATUS	(0x04)
-#define EMC_CONFIG	(0x08)
+#define EMC_CONTROL	__REG(EMC_PHYS + 0x00)
+#define EMC_STATUS	__REG(EMC_PHYS + 0x04)
+#define EMC_CONFIG	__REG(EMC_PHYS + 0x08)
 
-#define EMC_DYNMCTRL	(0x20)
-#define EMC_DYNMREF	(0x24)
-#define EMC_READCONFIG	(0x28)	/* Undocumented */
-#define EMC_PRECHARGE	(0x30)	/* rp */
-#define EMC_DYNM2PRE	(0x34)	/* ras */
-#define EMC_REFEXIT	(0x38)	/* rex */
-#define EMC_DOACTIVE	(0x3c)	/* apr */
-#define EMC_DIACTIVE	(0x40)	/* dal */
-#define EMC_DWRT	(0x44)	/* wr */
+#define EMC_DYNMCTRL	__REG(EMC_PHYS + 0x20)
+#define EMC_DYNMREF	__REG(EMC_PHYS + 0x24)
+#define EMC_READCONFIG	__REG(EMC_PHYS + 0x28)	/* Undocumented */
+#define EMC_PRECHARGE	__REG(EMC_PHYS + 0x30)	/* rp */
+#define EMC_DYNM2PRE	__REG(EMC_PHYS + 0x34)	/* ras */
+#define EMC_REFEXIT	__REG(EMC_PHYS + 0x38)	/* rex */
+#define EMC_DOACTIVE	__REG(EMC_PHYS + 0x3c)	/* apr */
+#define EMC_DIACTIVE	__REG(EMC_PHYS + 0x40)	/* dal */
+#define EMC_DWRT	__REG(EMC_PHYS + 0x44)	/* wr */
 
-#define EMC_DYNACTCMD	(0x48)	/* rc */
-#define EMC_DYNAUTO	(0x4c)	/* rfc */
-#define EMC_DYNREFEXIT	(0x50)	/* xsr */
-#define EMC_DYNACTIVEAB	(0x54)	/* rrd */
-#define EMC_DYNAMICTMRD	(0x58)	/* mrd */
+#define EMC_DYNACTCMD	__REG(EMC_PHYS + 0x48)	/* rc */
+#define EMC_DYNAUTO	__REG(EMC_PHYS + 0x4c)	/* rfc */
+#define EMC_DYNREFEXIT	__REG(EMC_PHYS + 0x50)	/* xsr */
+#define EMC_DYNACTIVEAB	__REG(EMC_PHYS + 0x54)	/* rrd */
+#define EMC_DYNAMICTMRD	__REG(EMC_PHYS + 0x58)	/* mrd */
 
-#define EMC_WAIT	(0x80)
+#define EMC_WAIT	__REG(EMC_PHYS + 0x80)
 
-#define EMC_DYNCFG0	(0x100)
-#define EMC_DYNRASCAS0	(0x104)
-#define EMC_DYNCFG1	(0x120)
-#define EMC_DYNRASCAS1	(0x124)
+#define EMC_DYNCFG0	__REG(EMC_PHYS + 0x100)
+#define EMC_DYNRASCAS0	__REG(EMC_PHYS + 0x104)
+#define EMC_DYNCFG1	__REG(EMC_PHYS + 0x120)
+#define EMC_DYNRASCAS1	__REG(EMC_PHYS + 0x124)
 
-#define EMC_SCONFIG0	(0x200)
-#define EMC_SWAITWEN0	(0x204)
-#define EMC_SWAITOEN0	(0x208)
-#define EMC_SWAITRD0	(0x20c)
-#define EMC_SWAITPAGE0	(0x210)
-#define EMC_SWAITWR0	(0x214)
-#define EMC_STURN0	(0x218)
+#define EMC_SCONFIG0	__REG(EMC_PHYS + 0x200)
+#define EMC_SWAITWEN0	__REG(EMC_PHYS + 0x204)
+#define EMC_SWAITOEN0	__REG(EMC_PHYS + 0x208)
+#define EMC_SWAITRD0	__REG(EMC_PHYS + 0x20c)
+#define EMC_SWAITPAGE0	__REG(EMC_PHYS + 0x210)
+#define EMC_SWAITWR0	__REG(EMC_PHYS + 0x214)
+#define EMC_STURN0	__REG(EMC_PHYS + 0x218)
 
-#define EMC_SCONFIG1	(0x220)
-#define EMC_SWAITWEN1	(0x224)
-#define EMC_SWAITOEN1	(0x228)
-#define EMC_SWAITRD1	(0x22c)
-#define EMC_SWAITPAGE1	(0x230)
-#define EMC_SWAITWR1	(0x234)
-#define EMC_STURN1	(0x238)
+#define EMC_SCONFIG1	__REG(EMC_PHYS + 0x220)
+#define EMC_SWAITWEN1	__REG(EMC_PHYS + 0x224)
+#define EMC_SWAITOEN1	__REG(EMC_PHYS + 0x228)
+#define EMC_SWAITRD1	__REG(EMC_PHYS + 0x22c)
+#define EMC_SWAITPAGE1	__REG(EMC_PHYS + 0x230)
+#define EMC_SWAITWR1	__REG(EMC_PHYS + 0x234)
+#define EMC_STURN1	__REG(EMC_PHYS + 0x238)
 
-#define EMC_SCONFIG2	(0x240)
-#define EMC_SWAITWEN2	(0x244)
-#define EMC_SWAITOEN2	(0x248)
-#define EMC_SWAITRD2	(0x24c)
-#define EMC_SWAITPAGE2	(0x250)
-#define EMC_SWAITWR2	(0x254)
-#define EMC_STURN2	(0x258)
+#define EMC_SCONFIG2	__REG(EMC_PHYS + 0x240)
+#define EMC_SWAITWEN2	__REG(EMC_PHYS + 0x244)
+#define EMC_SWAITOEN2	__REG(EMC_PHYS + 0x248)
+#define EMC_SWAITRD2	__REG(EMC_PHYS + 0x24c)
+#define EMC_SWAITPAGE2	__REG(EMC_PHYS + 0x250)
+#define EMC_SWAITWR2	__REG(EMC_PHYS + 0x254)
+#define EMC_STURN2	__REG(EMC_PHYS + 0x258)
 
-#define EMC_SCONFIG3	(0x260)
-#define EMC_SWAITWEN3	(0x264)
-#define EMC_SWAITOEN3	(0x268)
-#define EMC_SWAITRD3	(0x26c)
-#define EMC_SWAITPAGE3	(0x270)
-#define EMC_SWAITWR3	(0x274)
-#define EMC_STURN3	(0x278)
+#define EMC_SCONFIG3	__REG(EMC_PHYS + 0x260)
+#define EMC_SWAITWEN3	__REG(EMC_PHYS + 0x264)
+#define EMC_SWAITOEN3	__REG(EMC_PHYS + 0x268)
+#define EMC_SWAITRD3	__REG(EMC_PHYS + 0x26c)
+#define EMC_SWAITPAGE3	__REG(EMC_PHYS + 0x270)
+#define EMC_SWAITWR3	__REG(EMC_PHYS + 0x274)
+#define EMC_STURN3	__REG(EMC_PHYS + 0x278)
 
 #define IOCON_PHYS	(0xfffe5000)
 
-#define IOCON_MUXCTL1	(0x00)
-#define IOCON_RESCTL1	(0x04)
-#define IOCON_MUXCTL5	(0x20)
-#define IOCON_RESCTL5	(0x24)
-#define IOCON_MUXCTL6	(0x28)
-#define IOCON_MUXCTL7	(0x30)
-#define IOCON_RESCTL7	(0x34)
-#define IOCON_MUXCTL10	(0x48)
-#define IOCON_MUXCTL11	(0x50)
-#define IOCON_MUXCTL12	(0x58)
-#define IOCON_MUXCTL14	(0x68)
-#define IOCON_MUXCTL19	(0x90)
-#define IOCON_RESCTL19	(0x94)
-#define IOCON_MUXCTL20	(0x98)
-#define IOCON_RESCTL20	(0x9c)
-#define IOCON_MUXCTL21	(0xa0)
-#define IOCON_RESCTL21	(0xa4)
-#define IOCON_MUXCTL22	(0xa8)
-#define IOCON_RESCTL22	(0xac)
-#define IOCON_MUXCTL23	(0xb0)
-#define IOCON_RESCTL23	(0xb4)
-#define IOCON_MUXCTL24	(0xb8)
-#define IOCON_RESCTL24	(0xbc)
-#define IOCON_MUXCTL25	(0xc0)
+#define IOCON_MUXCTL1	__REG(IOCON_PHYS + 0x00)
+#define IOCON_RESCTL1	__REG(IOCON_PHYS + 0x04)
+#define IOCON_MUXCTL5	__REG(IOCON_PHYS + 0x20)
+#define IOCON_RESCTL5	__REG(IOCON_PHYS + 0x24)
+#define IOCON_MUXCTL6	__REG(IOCON_PHYS + 0x28)
+#define IOCON_MUXCTL7	__REG(IOCON_PHYS + 0x30)
+#define IOCON_RESCTL7	__REG(IOCON_PHYS + 0x34)
+#define IOCON_MUXCTL10	__REG(IOCON_PHYS + 0x48)
+#define IOCON_MUXCTL11	__REG(IOCON_PHYS + 0x50)
+#define IOCON_MUXCTL12	__REG(IOCON_PHYS + 0x58)
+#define IOCON_MUXCTL14	__REG(IOCON_PHYS + 0x68)
+#define IOCON_MUXCTL19	__REG(IOCON_PHYS + 0x90)
+#define IOCON_RESCTL19	__REG(IOCON_PHYS + 0x94)
+#define IOCON_MUXCTL20	__REG(IOCON_PHYS + 0x98)
+#define IOCON_RESCTL20	__REG(IOCON_PHYS + 0x9c)
+#define IOCON_MUXCTL21	__REG(IOCON_PHYS + 0xa0)
+#define IOCON_RESCTL21	__REG(IOCON_PHYS + 0xa4)
+#define IOCON_MUXCTL22	__REG(IOCON_PHYS + 0xa8)
+#define IOCON_RESCTL22	__REG(IOCON_PHYS + 0xac)
+#define IOCON_MUXCTL23	__REG(IOCON_PHYS + 0xb0)
+#define IOCON_RESCTL23	__REG(IOCON_PHYS + 0xb4)
+#define IOCON_MUXCTL24	__REG(IOCON_PHYS + 0xb8)
+#define IOCON_RESCTL24	__REG(IOCON_PHYS + 0xbc)
+#define IOCON_MUXCTL25	__REG(IOCON_PHYS + 0xc0)
 
 #define DMA_PHYS	(0xfffe1000)
 #define DMA0_PHYS	(0xfffe1000)
@@ -238,54 +238,54 @@
 #define TIMER_CNT1	(0xc)
 
 #define RTC_PHYS	(0xfffe0000)
-#define RTC_DR		(0x00)
-#define RTC_LR		(0x08)
-#define RTC_CR		(0x0c)
+#define RTC_DR		__REG (RTC_PHYS + 0x00)
+#define RTC_LR		__REG (RTC_PHYS + 0x08)
+#define RTC_CR		__REG (RTC_PHYS + 0x0c)
 
-#define GPIO_AB_PHYS	(0xfffdf000)
-#define GPIO_CD_PHYS	(0xfffde000)
-#define GPIO_EF_PHYS	(0xfffdd000)
-#define GPIO_GH_PHYS	(0xfffdc000)
-#define GPIO_IJ_PHYS	(0xfffdb000)
-#define GPIO_KL_PHYS	(0xfffda000)
-#define GPIO_MN_PHYS	(0xfffd9000)
+#define GPIO_AB_PHYS	__REG(0xfffdf000)
+#define GPIO_CD_PHYS	__REG(0xfffde000)
+#define GPIO_EF_PHYS    __REG(0xfffdd000)
+#define GPIO_GH_PHYS	__REG(0xfffdc000)
+#define GPIO_IJ_PHYS	__REG(0xfffdb000)
+#define GPIO_KL_PHYS	__REG(0xfffda000)
+#define GPIO_MN_PHYS	__REG(0xfffd9000)
 
 #define SSP_PHYS	(0xfffc6000)
 #define I2S_PHYS	(0xfffc8000)
 
 #define VIC_PHYS	0xfffff000
-#define VIC_IRQSTATUS	0x00
-#define VIC_FIQSTATUS	0x04
-#define VIC_RAWINTSR	0x08
-#define VIC_INTSELECT	0x0c
-#define VIC_INTENABLE	0x10
-#define VIC_INTENCLEAR	0x14
-#define VIC_SOFTINT	0x18
-#define VIC_SOFTINT_CLEAR 0x1c
-#define VIC_VECTADDR	0x30
-#define VIC_DEFVECTADDR	0x34
-#define VIC_VECTADDR0	0x100
-#define VIC_VECTCTRL0	0x200
+#define VIC_IRQSTATUS	__REG(VIC_PHYS + 0x00)
+#define VIC_FIQSTATUS	__REG(VIC_PHYS + 0x04)
+#define VIC_RAWINTSR	__REG(VIC_PHYS + 0x08)
+#define VIC_INTSELECT	__REG(VIC_PHYS + 0x0c)
+#define VIC_INTENABLE	__REG(VIC_PHYS + 0x10)
+#define VIC_INTENCLEAR	__REG(VIC_PHYS + 0x14)
+#define VIC_SOFTINT	__REG(VIC_PHYS + 0x18)
+#define VIC_SOFTINT_CLEAR __REG(VIC_PHYS + 0x1c)
+#define VIC_VECTADDR	__REG(VIC_PHYS + 0x30)
+#define VIC_DEFVECTADDR	__REG(VIC_PHYS + 0x34)
+#define VIC_VECTADDR0	__REG(VIC_PHYS + 0x100)
+#define VIC_VECTCTRL0	__REG(VIC_PHYS + 0x200)
 
 #define ALI_PHYS	(0xfffe4000) /* Advanced LCD Interface */
-#define ALI_SETUP	(0x00)
-#define ALI_CTRL	(0x04)
-#define ALI_TIMING1	(0x08)
-#define ALI_TIMING2	(0x0c)
+#define ALI_SETUP	__REG(ALI_PHYS + 0x00)
+#define ALI_CTRL	__REG(ALI_PHYS + 0x04)
+#define ALI_TIMING1	__REG(ALI_PHYS + 0x08)
+#define ALI_TIMING2	__REG(ALI_PHYS + 0x0c)
 
 #define CLCDC_PHYS	(0xffff4000)
-#define CLCDC_TIMING0	(0x00)
-#define CLCDC_TIMING1	(0x04)
-#define CLCDC_TIMING2	(0x08)
-#define CLCDC_UPBASE	(0x10)
-#define CLCDC_LPBASE	(0x14)
-#define CLCDC_INTREN	(0x18)
-#define CLCDC_CTRL	(0x1c)
-#define CLCDC_STATUS	(0x20)
-#define CLCDC_INTERRUPT	(0x24)
-#define CLCDC_UPCURR	(0x28)
-#define CLCDC_LPCURR	(0x2c)
-#define CLCDC_PALETTE	(0x200)
+#define CLCDC_TIMING0	__REG(CLCDC_PHYS + 0x00)
+#define CLCDC_TIMING1	__REG(CLCDC_PHYS + 0x04)
+#define CLCDC_TIMING2	__REG(CLCDC_PHYS + 0x08)
+#define CLCDC_UPBASE	__REG(CLCDC_PHYS + 0x10)
+#define CLCDC_LPBASE	__REG(CLCDC_PHYS + 0x14)
+#define CLCDC_INTREN	__REG(CLCDC_PHYS + 0x18)
+#define CLCDC_CTRL	__REG(CLCDC_PHYS + 0x1c)
+#define CLCDC_STATUS	__REG(CLCDC_PHYS + 0x20)
+#define CLCDC_INTERRUPT	__REG(CLCDC_PHYS + 0x24)
+#define CLCDC_UPCURR	__REG(CLCDC_PHYS + 0x28)
+#define CLCDC_LPCURR	__REG(CLCDC_PHYS + 0x2c)
+#define CLCDC_PALETTE	__REG(CLCDC_PHYS + 0x200)
 
 #define EMAC_PHYS		0xfffc7000
 #define EMAC_NETCTL		__REG(EMAC_PHYS + 0x00)

@@ -49,12 +49,12 @@
 static __naked __section (.bootstrap) void wait_on_busy (void)
 {
 #if defined CONFIG_NAND_LPD
-  while ((__REG8 (CPLD_FLASH) & CPLD_FLASH_RDYnBSY) == 0)
+  while ((CPLD_FLASH & CPLD_FLASH_RDYnBSY) == 0)
     ;
 #else
   do {
-    __REG8 (NAND_CLE) = Status;
-  } while ((__REG8 (NAND_DATA) & Ready) == 0);
+    NAND_CLE = Status;
+  } while ((NAND_DATA & Ready) == 0);
 #endif
   __asm ("mov pc, lr");
 }
@@ -78,16 +78,16 @@ void __naked __section (.bootstrap) relocate_apex (void)
   extern char reloc;
 
 #if defined (EMERGENCY)
-  __REG (IOCON_PHYS + IOCON_MUXCTL14) |=  (1<<8); 
-  __REG (GPIO_MN_PHYS) &= ~(1<<0);
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
+  IOCON_MUXCTL14 |=  (1<<8); 
+  GPIO_MN_PHYS &= ~(1<<0);
+  IOCON_MUXCTL7  &= ~(0xf<<12);
 
   /* Boot ROM uses 0xf. If I set this to 0xf, I can read nothing from
      NAND. */
 
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0xa<<12);
+  IOCON_MUXCTL7  |=  (0xa<<12);
+  IOCON_RESCTL7  &= ~(0xf<<12);
+  IOCON_RESCTL7  |=  (0xa<<12);
 #endif
 
   __asm volatile ("mov r0, lr\n\t"
@@ -105,22 +105,22 @@ void __naked __section (.bootstrap) relocate_apex (void)
     void* pv = &APEX_VMA_ENTRY;
     int cAddr = NAM_DECODE (BOOT_PBC);
 
-    __REG8 (NAND_CLE) = Reset;
+    NAND_CLE = Reset;
     wait_on_busy ();
 
-    __REG8 (NAND_CLE) = Read1;
+    NAND_CLE = Read1;
     while (cAddr--)
-      __REG8 (NAND_ALE) = 0;
+      NAND_ALE = 0;
     wait_on_busy ();
 
     while (cPages--) {
       int cb;
 
-      __REG8 (NAND_CLE) = Read1;
+      NAND_CLE = Read1;
       for (cb = 512; cb--; )
-	*((char*) pv++) = __REG8 (NAND_DATA);
+	*((char*) pv++) = NAND_DATA;
       for (cb = 16; cb--; )
-	__REG8 (NAND_DATA);
+	NAND_DATA;
       wait_on_busy ();
     }
   }

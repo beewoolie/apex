@@ -39,7 +39,7 @@ static void cpuinfo_report (void)
   unsigned long id;
   unsigned long ctrl;
   unsigned long cpsr;
-  unsigned short chipid = __REG16 (RCPC_PHYS + RCPC_CHIPID);
+  unsigned short chipid = RCPC_CHIPID;
   char* sz = NULL;
   unsigned char bootmode = BOOT_PBC;
   char* szBootmode = NULL;

@@ -183,23 +183,23 @@ static void msleep (int ms)
 
 static void enable_cs (void)
 {
-  __REG8 (CPLD_SPI) &= ~(1<<5);
+  CPLD_SPI &= ~(1<<5);
   usleep (T_CSS);
 }
 
 static void disable_cs (void)
 {
   usleep (T_CS);
-  __REG8 (CPLD_SPI) |=  (1<<5);
+  CPLD_SPI |=  (1<<5);
   usleep (T_CS);
 }
 
 static void pulse_clock (void)
 {
-  unsigned char reg = __REG8 (CPLD_SPI) & ~CPLD_SPI_SCLK;
-  __REG8 (CPLD_SPI) = reg | CPLD_SPI_SCLK;
+  unsigned char reg = CPLD_SPI & ~CPLD_SPI_SCLK;
+  CPLD_SPI = reg | CPLD_SPI_SCLK;
   usleep (T_SKH);
-  __REG8 (CPLD_SPI) = reg;
+  CPLD_SPI = reg;
   usleep (T_SKL);
 }
 
@@ -222,11 +222,10 @@ static void execute_spi_command (int v, int cwrite)
   PRINTF ("spi 0x%04x -> 0x%x\n", v & 0x1ff, (v >> CODEC_ADDR_SHIFT) & 0x7f);
   enable_cs ();
 
-  reg = __REG8 (CPLD_SPI) & ~CPLD_SPI_TX;
+  reg = CPLD_SPI & ~CPLD_SPI_TX;
   v <<= CPLD_SPI_TX_SHIFT; /* Correction for position of SPI_TX bit */
   while (cwrite--) {
-    __REG8 (CPLD_SPI) 
-      = reg | ((v >> cwrite) & CPLD_SPI_TX);
+    CPLD_SPI = reg | ((v >> cwrite) & CPLD_SPI_TX);
     usleep (T_DIS);
     pulse_clock ();
   }
@@ -311,10 +310,9 @@ static void codec_configure (int frequency, int sample_size)
 #if defined (USE_CPU_MASTER)
   ssp_set_speed (frequency);
 #else
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  MASK_AND_SET (__REG (RCPC_PHYS + RCPC_CTRL),  /* System osc. -> CLKOUT */
-		3<<5, 0<<5);
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  MASK_AND_SET (RCPC_CTRL, 3<<5, 0<<5);	/* System osc. -> CLKOUT */
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 #endif
 }
 
@@ -354,12 +352,12 @@ void ssp_set_speed (int speed)
   PRINTF ("ssp_set_speed  rcpc_ssppre %d  dvsr %d  cpd %d\n", 
 	  rcpc_prescale, ssp_dvsr, ssp_cpd);
 
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_PCLKSEL1) &= ~(1<<1);	/* HCLK -> SSP clock */
-  __REG (RCPC_PHYS + RCPC_SSPPRE) = rcpc_prescale>>1;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKSEL1 &= ~(1<<1);	/* HCLK -> SSP clock */
+  RCPC_SSPPRE = rcpc_prescale>>1;
   SSP_CPSR = ssp_dvsr;
   MASK_AND_SET (SSP_CTRL0, (0xff<<8), (ssp_cpd - 1)<<8);
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 }
 
 
@@ -368,9 +366,9 @@ static void codec_init (void)
   SSP_CTRL0 = 0;
   SSP_CTRL1 = 0;
 
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_PCLKCTRL1) &= ~(1<<1); /* Enable SSP clock */
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKCTRL1 &= ~(1<<1); /* Enable SSP clock */
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
 
 #if defined (USE_I2S)
@@ -379,32 +377,32 @@ static void codec_init (void)
 
   SSP_IMSC &= 0xff;		/* Mask everything */
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL5),
+  MASK_AND_SET (IOCON_MUXCTL5,
 		(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<6)|(1<<4)|(1<<2)|(1<<0));	/* SSP/I2S signals */
-//  __REG (IOCON_PHYS + IOCON_RESCTL5) &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
+//  IOCON_RESCTL5 &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
 
-    MASK_AND_SET (SSP_CTRL0, (3<<4), (1<<4)); /* TI mode */
+  MASK_AND_SET (SSP_CTRL0, (3<<4), (1<<4)); /* TI mode */
 #if defined (USE_CPU_MASTER)
-    SSP_CTRL1 &= ~(1<<2);	/* CPU as master */
+  SSP_CTRL1 &= ~(1<<2);	/* CPU as master */
 #else
-    SSP_CTRL1 |=  (1<<2);	/* CPU as slave */
+  SSP_CTRL1 |=  (1<<2);	/* CPU as slave */
 #endif
 
 #if defined (USE_LOOPBACK_SSP)
-    SSP_CTRL1 |= SSP_CTRL1_LBM;	/* Loopback */
+  SSP_CTRL1 |= SSP_CTRL1_LBM;	/* Loopback */
 #endif
 
 #if defined (USE_16)
-    MASK_AND_SET (SSP_CTRL0, 0xf, ((16 - 1) & 0xf));
+  MASK_AND_SET (SSP_CTRL0, 0xf, ((16 - 1) & 0xf));
 #else
-    MASK_AND_SET (SSP_CTRL0, 0xf, ((8  - 1) & 0xf));
+  MASK_AND_SET (SSP_CTRL0, 0xf, ((8  - 1) & 0xf));
 #endif    
 
 #if defined (USE_DMA)
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) &= ~(1<<0); /* Enable DMA AHB clock */
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_AHBCLKCTRL &= ~(1<<0); /* Enable DMA AHB clock */
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   DMA0_CTRL
     = (0<<13)			/* Peripheral source */
@@ -469,14 +467,14 @@ static void codec_init (void)
 
   codec_enable ();
 
-//  printf ("ssp: status 0x%lx\n", __REG (SSP_PHYS | SSP_SR));
+//  printf ("ssp: status 0x%lx\n", SSP_SR);
 }
 
 static void codec_release (void)
 {
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_PCLKCTRL1) |= (1<<1);	/* Disable SSP clock */
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKCTRL1 |= (1<<1);	/* Disable SSP clock */
+  RCPC_CTRL	 &= ~RCPC_CTRL_UNLOCK;
 }
 
 

@@ -61,21 +61,21 @@
 
 static void enable_cs (int chip_select)
 {
-  __REG16 (CPLD_SPI) |=  chip_select;
+  CPLD_SPI |=  chip_select;
   usleep (T_CSS);
 }
 
 static void disable_cs (int chip_select)
 {
-  __REG16 (CPLD_SPI) &= ~chip_select;
+  CPLD_SPI &= ~chip_select;
   usleep (T_CS);
 }
 
 static void pulse_clock (void)
 {
-  __REG16 (CPLD_SPI) |=  CPLD_SPI_SCLK;
+  CPLD_SPI |=  CPLD_SPI_SCLK;
   usleep (T_SKH);
-  __REG16 (CPLD_SPI) &= ~CPLD_SPI_SCLK;
+  CPLD_SPI &= ~CPLD_SPI_SCLK;
   usleep (T_SKL);
 }
 
@@ -100,9 +100,7 @@ static int execute_spi_command (int chip_select,
 
   v <<= CPLD_SPI_TX_SHIFT;	/* Correction for the position of SPI_TX bit */
   while (cwrite--) {
-    __REG16 (CPLD_SPI) 
-      = (__REG16 (CPLD_SPI) & ~CPLD_SPI_TX)
-      | ((v >> cwrite) & CPLD_SPI_TX);
+    CPLD_SPI = (CPLD_SPI & ~CPLD_SPI_TX) | ((v >> cwrite) & CPLD_SPI_TX);
     usleep (T_DIS);
     pulse_clock ();
   }
@@ -115,7 +113,7 @@ static int execute_spi_command (int chip_select,
 	
     l = -1;
     do {
-      if (__REG16 (CPLD_SPI) & CPLD_SPI_RX) {
+      if (CPLD_SPI & CPLD_SPI_RX) {
 	l = 0;
 	break;
       }
@@ -126,7 +124,7 @@ static int execute_spi_command (int chip_select,
     while (cread-- > 0) {
       pulse_clock ();
       l = (l<<1) 
-	| (((__REG16 (CPLD_SPI) & CPLD_SPI_RX) >> CPLD_SPI_RX_SHIFT) & 0x1);
+	| (((CPLD_SPI & CPLD_SPI_RX) >> CPLD_SPI_RX_SHIFT) & 0x1);
     }
 
   disable_cs (chip_select);

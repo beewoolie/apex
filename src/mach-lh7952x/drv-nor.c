@@ -130,14 +130,14 @@ static unsigned long phys_from_index (unsigned long index)
 static void vpen_enable (void)
 {
 #if defined (CONFIG_MACH_LPD79524)
-  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |=  CPLD_FLASH_FL_VPEN;
 #endif
 }
 
 static void vpen_disable (void)
 {
 #if defined (CONFIG_MACH_LPD79524)
-  __REG16 (CPLD_FLASH) &= ~CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH &= ~CPLD_FLASH_FL_VPEN;
 #endif
 }
 

@@ -52,8 +52,10 @@ static irq_return_t timer_isr (int irq)
 
 void lh79524_timer_init (void)
 {
-  __REG (RCPC_PHYS + RCPC_PCLKSEL0) |= 3<<7; /* 32KHz oscillator for RTC */
-  __REG (RTC_PHYS + RTC_CR) = RTC_CR_EN;  
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKSEL0  |= 3<<7; /* 32KHz oscillator for RTC */
+  RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
+  RTC_CR	  = RTC_CR_EN;  
 
 #if defined (CONFIG_INTERRUPTS)
  {
@@ -63,20 +65,23 @@ void lh79524_timer_init (void)
    __REG (TIMER1_PHYS + TIMER_CTRL) = (7<<2)|(1<<1)|(1<<0);
    __REG (TIMER1_PHYS + TIMER_INTEN1) = (1<<0);
 
-   __REG (VIC_PHYS + VIC_INTENABLE) |= (1<<5);
+   VIC_INTENABLE |= (1<<5);
  }
 #endif
 }
 
 static void lh79524_timer_release (void)
 {
-  __REG (RTC_PHYS + RTC_CR) &= ~RTC_CR_EN;  
-  __REG (RCPC_PHYS + RCPC_PCLKSEL0) &= ~(3<<7); /* 1Hz RTC */
+  RTC_CR &= ~RTC_CR_EN;  
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKSEL0  &= ~(3<<7); /* 1Hz RTC */
+  RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
+
 }
 
 unsigned long timer_read (void)
 {
-  return __REG (RTC_PHYS + RTC_DR);
+  return RTC_DR;
 }
 
 

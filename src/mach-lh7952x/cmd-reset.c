@@ -41,8 +41,8 @@
 
 static void cmd_reset (int argc, const char** argv)
 {
-  __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
-  __REG (RCPC_PHYS + RCPC_SOFTRESET) = 0xdead;
+  RCPC_CTRL      |= (1<<9); /* Unlock */
+  RCPC_SOFTRESET  = 0xdead;
 }
 
 static __command struct command_d c_reset = {

@@ -69,12 +69,12 @@ const static struct nand_chip* chip;
 static void wait_on_busy (void)
 {
 #if defined CONFIG_NAND_LPD
-  while ((__REG8 (CPLD_FLASH) & CPLD_FLASH_RDYnBSY) == 0)
+  while ((CPLD_FLASH & CPLD_FLASH_RDYnBSY) == 0)
     ;
 #else
   do {
-    __REG8 (NAND_CLE) = Status;
-  } while ((__REG8 (NAND_DATA) & Ready) == 0);
+    NAND_CLE = Status;
+  } while ((NAND_DATA & Ready) == 0);
 #endif
 }
 
@@ -82,25 +82,25 @@ static void wait_on_busy (void)
 static void nand_enable (void)
 {
 #if !defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS + IOCON_MUXCTL14) |=  (1<<8); 
-  __REG (GPIO_MN_PHYS) &= ~(1<<0);
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12); /* Boot ROM uses 0xf */
-//  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xf<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0xa<<12);
+  IOCON_MUXCTL14 |=  (1<<8); 
+  GPIO_MN_PHYS   &= ~(1<<0);
+  IOCON_MUXCTL7  &= ~(0xf<<12);
+  IOCON_MUXCTL7  |=  (0xa<<12); /* Boot ROM uses 0xf */
+//  IOCON_MUXCTL7  |=  (0xf<<12);
+  IOCON_RESCTL7  &= ~(0xf<<12);
+  IOCON_RESCTL7  |=  (0xa<<12);
 #endif
 }
 
 static void nand_disable (void)
 {
 #if !defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS + IOCON_MUXCTL14) &= ~(3<<8);
-  __REG (GPIO_MN_PHYS) |=   1<<0;
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0x5<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0x5<<12);
+  IOCON_MUXCTL14 &= ~(3<<8);
+  GPIO_MN_PHYS |=   1<<0;
+  IOCON_MUXCTL7  &= ~(0xf<<12);
+  IOCON_MUXCTL7  |=  (0x5<<12);
+  IOCON_RESCTL7  &= ~(0xf<<12);
+  IOCON_RESCTL7  |=  (0x5<<12);
 #endif
 }
 
@@ -122,19 +122,19 @@ static void nand_init (void)
 
   nand_enable ();
 
-  __REG8 (NAND_CLE) = Reset;
+  NAND_CLE = Reset;
   wait_on_busy ();
 
-  __REG8 (NAND_CLE) = Status;
+  NAND_CLE = Status;
   wait_on_busy ();
-  if ((__REG8 (NAND_DATA) & Ready) == 0)
+  if ((NAND_DATA & Ready) == 0)
     goto exit;
 
-  __REG8 (NAND_CLE) = ReadID;
-  __REG8 (NAND_ALE) = 0;
+  NAND_CLE = ReadID;
+  NAND_ALE = 0;
 
-  manufacturer = __REG8 (NAND_DATA);
-  device       = __REG8 (NAND_DATA);
+  manufacturer = NAND_DATA;
+  device       = NAND_DATA;
 
   for (chip = &chips[0]; 
        chip < chips + sizeof(chips)/sizeof (struct nand_chip);
@@ -192,19 +192,19 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     cb -= available;
     cbRead += available;
 
-    __REG8 (NAND_CLE) = Reset;
+    NAND_CLE = Reset;
     wait_on_busy ();
-    __REG8 (NAND_CLE) = (index < 256) ? Read1 : Read2;
-    __REG8 (NAND_ALE) = (index & 0xff);
-    __REG8 (NAND_ALE) = ( page        & 0xff);
-    __REG8 (NAND_ALE) = ((page >>  8) & 0xff);
+    NAND_CLE = (index < 256) ? Read1 : Read2;
+    NAND_ALE = (index & 0xff);
+    NAND_ALE = ( page        & 0xff);
+    NAND_ALE = ((page >>  8) & 0xff);
     wait_on_busy ();
 #if !defined (CONFIG_NAND_LPD)
 		/* Switch back to read mode */
-    __REG8 (NAND_CLE) = (index < 256) ? Read1 : Read2;
+    NAND_CLE = (index < 256) ? Read1 : Read2;
 #endif
     while (available--)		/* May optimize with assembler...later */
-      *((char*) pv++) = __REG8 (NAND_DATA);
+      *((char*) pv++) = NAND_DATA;
   }    
   
   nand_disable ();
@@ -236,32 +236,32 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
       available = cb;
     tail = 528 - index - available;
     
-    __REG8 (NAND_CLE) = SerialInput;
-    __REG8 (NAND_ALE) = 0;	/* Always start at page beginning */
-    __REG8 (NAND_ALE) = ( page        & 0xff);
-    __REG8 (NAND_ALE) = ((page >>  8) & 0xff);
+    NAND_CLE = SerialInput;
+    NAND_ALE = 0;	/* Always start at page beginning */
+    NAND_ALE = ( page        & 0xff);
+    NAND_ALE = ((page >>  8) & 0xff);
 
     while (index--)	   /* Skip to the portion we want to change */
-      __REG8 (NAND_DATA) = 0xff;
+      NAND_DATA = 0xff;
 
     d->index += available;
     cb -= available;
     cbWrote += available;
 
     while (available--)
-      __REG8 (NAND_DATA) = *((char*) pv++);
+      NAND_DATA = *((char*) pv++);
 
     while (tail--)	   /* Fill to end of block */
-      __REG8 (NAND_DATA) = 0xff;
+      NAND_DATA = 0xff;
 
-    __REG8 (NAND_CLE) = AutoProgram;
+    NAND_CLE = AutoProgram;
 
     wait_on_busy ();
 
     SPINNER_STEP;
 
-    __REG8 (NAND_CLE) = Status;
-    if (__REG8 (NAND_DATA) & Fail) {
+    NAND_CLE = Status;
+    if (NAND_DATA & Fail) {
       printf ("Write failed at page %ld\n", page);
       goto exit;
     }
@@ -290,17 +290,17 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
-    __REG8 (NAND_CLE) = Erase;
-    __REG8 (NAND_ALE) = ( page & 0xff);
-    __REG8 (NAND_ALE) = ((page >> 8) & 0xff);
-    __REG8 (NAND_CLE) = EraseConfirm;
+    NAND_CLE = Erase;
+    NAND_ALE = ( page & 0xff);
+    NAND_ALE = ((page >> 8) & 0xff);
+    NAND_CLE = EraseConfirm;
 
     wait_on_busy ();
 
     SPINNER_STEP;
 
-    __REG8 (NAND_CLE) = Status;
-    if (__REG8 (NAND_DATA) & Fail) {
+    NAND_CLE = Status;
+    if (NAND_DATA & Fail) {
       printf ("Erase failed at page %ld\n", page);
       goto exit;
     }

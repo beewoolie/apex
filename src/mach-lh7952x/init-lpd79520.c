@@ -161,26 +161,26 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 
 	/* Setup HCLK, FCLK and peripheral clocks */
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_CPUCLKPRESCALE) = RCPC_CPUCLKPRESCALE_V;
-  __REG (RCPC_PHYS + RCPC_HCLKCLKPRESCALE) = RCPC_HCLKCLKPRESCALE_V;
-  __REG (RCPC_PHYS + RCPC_CORECLKCONFIG) = RCPC_CORECLKCONFIG_V;
-  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~RCPC_AHBCLK_SDC;
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_CPUCLKPRESCALE = RCPC_CPUCLKPRESCALE_V;
+  RCPC_HCLKCLKPRESCALE = RCPC_HCLKCLKPRESCALE_V;
+  RCPC_CORECLKCONFIG = RCPC_CORECLKCONFIG_V;
+  RCPC_AHBCLKCTRL &= ~RCPC_AHBCLK_SDC;
   /* Enable timer clock so that we can handle SDRAM setup  */
-  __REG (RCPC_PHYS + RCPC_PERIPHCLKCTRL) &= ~RCPC_PERIPHCLK_T01;
+  RCPC_PERIPHCLKCTRL &= ~RCPC_PERIPHCLK_T01;
 
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
-  __REG (SDRC_PHYS + SDRC_REFTIMER) = SDRC_REFTIMER_V; /* Do this early */
+  SDRC_REFTIMER = SDRC_REFTIMER_V; /* Do this early */
 
   /* Stop watchdog? */
 
   /* *** 0x17ef was good enough for JTAG */
-  __REG (IOCON_PHYS + IOCON_MEMMUX) = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
+  IOCON_MEMMUX = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
 
-  __REG (SMC_PHYS + SMC_BCR0) = 0x100020ef; /* NOR flash */
-  __REG (SMC_PHYS + SMC_BCR4) = 0x10007580; /* CompactFlash */
-  __REG (SMC_PHYS + SMC_BCR5) = 0x100034c0; /* CPLD */
+  SMC_BCR0 = 0x100020ef; /* NOR flash */
+  SMC_BCR4 = 0x10007580; /* CompactFlash */
+  SMC_BCR5 = 0x100034c0; /* CPLD */
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
@@ -200,15 +200,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
      and there is no precharge after setting the mode.
   */
 
-  __REG (SDRC_PHYS + SDRC_CONFIG1) = SDRC_COMMAND_NOP;
+  SDRC_CONFIG1 = SDRC_COMMAND_NOP;
   usleep (200);
-  __REG (SDRC_PHYS + SDRC_CONFIG1) = SDRC_COMMAND_PRECHARGE;
+  SDRC_CONFIG1 = SDRC_COMMAND_PRECHARGE;
   usleep (200);
-  __REG (SDRC_PHYS + SDRC_CONFIG1) = SDRC_COMMAND_MODE;
-  __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
-  __REG (SDRAM_BANK1_PHYS + SDRAM_CHIP_MODE);
-  __REG (SDRC_PHYS + SDRC_CONFIG0) = SDRC_CONFIG_V;
-  __REG (SDRC_PHYS + SDRC_CONFIG1) = SDRC_COMMAND_NORMAL;
+  SDRC_CONFIG1 = SDRC_COMMAND_MODE;
+  SDRAM_CHIP_MODE;
+  SDRAM_CHIP_MODE;
+  SDRC_CONFIG0 = SDRC_CONFIG_V;
+  SDRC_CONFIG1 = SDRC_COMMAND_NORMAL;
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
@@ -234,7 +234,7 @@ static void target_init (void)
 static void target_release (void)
 {
   /* Flash is enabled for the kernel */
-  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |=  CPLD_FLASH_FL_VPEN;
 }
 
 static __service_0 struct service_d lh79520_target_service = {

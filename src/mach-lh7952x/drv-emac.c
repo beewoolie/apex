@@ -264,13 +264,13 @@ static void emac_phy_reset (int phy_address)
 
 #else
   printf ("emac: ctrl 0x%x\n", emac_phy_read (phy_address, 0));
-  __REG8 (CPLD_CONTROL) &= ~CPLD_CONTROL_WRLAN_ENABLE;
+  CPLD_CONTROL &= ~CPLD_CONTROL_WRLAN_ENABLE;
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_POWERDOWN
 		  | emac_phy_read (phy_address, 0));
   msleep (1000);
   printf ("emac: ctrl 0x%x\n", emac_phy_read (phy_address, 0));
-  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  CPLD_CONTROL |= CPLD_CONTROL_WRLAN_ENABLE;
   emac_phy_write (phy_address, 0,
 		  emac_phy_read (phy_address, 0)
 		  & ~PHY_CONTROL_POWERDOWN); 
@@ -366,32 +366,32 @@ void emac_init (void)
   
 #if defined (USE_DIAG)
 	/* Hardware setup */
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
+  MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));		
-//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
+//  MASK_AND_SET (IOCON_RESCTL1,
 //		(3<<8)|(3<<6)|(3<<4),
 //		(0<<8)|(0<<6)|(0<<4));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL23),
+  MASK_AND_SET (IOCON_MUXCTL23,
 		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL23),
+//  MASK_AND_SET (IOCON_RESCTL23,
 //		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 //		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL24),
+  MASK_AND_SET (IOCON_MUXCTL24,
 		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL24),
+//  MASK_AND_SET (IOCON_RESCTL24,
 //		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 //		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
 
-//  PRINTF ("CPLD_CONTROL %x => %x\n", __REG8 (CPLD_CONTROL),
-//	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
+//  PRINTF ("CPLD_CONTROL %x => %x\n", CPLD_CONTROL,
+//	  CPLD_CONTROL | CPLD_CONTROL_WRLAN_ENABLE);
 #endif
 
-  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL       |=  RCPC_CTRL_UNLOCK;
+  RCPC_AHBCLKCTRL &= ~(1<<2);
+  RCPC_CTRL	  &= ~RCPC_CTRL_UNLOCK;
 
   {
     unsigned char rgb[6];
@@ -409,7 +409,7 @@ void emac_init (void)
 
 //  msleep (1000);
 #if defined (CPLD_CONTROL_WRLAN_ENABLE)
-  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  CPLD_CONTROL |= CPLD_CONTROL_WRLAN_ENABLE;
 #endif
 //  msleep (1000);
   //  msleep (500);

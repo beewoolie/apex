@@ -98,16 +98,17 @@ void __naked __section (.vector.1) v_irq_handler (void)
 void __irq_handler __section (.bootstrap) irq_handler (void)
 {
   int irq;
-  unsigned long v = __REG (VIC_PHYS + VIC_IRQSTATUS);
+  unsigned long v = VIC_IRQSTATUS;
   if (v == 0)
     return;
 
   for (irq = 0; irq; ++irq) {
     if (v & (1<<irq)) {
       if (!interrupt_handlers[irq]
-	  || interrupt_handlers[irq](irq) != IRQ_HANDLED)
-	__REG (VIC_PHYS + VIC_INTENCLEAR) = (1<<irq);
-      __REG (VIC_PHYS + VIC_VECTADDR) = 0;
+	  || interrupt_handlers[irq](irq) != IRQ_HANDLED) {
+	VIC_INTENCLEAR = (1<<irq);
+	VIC_VECTADDR = 0;
+      }
       break;
     }    
   }
@@ -115,9 +116,9 @@ void __irq_handler __section (.bootstrap) irq_handler (void)
 
 void lh7952x_exception_init (void)
 {
-  __REG (RCPC_PHYS + RCPC_CTRL)       |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_REMAP) = 0x1;	/* SDRAM at 0x0 */
-  __REG (RCPC_PHYS + RCPC_CTRL)       &= ~RCPC_CTRL_UNLOCK;
+  RCPC_CTRL  |=  RCPC_CTRL_UNLOCK;
+  RCPC_REMAP  =  0x1;	/* SDRAM at 0x0 */
+  RCPC_CTRL  &= ~RCPC_CTRL_UNLOCK;
 
 	/* Clear V for exception vectors at 0x0 */
   { 
@@ -143,10 +144,10 @@ void lh7952x_exception_init (void)
   printf ("exceptions %p %p\n", 
 	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END);
 
-  __REG (VIC_PHYS + VIC_INTSELECT) = 0;
-  __REG (VIC_PHYS + VIC_INTENABLE) = 0;
-  __REG (VIC_PHYS + VIC_INTENCLEAR) = ~0;
-  __REG (VIC_PHYS + VIC_SOFTINT_CLEAR) = ~0;
+  VIC_INTSELECT = 0;
+  VIC_INTENABLE = 0;
+  VIC_INTENCLEAR = ~0;
+  VIC_SOFTINT_CLEAR = ~0;
 
 		/* Initialize interrupt stack */
   __asm volatile ("mrs r2, cpsr\n\t"
@@ -166,7 +167,7 @@ void lh7952x_exception_init (void)
 
 void lh7952x_exception_release (void)
 {
-  __REG (VIC_PHYS + VIC_INTENABLE) = 0;
+  VIC_INTENABLE = 0;
 
   local_irq_disable ();
 }

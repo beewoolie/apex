@@ -70,77 +70,77 @@ static void clcdc_init (void)
     }
   }
 
-  __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
-  __REG (RCPC_PHYS + RCPC_PCLKCTRL1) &= ~(1<<0);
-  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<4);
-  //  __REG (RCPC_PHYS + RCPC_LCDPRE) = (8>>1); 
-  __REG (RCPC_PHYS + RCPC_LCDPRE) = (1>>1); 
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~(1<<9); /* Lock */
+  RCPC_CTRL |= (1<<9); /* Unlock */
+  RCPC_PCLKCTRL1 &= ~(1<<0);
+  RCPC_AHBCLKCTRL &= ~(1<<4);
+  //  RCPC_LCDPRE = (8>>1); 
+  RCPC_LCDPRE = (1>>1); 
+  RCPC_CTRL &= ~(1<<9); /* Lock */
 
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
+  MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<2)|(3<<0),
 		(1<<2)|(1<<0));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
+  MASK_AND_SET (IOCON_RESCTL1,
 		(3<<2)|(3<<0),
 		(0<<2)|(0<<0));
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL19), 
+  MASK_AND_SET (IOCON_MUXCTL19,
 		(3<<12)|(3<<8)|(3<<4)|(3<<2), 
 		/* LCDVEEN, LCDVDDEN, LCDREV, LCDCLS */
 		(1<<12)|(1<<8)|(2<<4)|(1<<2));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL19), 
+  MASK_AND_SET (IOCON_RESCTL19,
 		(3<<12)|(3<<8)|(3<<4)|(3<<2), 
 		(0<<12)|(0<<8)|(0<<4)|(0<<2));
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL20), 
+  MASK_AND_SET (IOCON_MUXCTL20, 
 		(3<<14)|(3<<10)|(3<<6)|(3<<2)|(3<<0), 
 		/* LCDPS, LCDDCLK, LCDHRLP, LCDSPS, LCDSPL */
 		(1<<14)|(1<<10)|(2<<6)|(2<<2)|(2<<0)); 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL20), 
+  MASK_AND_SET (IOCON_RESCTL20, 
 		(3<<14)|(3<<10)|(3<<6)|(3<<2)|(3<<0), 
 		(0<<14)|(0<<10)|(0<<6)|(0<<2)|(0<<0)); 
   
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL21), 
+  MASK_AND_SET (IOCON_MUXCTL21, 
 		(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
 		(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL21), 
+  MASK_AND_SET (IOCON_RESCTL21, 
 		(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
 		(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL22),
+  MASK_AND_SET (IOCON_MUXCTL22,
 		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
 		(1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0)); 
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL22), 
+  MASK_AND_SET (IOCON_RESCTL22, 
 		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
 		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0)); 
 
-  __REG(CLCDC_PHYS + CLCDC_TIMING0)   = 0x0e143c38;
-  __REG(CLCDC_PHYS + CLCDC_TIMING1)   = 0x075f013f;
-  __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef300e;
-  __REG(CLCDC_PHYS + CLCDC_UPBASE)    = (unsigned long) buffer;
-  __REG(CLCDC_PHYS + CLCDC_CTRL)      = 0x00010028;
-  __REG(ALI_PHYS   + ALI_SETUP)	      = 0x00000efd;
-  __REG(ALI_PHYS   + ALI_CTRL)	      = 0x00000013;
-  __REG(ALI_PHYS   + ALI_TIMING1)     = 0x0000087d;
-  __REG(ALI_PHYS   + ALI_TIMING2)     = 0x00009ad0;
+  CLCDC_TIMING0   = 0x0e143c38;
+  CLCDC_TIMING1   = 0x075f013f;
+  CLCDC_TIMING2   = 0x00ef300e;
+  CLCDC_UPBASE    = (unsigned long) buffer;
+  CLCDC_CTRL      = 0x00010028;
+  ALI_SETUP	  = 0x00000efd;
+  ALI_CTRL	  = 0x00000013;
+  ALI_TIMING1     = 0x0000087d;
+  ALI_TIMING2     = 0x00009ad0;
 
-  __REG(CLCDC_PHYS + CLCDC_CTRL)      |= (1<<0); /* Enable CLCDC */
+  CLCDC_CTRL     |= (1<<0); /* Enable CLCDC */
   msleep (20);			/* Wait 20ms for digital signals  */
-  __REG(CLCDC_PHYS + CLCDC_CTRL)      |= (1<<11); /* Apply power */
+  CLCDC_CTRL     |= (1<<11); /* Apply power */
 }
 
 static void clcdc_release (void)
 {
-  __REG(CLCDC_PHYS + CLCDC_CTRL) &= ~(1<<11); /* Remove power */
+  CLCDC_CTRL &= ~(1<<11); /* Remove power */
   msleep (20);			/* Wait 20ms */
-  __REG(CLCDC_PHYS + CLCDC_CTRL) &= ~(1<<0); /* Disable CLCDC controller */
+  CLCDC_CTRL &= ~(1<<0); /* Disable CLCDC controller */
 
 				/*  Shutdown all the clocks */
-  __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
-  __REG (RCPC_PHYS + RCPC_PCLKCTRL1) |= 1<<0;
-  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) |= 1<<4;
-  __REG (RCPC_PHYS + RCPC_CTRL) &= ~(1<<9); /* Lock */
+  RCPC_CTRL	  |=  (1<<9); /* Unlock */
+  RCPC_PCLKCTRL1  |=   1<<0;
+  RCPC_AHBCLKCTRL |=   1<<4;
+  RCPC_CTRL	  &= ~(1<<9); /* Lock */
 }
 
 static __service_7 struct service_d lpd79524_clcdc_service = {
