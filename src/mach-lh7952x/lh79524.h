@@ -62,6 +62,7 @@
 #define RCPC_PCLKSEL0	(0x30)
 #define RCPC_PCLKSEL1	(0x34)
 #define RCPC_LCDPRE	(0x40)
+#define RCPC_SSPPRE	(0x44)
 #define RCPC_INTCONFIG	(0x80)
 #define RCPC_INTCLR	(0x84)
 #define RCPC_CORECONFIG	(0x88)
@@ -133,6 +134,7 @@
 #define IOCON_MUXCTL1	(0x00)
 #define IOCON_RESCTL1	(0x04)
 #define IOCON_MUXCTL5	(0x20)
+#define IOCON_RESCTL5	(0x24)
 #define IOCON_MUXCTL6	(0x28)
 #define IOCON_MUXCTL7	(0x30)
 #define IOCON_RESCTL7	(0x34)
@@ -191,6 +193,9 @@
 #define GPIO_IJ_PHYS	(0xfffdb000)
 #define GPIO_KL_PHYS	(0xfffda000)
 #define GPIO_MN_PHYS	(0xfffd9000)
+
+#define SSP_PHYS	(0xfffc6000)
+#define I2S_PHYS	(0xfffc8000)
 
 #define VIC_PHYS	0xfffff000
 #define VIC_IRQSTATUS	0x00
