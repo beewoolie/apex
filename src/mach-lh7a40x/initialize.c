@@ -195,13 +195,16 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 	/* Enable Asynchronous Bus mode, NotFast and iA bits */
-  __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
-		  "orr	%0, %0, #(3<<30)\n\t"	// set nF and iA bits
-		  "mcr	p15, 0, %0, c1, c0, 0"
-		  : "=r");
+  {
+    unsigned long l;
+    __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
+		    "orr	%0, %0, #(3<<30)\n\t"	// set nF and iA bits
+		    "mcr	p15, 0, %0, c1, c0, 0"
+		    : "=r" (l));
+  }
 
 	/* Set the running clock speed */
-  __REG (CLKSC_BASE | CSC_CLKSET) = CSC_CLKSET_V;
+  __REG (CSC_PHYS | CSC_CLKSET) = CSC_CLKSET_V;
 
   __asm volatile ("cmp %0, %1\n\t"
 		  "movls r0, #0\n\t"

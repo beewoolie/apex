@@ -64,7 +64,7 @@ unsigned long timer_read (void)
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
 {
-  //  return (end - start)*1000/32768;
+  return end - start;
 }
 
 static __service_0 struct service_d lh7a40x_timer_service = { 
