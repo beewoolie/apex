@@ -22,8 +22,9 @@ int cmd_verify (int argc, const char** argv)
   return 0;
 }
 
-static __command struct command_d c_version = {
+static __command struct command_d c_verify = {
   .command = "verify",
+  .description = "compare sequences of bytes",
   .func = cmd_verify,
 
 };

@@ -25,6 +25,6 @@ int cmd_version (int argc, const char** argv)
 
 static __command struct command_d c_version = {
   .command = "version",
+  .description = "show version and copyright",
   .func = cmd_version,
-
 };

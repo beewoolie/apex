@@ -21,8 +21,8 @@
 
 struct command_d {
   const char* command;
-  const char* help_short;
-  const char* help_long;
+  const char* description;
+  const char* help;
   int cbPrefix;			/* Length of prefix (?) */
   int (*func)(int argc, const char** argv);
 };
