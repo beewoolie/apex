@@ -402,7 +402,7 @@ scripts_basic:
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
 
-no-dot-config-targets := clean mrproper distclean tidy \
+no-dot-config-targets := clean mrproper distclean tidy complete_release\
 			 cscope TAGS tags help %docs check% every
 
 config-targets := 0
