@@ -1,4 +1,4 @@
-/* compactflash.h
+/* drv-cf.h
      $Id$
 
    written by Marc Singer
@@ -41,29 +41,30 @@
 #if defined (CONFIG_MACH_LPD79520)
 
 # if !defined (CF_PHYS)
-#  define CF_PHYS	(0x50200000)
+#  define CF_PHYS		(0x50200000)
+#  define CF_IOBARRIER_PHYS	(0x20000000)
 # endif
 
-# define CF_WIDTH	(16)
-# define CF_ADDR_MULT	1
-# define CF_REG		(1<<12)
-# define CF_ALT		(1<<11)
-# define CF_ATTRIB	(1<<10)
+# define CF_WIDTH		(16)
+# define CF_ADDR_MULT		(1)
+# define CF_REG			(1<<12)
+# define CF_ALT			(1<<11)
+# define CF_ATTRIB		(1<<10)
 
 #endif
-
 
 #if defined (CONFIG_MACH_LPD79524)
 
 # if !defined (CF_PHYS)
-#  define CF_PHYS	(0x48200000)
+#  define CF_PHYS		(0x48200000)
+#  define CF_IOBARRIER_PHYS	(0x20000000)
 # endif
 
-# define CF_WIDTH	(16)
-# define CF_ADDR_MULT	2
-# define CF_REG		(1<<13)
-# define CF_ALT		(1<<12)
-# define CF_ATTRIB	(1<<10)
+# define CF_WIDTH		(16)
+# define CF_ADDR_MULT		(2)
+# define CF_REG			(1<<13)
+# define CF_ALT			(1<<12)
+# define CF_ATTRIB		(1<<10)
 
 #endif
 
