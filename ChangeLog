@@ -1,5 +1,7 @@
 2005-02-20  Marc Singer  <elf@buici.com>
 
+	* Makefile Revision in preparation for milestone2 release.
+
 	* src/mach-lh7952x/drv-nor-cfi.c (NOR_1_LENGTH): added logic
 	necessary to support the double bank of NOR flash on the LPD79524
 	boards.
