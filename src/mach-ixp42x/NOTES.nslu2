@@ -3,6 +3,12 @@
   NSLU2
 ==========
 
+2005.Feb.24
+
+  o Some improvement to the SDRAM init selection.  I think it might be
+    better to config the number of bits per chip since that's
+    something clear from the chip datasheet.
+
 2005.Feb.16
 
   o There appears to be an unresolved issue with the boot process.  In
