@@ -23,7 +23,10 @@ LDFLAGS_apex := -p --no-undefined -X -g
 OBJCOPYFLAGS := -O binary -R .note -R .comment -R .bss
 GZFLAGS      := -9
 
-#CFLAGS_entry.o += -Os
+# *** This lets the clean target work, but I'm not sure it's a good
+# idea to include it.
+include config
+
 CFLAGS += -Os
 
 init-y += src/arch-arm/entry/ 

@@ -119,7 +119,7 @@ void exec_monitor (void)
     int argc;
     const char** argv;
     strcpy (sz, szStartup);
-    printf ("startup '%s'\r\n", sz);
+    //    printf ("startup '%s'\r\n", sz);
     
     while (*pch) {
       char* pchEnd = strchr (pch, ';');

@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   NAND flash block IO driver for LPD 79524.
+   NAND flash IO driver for LPD 79524.
 
    Unlike the NOR driver, this one hasn't received the same attention
    for reducing code size.  It is probably amenable to the same
@@ -187,8 +187,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   SPINNER_STEP;
 
   while (cb) {
-    unsigned long page  = d->index/512;
-    unsigned long index = d->index%512;
+    unsigned long page  = (d->start + d->index)/512;
+    unsigned long index = (d->start + d->index)%512;
     int available = 512 - index;
     int tail;
 
@@ -196,6 +196,9 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
       available = cb;
     tail = 528 - index - available;
     
+//  printf ("nand_write (%ld) page %ld  index %ld  available %d  tail %d\r\n",
+//   cb, page, index, available, tail);
+
     __REG8 (NAND_CLE) = SerialInput;
     __REG8 (NAND_ALE) = 0;	/* Always start at page beginning */
     __REG8 (NAND_ALE) = ( page        & 0xff);

@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   NOR flash block IO driver for LPD 79524.  The is, in the sum, a CFI
+   NOR flash IO driver for LPD 79524.  The is, in the sum, a CFI
    compliant driver.  Nothing has been done to make it a general
    solution since it is more important that the driver be small than
    there be much code sharing.  After all, the code isn't very large

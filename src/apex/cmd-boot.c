@@ -91,30 +91,28 @@ static __command struct command_d c_boot = {
 struct tag* atag_commandline (struct tag* p)
 {
   const char* szEnv = env_fetch ("cmdline");
-  int cb = 0;
 
-  if (szEnv) {
+  int cb = 0;
+  p->u.cmdline.cmdline[0] = '\0';
+
+  if (commandline_argc > 0) {
+    char* pb = p->u.cmdline.cmdline;
+    int i;
+
+    for (i = 0; i < commandline_argc; ++i) {
+      strlcpy (pb, commandline_argv[i], COMMAND_LINE_SIZE);
+      pb += strlen (pb);
+      *pb++ = ' ';
+    }
+	
+    pb--;
+    *pb++ = 0;
+
+    cb = pb - p->u.cmdline.cmdline;
+  }
+  else if (szEnv) {
     strlcpy (p->u.cmdline.cmdline, szEnv, COMMAND_LINE_SIZE);
     cb = strlen (szEnv) + 1;
-  }
-  else {
-    p->u.cmdline.cmdline[0] = '\0';
-
-    if (commandline_argc > 0) {
-      char* pb = p->u.cmdline.cmdline;
-      int i;
-
-      for (i = 0; i < commandline_argc; ++i) {
-	strlcpy (pb, commandline_argv[i], COMMAND_LINE_SIZE);
-	pb += strlen (pb);
-	*pb++ = ' ';
-      }
-	
-      pb--;
-      *pb++ = 0;
-
-      cb = pb - p->u.cmdline.cmdline;
-    }
   }
 
   if (cb) {
