@@ -1,10 +1,10 @@
-================
-APEX Boot Loader
- Release Notes
-================
+===========================
+     APEX Boot Loader
+ Release Notes & Quickstart
+===========================
 
 The APEX boot loader has been designed to be small, efficient, and
-easy to extend.  It uses some code and the build system form the Linux
+easy to extend.  It uses some code and the build system from the Linux
 kernel.  There are pieces of code taken from BLOB and UBoot as well.
 
 
@@ -26,7 +26,8 @@ platform.  For example,
 
   CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 
-To build for the LPD79524:
+Building also requires a configuration file in the root called
+'config'.  To build using the default configuration for the LPD79524:
 
   # make lpd79524_config
 
@@ -38,14 +39,13 @@ features.
 APEX uses the Linux kernel build scripts so that rebuilding is
 (nearly) optimal.  Changes to the configuration are automatically
 propagated such that only affected source files are rebuilt.  It isn't
-as optimal as the kernel because it lacks the fancy config splitter
-that kbuild executes.  This will be implemented, eventually.
+as optimal as the kernel (yet) because it lacks the fancy config
+splitter that kbuild executes.
 
   # make
 
-The ELF format binary, apex, as well as the dumped
-src/arch-arm/rom/apex.bin will be put into the root directory.  To
-generate a dumped binary, build the apex.bin target.
+The ELF format binary, apex, as well as a link to the dumped apex.bin
+will be put into the root directory.
 
 
   Running APEX
@@ -55,10 +55,51 @@ APEX is designed to start from any address and to relocate itself when
 necessary.  If the binary is small enough (less than 16KiB), it may be
 copied to the internal SRAM of the LH79524 and executed from there.
 
+Once you see the apex> prompt, the loader may be copied to flash and
+the environment edited.  Below is the signon message.  It may be
+reprinted with the 'version' command.
+
+  apex> ver
+  APEX Boot Loader 1.0.6 -- Copyright (c) 2004 Marc Singer
+
+  APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you
+  are welcome to redistribute it under certain circumstances.
+  Refer to the source the COPYING for details.
+
+    apex => mem:0x20200000#0x4a94
+    env  => nor:128k#64k
+    CPLD revision 0x5
+
+The apex and env region specifications are important.  The apex spec
+describes where in RAM apex has been relocated as well as the exact
+length of the program.  The env spec describes where in flash the
+environment is stored.
+
+Assuming that APEX needs to be the first program in NOR flash, writing
+APEX to flash looks like this.
+
+  apex> erase nor:0
+  apex> copy mem:0x20200000#0x4a94 nor:0
+
+The source of the copy command is the descriptor from the signon
+message.  Preparing the environment area is even simpler.
+
+  apex> erase nor:128k#64k
+
+Again, using the information in the signon to erase the proper portion
+of flash.  The environment allows APEX to be customized at runtime.
+
+
+ o Bootstraping APEX with LOLO or a JTAG emulator
+ o Downloading the kernel using XMODEM
+ o Changing the startup command to copy the kernel to RAM
+ o Changing the kernel command line
+ o Changing the startup command to automatically boot the kernel
+
 
   Getting Help
   ------------
 
-You can send mail directly to me, the author.
+Beyond what is here, you can send mail directly to me, the author.
 
   Marc Singer <elf@buici.com>

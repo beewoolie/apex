@@ -4,18 +4,19 @@ APEX Boot Loader
 ================
 
 APEX uses a common notation when describing regions of memory, data
-sources, and data sinks.  The form is similar to that used by the
-Linux kernel, but it is different in a significant way.
+sources, and data sinks.  While similar to the way that the kernel
+refers to regions of memory, the APEX notation is not compatible with
+the kernel form.
 
   [DRIVER:][@]START[#LENGTH]
 
 The DRIVER is the name of an IO driver that handles the requests.
 Without an explicit driver, the 'memory:' driver is the default.
-Driver names may be shortened to a unique prefix.  If there is only
-one driver that begins with the letter 'm', then 'm:' uniquely
-identifies it.  If there are two nor drivers, APEX will require a
-driver name long enough to distinguish which one to use.  The command
-'drvinfo' lists the available drivers.
+Driver names may be shortened to any unambiguous prefix.  If there is
+only one driver that begins with the letter 'm', then 'm:' uniquely
+identifies that driver.  If there are two nor drivers, APEX will
+require a driver name long enough to distinguish which one to use.
+The command 'drvinfo' lists the available drivers.
 
 The START address is the beginning of the region relative to the
 driver's domain.  In the case of the memory driver, this is the start
@@ -30,10 +31,10 @@ example, when displaying a region, the default length is about 64.
 When erasing a flash block, the default length is 1.
 
 START and LENGTH may be specifed as a decimal number, a hexadecimal
-number, and may followed by a suffix 'm' or 'k' for megabytes
-(1024*1024) or kilobytes (1024).
+number, and may followed by a suffix 'm' for for megabytes (1024*1024)
+or 'k' for kilobytes (1024).
 
   nor:16k#4k	 - 4096 bytes, 16384 bytes from the start of NOR flash
-  nand:0	 - The only NAND driver
-  nand-eb501:0   - A specific NAND driver
+  nand:0	 - Starting with the first byte using the only NAND driver
+  nand-eb501:0   - Starting with the first byte using a specific NAND driver
 

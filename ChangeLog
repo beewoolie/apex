@@ -1,5 +1,7 @@
 2005-01-12  Marc Singer  <elf@buici.com>
 
+	* README_config: Editing the documentation.
+
 	* Makefile (include/config.h): Fixed the script that generates the
 	configuration file.
 	(tidy): New target to remove debris.

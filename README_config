@@ -97,7 +97,8 @@ CONFIG_CMD_WAIT (y/n)
 
 CONFIG_CMD_XRECEIVE (y/n)
 
-  Command receives data over the console and saves it to a region.
+  Command receives data over the serial console and saves it to a
+  region.
 
 CONFIG_ATAG (y/n)
 
@@ -113,6 +114,9 @@ CONFIG_ATAG_PHYS (hex)
 CONFIG_ARCH_NUMBER (number)
 
   The ARM architecture number passed to the Linux kernel at boot time.
+  This configuration option is used to build a loader that supports
+  one and only one architecture (in the Linux kernel sense of the
+  word.)
 
 CONFIG_ARCH_NUMBER_FUNCTION (function_name)
 
@@ -132,16 +136,19 @@ CONFIG_DRIVER_NOR (y/n)
 CONFIG_RELOCATE_NAND (y/n)
 
   Use an APEX relocator that will copy the loader from NAND flash
-  instead of relocating it where it starts.  Normally, the loader
-  copies itself from NOR flash with a simple memory to memory copy.
-  NAND flash requires greater support to move the loader from flash to
-  SDRAM.
+  instead of relocating APEX from whereever it starts.  Normally, the
+  loader copies itself from NOR flash with a simple memory to memory
+  copy.  Some facility in the system will usually copy a portion of
+  NAND flash to SDRAM and jump to it.  Getting the whole of APEX into
+  memory requires an extra piece of code that moves the rest of the
+  loader from NAND flash into SDRAM.
 
 CONFIG_NAND_LPD (y/n)
 
   Directly support the LogicPD NAND flash control features.  The
-  LogicPD CPLD has slightly control over NAND flash than a bare chip.
-  Use this options when building for one of the LPD CardEngines. 
+  LogicPD CPLD has slightly different control over NAND flash than a
+  vanilla CPU design. Use this options when building for one of the
+  LPD CardEngines.
 
 CONFIG_ENV_AUTOBOOT (number)
 
@@ -156,7 +163,8 @@ CONFIG_ENV_REGION (string)
   this parameter is present (or if the env_d descriptor is initialized
   elsewhere), the user will be able to make and preserve changes to
   the environment between executions of the loader.  Without an IO
-  region, the environment is statically defined at compile time.  E.g.
+  region, the environment is statically defined at compile time by the
+  default values.  E.g.
 
   CONFIG_ENV_REGION=nor:128k#64k
 
