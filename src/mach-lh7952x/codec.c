@@ -89,12 +89,14 @@
 
 #define CODEC_ADDR_SHIFT	(9)
 
-#define FREQUENCY_8K		(0)
-#define FREQUENCY_32K1		(1)
-#define FREQUENCY_44K1		(2)
-#define FREQUENCY_48K		(3)
-#define FREQUENCY_88K2		(4)
-#define FREQUENCY_96K		(5)
+#define FREQUENCY_4K		(0) /* 8kHz with MCLK/2 */
+#define FREQUENCY_8K		(1)
+#define FREQUENCY_22K05		(2) /* 44.1kHz with MCLK/2 */
+#define FREQUENCY_32K1		(3)
+#define FREQUENCY_44K1		(4)
+#define FREQUENCY_48K		(5)
+#define FREQUENCY_88K2		(6)
+#define FREQUENCY_96K		(7)
 
 #define CMD(a,c)	((((a) & 0x7f)<<CODEC_ADDR_SHIFT)|((c) & 0x1ff))
 
@@ -132,7 +134,7 @@ static void pulse_clock (void)
 
 */
 
-static void execute_spi_command (int v, int cwrite, int cread)
+static void execute_spi_command (int v, int cwrite)
 {
   //  unsigned long l = 0;
   unsigned char reg;
@@ -177,24 +179,53 @@ static void execute_spi_command (int v, int cwrite, int cread)
 //  return l;
 }
 
+static void codec_unmute (void)
+{
+  execute_spi_command (CMD (CODEC_POWER_CTRL, 
+			    (1<<2) /* Disable ADC  */
+			    | (1<<1) /* Disable MIC  */
+			    | (1<<0) /* Disable LINE IN */
+			    ), 16);
+  execute_spi_command (CMD (CODEC_ANALOG_CTRL, 
+			    (1<<4) /* Enable DAC */
+			    |(1<<1) /* Mute Microphone */
+			    ), 16);
+  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
+}
+
+static void codec_mute (void)
+{
+  execute_spi_command (CMD (CODEC_ANALOG_CTRL, 
+			    (0<<4) /* Disable DAC */
+			    |(1<<1) /* Mute Microphone */
+			    ), 16);
+  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (0<<0)), 16);
+}
+
 static void codec_configure (int frequency)
 {
-  unsigned short v =
-//      (1<<7) /* MCLK/2 input */
-//    | (1<<6) /* MCLK/2 output */
-      (0<<7) /* MCLK input */
-    | (0<<6) /* MCLK output */
-//    | (8<<2) /* SR3-SR0 */
-//    | (0<<1) /* BOSR */
-    | (0<<0); /* Normal */
+  unsigned short v = 0;
+  //      (0<<7) /* MCLK input */
+  //    | (0<<6) /* MCLK output */
+  //    | (0<<0); /* Normal */
 
   switch (frequency) {
   default:
+  case FREQUENCY_4K:
+    v |= (0xb<<2) /* SR3-SR0 */
+      |  (0<<1); /* BOSR */
+    v |= (1<<7)|(1<<6);		/* MCLK/2 */
+    break;
   case FREQUENCY_8K:
     v |= (0xb<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     break;
   case FREQUENCY_32K1:
+    break;
+  case FREQUENCY_22K05:
+    v |= (0x8<<2) /* SR3-SR0 */
+      |  (0<<1); /* BOSR */
+    v |= (1<<7)|(1<<6);		/* MCLK/2 */
     break;
   case FREQUENCY_44K1:
     v |= (0x8<<2) /* SR3-SR0 */
@@ -210,8 +241,8 @@ static void codec_configure (int frequency)
     break;
   }
 
-  execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16, 0);
-  usleep (1);
+  execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16);
+  //  usleep (1);
 }
 
 static void codec_init (void)
@@ -227,50 +258,44 @@ static void codec_init (void)
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL5),
 		(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<6)|(1<<4)|(1<<2)|(1<<0));	/* SSP/I2S signals */
-  __REG (IOCON_PHYS + IOCON_RESCTL5) &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
+//  __REG (IOCON_PHYS + IOCON_RESCTL5) &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
 
   __REG (SSP_PHYS + SSP_CTRL0) 
     = (1<<4)			/* TI synchronous mode */
     | ((16 - 1) & 0xf)<<0;	/* Frame size = 16 */
   __REG (SSP_PHYS + SSP_CTRL1) 
     = (1<<2)			/* slave */
-//    = (0<<2)			/* master */
     | (1<<1)			/* enabled */
     | (0<<3);			/* SSP can driver SSPTX */
   __REG (SSP_PHYS + SSP_CPSR) = 2; /* Smallest prescalar is 2 */
-  __REG (I2S_PHYS + I2S_CTRL)
-    = I2S_CTRL_I2SEN
+  //  __REG (I2S_PHYS + I2S_CTRL)
+  //    = I2S_CTRL_I2SEN
 //    | I2S_CTRL_WSINV
-    ;
+  ;
 
-  execute_spi_command (CMD (CODEC_RESET, 0), 16, 0);
-  usleep (1);
-  execute_spi_command (CMD (CODEC_ANALOG_CTRL, 
-			    (1<<4) /* Enable DAC */
-			    |(1<<1) /* Mute Microphone */
-			    ), 16, 0);
-  usleep (1);
+  codec_mute ();
+
+  execute_spi_command (CMD (CODEC_RESET, 0), 16);
+  //  usleep (1);
+  //  usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
 			    (2<<1) /* 44.1 kHz deemphasis */
-			    ), 16, 0);
-  usleep (1);
-  execute_spi_command (CMD (CODEC_POWER_CTRL, 
-			    (1<<2) /* Disable ADC  */
-			    | (1<<1) /* Disable MIC  */
-			    | (1<<0) /* Disable LINE IN */
-			    ), 16, 0);
-  usleep (1);
+			    ), 16);
+  //  usleep (1);
+  //  usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_FORMAT,
-			      (1<<1) /* I2S */
+			    0
 			    | (1<<6) /* Master */
+			    | (1<<4) /* Right channel on LRC low */
 			    | (0<<2) /* 16 bit */
 //			    | (3<<2) /* 32 bit */
-			    | (2<<0) /* I2S format */
-			    ), 16, 0);
-  usleep (1);
+//			    | (2<<0) /* I2S format */
+			    | (3<<0) /* DSP format */
+			    ), 16);
+  //  usleep (1);
   codec_configure (FREQUENCY_44K1);
-  usleep (1);
-  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16, 0);
+  //  usleep (1);
+//  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
 
   usleep (10);
   printf ("ssp: status 0x%lx\r\n", __REG (SSP_PHYS | SSP_SR));
@@ -288,19 +313,24 @@ static int cmd_codec_test (int argc, const char** argv)
   int i;
   codec_configure (FREQUENCY_8K);
 //  codec_configure (FREQUENCY_44K1);
+  codec_unmute ();
 
   for (i = 0; i < sizeof (rgbPCM); ++i) {
+    unsigned char v = ((unsigned char)rgbPCM[i])/2;
+
 				/* Wait for room in the FIFO */
-    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
+    while ((__REG16 (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
       ;
-    __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
-    //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i]>>1)<<7;
+    //    __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
+    __REG16 (SSP_PHYS + SSP_DR) = (v<<8)|(v);
 				/* Wait for room in the FIFO */
     //    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
     //      ;
     //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i] << 8)|rgbPCM[i];
   }
 //  __REG (SSP_PHYS + SSP_DR) = 0x7f7f;
+
+  codec_mute ();
   return 0;
 }
 
