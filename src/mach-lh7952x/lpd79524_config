@@ -23,10 +23,10 @@ CONFIG_NOR_BANK0_LENGTH=(8*1024*1024)
 
 CONFIG_SPINNER=y
 
-CONFIG_SMALL=y
+#CONFIG_SMALL=y
 
 # Test code for the LCD display
-#CONFIG_CLCDC=y
+CONFIG_CLCDC=y
 
 # Test code for the audio codec
 #CONFIG_CODEC=y
