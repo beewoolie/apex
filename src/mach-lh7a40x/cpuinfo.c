@@ -39,10 +39,10 @@ static void cpuinfo_report (void)
   unsigned long id;
   unsigned long ctrl;
   unsigned long cpsr;
-  unsigned long csc = CSC_PWRSR;
+  unsigned long csc = (CSC_PWRSR>>CSC_PWRSR_CHIPID_SHIFT);
   char* sz = NULL;
 
-  switch (((csc>>CSC_PWRSR_CHIPID_SHIFT) & CSC_PWRSR_CHIPID_MASK) & 0xf0) {
+  switch (csc & 0xf0) {
   default  : sz = "lh?";     break;
   case 0x00: sz = "lh7a400"; break;
   case 0x20: sz = "lh7a404"; break;
@@ -52,7 +52,7 @@ static void cpuinfo_report (void)
   __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
   printf ("  cpu:    id 0x%lx  ctrl 0x%lx  cpsr 0x%lx  chipid 0x%x %s\n",
-	  id, ctrl, cpsr, csc>>16, sz);
+	  id, ctrl, cpsr, (unsigned) csc, sz);
 
 #if defined (CPLD_REVISION)
   printf ("  cpld:   revision 0x%x\n", CPLD_REVISION);
