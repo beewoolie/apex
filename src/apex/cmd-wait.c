@@ -53,6 +53,7 @@ int cmd_wait (int argc, const char** argv)
     puts (*argv++);
     putchar (' ');
   }
+  putchar ('\r');
   putchar ('\n');
 
   /* *** FIXME: we may want to flush input */
