@@ -155,6 +155,27 @@
 #define IOCON_MUXCTL24	(0xb8)
 #define IOCON_RESCTL24	(0xbc)
 
+#define DMA_PHYS	(0xfffe1000)
+#define DMA0_PHYS	(0xfffe1000)
+#define DMA1_PHYS	(0xfffe1040)
+#define DMA2_PHYS	(0xfffe1080)
+#define DMA3_PHYS	(0xfffe10c0)
+
+#define DMA_SOURCELO	(0x00)
+#define DMA_SOURCEHI	(0x04)
+#define DMA_DESTLO	(0x08)
+#define DMA_DESTHI	(0x0c)
+#define DMA_MAX		(0x10)
+#define DMA_CTRL	(0x14)
+#define DMA_CURSLO	(0x18)
+#define DMA_CURSHI	(0x1c)
+#define DMA_CURDLO	(0x20)
+#define DMA_CURDHI	(0x24)
+#define DMA_TCNT	(0x28)
+#define DMA_MASK	(0xf0)
+#define DMA_CLR		(0xf4)
+#define DMA_STATUS	(0xf8)
+
 #define UART_PHYS	(0xfffc0000)
 
 #define UART0_PHYS	(UART_PHYS + 0x0000)

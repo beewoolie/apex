@@ -29,6 +29,9 @@
 
 #include "pcm.h"
 
+#define USE_I2S
+//#define USE_CPU_MASTER
+
 #define T_SKH	1		/* Clock time high (us) */
 #define T_SKL	1		/* Clock time low (us) */
 #define T_CS	1		/* Minimum chip select low time (us)  */
@@ -202,7 +205,7 @@ static void codec_mute (void)
   execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (0<<0)), 16);
 }
 
-static void codec_configure (int frequency)
+static void codec_configure (int frequency, int sample_size)
 {
   unsigned short v = 0;
   //      (0<<7) /* MCLK input */
@@ -243,6 +246,10 @@ static void codec_configure (int frequency)
 
   execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16);
   //  usleep (1);
+
+  __REG (SSP_PHYS + SSP_CTRL0) 
+    = (1<<4)			/* TI synchronous mode */
+    | ((sample_size - 1) & 0xf)<<0;
 }
 
 static void codec_init (void)
@@ -260,18 +267,20 @@ static void codec_init (void)
 		(1<<6)|(1<<4)|(1<<2)|(1<<0));	/* SSP/I2S signals */
 //  __REG (IOCON_PHYS + IOCON_RESCTL5) &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
 
-  __REG (SSP_PHYS + SSP_CTRL0) 
-    = (1<<4)			/* TI synchronous mode */
-    | ((16 - 1) & 0xf)<<0;	/* Frame size = 16 */
-  __REG (SSP_PHYS + SSP_CTRL1) 
-    = (1<<2)			/* slave */
+  __REG (SSP_PHYS + SSP_CTRL1) = 0
+#if defined (USE_CPU_MASTER)
+    | (0<<2)			/* master */
+#else
+    | (1<<2)			/* slave */
+#endif
     | (1<<1)			/* enabled */
     | (0<<3);			/* SSP can driver SSPTX */
   __REG (SSP_PHYS + SSP_CPSR) = 2; /* Smallest prescalar is 2 */
-  //  __REG (I2S_PHYS + I2S_CTRL)
-  //    = I2S_CTRL_I2SEN
-//    | I2S_CTRL_WSINV
-  ;
+#if defined (USE_I2S)
+  __REG (I2S_PHYS + I2S_CTRL)
+    = I2S_CTRL_I2SEN
+    ;
+#endif
 
   codec_mute ();
 
@@ -279,21 +288,29 @@ static void codec_init (void)
   //  usleep (1);
   //  usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
-			    (2<<1) /* 44.1 kHz deemphasis */
+			    0
+//			    |(2<<1) /* 44.1 kHz deemphasis */
 			    ), 16);
   //  usleep (1);
   //  usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_FORMAT,
 			    0
+#if defined (USE_CPU_MASTER)
+			    | (0<<6) /* Slave */
+#else
 			    | (1<<6) /* Master */
-			    | (1<<4) /* Right channel on LRC low */
+#endif
+//			    | (1<<4) /* LRP: right channel on LRC low */
 			    | (0<<2) /* 16 bit */
 //			    | (3<<2) /* 32 bit */
-//			    | (2<<0) /* I2S format */
+#if defined (USE_I2S)
+			    | (2<<0) /* I2S format */
+#else
 			    | (3<<0) /* DSP format */
+#endif
 			    ), 16);
   //  usleep (1);
-  codec_configure (FREQUENCY_44K1);
+  codec_configure (FREQUENCY_44K1, 16);
   //  usleep (1);
 //  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
 
@@ -308,27 +325,148 @@ static void codec_release (void)
   __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 }
 
+#define USE_DMA
+#define USE_16
+
 static int cmd_codec_test (int argc, const char** argv)
 {
+  static unsigned short __attribute__((section("pcm.data"))) buffer[16384];
   int i;
-  codec_configure (FREQUENCY_8K);
-//  codec_configure (FREQUENCY_44K1);
+  int cSampleMax = sizeof (rgbPCM);
+  static unsigned long cap;
+
+#if defined (USE_16)
+#define rgb buffer  
+#else
+#define rgb rgbPCM
+#endif
+
+#if defined (USE_16)
+  codec_configure (FREQUENCY_8K, 16);
+#else
+  codec_configure (FREQUENCY_8K, 8);
+#endif
+
   codec_unmute ();
 
-  for (i = 0; i < sizeof (rgbPCM); ++i) {
-    unsigned char v = ((unsigned char)rgbPCM[i])/2;
+#if defined (USE_16)
+  cSampleMax = sizeof (buffer)/sizeof (buffer[0]);
+  for (i = 0; i < cSampleMax; ++i) {
+    unsigned short v = (rgbPCM[i]<<8) | rgbPCM[i];
+    v = v/2;// + 0x8000/2;
+    buffer[i] = v;
+  }
+#endif
+
+#if defined (USE_DMA)
+  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) &= ~(1<<0); /* Enable DMA AHB clock */
+  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+
+  //  __REG (SSP_PHYS + SSP_IMSC) |= 0
+  //    | (1<<3)
+  //    | (1<<2);			/* Interrupts needed for DMA */
+  __REG (SSP_PHYS + SSP_DCR)  |= 0
+    | (1<<1)			/* TX DMA enabled */
+    | (1<<0)			/* RX DMA enabled */
+    ;
+
+  __REG (DMA_PHYS + DMA_MASK)	   = 0; /* Mask all interrupts */
+  __REG (DMA_PHYS + DMA_CLR)	   = 0xff; /* Clear pending interrupts */
+
+#if 1
+  __REG (DMA0_PHYS + DMA_CTRL)     = 0; /* Disable */
+  __REG (DMA0_PHYS + DMA_SOURCELO) =  (SSP_PHYS + SSP_DR)          & 0xffff;
+  __REG (DMA0_PHYS + DMA_SOURCEHI) = ((SSP_PHYS + SSP_DR) >> 16)   & 0xffff;
+  __REG (DMA0_PHYS + DMA_DESTLO)   =  ((unsigned long)&cap)        & 0xffff;
+  __REG (DMA0_PHYS + DMA_DESTHI)   = (((unsigned long)&cap) >> 16) & 0xffff;
+  __REG (DMA0_PHYS + DMA_MAX)	   = 0xffff;
+  __REG (DMA0_PHYS + DMA_CTRL)
+    = (0<<13)			/* Peripheral source */
+    | (0<<9)			/* Load base addresses on start  */
+    | (1<<7)			/* Destination size 2 bytes */
+    | (1<<3)			/* Source size is 2 bytes */
+    | (0<<2)			/* Destination fixed */
+    | (0<<1);			/* Source fixed */
+
+#endif
+
+  __REG (DMA1_PHYS + DMA_CTRL)     = 0; /* Disable */
+  __REG (DMA1_PHYS + DMA_SOURCELO) =  ((unsigned long)rgb)        & 0xffff;
+  __REG (DMA1_PHYS + DMA_SOURCEHI) = (((unsigned long)rgb) >> 16) & 0xffff;
+  __REG (DMA1_PHYS + DMA_DESTLO)   =  (SSP_PHYS + SSP_DR)	     & 0xffff;
+  __REG (DMA1_PHYS + DMA_DESTHI)   = ((SSP_PHYS + SSP_DR) >> 16)     & 0xffff;
+  __REG (DMA1_PHYS + DMA_MAX)	   = cSampleMax;
+  __REG (DMA1_PHYS + DMA_CTRL)
+    = (1<<13)			/* Peripheral destination */
+#if defined (USE_16)
+    | (1<<7)			/* Destination size 2 bytes */
+    | (1<<3)			/* Source size is 2 bytes */
+//    | (1<<5)			/* Source burst 4 incrementing */
+#else
+    | (0<<7)			/* Destination size 1 bytes */
+    | (0<<3)			/* Source size is 1 byte */
+    | (1<<5)			/* Source burst 4 incrementing */
+#endif
+    | (0<<9)			/* Wrapping: Load base addresses on start  */
+    | (0<<2)			/* Destination fixed */
+    | (1<<1);			/* Source incremented */
+
+  __REG (DMA0_PHYS + DMA_CTRL) |= (1<<0); /* Enable RX DMA */
+  __REG (DMA1_PHYS + DMA_CTRL) |= (1<<0); /* Enable TX DMA */
+
+				/* Wait for completion */
+  while ((__REG (DMA_PHYS + DMA_STATUS) & (1<<1)) == 0)
+    ;
+
+#else
+
+#if defined (USE_16)
+
+  for (i = 0; i < cSampleMax; ++i) {
+    //    unsigned char v = rgbPCM[i]/2 + 0x8000/2;
 
 				/* Wait for room in the FIFO */
     while ((__REG16 (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
       ;
     //    __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
-    __REG16 (SSP_PHYS + SSP_DR) = (v<<8)|(v);
+//    __REG16 (SSP_PHYS + SSP_DR) = (v<<8)|(v);
+    __REG16 (SSP_PHYS + SSP_DR) = rgb[i];
 				/* Wait for room in the FIFO */
     //    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
     //      ;
     //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i] << 8)|rgbPCM[i];
   }
-//  __REG (SSP_PHYS + SSP_DR) = 0x7f7f;
+#else
+
+  for (i = 0; i < sizeof (rgbPCM); ++i) {
+//    unsigned char v = rgbPCM[i]/2 + 0x8000/2;
+    unsigned char v = rgbPCM[i];
+    
+				/* Wait for room in the FIFO */
+    while ((__REG16 (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
+      ;
+    //    __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
+//    __REG16 (SSP_PHYS + SSP_DR) = (v<<8)|(v);
+    __REG16 (SSP_PHYS + SSP_DR) = v;
+				/* Wait for room in the FIFO */
+    //    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
+    //      ;
+    //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i] << 8)|rgbPCM[i];
+  }
+
+				/* Clear the pipe  */
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+#endif
+
+#endif /* !USE_DMA */
 
   codec_mute ();
   return 0;
