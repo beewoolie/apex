@@ -1,7 +1,7 @@
-=======================
-Apex -- Arm Boot Loader
-NOTES
-=======================
+================
+APEX Boot Loader
+     NOTES
+================
 
 TODO:
 
@@ -14,6 +14,9 @@ TODO:
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
   o command history
+  o Fix that freaking NAND loader code
+  o Rename segments to remove the leading period.  Also, make the
+    underscores into periods.
 
 Goals
 
@@ -244,6 +247,10 @@ NAND Flash Drivers
     CompactFlash or large NOR flash.  CF would be OK as long as the
     implementation didn't require the A23 line as Logic does.
     Refer to CONFIG_NAND_LPD.
+  o I am unable to erase the second flash block.  I don't know if this
+    is a new problem, or if this has always been the case.  The
+    datasheet gives me the impression that this is a problem with the
+    chip enable.
 
 Errors
 
@@ -253,3 +260,12 @@ Errors
     from NAND, but there is not NAND aware relocation function.
     Generally, I'm OK with little error handling since it is usually
     wasted space.
+
+Relocation
+
+  o The relocation code now checks to see if it is already executing
+    from the target location. If so, it will return immediately.
+  o The relocation code, too, will not restart the loader, but must
+    always continue with a proper return.  If we only have the NAND
+    relocator, then we have no way of moving the loader in SDRAM if it
+    has been put there.  I think that this may be a shortcoming.
