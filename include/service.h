@@ -24,8 +24,11 @@ struct service_d {
   void (*release) (void);
 };
 
-#define __service     __attribute__((used,section(".service")))
-#define __service_(v) __attribute__((used,section(".service" ## v)))
+#define __service  __attribute__((used,section(".service")))
+#define __service_0 __attribute__((used,section(".service_0")))
+#define __service_1 __attribute__((used,section(".service_1")))
+#define __service_2 __attribute__((used,section(".service_2")))
+#define __service_3 __attribute__((used,section(".service_3")))
 
 /* ----- Globals */
 

@@ -83,7 +83,7 @@ ssize_t lh79524_serial_write (unsigned long fh, const void* pv, size_t cb)
   return cWrote;
 }
 
-static __driver_init struct driver_d lh79524_serial_driver = {
+static __driver_0 struct driver_d lh79524_serial_driver = {
   .name = "lh79524_serial",
   .description = "lh79524 serial driver",
   .flags = DRIVER_SERIAL | DRIVER_CONSOLE,

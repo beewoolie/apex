@@ -37,7 +37,11 @@ struct driver_d {
   size_t (*seek)(unsigned long fd, ssize_t cb, int whence);
 };
 
-#define __driver_init __attribute__((used,section(".driver_init")))
+#define __driver  __attribute__((used,section(".driver")))
+#define __driver_0 __attribute__((used,section(".driver_0")))
+#define __driver_1 __attribute__((used,section(".driver_1")))
+#define __driver_2 __attribute__((used,section(".driver_2")))
+#define __driver_3 __attribute__((used,section(".driver_2")))
 
 /* ----- Globals */
 

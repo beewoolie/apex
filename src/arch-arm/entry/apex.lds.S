@@ -31,12 +31,20 @@ SECTIONS
 	}
 	.service . : {
 		APEX_SERVICE_START = .;
+		*(.service_0)
+		*(.service_1)
+		*(.service_2)
+		*(.service_3)
 		*(.service)
 		APEX_SERVICE_END = .;
 	}
-	.driver_init . : {
+	.driver . : {
 		APEX_DRIVER_INIT_START = .;
-		*(.driver_init)
+		*(.driver_0)
+		*(.driver_1)
+		*(.driver_2)
+		*(.driver_3)
+		*(.driver)
 		APEX_DRIVER_INIT_END = .;
 	}
 	.command . : {
