@@ -6,7 +6,9 @@ LDFLAGS_apex := -p --no-undefined -X -g
 OBJCOPYFLAGS := -O binary -R .note -R .comment -R .bss
 GZFLAGS      := -9
 
-CFLAGS_entry.o += -Os
+#CFLAGS_entry.o += -Os
+CFLAGS += -Os
+
 
 init-y += src/arch-arm/entry/ 
 core-y += src/mach-lh7952x/ src/drivers/ src/arch-arm/linux/

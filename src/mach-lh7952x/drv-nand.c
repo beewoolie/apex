@@ -10,7 +10,7 @@
    DESCRIPTION
    -----------
 
-   NAND flash block IO driver for LPD 70524.
+   NAND flash block IO driver for LPD 79524.
 
 */
 
@@ -62,8 +62,6 @@ const static struct nand_chip chips[] = {
 const static struct nand_chip* chip;
 
 static struct nand_descriptor descriptors[2];
-
-#define static
 
 static void wait_on_busy (void)
 {
@@ -131,6 +129,8 @@ static unsigned long nand_open (struct open_d* d)
   descriptors[fh].cb = d->length;
   descriptors[fh].ib = 0;
       
+  /* *** FIXME: bounding of the cb is a good idea here */
+
   return fh;
 }
 

@@ -62,9 +62,9 @@ void __naked __section (.bootstrap) reset (void)
 {
 #if 0
 				/* Disable MMU */
-  __asm ("mrc p15, 0, r0, c1, c0, 0");
-  __asm ("bic r0, r0, #1");
-  __asm ("mcr p15, 0, r0, c1, c0, 0");
+  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
+		  "bic r0, r0, #1\n\t"
+		  "mcr p15, 0, r0, c1, c0, 0");
 #endif
 
   initialize_bootstrap ();
