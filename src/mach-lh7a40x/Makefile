@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := initialize.o serial.o timer.o env.o
+obj-y := initialize.o serial.o timer.o env.o arch.o
 #obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
 obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
 #obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o

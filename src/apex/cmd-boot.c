@@ -25,6 +25,9 @@
    DESCRIPTION
    -----------
 
+   *** NOTE: this function should be part of the arch-arm code since
+   *** it uses the arm specific calling convention to the kernel.
+
 */
 
 #include <linux/types.h>
@@ -45,9 +48,13 @@ static const char** commandline_argv;
 extern void build_atags (void);
 #endif
 
+#if defined (CONFIG_ARCH_NUMBER_FUNCTION)
+#endif
+
 int cmd_boot (int argc, const char** argv)
 {
   unsigned long address = env_fetch_int ("bootaddr", 0xffffffff);
+  int arch_number = -1;
 
   if (argc > 2 && strcmp (argv[1], "-g") == 0) {
     address = simple_strtoul (argv[2], NULL, 0);
@@ -59,6 +66,17 @@ int cmd_boot (int argc, const char** argv)
     printf ("Kernel address required.\r\n");
     return 0;
   }
+
+#if defined (CONFIG_ARCH_NUMBER_FUNCTION)
+  {
+    extern int CONFIG_ARCH_NUMBER_FUNCTION (void);
+    arch_number = CONFIG_ARCH_NUMBER_FUNCTION ();
+  }
+#endif
+
+#if defined (CONFIG_ARCH_NUMBER)
+  arch_number = CONFIG_ARCH_NUMBER;
+#endif
 
 #if defined (CONFIG_ATAG)
   commandline_argc = argc - 1;
@@ -74,7 +92,7 @@ int cmd_boot (int argc, const char** argv)
   release_services ();
 
   ((void (*)(int, int, int)) address) 
-    (0, CONFIG_ARCH_NUMBER, CONFIG_ATAG_PHYS);
+    (0, arch_number, CONFIG_ATAG_PHYS);
 
   printf ("Uh, oh.  Linux returned.\r\n");
 
