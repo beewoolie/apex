@@ -19,13 +19,17 @@
 #   USA.
 #
 
+export CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
+
 #CROSS_COMPILE ?= /usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
 
 all:
-	make -C src/mach-ixp42x/intel/ixp400_xscale_sw \
+	make -C src/mach-ixp42x/_intel/ixp400_xscale_sw \
 	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
 	  IX_TARGET=linuxbe\
-	  IX_XSCALE_SW=`pwd`/src/mach-ixp42x/intel/ixp400_xscale_sw\
-	  linuxbe_KERNEL_DIR=/home/elf/z/embedded/linux
+	  IX_XSCALE_SW=`pwd`/src/mach-ixp42x/_intel/ixp400_xscale_sw\
+	  linuxbe_KERNEL_DIR=`pwd`/src/mach-ixp42x/_intel/linux
+
+#	  linuxbe_KERNEL_DIR=$(HOME)/z/embedded/linux
 
 #lib-$(CONFIG_NPE) += IxNpeMicrocode.o

@@ -1,7 +1,7 @@
 Index: ixp_osal/Makefile
 ===================================================================
 --- ixp_osal.orig/Makefile	2004-11-17 22:37:37.000000000 -0800
-+++ ixp_osal/Makefile	2005-02-24 18:32:10.456580640 -0800
++++ ixp_osal/Makefile	2005-03-07 20:33:56.660706711 -0800
 @@ -172,7 +172,7 @@
  
  # TODO push this to linux make
@@ -14,11 +14,16 @@ Index: ixp_osal/Makefile
 Index: ixp_osal/include/linux-2.6.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ ixp_osal/include/linux-2.6.h	2005-02-24 18:32:10.457580399 -0800
-@@ -0,0 +1,37 @@
++++ ixp_osal/include/linux-2.6.h	2005-03-07 21:32:59.216656089 -0800
+@@ -0,0 +1,60 @@
 +/* */
 +
 +#include "asm/page.h"
++
++#if !defined io_p2v
++/* In the bootloader, physical and virtual addresses are equivalent */
++# define io_p2v(p) p
++#endif
 +
 +#if !defined (IXP425_TIMER_BASE_PHYS)
 +# define IXP425_TIMER_BASE_PHYS 	IXP4XX_TIMER_BASE_PHYS
@@ -53,10 +58,28 @@ Index: ixp_osal/include/linux-2.6.h
 +#if !defined (IXP425_EXP_BUS_BASE2_PHYS)
 +# define IXP425_EXP_BUS_BASE2_PHYS	IXP4XX_EXP_BUS_CS2_BASE_PHYS
 +#endif
++#if !defined (IXP425_EthA_BASE_PHYS)
++# define IXP425_EthA_BASE_PHYS		IXP4XX_EthA_BASE_PHYS
++#endif
++#if !defined (IXP425_EthB_BASE_PHYS)
++# define IXP425_EthB_BASE_PHYS		IXP4XX_EthB_BASE_PHYS
++#endif
++#if !defined (IXP425_ICMR)
++# define IXP425_ICMR			IXP4XX_ICMR
++#endif
++#if !defined (IXP425_USB_BASE_PHYS)
++# define IXP425_USB_BASE_PHYS		IXP4XX_USB_BASE_PHYS
++#endif
++#if !defined (IXP425_INTC_BASE_PHYS)
++# define IXP425_INTC_BASE_PHYS		IXP4XX_INTC_BASE_PHYS
++#endif
++#if !defined (IRQ_IXP425_USB)
++# define IRQ_IXP425_USB			IRQ_IXP4XX_USB
++#endif
 Index: ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
 ===================================================================
 --- ixp_osal.orig/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2004-11-17 22:37:35.000000000 -0800
-+++ ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2005-02-24 18:32:10.458580159 -0800
++++ ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2005-03-07 20:33:56.661706471 -0800
 @@ -53,6 +53,8 @@
  #include "asm/hardware.h"
  #include "asm/arch/irqs.h"
@@ -69,7 +92,7 @@ Index: ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
 Index: ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
 ===================================================================
 --- ixp_osal.orig/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2004-11-17 22:37:36.000000000 -0800
-+++ ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2005-02-24 18:32:10.458580159 -0800
++++ ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2005-03-07 20:33:56.669704550 -0800
 @@ -45,6 +45,7 @@
   * -- End Intel Copyright Notice --
   */
@@ -81,7 +104,7 @@ Index: ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
 Index: ixp_osal/os/linux/src/core/IxOsalOsThread.c
 ===================================================================
 --- ixp_osal.orig/os/linux/src/core/IxOsalOsThread.c	2004-11-17 22:37:35.000000000 -0800
-+++ ixp_osal/os/linux/src/core/IxOsalOsThread.c	2005-02-24 18:32:10.459579919 -0800
++++ ixp_osal/os/linux/src/core/IxOsalOsThread.c	2005-03-07 20:33:56.669704550 -0800
 @@ -65,12 +65,10 @@
      void *arg = IxOsalOsThreadData.arg;
      static int seq = 0;
@@ -99,7 +122,7 @@ Index: ixp_osal/os/linux/src/core/IxOsalOsThread.c
 Index: ixp_osal/os/linux/make/macros.mk
 ===================================================================
 --- ixp_osal.orig/os/linux/make/macros.mk	2004-11-17 22:37:35.000000000 -0800
-+++ ixp_osal/os/linux/make/macros.mk	2005-02-24 18:35:06.069371470 -0800
++++ ixp_osal/os/linux/make/macros.mk	2005-03-07 20:33:56.669704550 -0800
 @@ -71,10 +71,12 @@
  ################################################################
  # Linux Compiler & linker commands
@@ -133,7 +156,7 @@ Index: ixp_osal/os/linux/make/macros.mk
 Index: ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
 ===================================================================
 --- ixp_osal.orig/os/linux/src/core/IxOsalOsMsgQ.c	2004-11-17 22:37:35.000000000 -0800
-+++ ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2005-02-24 18:36:05.885995872 -0800
++++ ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2005-03-07 20:33:56.669704550 -0800
 @@ -45,9 +45,9 @@
   * -- End Intel Copyright Notice --
   */
@@ -145,3 +168,46 @@ Index: ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
  #include <linux/interrupt.h>
  
  #include "IxOsal.h"
+Index: ixp_osal/os/linux/src/core/IxOsalOsServices.c
+===================================================================
+--- ixp_osal.orig/os/linux/src/core/IxOsalOsServices.c	2004-11-17 22:37:35.000000000 -0800
++++ ixp_osal/os/linux/src/core/IxOsalOsServices.c	2005-03-07 20:46:22.426662240 -0800
+@@ -53,6 +53,7 @@
+ #include <linux/time.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/interrupt.h>
+ 
+ #include "IxOsal.h"
+ 
+@@ -88,7 +89,7 @@
+ /*
+  * General interrupt handler
+  */
+-static void
++static irqreturn_t
+ ixOsalOsIsrProxy (int irq, void *dev_id, struct pt_regs *regs)
+ {
+     IxOsalInfoType *isr_proxy_info = (IxOsalInfoType *) dev_id;
+@@ -97,6 +98,7 @@
+ 		   "ixOsalOsIsrProxy: Interrupt used before ixOsalIrqBind was invoked");
+ 
+     isr_proxy_info->routine (isr_proxy_info->parameter);
++    return IRQ_HANDLED;
+ }
+ 
+ /*
+@@ -104,11 +106,12 @@
+  * This handler saves the interrupted Program Counter (PC)
+  * into a global variable
+  */
+-static void
++static irqreturn_t
+ ixOsalOsIsrProxyWithPC (int irq, void *dev_id, struct pt_regs *regs)
+ {
+     ixOsalLinuxInterruptedPc = regs->ARM_pc;
+     ixOsalOsIsrProxy(irq, dev_id, regs);
++    return IRQ_HANDLED;
+ }
+ 
+ /**************************************
