@@ -1,0 +1,36 @@
+config USES_NOR_CFI
+	bool
+
+config USES_COMPACTFLASH
+	bool
+
+menu "Generic Drivers"
+
+config DRIVER_FAT
+	bool "FAT Filesystem"
+	default n
+	help
+	  This driver implements a FAT filesystem driver.
+
+config DRIVER_EXT2
+	bool "EXT2 Filesystem"
+	default n
+	help
+	  This driver implements an Ext2 filesystem driver.
+
+config DRIVER_NOR_CFI
+	bool "CFI NOR Flash"
+	depends on USES_NOR_CFI=y
+	default n 
+	help
+	  This driver implements a standard CFI compliant NOR flash driver. 
+
+config DRIVER_COMPACTFLASH
+	bool "CompactFlash"
+	depends on USES_COMPACTFLASH=y
+	default n 
+	help
+	  This driver implements a CompactFlash driver for the target
+	  platform.
+
+endmenu

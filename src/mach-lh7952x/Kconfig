@@ -1,0 +1,21 @@
+if ARCH_LH7952X
+
+choice
+	prompt "LH7952X Implementations"
+	default MACH_LPD79524
+
+config MACH_LPD79520
+	bool "Logic Product Development LPD79520"
+	select ARCH_LH79520
+	select USES_NOR_CFI
+	select USES_CF
+
+config MACH_LPD79524
+	bool "Logic Product Development LPD79524"
+	select ARCH_LH79524
+	select USES_NOR_CFI
+	select USES_COMPACTFLASH
+
+endchoice
+
+endif

@@ -1,0 +1,21 @@
+if ARCH_LH7A40X
+
+choice
+	prompt "LH7A40X Implementations"
+	default MACH_LPD7A400
+
+config MACH_LPD7A400
+	bool "Logic Product Development LPD7A400"
+	select ARCH_LH79520
+	select USES_NOR_CFI
+	select USES_COMPACTFLASH
+
+config MACH_LPD7A404
+	bool "Logic Product Development LPD7A404"
+	select ARCH_LH7A404
+	select USES_NOR_CFI
+	select USES_COMPACTFLASH
+
+endchoice
+
+endif

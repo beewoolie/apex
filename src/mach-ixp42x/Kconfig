@@ -1,0 +1,14 @@
+if ARCH_IXP42X
+
+choice
+	prompt "IXP42X Implementations"
+	default MACH_NSLU2
+
+config MACH_NSLU2
+	bool "Linksys NSLU2"
+	select ARCH_IXP420
+	select USES_NOR_CFI
+
+endchoice
+
+endif

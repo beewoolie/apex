@@ -442,21 +442,18 @@ ifeq ($(config-targets),1)
 # *config targets only - make sure prerequisites are updated, and descend
 # in scripts/kconfig to make the *config target
 
-config: scripts_basic FORCE
+.config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
-%_config: FORCE
-	@if [ -L config ]; then rm config ; fi
-	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
-	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
-	@ln -s src/mach-*/$@ config
-	@if [ -e include/config.h ]; then rm include/config.h; fi
-	@if [ -L include/mach ]; then rm include/mach ; fi
+# %_config: FORCE
+# #	@if [ -L config ]; then rm config ; fi
+# #	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
+# 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
+# 	@cp src/mach-*/$@ .config
+# 	@if [ -e include/config.h ]; then rm include/config.h; fi
+# 	@if [ -L include/mach ]; then rm include/mach ; fi
 
-#%config: scripts_basic FORCE
-#	$(Q)$(MAKE) $(build)=scripts/kconfig $@
-
-xconfig: scripts_basic FORCE
+%config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 else
@@ -516,9 +513,9 @@ ifeq ($(dot-config),1)
 
 # Read in dependencies to all Kconfig* files, make sure to run
 # oldconfig if changes are detected.
-#-include .config.cmd
+-include .config.cmd
 
-include $(wildcard config)
+include .config
 
 ifeq '$(ENV_CROSS_COMPILE)' ''
  CROSS_COMPILE_=$(CROSS_COMPILE)
@@ -529,7 +526,6 @@ endif
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.
 # To avoid any implicit rule to kick in, define an empty command
-#.config: ;
 .config: ;
 
 # If .config is newer than include/linux/autoconf.h, someone tinkered

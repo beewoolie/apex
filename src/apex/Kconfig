@@ -1,0 +1,73 @@
+menu "Commands"
+
+config CMD_CHECKSUM
+	bool "Checksum Region"
+	default y
+	help
+	  Computes a CCITT CRC32 checksum over a region.
+
+config CMD_COPY
+	bool "Copy Regions"
+	default y
+	help
+	  Copies from one region to another.
+
+config CMD_COMPARE
+	bool "Compare Regions"
+	default y
+
+config CMD_DRVINFO
+	bool "Driver Info"
+	default y
+
+config CMD_DUMP
+	bool "Dump Region"
+	default y
+	help
+	  Shows the contents of a region on the console.
+
+config CMD_ENV
+	bool "Environment Commands"
+	default y
+
+config CMD_ERASEENV
+	bool "Erase Environment"
+	depends on CMD_ENV=y
+	default n
+
+config CMD_SETENV
+	bool "Set/unset Environment Variable"
+	depends on CMD_ENV=y
+	default y
+
+config CMD_ERASE
+	bool "Erase Region"
+	default y
+
+config CMD_FILL
+	bool "Fill Region"
+	default y
+
+config CMD_GO
+	bool "Go"
+	default y
+	help
+	  Allows transfer of execution to any memory address.
+
+config CMD_PAUSE
+	bool "Pause"
+	default n
+
+config CMD_WAIT
+	bool "Wait"
+	default y
+
+config CMD_XRECEIVE
+	bool "Xmodem Receive"
+	default y
+
+config CMD_EMAC
+	bool "Ethernet MAC" 
+	default y
+
+endmenu
