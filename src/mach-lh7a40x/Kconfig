@@ -19,3 +19,9 @@ config MACH_LPD7A404
 endchoice
 
 endif
+
+config ARCH_LH7A400
+	bool
+
+config ARCH_LH7A404
+	bool

@@ -18,4 +18,31 @@ config MACH_LPD79524
 
 endchoice
 
+config ENV_REGION
+	string "Default region for environment"
+	default "nor:128k+64k" if MACH_LPD79520
+	default "nor:128k+32k" if MACH_LPD79524
+
+config ENV_REGION_KERNEL
+	string "Default region for kernel"
+	default "nor:256k+1536k"
+
+menu "Platform Drivers"
+
+config DRIVER_EMAC_LH79524
+	bool "LH79524 EMAC"
+	depends on ARCH_LH79524
+	default y
+	help
+	  This driver initialize the built-in Ethernet MAC of the
+	  Sharp lh79524. 
+
+endmenu
+
 endif
+
+config ARCH_LH79520
+	bool
+
+config ARCH_LH79524
+	bool

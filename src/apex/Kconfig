@@ -66,8 +66,11 @@ config CMD_XRECEIVE
 	bool "Xmodem Receive"
 	default y
 
-config CMD_EMAC
+config CMD_EMAC_LH79524
 	bool "Ethernet MAC" 
+	depends on ARCH_LH79524 && DRIVER_EMAC_LH79524
 	default y
+	help
+	  Commands to configure the built-in MAC of the LH79524.
 
 endmenu
