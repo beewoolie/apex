@@ -39,7 +39,7 @@
 # include "lh79520.h"
 #endif
 
-static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
+static void cmd_reset (int argc, const char** argv)
 {
   __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
   __REG (RCPC_PHYS + RCPC_SOFTRESET) = 0xdead;
@@ -48,5 +48,5 @@ static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 static __command struct command_d c_reset = {
   .command = "reset",
   .description = "reset target",
-  .func = cmd_reset,
+  .func = (command_func_t) cmd_reset,
 };
