@@ -251,12 +251,18 @@ static void target_init (void)
 
 	/* CompactFlash, 16 bit */
   EMC_SCONFIG2    = 0x81;
+  //  EMC_SWAITWEN2   = 2;
+  //  EMC_SWAITOEN2   = 2;
+  //  EMC_SWAITRD2    = 6;
+  //  EMC_SWAITPAGE2  = 2;
+  //  EMC_SWAITWR2    = 6;
+  //  EMC_STURN2      = 1;
   EMC_SWAITWEN2   = 2;
   EMC_SWAITOEN2   = 2;
-  EMC_SWAITRD2    = 6;
-  EMC_SWAITPAGE2  = 2;
-  EMC_SWAITWR2    = 6;
-  EMC_STURN2      = 1;
+  EMC_SWAITRD2    = 0x1f;
+  EMC_SWAITPAGE2  = 0x1f;
+  EMC_SWAITWR2    = 0x1f;
+  EMC_STURN2      = 0xf;
 
 	/* CPLD, 16 bit */
   EMC_SWAITWEN3   = 2;

@@ -43,6 +43,8 @@
 /* ----- Prototypes */
 
 
+#define USE_NEW_CPLD
+
 #define CPLD_INTR		__REG8(0x4c600000)
 #define CPLD_CONTROL		__REG8(0x4c100000)
 #define CPLD_SPI		__REG8(0x4c500000)
@@ -71,7 +73,7 @@
 
 #define CPLD_INTR_NWRLAN	(1<<0)
 
-#if 1 				/* New bits */
+#if defined (USE_NEW_CPLD)			/* New bits */
 #define CPLD_INTR_IRQDMSK	(1<<1)
 #define CPLD_INTR_WLANMSK	(1<<2)
 #define CPLD_INTR_WLANMSK	(1<<2)
@@ -90,7 +92,7 @@
 #define CPLD_INTR_NSWINT	(1<<7)
 #endif
 
-#if 1
+#if defined (USE_NEW_CPLD)
 #define CPLD_EXGPIO_GPIO1	(1<<0)
 #define CPLD_EXGPIO_LED2	(1<<1)
 #define CPLD_EXGPIO_LED1	(1<<2)
@@ -105,7 +107,7 @@
 //#define NOR_1_LENGTH	(8*1024*1024)
 //#define WIDTH		(16)	/* Device width in bits */
 
-#if 1
+#if defined (USE_NEW_CPLD)
 # define CF_PHYS	0x48200000
 #else
 # define CF_PHYS	0x48100000

@@ -33,8 +33,8 @@ original '#' which is deprecated though still supported.  The #
 character is more useful as a comment character.
 
 START and LENGTH may be specifed as a decimal number, a hexadecimal
-number, and may followed by a suffix 'm' for for megabytes (1024*1024)
-or 'k' for kilobytes (1024).
+number, and may followed by a suffix 'm' for for megabytes (1024*1024),
+'k' for kilobytes (1024) or 's' for sectors (512).
 
   nor:16k+4k	 - 4096 bytes, 16384 bytes from the start of NOR flash
   nand:0	 - Starting with the first byte using the only NAND driver

@@ -120,6 +120,10 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
     if (pl) {
       *pl = simple_strtoul (sz + ib, &pchEnd, 0);
       ib = pchEnd - sz;
+      if (sz[ib] == 's' || sz[ib] == 'S') {
+	*pl *= 512;
+	++ib;
+      }
       if (sz[ib] == 'k' || sz[ib] == 'K') {
 	*pl *= 1024;
 	++ib;
