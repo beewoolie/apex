@@ -44,6 +44,13 @@ CONFIG_MEM_BANK[0-3]_LENGTH (hex)
   Declaration of the SDRAM banks.  This is used used search for memory
   to pass to the kernel.
 
+CONFIG_MEM_CONTIGUOUS
+
+  Use a contiguous mapping for SDRAM if available.  On the LH7A40X
+  CPUs, this means setting the SROMLL in the SDRAM controller.
+  Beware, in some configurations the memory will not *all* be
+  contiguous.  32MiB systems are known to work properly.
+
 CONFIG_SPINNER (y/n)
  
   Declare as y to enable a progress feedback spinner while the loader

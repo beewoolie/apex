@@ -91,15 +91,14 @@
 
 */
 
-/* USE_SROMLL - This bit changes the way that the SDRAM controller
-   maps SDRAM to physical addresses.  In systems with 32MiB of RAM,
-   this will make it contguous.  In systems with more memory, the
-   memory is not all contiguous though it is supposed to be
+/* CONFIG_MEM_CONTIGUOUS - This bit changes the way that the SDRAM
+   controller maps SDRAM to physical addresses.  In systems with 32MiB
+   of RAM, this will make it contguous.  In systems with more memory,
+   the memory is not all contiguous though it is supposed to be
    accessible. */
 
 
 //#define USE_SLOW
-#define USE_SROMLL		/* Coerce SDRAM to be contiguously mapped */
 
 
 #define KHZ			(100000)
@@ -135,7 +134,7 @@
 #define BCR6_MODE		(0x1000fbe0)	// CompactFlash
 #define BCR7_MODE		(0x1000b2c2)	// CPLD & Ethernet
 
-#if defined (USE_SROMLL)
+#if defined (CONFIG_MEM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
 #else
 #define SDRAM_MODE_SROMLL	(0)
