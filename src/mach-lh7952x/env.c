@@ -50,6 +50,6 @@ static void lh79524_env_init (void)
     env_d.driver->close (&env_d);
 }
 
-static __service_0 struct service_d lh79524_env_service = { 
+static __service_3 struct service_d lh79524_env_service = { 
   .init = lh79524_env_init,
 };

@@ -94,6 +94,11 @@ static void _env_rewind (void)
   env_d.driver->seek (&env_d, 0, SEEK_SET);
 }
 
+static void _env_back (void)
+{
+  env_d.driver->seek (&env_d, -1, SEEK_CUR);
+}
+
 static char _env_locate (int i)
 {
   char ch;
@@ -103,7 +108,7 @@ static char _env_locate (int i)
       return ch;
     do {
       _env_read (&ch, 1);
-    } while (ch);
+    } while (ch && ch != 0xff);
   }
 
   return ch;
@@ -214,7 +219,10 @@ int env_fetch_int (const char* szKey, int valueDefault)
 
 /* env_erase
 
-   removes a key from the environment.
+   removes a key from the environment.  
+
+   This function must not be called when the env_d descriptor is not
+   open.
 
 */
 
@@ -222,7 +230,7 @@ void env_erase (const char* szKey)
 {
   int i = _env_index (szKey);
   char ch;
-  if (i < 0 || !is_descriptor_open (&env_d))
+  if (i < 0)
     return;
 
   _env_rewind ();
@@ -240,6 +248,9 @@ void env_erase (const char* szKey)
    the key will be erased.  The return value is non-zero if the data
    cannot be written to flash.
  
+   This function must not be called when the env_d descriptor is not
+   open.
+
 */
 
 int env_store (const char* szKey, const char* szValue)
@@ -248,20 +259,26 @@ int env_store (const char* szKey, const char* szValue)
   int cch = strlen (szValue);
   char ch;
 
-  if (i < 0 || !is_descriptor_open (&env_d) || cch > ENV_CB_MAX - 1)
+  if (i < 0 || cch > ENV_CB_MAX - 1)
     return 1;
 
   _env_rewind ();
 
   while ((ch = _env_locate (i)) != ENV_END) {
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
+    _env_back ();
     _env_write (&ch, 1);
   }
   ch = ENV_VAL_NOT_DELETED | (i & 0x7f);
+  _env_back ();
   _env_write (&ch, 1);
   _env_write (szValue, cch + 1);
 
   return 0;
 }
 
-
+void env_erase_all (void)
+{
+  _env_rewind ();
+  env_d.driver->erase (&env_d, env_d.length); 
+}

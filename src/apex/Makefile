@@ -4,7 +4,7 @@
 
 obj-y :=
 #obj-$(CONFIG_LPD7952X) += initialize.o
-obj-y += init.o init-drivers.o console.o console-printf.o
+obj-y += init.o console.o console-printf.o
 obj-y += command.o cmd-version.o cmd-help.o cmd-boot.o
 
 obj-$(CONFIG_CMD_COPY) += cmd-copy.o

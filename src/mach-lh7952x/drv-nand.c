@@ -69,7 +69,7 @@ static void wait_on_busy (void)
     ;
 }
 
-static int nand_probe (void)
+static void nand_init (void)
 {
   unsigned char manufacturer;
   unsigned char device;
@@ -80,7 +80,7 @@ static int nand_probe (void)
   wait_on_busy ();
   if ((__REG8 (NAND_DATA) & Ready) == 0) {
 //    printf ("NAND flash not found\r\n");
-    return 1;
+    return;
   }
 
   __REG8 (NAND_CLE) = ReadID;
@@ -108,7 +108,7 @@ static int nand_probe (void)
     printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
 #endif
 
-  return chip == NULL;		/* Present and initialized */
+  return;
 }
 
 static int nand_open (struct descriptor_d* d)
@@ -261,7 +261,6 @@ static __driver_3 struct driver_d nand_driver = {
   .name = "nand-79524",
   .description = "NAND flash driver",
   //  .flags = DRIVER_ | DRIVER_CONSOLE,
-  .probe = nand_probe,
   .open = nand_open,
   .close = close_descriptor,
   .read = nand_read,
@@ -270,3 +269,6 @@ static __driver_3 struct driver_d nand_driver = {
   .seek = seek_descriptor,
 };
 
+static __service_2 struct service_d lh79524_nand_service = {
+  .init = nand_init,
+};

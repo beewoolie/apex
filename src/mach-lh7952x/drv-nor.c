@@ -34,6 +34,7 @@
 */
 
 #include <driver.h>
+#include <service.h>
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
@@ -139,7 +140,7 @@ static unsigned short nor_unlock_page (unsigned long index)
   return nor_status (index);
 }
 
-static int nor_probe (void)
+static void nor_init (void)
 {
   unsigned char manufacturer;
   unsigned char device;
@@ -152,7 +153,7 @@ static int nor_probe (void)
   if (   __REG16 (NOR_0_PHYS + (0x10 << WIDTH_SHIFT)) != 'Q'
       || __REG16 (NOR_0_PHYS + (0x11 << WIDTH_SHIFT)) != 'R'
       || __REG16 (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != 'Y')
-    return 0;
+    return;
 
   manufacturer = __REG16 (NOR_0_PHYS + (0x00 << WIDTH_SHIFT));
   device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH_SHIFT));
@@ -179,8 +180,6 @@ static int nor_probe (void)
 
   __REG16 (NOR_0_PHYS) = ClearStatus;
   __REG16 (NOR_1_PHYS) = ClearStatus;
-
-  return chip == NULL;		/* Present and initialized */
 }
 
 static int nor_open (struct descriptor_d* d)
@@ -258,20 +257,16 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     if (index & 1) {
       step = 1;
       index &= ~1;
-      //      WRITE_ONE (d->index, ReadArray);
-      //      data = READ_ONE (index);
       data = 0xffff;
       ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
     }
     else if (cb == 1) {
       step = 1;
-      //      WRITE_ONE (d->index, ReadArray);
-      //      data = READ_ONE (index);
       data = 0xffff;
       ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
     }
     else
-      data = *(const unsigned short*) pv;
+      memcpy (&data, pv, 2);
 
     vpen_enable ();
     if (page != pageLast) {
@@ -355,7 +350,6 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 static __driver_3 struct driver_d nor_driver = {
   .name = "nor-79524",
   .description = "NOR flash driver",
-  .probe = nor_probe,
   .open = nor_open,
   .close = close_descriptor,
   .read = nor_read,
@@ -364,3 +358,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_descriptor,
 };
 
+static __service_2 struct service_d lh79524_nor_service = {
+  .init = nor_init,
+};

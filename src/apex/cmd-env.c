@@ -58,7 +58,9 @@
 #include <command.h>
 #include <error.h>
 #include <environment.h>
+#include <driver.h>
 
+extern struct descriptor_d env_d;
 
 int cmd_printenv (int argc, const char** argv)
 {
@@ -98,8 +100,12 @@ static int cmd_setenv (int argc, const char** argv)
   int cb;
   static char sz[ENV_CB_MAX];
 
+  if (!is_descriptor_open (&env_d))
+    return ERROR_UNSUPPORTED;
+
   if (argc < 3)
     return ERROR_PARAM; 
+
 
 #if 0
   SerialOutputString ("set ");
@@ -122,7 +128,7 @@ static int cmd_setenv (int argc, const char** argv)
   result = env_store (argv[1], sz);
 
   if (result)
-    puts ("unrecognized environment variable\r\n");
+    puts ("Unrecognized variable\r\n");
 
   return 0;
 }
@@ -135,6 +141,9 @@ static __command struct command_d c_setenv = {
 
 static int cmd_unsetenv (int argc, const char** argv)
 {
+  if (!is_descriptor_open (&env_d))
+    return ERROR_UNSUPPORTED;
+
   if (argc != 2)
     return ERROR_PARAM; 
 
@@ -153,5 +162,25 @@ static __command struct command_d c_unsetenv = {
   .command = "unsetenv",
   .description = "Remove environment variable",
   .func = cmd_unsetenv,
+};
+
+
+static int cmd_eraseenv (int argc, const char** argv)
+{
+  if (!is_descriptor_open (&env_d))
+    return ERROR_UNSUPPORTED;
+
+  if (argc != 1)
+    return ERROR_PARAM; 
+
+  env_erase_all ();
+
+  return 0;
+}
+
+static __command struct command_d c_eraseenv = {
+  .command = "eraseenv",
+  .description = "Erase environment",
+  .func = cmd_eraseenv,
 };
 

@@ -13,9 +13,14 @@
 */
 
 #include <driver.h>
+#include <service.h>
 #include "lh79524.h"
 
-int lh79524_serial_probe (void)
+extern struct driver_d* console_driver;
+
+static struct driver_d lh79524_serial_driver;
+
+void lh79524_serial_init (void)
 {
   u32 baudrate = 115200;
   u32 divisor_i = 0;
@@ -26,7 +31,7 @@ int lh79524_serial_probe (void)
     divisor_i = 6; divisor_f = 8; break;
 
   default:
-    return -1;			/* ERANGE */
+    return;
   }
 
   while (__REG (UART + UART_FR) & UART_FR_BUSY)
@@ -44,7 +49,8 @@ int lh79524_serial_probe (void)
 
   __REG (UART + UART_CR) = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
 
-  return 0;			/* Present and initialized */
+  if (console_driver == 0)
+    console_driver = &lh79524_serial_driver;
 }
 
 ssize_t lh79524_serial_poll (struct descriptor_d* d, size_t cb)
@@ -93,9 +99,11 @@ static __driver_0 struct driver_d lh79524_serial_driver = {
   .name = "serial-lh79524",
   .description = "lh79524 serial driver",
   .flags = DRIVER_SERIAL | DRIVER_CONSOLE,
-  .probe = lh79524_serial_probe,
   .read = lh79524_serial_read,
   .write = lh79524_serial_write,
   .poll = lh79524_serial_poll,
 };
 
+static __service_1 struct service_d lh79524_serial_service = {
+  .init = lh79524_serial_init,
+};

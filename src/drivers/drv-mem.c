@@ -15,6 +15,7 @@
 */
 
 #include <driver.h>
+#include <service.h>
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
@@ -65,7 +66,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   return i;
 }
 
-static int memory_probe (void)
+static void memory_init (void)
 {
   int i;
 
@@ -94,8 +95,6 @@ static int memory_probe (void)
       printf (" 0x%p 0x%08x (%d MiB)\r\n", 
 	      regions[i].pv, regions[i].cb, regions[i].cb/(1024*1024));
 #endif
-
-  return 0;			/* Present and initialized */
 }
 
 static int memory_open (struct descriptor_d* d)
@@ -130,12 +129,15 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 static __driver_0 struct driver_d memory_driver = {
   .name = "memory",
   .description = "memory driver (SDRAM/DRAM/SRAM)",
-  .probe = memory_probe,
   .open = memory_open,
   .close = close_descriptor,
   .read = memory_read,
   .write = memory_write,
   .seek = seek_descriptor,
+};
+
+static __service_0 struct service_d memort_service = {
+  .init = memory_init,
 };
 
 

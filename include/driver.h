@@ -51,7 +51,6 @@ struct driver_d {
   const char* description;
   unsigned long flags;
   void* priv;			/* Driver's private data */
-  int           (*probe) (void);
   int		(*open)  (struct descriptor_d*);
   void		(*close) (struct descriptor_d*);
   ssize_t	(*read)  (struct descriptor_d*, void* pv, size_t cb);

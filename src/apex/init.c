@@ -36,7 +36,6 @@ static void init_services (void)
 void init (void)
 {
   init_services ();
-  init_drivers ();
   cmd_version (0, NULL);	/* Signon */
   exec_monitor ();
 }
