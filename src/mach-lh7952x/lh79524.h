@@ -52,6 +52,7 @@
 
 #define RCPC_CTRL	(0x00)
 #define RCPC_CHIPID	(0x04)
+#define RCPC_SOFTRESET	(0x0c)
 #define RCPC_SYSCLKPRE	(0x18)
 #define RCPC_CPUCLKPRE	(0x1c)
 #define RCPC_CPUCLKPRE	(0x1c)
