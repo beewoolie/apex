@@ -80,6 +80,10 @@
    o What do we know that the directory contains file type info? Is
      this standard in all ext2 implementations?
 
+   o A path starting with ?i is interpreted as a direct request for an
+     inode.  The number following the ?i prefix is parsed as a decimal
+     number and is used as the inode to open.
+
 */
 
 #include <config.h>
@@ -92,7 +96,7 @@
 #include <linux/kernel.h>
 #include <error.h>
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -277,11 +281,8 @@ struct ext2_info {
   int fOK;
   struct partition partition[4];
   struct superblock superblock;
-//  struct block_group block_group[200];	/* Cached block group info */
   int block_size;
   int rg_blocking[3];		/* Tier block counts */
-
-//  char rgb[BLOCK_SIZE_MAX];	/* I/O buffer -- may not be needed */
 
   struct inode inode;		/* Current inode */
   int blockCache;		/* Number of first block in cache */
@@ -343,7 +344,7 @@ static int ext2_update_block_cache (int block_index)
 
   if (block_index >= ext2.blockCache 
       && block_index < ext2.blockCache + ext2.cCache) {
-    PRINTF ("ubc: %d %d %d\n", block_index, ext2.blockCache, ext2.cCache);
+//    PRINTF ("ubc: %d %d %d\n", block_index, ext2.blockCache, ext2.cCache);
     return 0;			/* Already cached */
   }
 
@@ -495,51 +496,103 @@ static int ext2_identify (void)
   return 0;
 }
 
-static ssize_t ext2_show_directory (int inode)
+/* ext2_enum_directory
+
+   enumerates the entries in a directory, returning the next directory
+   structure for each successive call.  The return value is NULL at
+   the end of the list.
+
+   *** The call interface could be simplified by passing the inode in
+   *** the handle, or by reading the inode before calling it.  In
+   *** either case, there isn't a compelling reason to make the
+   *** change.
+
+   Note that the handle is only 0 at the start of the enumeration.
+   Moreover, the returned value points to the next entry that will be
+   enumerated.  If the last entry in a block has a reclen that puts
+   the next record at the beginning of the next block, the initial
+   check for a null inode will really be looking at the first entry of
+   the block.  Fortunately, this is innocuous.  It may be better to
+   perform that fixup just before returning.
+
+*/
+
+static void* ext2_enum_directory (int inode, void* h, 
+				  struct directory** pdir)
 {
+  static int block_number;
   static char rgb[BLOCK_SIZE_MAX];
-  size_t ib = 0;
+  size_t ib = (size_t) h;
+  int block_index;
+  struct directory* dir;
 
 //  ENTRY (0);
 
-  if (ext2_find_inode (inode))
-    return -1;
+  if (ib == 0) {
+    if (ext2_find_inode (inode))
+      return NULL;
+    if (!S_ISDIR (ext2.inode.i_mode))
+      return NULL;
+  }
 
-  if (!S_ISDIR (ext2.inode.i_mode))
-    return -1;
+  if (ib >= ext2.inode.i_size)
+    return NULL;
+  dir = (struct directory*) ((void*) rgb + (ib & (ext2.block_size - 1)));
+  if (ib && dir->inode == 0)	/* This may never be invoked */
+    ib = (ib & ~(ext2.block_size - 1)) + ext2.block_size;
+  if (ib >= ext2.inode.i_size)
+    return NULL;
 
-  /* debug */
-  //  ext2_update_block_cache (0);
-  //  dump (ext2.rgbCache, 64, 0);
+  block_index = ib/ext2.block_size;
+  ext2_update_block_cache (block_index);
+  if (read_block_number (block_index - ext2.blockCache) != block_number) {
+    block_number = read_block_number (block_index - ext2.blockCache);
+    if (ext2_block_read (block_number, rgb, ext2.block_size))
+      return NULL;
+  }
+  dir = (struct directory*) ((void*) rgb + (ib & (ext2.block_size - 1)));
+  *pdir = dir;
+  return (void*) ib + dir->rec_len;
+}
 
-//  dump ((void*) &ext2.inode, sizeof (ext2.inode), 0);
 
-//  PRINTF ("  node found %d %d bytes\n", inode, ext2.inode.i_size);
+/* ext2_path_to_inode
 
-  while (ib < ext2.inode.i_size) {
-    int block_index = ib/ext2.block_size;
-    ext2_update_block_cache (block_index);
-    if (ext2_block_read (read_block_number (block_index - ext2.blockCache),
-			 rgb, ext2.block_size))
-      return -1;
+   follows the given path and returns the inode of the final path
+   element.  
 
-//    dump (rgb, 64, 0);
+   This is a core function of the driver.  It is what enabled the use
+   of pathnames to access files in the filesystem.  It should be
+   augmented to support symbolic links as these are likely to be
+   useful in configuring the boot kernel and rootfs.
 
-    {
-      struct directory* dir = (struct directory*) rgb;
-      while ((char*) dir < rgb + ext2.block_size && dir->inode) {
-#if 1
-	printf ("%5d: 0x%x %*.*s\n", 
-		dir->inode, dir->file_type, 
-		dir->name_len, dir->name_len, dir->name);
-#endif
-	dir = (struct directory*) ((void*) dir + dir->rec_len);
-      }
-    }    
+*/
 
-    ib += ext2.block_size;
-  }  
+static int ext2_path_to_inode (struct descriptor_d* d)
+{
+  int i = d->iRoot;
+  int inode = EXT2_ROOT_INO;
+  void* h;
+  struct directory* dir = NULL;
 
+  for (; i < d->c; ++i) {
+    int length = strlen (d->pb[i]);
+    h = NULL;
+    while ((h = ext2_enum_directory (inode, h, &dir))) {
+      if (length != dir->name_len)
+	continue;
+      if (memcmp (d->pb[i], dir->name, length))
+	continue;
+		/* Name matches */
+      if (i + 1 < d->c && dir->file_type != EXT2_FT_DIR)
+	return 0;		/* Can only follow paths via directories */
+      inode = dir->inode;
+      break;
+    }
+    if (h == NULL)
+      return 0;
+  }
+  return inode;
 }
 
 static int ext2_open (struct descriptor_d* d)
@@ -621,11 +674,26 @@ static int ext2_open (struct descriptor_d* d)
   }    
 #endif
 
-  /* Parse an inode number */
-  if (*d->pb[d->iRoot] == '?')
-    inode_target = simple_strtoul (d->pb[d->iRoot] + 1, NULL, 10);
+	/* Parse an inode number */
+  if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {
+    inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
+  }
+  else
+    inode_target = ext2_path_to_inode (d);
 
-  ext2_show_directory (inode_target);
+  if (inode_target == 0)
+    return ERROR_FILENOTFOUND;
+
+  /* Dump it as a dir if it is one */
+  {
+    void* h = NULL;
+    struct directory* dir;
+    while ((h = ext2_enum_directory (inode_target, h, &dir))) {
+      printf ("%5d: 0x%x %*.*s\n", 
+	      dir->inode, dir->file_type, 
+	      dir->name_len, dir->name_len, dir->name);
+    }
+  }      
 
   if (ext2_find_inode (inode_target)) {
     close_descriptor (&ext2.d); 

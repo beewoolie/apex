@@ -108,6 +108,26 @@ int call_command (int argc, const char** argv)
     result = command_match->func (argc, argv);
     if (result < ERROR_IMPORTANT) {
       printf ("Error %d", result);
+#if !defined (CONFIG_SMALL)
+      if (error_description == NULL) {
+	switch (result) {
+	case ERROR_PARAM:
+	  error_description = "parameter error"; break;
+	case ERROR_OPEN:
+	  error_description = "error on open"; break;
+	case ERROR_AMBIGUOUS:
+	  error_description = "ambiguous"; break;
+	case ERROR_NODRIVER:
+	  error_description = "no driver"; break;
+	case ERROR_UNSUPPORTED:
+	  error_description = "unsupported"; break;
+	case ERROR_BADPARTITION:
+	  error_description = "bad partition"; break;
+	case ERROR_FILENOTFOUND:
+	  error_description = "file not found"; break;
+	}
+      }
+#endif
       printf (" (%s)", error_description);
       printf ("\n");
     }

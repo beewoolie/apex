@@ -1,3 +1,11 @@
+2005-03-06  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-ext2.c: A rudimentary ext2 driver is
+	implemented.  It has not received much testing.
+
+	* src/apex/command.c (call_command): Added strings to error
+	reporting when not CONFIG_SMALL and a string has not yet been set.
+
 2005-03-04  Marc Singer  <elf@buici.com>
 
 	* scripts/envmagic: Removed undesirable paths from the find.
