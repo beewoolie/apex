@@ -483,7 +483,7 @@ every:
 	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
 	@[ ! -d every ] || rm -rf every
 	@mkdir every
-	@for i in `find src/mach-*/ -name '*config' -printf ' %f'` ; do\
+	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do\
 	$(MAKE) clean ;\
 	$(MAKE) $$i ;\
 	echo "  BUILD   $$i";\

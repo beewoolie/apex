@@ -1,7 +1,11 @@
 #!/bin/sh
 
 echo -n \#define ENV_MAGIC 0x
-find . -exec grep "[.]key[ ]*=" \{\} \; | sed -e 's/[^"]*"\([^"]*\).*/\1/'\
+find . \
+  -path '*/_*' -prune -o \
+  -path '*/.svn*' -prune -o \
+  -exec grep "[.]key[ ]*=" \{\} \;\
+ | sed -e 's/[^"]*"\([^"]*\).*/\1/'\
  | sort | uniq | md5sum | cut -c1-4
 
 
