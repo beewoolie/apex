@@ -39,7 +39,7 @@
 # include "lh79520.h"
 #endif
 
-int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
+static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
   __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
   __REG (RCPC_PHYS + RCPC_SOFTRESET) = 0xdead;

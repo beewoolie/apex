@@ -12,6 +12,11 @@
 
    Test code for the audio codec. 
 
+   You can dump an 8 bit file with hexdump.  This one skips to the
+   0x2c'th byte before dumping.
+
+     /usr/bin/hexdump -v -s 0x2c -e '8 1 "0x%02x, " "\n\t"' k3b_success1.wav
+
 */
 
 #include <config.h>
@@ -19,7 +24,10 @@
 #include <service.h>
 #include <linux/string.h>
 #include <apex.h>
+#include <command.h>
 #include "hardware.h"
+
+#include "pcm.h"
 
 #define T_SKH	1		/* Clock time high (us) */
 #define T_SKL	1		/* Clock time low (us) */
@@ -80,6 +88,13 @@
 #define CODEC_RESET		(0xf)
 
 #define CODEC_ADDR_SHIFT	(9)
+
+#define FREQUENCY_8K		(0)
+#define FREQUENCY_32K1		(1)
+#define FREQUENCY_44K1		(2)
+#define FREQUENCY_48K		(3)
+#define FREQUENCY_88K2		(4)
+#define FREQUENCY_96K		(5)
 
 #define CMD(a,c)	((((a) & 0x7f)<<CODEC_ADDR_SHIFT)|((c) & 0x1ff))
 
@@ -162,6 +177,43 @@ static void execute_spi_command (int v, int cwrite, int cread)
 //  return l;
 }
 
+static void codec_configure (int frequency)
+{
+  unsigned short v =
+//      (1<<7) /* MCLK/2 input */
+//    | (1<<6) /* MCLK/2 output */
+      (0<<7) /* MCLK input */
+    | (0<<6) /* MCLK output */
+//    | (8<<2) /* SR3-SR0 */
+//    | (0<<1) /* BOSR */
+    | (0<<0); /* Normal */
+
+  switch (frequency) {
+  default:
+  case FREQUENCY_8K:
+    v |= (0xb<<2) /* SR3-SR0 */
+      |  (0<<1); /* BOSR */
+    break;
+  case FREQUENCY_32K1:
+    break;
+  case FREQUENCY_44K1:
+    v |= (0x8<<2) /* SR3-SR0 */
+      |  (0<<1); /* BOSR */
+    break;
+  case FREQUENCY_48K:
+    break;
+  case FREQUENCY_88K2:
+    v |= (0xf<<2) /* SR3-SR0 */
+      |  (0<<1); /* BOSR */
+    break;
+  case FREQUENCY_96K:
+    break;
+  }
+
+  execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16, 0);
+  usleep (1);
+}
+
 static void codec_init (void)
 {
   __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
@@ -186,16 +238,10 @@ static void codec_init (void)
     | (1<<1)			/* enabled */
     | (0<<3);			/* SSP can driver SSPTX */
   __REG (SSP_PHYS + SSP_CPSR) = 2; /* Smallest prescalar is 2 */
-  __REG (I2S_PHYS + I2S_CTRL) = I2S_CTRL_I2SEN;
-
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
-  __REG (SSP_PHYS + SSP_DR) = 0x7fff;
+  __REG (I2S_PHYS + I2S_CTRL)
+    = I2S_CTRL_I2SEN
+//    | I2S_CTRL_WSINV
+    ;
 
   execute_spi_command (CMD (CODEC_RESET, 0), 16, 0);
   usleep (1);
@@ -204,26 +250,25 @@ static void codec_init (void)
 			    |(1<<1) /* Mute Microphone */
 			    ), 16, 0);
   usleep (1);
+  execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
+			    (2<<1) /* 44.1 kHz deemphasis */
+			    ), 16, 0);
+  usleep (1);
   execute_spi_command (CMD (CODEC_POWER_CTRL, 
 			    (1<<2) /* Disable ADC  */
 			    | (1<<1) /* Disable MIC  */
-			    | (1<<0) /* Disable LINE  */
+			    | (1<<0) /* Disable LINE IN */
 			    ), 16, 0);
   usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_FORMAT,
 			      (1<<1) /* I2S */
 			    | (1<<6) /* Master */
 			    | (0<<2) /* 16 bit */
+//			    | (3<<2) /* 32 bit */
 			    | (2<<0) /* I2S format */
 			    ), 16, 0);
   usleep (1);
-  execute_spi_command (CMD (CODEC_SAMPLE_RATE,
-			      (0<<7) /* MCLK input */
-			    | (0<<6) /* MCLK output */
-			    | (8<<2) /* SR3-SR0 */
-			    | (0<<1) /* BOSR */
-			    | (0<<0) /* Normal */
-			    ), 16, 0);
+  codec_configure (FREQUENCY_44K1);
   usleep (1);
   execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16, 0);
 
@@ -238,7 +283,32 @@ static void codec_release (void)
   __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 }
 
+static int cmd_codec_test (int argc, const char** argv)
+{
+  int i;
+  codec_configure (FREQUENCY_8K);
+//  codec_configure (FREQUENCY_44K1);
+
+  for (i = 0; i < sizeof (rgbPCM); ++i) {
+				/* Wait for room in the FIFO */
+    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
+      ;
+    __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
+				/* Wait for room in the FIFO */
+    //    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
+    //      ;
+    //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i] << 8)|rgbPCM[i];
+  }
+  return 0;
+}
+
 static __service_7 struct service_d lpd79524_codec_service = {
   .init = codec_init,
   .release = codec_release,
+};
+
+static __command struct command_d c_codec = {
+  .command = "codec",
+  .description = "test codec",
+  .func = cmd_codec_test,
 };

@@ -71,6 +71,9 @@ SECTIONS
 		*(env)
 		APEX_ENV_END = .;
 	}
+	pcm.data . : {
+		*(pcm.data)
+	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (8);
