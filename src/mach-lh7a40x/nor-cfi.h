@@ -39,7 +39,6 @@
 
 #define NOR_WIDTH	(32)
 #define NOR_0_PHYS	(0x00000000)
-#define NOR_0_LENGTH	(16*1024*1024)
 
 #define NOR_CHIP_MULTIPLIER	(2)	/* Number of chips at REGA */
 

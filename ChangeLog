@@ -1,3 +1,12 @@
+2005-03-17  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7a40x/initialize.c: Added hack to the lpd7a40x
+	initialization to enable PCMCIA.  May be a work-around for a NOR
+	flash problem.
+ 
+	* src/drivers/drv-nor-cfi.c (nor_read): Eliminated (most)
+	references to nor chip length except when necessary.
+
 2005-03-16  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/timer-lh79520.c (lh79520_timer_init): Fixed the

@@ -89,20 +89,21 @@
 
 #define CSC_PWRCNT_USBH_EN	(1<<28)	/* USB Host power enable */
 
-#define SMC_BCR0		(0x00)
-#define SMC_BCR1		(0x04)
-#define SMC_BCR2		(0x08)
-#define SMC_BCR3		(0x0c)
-#define SMC_BCR6		(0x18)
-#define SMC_BCR7		(0x1c)
+#define SMC_BCR0		__REG (SMC_PHYS + 0x00)
+#define SMC_BCR1		__REG (SMC_PHYS + 0x04)
+#define SMC_BCR2		__REG (SMC_PHYS + 0x08)
+#define SMC_BCR3		__REG (SMC_PHYS + 0x0c)
+#define SMC_BCR6		__REG (SMC_PHYS + 0x18)
+#define SMC_BCR7		__REG (SMC_PHYS + 0x1c)
+#define SMC_PCMCIACON		__REG (SMC_PHYS + 0x40)
 
-#define SDRC_GBLCNFG		(0x04)
-#define SDRC_RFSHTMR		(0x08)
-#define SDRC_BOOTSTAT		(0x0c)
-#define SDRC_SDCSC0		(0x10)
-#define SDRC_SDCSC1		(0x14)
-#define SDRC_SDCSC2		(0x18)
-#define SDRC_SDCSC3		(0x1c)
+#define SDRC_GBLCNFG		__REG (SDRC_PHYS + 0x04)
+#define SDRC_RFSHTMR		__REG (SDRC_PHYS + 0x08)
+#define SDRC_BOOTSTAT		__REG (SDRC_PHYS + 0x0c)
+#define SDRC_SDCSC0		__REG (SDRC_PHYS + 0x10)
+#define SDRC_SDCSC1		__REG (SDRC_PHYS + 0x14)
+#define SDRC_SDCSC2		__REG (SDRC_PHYS + 0x18)
+#define SDRC_SDCSC3		__REG (SDRC_PHYS + 0x1c)
 
 #define SDRAM_BANK0_PHYS	0xc0000000
 #define SDRAM_BANK1_PHYS	0xd0000000

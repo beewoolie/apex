@@ -230,6 +230,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* Set the running clock speed */
   CSC_CLKSET = CSC_CLKSET_V;
 
+	/* Enable PCMCIA.  This is a workaround for a buggy CPLD on
+	   the LPD boards.  Apparently, the PCMCIA signals float when
+	   disabled which breaks the CPLD handling of chip
+	   selects. */
+  SMC_PCMCIACON |= 0x3;		/* Enable both PCMCIA slots */
+
   __asm volatile ("cmp %0, %1\n\t"
 		  "movhi r0, #0\n\t"
 		  "movhi pc, %0\n\t"
@@ -238,14 +244,14 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL ('S');
 
 	/* Initialize SDRAM */
-  __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE_SETUP;
-  __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NOP;
+  SDRC_SDCSC0 = SDRAM_MODE_SETUP;
+  SDRC_GBLCNFG = SDRAM_CMD_NOP;
   usleep (200);
-  __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_PRECHARGEALL;
-  __REG (SDRC_PHYS + SDRC_RFSHTMR) = SDRAM_REFRESH_CHARGING;
+  SDRC_GBLCNFG = SDRAM_CMD_PRECHARGEALL;
+  SDRC_RFSHTMR = SDRAM_REFRESH_CHARGING;
   usleep (8);
-  __REG (SDRC_PHYS + SDRC_RFSHTMR) = SDRAM_REFRESH;
-  __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_MODE;
+  SDRC_RFSHTMR = SDRAM_REFRESH;
+  SDRC_GBLCNFG = SDRAM_CMD_MODE;
 #if defined (CONFIG_SDRAM_BANK0)
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
 #endif
@@ -255,8 +261,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #if defined (CONFIG_SDRAM_BANK2)
   __REG (SDRAM_BANK2_PHYS + SDRAM_CHIP_MODE);
 #endif
-  __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NORMAL;
-  __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE;
+  SDRC_GBLCNFG = SDRAM_CMD_NORMAL;
+  SDRC_SDCSC0 = SDRAM_MODE;
   
   PUTC_LL ('s');
 

@@ -424,8 +424,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
   while (cb) {
     unsigned long index = d->start + d->index;
     int available = cb;
-    if (index < NOR_0_LENGTH && index + available > NOR_0_LENGTH)
-      available = NOR_0_LENGTH - index;
+    if (index < chip->total_size && index + available > chip->total_size)
+      available = chip->total_size - index;
     index = phys_from_index (index);
 
     d->index += available;
