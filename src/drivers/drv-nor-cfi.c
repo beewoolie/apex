@@ -297,8 +297,6 @@ static void nor_init_chip (unsigned long phys)
   }
 }
 
-
-
 static void nor_init (void)
 {
   ENTRY (0);
@@ -570,6 +568,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
    Most chips can perform buffered writes.  This routine only writes
    one cell at a time because the logic is simpler and adequate.
+
+   For saving on code size, this version is a win.
 
 */
 
