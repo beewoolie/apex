@@ -1,9 +1,13 @@
 2005-03-10  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/initialize.c: SDRAM initialization was
+	completely broken since 1.1.0.  It works again.
+
 	* src/drivers/drv-cf.c: Moved Compact Flash code to live among
-	generic drivers.
+	generic drivers.  Implemented CF for the 79520's.  Wrote code for
+	the 7a40x's, but it isn't working.  
 	
-	* src/drivers/drv-ext2.c (ext2_path_to_inode): Fixed dump error in
+	* src/drivers/drv-ext2.c (ext2_path_to_inode): Fixed dumb error in
 	the symlink traversal code.
 
 	* src/drivers/drv-nor-cfi.c: Improved TALK for troubleshooting

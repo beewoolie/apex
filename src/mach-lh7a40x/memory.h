@@ -33,17 +33,23 @@
 /* ----- Includes */
 
 #include <config.h>
+#include <mach/hardware.h>
 
 /* ----- Constants */
 
 #if defined (CONFIG_SDRAM_BANK0)
-# define RAM_BANK0_START	0xc0000000
+# define RAM_BANK0_START	SDRAM_BANK0_PHYS
 # define RAM_BANK0_LENGTH	0x10000000
 #endif
 
 #if defined (CONFIG_SDRAM_BANK1)
-# define RAM_BANK1_START	0xd0000000
+# define RAM_BANK1_START	SDRAM_BANK1_PHYS
 # define RAM_BANK1_LENGTH	0x10000000
+#endif
+
+#if defined (CONFIG_SDRAM_BANK2)
+# define RAM_BANK2_START	SDRAM_BANK2_PHYS
+# define RAM_BANK2_LENGTH	0x10000000
 #endif
 
 #endif  /* __MEMORY_H__ */

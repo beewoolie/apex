@@ -246,13 +246,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   usleep (8);
   __REG (SDRC_PHYS + SDRC_RFSHTMR) = SDRAM_REFRESH;
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_MODE;
-#if defined (CONFIG_MEM_BANK0_START)
+#if defined (CONFIG_SDRAM_BANK0)
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
 #endif
-#if defined (CONFIG_MEM_BANK1_START)
+#if defined (CONFIG_SDRAM_BANK1)
   __REG (SDRAM_BANK1_PHYS + SDRAM_CHIP_MODE);
 #endif
-#if defined (CONFIG_MEM_BANK2_START)
+#if defined (CONFIG_SDRAM_BANK2)
   __REG (SDRAM_BANK2_PHYS + SDRAM_CHIP_MODE);
 #endif
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NORMAL;
