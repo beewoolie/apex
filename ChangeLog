@@ -1,3 +1,8 @@
+2005-02-12  Marc Singer  <elf@cerise.buici.com>
+
+	* include/debug_ll.h: Added low-level debug support via the serial
+	console.
+
 2005-02-11  Marc Singer  <elf@buici.com>
 
 	* src/lib/spinner.c (spinner_step): Smoothed out the spinner.
