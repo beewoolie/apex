@@ -445,13 +445,13 @@ ifeq ($(config-targets),1)
 .config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
-# %_config: FORCE
-# #	@if [ -L config ]; then rm config ; fi
-# #	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
-# 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
-# 	@cp src/mach-*/$@ .config
-# 	@if [ -e include/config.h ]; then rm include/config.h; fi
-# 	@if [ -L include/mach ]; then rm include/mach ; fi
+%_config: FORCE
+#	@if [ -L config ]; then rm config ; fi
+#	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
+	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
+	@cp src/mach-*/$@ .config
+#	@if [ -e include/config.h ]; then rm include/config.h; fi
+#	@if [ -L include/mach ]; then rm include/mach ; fi
 
 %config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
@@ -483,8 +483,7 @@ endif # KBUILD_EXTMOD
 # every target builds all of the available configurations
 .PHONY: every
 every:
-	@if [ -L config ]; then rm config ; fi
-	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
+	@if [ -e .config ]; then rm .config ; fi
 	@[ ! -d every ] || rm -rf every
 	@mkdir every
 	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do\
@@ -495,7 +494,7 @@ every:
 	mkdir every/$$i ;\
 	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ;\
 	done
-	@rm config
+	@rm .config
 
 ifeq ($(dot-config),1)
 ifeq "$(wildcard .config)" ""
@@ -839,9 +838,9 @@ include/envmagic.h: FORCE
 
 export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
-include/config.h: config
-	@[ -f config ] && echo "  CONFIG " `readlink config` \
-		       && scripts/configtoh config > include/config.h
+include/config.h: .config
+	@[ -f .config ] && echo "  CONFIG " `readlink .config` \
+		       && scripts/configtoh .config > include/config.h
 
 # Single targets
 # ---------------------------------------------------------------------------
