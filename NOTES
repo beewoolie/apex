@@ -18,6 +18,10 @@ TODO:
       many transfers at one time.    
     o Finally, I don't know what the right solution to the problem
       should be.
+    o Dump could be made to do the right thing with a switch to read
+      only one byte (or word) at a time.  This is probably desirable
+      anyway since we could use a mode to display words or
+      half-words instead of just bytes.
 
   o It might be helpful to make the envmagic script more repeatable.
     Need to look into this.  Seems like it changes when there are no
