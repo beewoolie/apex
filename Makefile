@@ -475,6 +475,16 @@ libs-y		:= src/lib/
 core-y		:= # usr/
 endif # KBUILD_EXTMOD
 
+ifeq "$(wildcard config)" ""
+# *** FIXME: this stuff doesn't yet work.  I'll need to spend some
+# time with the .config stuff.  
+dot-config := 0
+.PHONY: config
+config: FORCE
+	@echo "Nothing will happen without a config file."
+	@echo "Please refer to the documentation."
+endif
+
 ifeq ($(dot-config),1)
 # In this section, we need .config
 
@@ -482,7 +492,7 @@ ifeq ($(dot-config),1)
 # oldconfig if changes are detected.
 -include .config.cmd
 
-include config 
+include $(wildcard config)
 #include .config
 
 # If .config needs to be updated, it will be done via the dependency
@@ -1016,11 +1026,13 @@ distclean: mrproper
 # rpm target kept for backward compatibility
 package-dir	:= $(srctree)/scripts/package
 
-.PHONY: %-pkg rpm
+.PHONY: %-pkg rpm tgz
 
 %pkg: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 rpm: FORCE
+	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
+tgz: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 
 
@@ -1035,14 +1047,14 @@ help:
 	@echo  '  clean		  - remove most generated files but keep the config'
 	@echo  '  mrproper	  - remove all generated files + config + various backup files'
 	@echo  ''
-	@echo  'Configuration targets:'
-	@-$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
-	@echo  ''
+#	@echo  'Configuration targets:'
+#	@-$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
+#	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* apex	  - Build the bare kernel'
-	@echo  '* modules	  - Build all modules'
-	@echo  '  modules_install - Install all modules'
+	@echo  '* apex	          - Build the loader'
+#	@echo  '* modules	  - Build all modules'
+#	@echo  '  modules_install - Install all modules'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  rpm		  - Build a kernel as an RPM package'
@@ -1058,9 +1070,9 @@ help:
 	@echo  'Kernel packaging:'
 	@-$(MAKE) -f $(package-dir)/Makefile help
 	@echo  ''
-	@echo  'Documentation targets:'
-	@-$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
-	@echo  ''
+#	@echo  'Documentation targets:'
+#	@-$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
+#	@echo  ''
 	@echo  'Architecture specific targets ($(ARCH)):'
 	@$(if $(archhelp),$(archhelp),\
 		echo '  No architecture specific help defined for $(ARCH)')
