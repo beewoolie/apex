@@ -122,8 +122,8 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     if (available > cb)
       available = cb;
 
-    //    printf ("nand-read %ld page  %d index  %d available\r\n",
-    //	    page, index, available);
+//    printf ("nand-read  page %ld  index %d  available %d\r\n",
+//	    page, index, available);
 
     d->index += available;
     cb -= available;
@@ -199,6 +199,18 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   return cbWrote;
 }
 
+#if 0
+#define LH79524_GPIO_NAND_CE  ((volatile u32*)0xFFFD9000)
+#define NAND_DISABLE_CE(nand) do { *LH79524_GPIO_NAND_CE |= GPIO_PMDR_PM0;} while(0)
+#define NAND_ENABLE_CE(nand) do { *LH79524_GPIO_NAND_CE &= ~GPIO_PMDR_PM0;} while(0)
+
+#define WRITE_NAND_COMMAND(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT | _BIT(4)) = (u8)(d); } while(0)
+#define WRITE_NAND_ADDRESS(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT | _BIT(3)) = (u8)(d); } while(0)
+#define WRITE_NAND(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT) = (u8)d; } while(0)
+#define READ_NAND(adr) ((volatile unsigned char)(*(volatile u8 *)((unsigned long)adr | _BIT(23))))
+#endif
+
+
 static void nand_erase (struct descriptor_d* d, size_t cb)
 {
   if (!chip)
@@ -209,12 +221,20 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 
   SPINNER_STEP;
 
+#if 0
+  __REG (GPIO_MN_PHYS | 0x08) &= ~(1<<0); /* PM0 output */
+  __REG (GPIO_MN_PHYS | 0x00) &= ~(1<<0); /* PM0 low */
+
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
+#endif
+
   do {
-    unsigned long block = (d->start + d->index)/chip->erase_size;
+    unsigned long block = (d->start + d->index)>>9;
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
-    printf ("nand erase %ld, %ld\r\n", block, available);
+//    printf ("nand erase %ld, %ld\r\n", block, available);
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = (block & 0xff);
@@ -228,6 +248,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
       printf ("Erase failed at block %ld\r\n", block);
+//      goto fail;
       return;
     }
 
@@ -240,6 +261,12 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
       d->index = d->length;
     }
   } while (cb > 0);
+
+#if 0
+ fail:
+  __REG (GPIO_MN_PHYS | 0x00) |= (1<<0); /* PM0 high */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+#endif
 }
 
 static __driver_3 struct driver_d nand_driver = {

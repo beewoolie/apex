@@ -151,6 +151,13 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define RTC_LR		(0x08)
 #define RTC_CR		(0x0c)
 
+#define GPIO_AB_PHYS	(0xfffdf000)
+#define GPIO_CD_PHYS	(0xfffde000)
+#define GPIO_EF_PHYS	(0xfffdd000)
+#define GPIO_GH_PHYS	(0xfffdc000)
+#define GPIO_IJ_PHYS	(0xfffdb000)
+#define GPIO_KL_PHYS	(0xfffda000)
+#define GPIO_MN_PHYS	(0xfffd9000)
 
  /* -- */
 
