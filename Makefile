@@ -407,7 +407,7 @@ scripts_basic:
 # of make so .config is not included in this case either (for *config).
 
 no-dot-config-targets := clean mrproper distclean \
-			 cscope TAGS tags help %docs check%
+			 cscope TAGS tags help %docs check% every
 
 config-targets := 0
 mixed-targets  := 0
@@ -479,10 +479,26 @@ libs-y		:= src/lib/
 core-y		:= # usr/
 endif # KBUILD_EXTMOD
 
+# every target builds all of the available configurations
+.PHONY: every
+every:
+	@[ -d every ] && rm -rf every
+	@mkdir every
+	@for i in `find src/mach-*/ -name '*config' -printf ' %f'` ; do\
+	$(MAKE) clean ;\
+	$(MAKE) $$i ;\
+	echo "  BUILD   $$i";\
+	$(MAKE) > makelog 2>&1;\
+	mkdir every/$$i ;\
+	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ;\
+	done
+
+ifeq ($(dot-config),1)
 ifeq "$(wildcard config)" ""
-dot-config := 0
+#dot-config := 0
 config:
 	$(error Nothing will happen without a config file.  Please refer to the documentation.)
+endif
 endif
 
 ifeq ($(dot-config),1)
@@ -1063,13 +1079,14 @@ help:
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* apex	          - Build the loader'
+	@echo  '  every	          - Build every configuration to every/'
 #	@echo  '* modules	  - Build all modules'
 #	@echo  '  modules_install - Install all modules'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
-	@echo  '  rpm		  - Build a kernel as an RPM package'
-	@echo  '  tags/TAGS	  - Generate tags file for editors'
-	@echo  '  cscope	  - Generate cscope index'
+#	@echo  '  rpm		  - Build a kernel as an RPM package'
+#	@echo  '  tags/TAGS	  - Generate tags file for editors'
+#	@echo  '  cscope	  - Generate cscope index'
 	@echo  ''
 	@echo  'Static analysers'
 	@echo  '  buildcheck      - List dangling references to apex discarded sections'
