@@ -24,8 +24,8 @@ static void init_services (void)
 {
   extern char APEX_SERVICE_START;
   extern char APEX_SERVICE_END;
-
   struct service_d* service;
+
   for (service = (struct service_d*) &APEX_SERVICE_START;
        service < (struct service_d*) &APEX_SERVICE_END;
        ++service)
@@ -37,8 +37,8 @@ void release_services (void)
 {
   extern char APEX_SERVICE_START;
   extern char APEX_SERVICE_END;
-
   struct service_d* service;
+
   for (service = (struct service_d*) &APEX_SERVICE_END;
        service-- > (struct service_d*) &APEX_SERVICE_START; )
     if (service->release)
