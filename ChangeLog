@@ -1,5 +1,8 @@
 2005-02-21  Marc Singer  <elf@buici.com>
 
+	* Makefile (SUBLEVEL): rolled to 1.1.0 for release with
+	Milestone2.  Yipee!
+
 	* src/mach-lh7952x/drv-emac.c: Cleanup of the driver.  Better
 	control over compile options.  Added help and report features.
  
