@@ -68,12 +68,17 @@
    o FAT formats
 
      Only FAT16 is supported.  Others may be, but only when we have a
-     sample to test.
+     sample to test.  FAT12 on the way.
 
    o FILE I/O
 
      Information about the current file is cached in the fat info
      structure.  Thus precluding operations on two files.  Be warned.
+
+   o The code path needs to either cope properly with no filename and
+     return the partition table, or it needs to drop the feature.  The
+     open call starts the ball rolling, but the read code doesn't know
+     what to do.
 
 */
 
@@ -87,7 +92,7 @@
 #include <linux/kernel.h>
 #include <error.h>
 
-//#define TALK
+#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -108,6 +113,11 @@
 #define DRIVER_NAME	"fatfs"
 
 #define SECTOR_SIZE	512
+
+enum {
+  fat12 = 1,
+  fat16 = 2,
+};
 
 struct partition {
   unsigned char boot;
@@ -156,9 +166,6 @@ struct directory {
 } __attribute__ ((packed));
 
 struct fat_info {
-//  char bootsector[SECTOR_SIZE];	/* *** Superfluous */
-//  struct directory root[32];
-
   int fOK;			/* True when the block device recognizabled */
   struct partition partition[4];
   struct parameter parameter;	/* Parameter info for the partition */
@@ -170,6 +177,7 @@ struct fat_info {
   /* *** FIXME: directory clusters not yet implemented */
 //unsigned cluster_dir;		/* Current directory cluster being read  */
 
+  int fat_type;			/* Decided FAT format */
   char fat[SECTOR_SIZE];	/* Cached FAT sector  */
   int sector_fat;		/* Sector number of the cached FAT */
 
@@ -257,6 +265,9 @@ static int fat_identify (void)
 
    *** FIXME: this implementation only works for FAT16.
 
+   *** The cheat is there to save and restore the index pointer of the
+   *** descriptor being used to read from the CF.  It isn't heinous,
+   *** but it should be more above board.
 */
 
 static unsigned fat_next_cluster (unsigned cluster)
@@ -270,7 +281,18 @@ static unsigned fat_next_cluster (unsigned cluster)
     fat.sector_fat = sector;
     fat.d.index = index;	/* *** FIXME: This is a cheat */
   }
-  return read_short (fat.fat + (cluster%(SECTOR_SIZE/2))*2);
+
+  if (fat.fat_type == fat12) {
+    int index = cluster%(SECTOR_SIZE*2/3);
+    unsigned short v = read_short (fat.fat + index*3/2);
+    PRINTF ("next_cluster %x %x %x\n", cluster, index, v);
+    return (index & 1) ? ((v >> 4) & 0xfff): (v & 0xfff);
+  }
+
+  //read_short (fat.fat + (cluster%(SECTOR_SIZE/2))*2);
+  if (fat.fat_type == fat16)
+    return read_short (fat.fat + (cluster%(SECTOR_SIZE/2))*2);
+  return 0;			/* an error, really */
 }
 
 
@@ -322,7 +344,7 @@ static int fat_find (struct descriptor_d* d)
       }
       sz[k] = 0;
     }
-#if 0
+#if defined (TALK)
     {
       unsigned cluster_next = fat_next_cluster (fat.file.cluster);
       PRINTF ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n", 
@@ -339,7 +361,7 @@ static int fat_find (struct descriptor_d* d)
 
 static int fat_open (struct descriptor_d* d)
 {
-  int result;
+  int result = 0;
   char sz[128];
 
   ENTRY (0);
@@ -351,7 +373,7 @@ static int fat_open (struct descriptor_d* d)
     return result;
   fat.fOK = 1;
 
-#if 0
+#if defined (TALK)
   PRINTF ("descript %d %d\n", d->c, d->iRoot);
   {
     int i;
@@ -379,10 +401,12 @@ static int fat_open (struct descriptor_d* d)
 	      fat.partition[0].start, fat.partition[0].length);
   }
 
+  PRINTF ("  opening %s\n", sz);
+
 	/* Open descriptor for the partition */
   if (   (result = parse_descriptor (sz, &fat.d))
       || (result = open_descriptor (&fat.d))) 
-    return -1;
+    return result;
 
 	/* Read parameter block */
   fat.d.driver->seek (&fat.d, 0, SEEK_SET);
@@ -394,15 +418,24 @@ static int fat_open (struct descriptor_d* d)
     + fat.parameter.root_entries*32;
   fat.bytes_per_cluster = fat.parameter.sectors_per_cluster*SECTOR_SIZE;
 
-	/* Open file by finding directory entry and thus, the first cluster */
-  result = fat_find (d);
-  fat.cluster_file = fat.file.cluster;
-  fat.index_cluster_file = 0;
+	/* Decode FAT type */
+  fat.fat_type = 0;
+  if (memcmp (fat.parameter.type, "FAT12", 5) == 0)
+    fat.fat_type = fat12;
+  if (memcmp (fat.parameter.type, "FAT16", 5) == 0)
+    fat.fat_type = fat16;
 
-  if (d->start > fat.file.length)
-    d->start = fat.file.length;
-  if (d->start + d->length > fat.file.length)
-    d->length = fat.file.length - d->start;
+	/* Open file by finding directory entry and thus, the first cluster */
+  if (d->c != 0) {
+    result = fat_find (d);
+    fat.cluster_file = fat.file.cluster;
+    fat.index_cluster_file = 0;
+
+    if (d->start > fat.file.length)
+      d->start = fat.file.length;
+    if (d->start + d->length > fat.file.length)
+      d->length = fat.file.length - d->start;
+  }
 
   /* *** Do we want to set the default length to be the whole file?  */
 
@@ -515,13 +548,14 @@ static void fat_report (void)
 	    read_short (&fat.parameter.heads),
 	    read_long (&fat.parameter.hidden_sectors), 
 	    read_long  (&fat.parameter.large_sectors));
-    printf ("          log 0x%02x sig 0x%x serial %08lx vol %11.11s"
-	    " type %8.8s\n",
+    printf ("          log 0x%02x sig 0x%x serial %08lx\n"
+	    "          vol '%11.11s' type '%8.8s' fat_type %d\n",
 	    read_short (&fat.parameter.logical_drive),
 	    fat.parameter.signature,
 	    read_long (&fat.parameter.serial),	    
 	    fat.parameter.volume,
-	    fat.parameter.type);
+	    fat.parameter.type,
+	    fat.fat_type);
 
 #if 0
     for (i = 0; i < SECTOR_SIZE/sizeof (struct directory); ++i) {
