@@ -40,14 +40,14 @@
 #include <service.h>
 #include "hardware.h"
 
-#define UART_DR			__REG(UART_PHYS + 0x00)
-#define UART_IBRD		__REG(UART_PHYS + 0x24)
-#define UART_FBRD		__REG(UART_PHYS + 0x28)
-#define UART_LCR_H		__REG(UART_PHYS + 0x2c)
-#define UART_CR			__REG(UART_PHYS + 0x30)
-#define UART_FR			__REG(UART_PHYS + 0x18)
-#define UART_IMSC		__REG(UART_PHYS + 0x38)
-#define UART_ICR		__REG(UART_PHYS + 0x44)
+#define UART_DR			__REG(UART + 0x00)
+#define UART_IBRD		__REG(UART + 0x24)
+#define UART_FBRD		__REG(UART + 0x28)
+#define UART_LCR_H		__REG(UART + 0x2c)
+#define UART_CR			__REG(UART + 0x30)
+#define UART_FR			__REG(UART + 0x18)
+#define UART_IMSC		__REG(UART + 0x38)
+#define UART_ICR		__REG(UART + 0x44)
 
 #define UART_FR_TXFE		(1<<7)
 #define UART_FR_RXFF		(1<<6)

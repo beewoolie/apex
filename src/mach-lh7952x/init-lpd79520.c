@@ -162,7 +162,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 #if defined (CONFIG_DEBUG_LL)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
-  RCPC_PERIPHCLKCTRL &= ~RCPC_PERIPHCLK_U0;
+  RCPC_PERIPHCLKCTRL &= ~RCPC_PERIPHCLK_U1;
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
