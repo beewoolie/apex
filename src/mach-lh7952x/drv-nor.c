@@ -19,8 +19,12 @@
    It's important that the driver leave the memory array in ReadArray
    mode so that the memory driver can be used to read from the device.
 
-   *** FIXME: must unlock before erasing/writing.  There might be a
-   *** function to lock after writing, too.
+   Multiple banks means that we are somewhat shaky in some modes.  For
+   example, it would be handy to be lazy about clearing status and
+   setting the array in read mode.  Unfortunately, the multiple banks
+   makes this difficult to detect optimally.  It might be OK to
+   perform the ReadArray and ClearStatus commands always for both
+   banks.
 
 */
 
@@ -30,7 +34,7 @@
 #include <config.h>
 #include "lh79524.h"
 
-#define TALK
+//#define TALK
 
 #define NOR_0_PHYS	(0x44000000)
 #define NOR_0_LENGTH	(8*1024*1024)
@@ -51,7 +55,7 @@
 #define Suspend		(0xb0)
 #define Resume		(0xd0)
 #define STSConfig	(0xb8)
-#define Lock		(0x60)
+#define Configure	(0x60)
 #define LockSet		(0x01)
 #define LockClear	(0xd0)
 #define ProgramOTP	(0xc0)
@@ -81,9 +85,10 @@ const static struct nor_chip chips[] = {
 
 const static struct nor_chip* chip;
 
-static unsigned long phys_from_ib (unsigned long ib)
+static unsigned long phys_from_index (unsigned long index)
 {
-  return ib + ((ib < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
+  return index 
+    + ((index < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
 }
 
 static void vpen_enable (void)
@@ -94,6 +99,15 @@ static void vpen_enable (void)
 static void vpen_disable (void)
 {
   __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+}
+
+static unsigned short nor_status (unsigned long index)
+{
+  unsigned short status; 
+  do {
+    status = __REG16 (index);
+  } while ((status & Ready) == 0);
+  return status;
 }
 
 static int nor_probe (void)
@@ -151,9 +165,6 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
 
-  if (!chip)
-    return cbRead;
-
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
@@ -162,14 +173,14 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     int available = cb;
     if (index < NOR_0_LENGTH && index + available > NOR_0_LENGTH)
       available = NOR_0_LENGTH - index;
-    index = phys_from_ib (index);
+    index = phys_from_index (index);
 
     d->index += available;
     cb -= available;
     cbRead += available;
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
-    __REG16(index) = 0xff;
+    __REG16 (index) = ReadArray;
     memcpy (pv, (void*) index, available);
 
     pv += available;
@@ -178,92 +189,130 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
-#if 0
 
-static ssize_t nor_write (unsigned long fh, const void* pv, size_t cb)
+/* nor_write
+
+   does a little bit of fussing in order to handle writing single
+   bytes and odd addresses.  This implementation is coded for a 16 bit
+   device.  It is probably OK for 32 bit devices, too, since most of
+   those are really pairs of 16 bit devices.
+
+   The ReadArray command is sent after every byte because we would
+   otherwise need to check for bank changes.  This driver must always
+   leave the array in ReadArray mode so that the memory operators
+   work.
+
+   The LH28F128 can perform buffered writes.  This routine only writes
+   individual bytes because the logic is simpler and adequate.
+
+   We ought to clear status as the top of the routine.  Unfortunately,
+   with multiple banks, we would have to either detect bank switches,
+   or always clear status on both banks.
+
+*/
+
+static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int cbWrote = 0;
+  int pageLast = -1;
 
-  if (!chip)
-    return cbWrote;
-
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   while (cb) {
-    unsigned long page  = descriptors[fh].ib/512;
-    unsigned long index = descriptors[fh].ib%512;
-    int available = 512 - index;
-    int tail;
+    unsigned long index = d->start + d->index;
+    int page = index/chip->erase_size;
+    unsigned short data;
+    unsigned short status;
+    int step = 2;
 
-    if (available > cb)
-      available = cb;
-    tail = 528 - index - available;
-    
-    __REG8 (NOR_CLE) = SerialInput;
-    __REG8 (NOR_ALE) = 0;	/* Always start at page beginning */
-    __REG8 (NOR_ALE) = ( page        & 0xff);
-    __REG8 (NOR_ALE) = ((page >>  8) & 0xff);
+    index = phys_from_index (index);
 
-    while (index--)	   /* Skip to the portion we want to change */
-      __REG8 (NOR_DATA) = 0xff;
+    if (index & 1) {
+      step = 1;
+      index &= ~1;
+      __REG16 (d->index & ~1) = ReadArray;
+      data = __REG16 (index);
+      ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
+    }
+    else if (cb == 1) {
+      step = 1;
+      __REG16 (d->index & ~1) = ReadArray;
+      data = __REG16 (index);
+      ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
+    }
+    else
+      data = *(const unsigned short*) pv;
 
-    descriptors[fh].ib += available;
-    cb -= available;
-    cbWrote += available;
+    vpen_enable ();
+    if (page != pageLast) {
+      __REG16 (index) = Configure;
+      __REG16 (index) = LockClear;
+      status =  nor_status (index);
+      if (status & ProgramError)
+	goto fail;
+      pageLast = page;
+    }
+    __REG16 (index) = Program;
+    __REG16 (index) = data;
+    status = nor_status (index);
+    vpen_disable ();
+    __REG16 (index) = ReadArray;
 
-    while (available--)
-      __REG8 (NOR_DATA) = *((char*) pv++);
-
-    while (tail--)	   /* Fill to end of block */
-      __REG8 (NOR_DATA) = 0xff;
-
-    __REG8 (NOR_CLE) = AutoProgram;
-
-    wait_on_busy ();
-
-    __REG8 (NOR_CLE) = Status;
-    if (__REG8 (NOR_DATA) & Fail) {
-      printf ("Write failed at page %ld\r\n", page);
+    if (status & ProgramError) {
+    fail:
+      printf ("Program failed at 0x%p (%x)\r\n", (void*) index, status);
+      __REG16 (index) = ClearStatus;
       return cbWrote;
     }
-  }    
+
+    d->index += step;
+    pv += step;
+    cb -= step;
+    cbWrote += step;
+  }
 
   return cbWrote;
 }
 
-#endif
-
 static void nor_erase (struct descriptor_d* d, size_t cb)
 {
-  if (!chip)
-    return;
+  int pageLast = -1;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
   while (cb > 0) {
-    unsigned long index
-      = phys_from_ib (d->start + d->index);
+    unsigned long index = d->start + d->index;
+    int page = index/chip->erase_size;
     unsigned long available
-      = ((index + chip->erase_size)&~(chip->erase_size - 1)) - index;
+      = chip->erase_size - (index & ~(chip->erase_size - 1));
     unsigned short status; 
+
+    index = phys_from_index (index);
+
     if (available > cb)
       available = cb;
 
     index &= ~(chip->erase_size - 1);
 
+    __REG16 (index) = ClearStatus;
     vpen_enable ();
+    if (page != pageLast) {
+      __REG16 (index) = Configure;
+      __REG16 (index) = LockClear;
+      status =  nor_status (index);
+      if (status & ProgramError)
+	goto fail;
+      pageLast = page;
+    }
     __REG16 (index) = Erase;
     __REG16 (index) = EraseConfirm;
-
-    do {
-      status = __REG16 (index);
-    } while ((status & Ready) == 0);
-    
+    status = nor_status (index);
     vpen_disable ();
 
     if (status & EraseError) {
+    fail:
       printf ("Erase failed at 0x%p (%x)\r\n", (void*) index, status);
       __REG16 (index) = ClearStatus;
       return;
@@ -283,7 +332,7 @@ static __driver_3 struct driver_d nor_driver = {
   .open = nor_open,
   .close = close_descriptor,
   .read = nor_read,
-  //  .write = nor_write,
+  .write = nor_write,
   .erase = nor_erase,
   .seek = seek_descriptor,
 };

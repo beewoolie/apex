@@ -213,9 +213,9 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     cb = d->length - d->index;
 
   do {
-    unsigned long block = d->index/chip->erase_size;
-    unsigned long step
-      = chip->erase_size - (d->index & ~(chip->erase_size - 1));
+    unsigned long block = (d->start + d->index)/chip->erase_size;
+    unsigned long available
+      = chip->erase_size - ((d->start + d->index) & ~(chip->erase_size - 1));
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = (block & 0xff);
@@ -230,9 +230,9 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
       return;
     }
 
-    if (step < cb) {
-      cb -= step;
-      d->index += step;
+    if (available < cb) {
+      cb -= available;
+      d->index += available;
     }
     else {
       cb = 0;
