@@ -58,11 +58,6 @@
 
 //#define TALK
 
-#define NOR_0_PHYS	(0x44000000)
-#define NOR_0_LENGTH	(8*1024*1024)
-#define NOR_1_PHYS	(0x45000000)
-#define NOR_1_LENGTH	(8*1024*1024)
-#define WIDTH		(16)	/* Device width in bits */
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
 #define ReadArray	(0xff)
@@ -82,10 +77,6 @@
 #define LockClear	(0xd0)
 #define ProgramOTP	(0xc0)
 
-#define CPLD_REG_FLASH	(0x4c800000)
-#define RDYnBSY		(1<<2)
-#define FL_VPEN		(1<<0)
-
 #define Ready		(1<<7)
 #define EraseSuspended	(1<<6)
 #define EraseError	(1<<5)
@@ -97,30 +88,40 @@
 struct nor_chip {
   unsigned char manufacturer;
   unsigned char device;
-  unsigned long total_size;
-  int erase_size;
+  unsigned long total_size;	/* Size (bytes) of flash device */
+  int erase_size;		/* Size (bytes) of each erase block */
+  int erase_count;		/* Number of erase blocks */
+  int writebuffer_size;		/* Size (bytes) of buffered write buffer */
 };
 
+#if 0
 const static struct nor_chip chips[] = {
   { 0xb0, 0x18, 16*1024*1024, 128*1024 }, /* LH28F128SPHTD */
+  { 0x89, 0x17, 16*1024*1024, 128*1024 }, /* I28F??? */
 };
+#endif
 
 const static struct nor_chip* chip;
+static struct nor_chip chip_probed;
 
 static unsigned long phys_from_index (unsigned long index)
 {
+#if defined (NOR_1_PHYS)
   return index 
     + ((index < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
+#else
+  return index + NOR_0_PHYS;
+#endif
 }
 
 static void vpen_enable (void)
 {
-  __REG16 (CPLD_REG_FLASH) |= FL_VPEN;
+  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
 }
 
 static void vpen_disable (void)
 {
-  __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+  __REG16 (CPLD_FLASH) &= ~CPLD_FLASH_FL_VPEN;
 }
 
 static unsigned short nor_read_one (unsigned long index)
@@ -157,9 +158,6 @@ static unsigned short nor_unlock_page (unsigned long index)
 
 static void nor_init (void)
 {
-  unsigned char manufacturer;
-  unsigned char device;
-
   vpen_disable ();
 
   __REG16 (NOR_0_PHYS) = ReadArray;
@@ -170,6 +168,20 @@ static void nor_init (void)
       || __REG16 (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != 'Y')
     return;
 
+  chip_probed.total_size 
+    = 1<<__REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT));
+  chip_probed.writebuffer_size
+    = 1<<(   __REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
+	  | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8));
+  chip_probed.erase_size
+    = 256*(   __REG16 (NOR_0_PHYS + (0x2f << WIDTH_SHIFT))
+	   | (__REG16 (NOR_0_PHYS + (0x30 << WIDTH_SHIFT)) << 8));
+  chip_probed.erase_count
+    = 1 + (__REG16 (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
+	   | (__REG16 (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8));
+  chip = &chip_probed;
+
+#if 0
   manufacturer = __REG16 (NOR_0_PHYS + (0x00 << WIDTH_SHIFT));
   device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH_SHIFT));
 
@@ -180,6 +192,7 @@ static void nor_init (void)
       break;
   if (chip >= chips + sizeof (chips)/sizeof (chips[0]))
       chip = NULL;
+#endif
 
 #if defined (TALK)
 
@@ -188,13 +201,37 @@ static void nor_init (void)
   if (chip)
     printf (" %ldMiB total, %dKiB erase\r\n", 
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
-  else
-    printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
 
+  printf ("command set 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x13 << WIDTH_SHIFT)));
+  printf ("extended table 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x15 << WIDTH_SHIFT)));
+  printf ("alternate command set 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x17 << WIDTH_SHIFT)));
+  printf ("alternate address 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x19 << WIDTH_SHIFT)));
+
+  printf ("device size 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)));
+  printf ("flash interface 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT))
+	  | (__REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT)) << 8));
+  printf ("write buffer size 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
+	  | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8));
+  printf ("erase block regions x2c 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x2c << WIDTH_SHIFT)));
+  printf ("erase block info 0x%x\r\n",
+	  __REG16 (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
+	  | (__REG16 (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8)
+	  | (__REG16 (NOR_0_PHYS + (0x2f << WIDTH_SHIFT)) << 16)
+	  | (__REG16 (NOR_0_PHYS + (0x30 << WIDTH_SHIFT)) << 24));
 #endif
 
   __REG16 (NOR_0_PHYS) = ClearStatus;
+#if defined (NOR_1_PHYS)
   __REG16 (NOR_1_PHYS) = ClearStatus;
+#endif
 }
 
 static int nor_open (struct descriptor_d* d)

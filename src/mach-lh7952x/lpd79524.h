@@ -47,5 +47,10 @@
 #define CPLD_FLASH_STS1		(1<<1)
 #define CPLD_FLASH_NANDSPD	(1<<6)
 
+#define NOR_0_PHYS	(0x44000000)
+#define NOR_0_LENGTH	(8*1024*1024)
+#define NOR_1_PHYS	(0x45000000)
+#define NOR_1_LENGTH	(8*1024*1024)
+#define WIDTH		(16)	/* Device width in bits */
 
 #endif  /* __LPD79524_H__ */

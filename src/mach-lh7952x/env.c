@@ -37,6 +37,22 @@
 #define _s(v) #v 
 #define _t(v) _s(v)
 
+#if defined (CONFIG_MACH_LPD79520)
+
+static __env struct env_d e_cmdline = {
+  .key = "cmdline",
+  .default_value = "console=ttyAM1"
+		   " root=/dev/hda1"
+		   " mtdparts="
+		   "lpd79520_norflash:2m(boot)ro,-(root)"
+  ,
+  .description = "Linux kernel command line",
+};
+
+#endif
+
+#if defined (CONFIG_MACH_LPD79524)
+
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0"
@@ -48,4 +64,6 @@ static __env struct env_d e_cmdline = {
   ,
   .description = "Linux kernel command line",
 };
+
+#endif
 
