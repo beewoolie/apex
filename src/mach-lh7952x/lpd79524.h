@@ -47,7 +47,7 @@
 #define CPLD_CONTROL		(0x4c100000)
 #define CPLD_SPI		(0x4c500000)
 #define CPLD_INTERRUPT		(0x4c600000)
-#define CPLD_FLASH		(0x4c800000)
+#define CPLD_FLASH		__REG16 (0x4c800000)
 #define CPLD_REVISION		(0x4ca00000)
 #define CPLD_EXGPIO		(0x4cb00000)
 #define CPLD_GPIODATA		(0x4cc00000)
@@ -99,11 +99,11 @@
 #define CPLD_EXGPIO_LED2	(1<<2)
 #endif
 
-#define NOR_0_PHYS	(0x44000000)
-#define NOR_0_LENGTH	(8*1024*1024)
-#define NOR_1_PHYS	(0x45000000)
-#define NOR_1_LENGTH	(8*1024*1024)
-#define WIDTH		(16)	/* Device width in bits */
+//#define NOR_0_PHYS	(0x44000000)
+//#define NOR_0_LENGTH	(8*1024*1024)
+//#define NOR_1_PHYS	(0x45000000)
+//#define NOR_1_LENGTH	(8*1024*1024)
+//#define WIDTH		(16)	/* Device width in bits */
 
 #if 1
 # define CF_PHYS	0x48200000

@@ -655,6 +655,24 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
   }
 }
 
+#if !defined (CONFIG_SMALL)
+
+static void nor_report (void)
+{
+  int i;
+  printf ("  nor: %ldMiB total  %dB write buffer\r\n",
+	  chip->total_size/(1024*1024), chip->writebuffer_size);
+  for (i = 0; i < chip->regions; ++i)
+    printf ("    region %d: %3d block%c at %6d (0x%05x) bytes\r\n",
+	    i,
+	    chip->region[i].count, 
+	    (chip->region[i].count > 1) ? 's' : ' ',
+	    chip->region[i].size, chip->region[i].size);
+  printf ("\r\n");
+}
+
+#endif
+
 static __driver_3 struct driver_d nor_driver = {
   .name = "nor-cfi",
   .description = "CFI NOR flash driver",
@@ -673,4 +691,7 @@ static __driver_3 struct driver_d nor_driver = {
 
 static __service_6 struct service_d cfi_nor_service = {
   .init = nor_init,
+#if !defined (CONFIG_SMALL)
+  .report = nor_report,
+#endif
 };

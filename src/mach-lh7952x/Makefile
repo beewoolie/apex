@@ -23,11 +23,12 @@ obj-y := serial.o env.o
 
 obj-$(CONFIG_MACH_LPD79520)     += init-lpd79520.o timer-lh79520.o
 obj-$(CONFIG_MACH_LPD79520)     += cmd-version-hook.o
-obj-x$(CONFIG_MACH_LPD79529)$(CONFIG_DRIVER_NOR) += drv-nor.o
+obj-x$(CONFIG_MACH_LPD79520)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
 
-obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o adc.o
+obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_MACH_LPD79524)     += cmd-version-hook.o
-obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_DRIVER_NOR) += drv-nor.o
+obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
+obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_ADC) += adc.o
 obj-$(CONFIG_MACH_KEV79524)     += init-kev79524.o timer-lh79524.o
 obj-x$(CONFIG_MACH_KEV79524)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
 obj-$(CONFIG_MACH_KEV79524)     += cmd-version-hook.o

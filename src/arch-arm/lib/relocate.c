@@ -62,7 +62,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 	       "0: ldmia r0!, {r3-r10}\n\t"
 		  "stmia %0!, {r3-r10}\n\t"
 		  "cmp %0, %1\n\t"
-		  "bne 0b\n\t"
+		  "bls 0b\n\t"
 		  "add pc, ip, lr\n\t" /* Return to SDRAM copy */
 		  :
 		  : "r" (&APEX_VMA_COPY_START), "r" (&APEX_VMA_COPY_END)

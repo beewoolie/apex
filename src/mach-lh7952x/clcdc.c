@@ -117,7 +117,7 @@ static void clcdc_init (void)
 
   __REG(CLCDC_PHYS + CLCDC_TIMING0)   = 0x0e143c38;
   __REG(CLCDC_PHYS + CLCDC_TIMING1)   = 0x075f013f;
-  __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef3006;
+  __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef300e;
   __REG(CLCDC_PHYS + CLCDC_UPBASE)    = (unsigned long) buffer;
   __REG(CLCDC_PHYS + CLCDC_CTRL)      = 0x00010028;
   __REG(ALI_PHYS   + ALI_SETUP)	      = 0x00000efd;

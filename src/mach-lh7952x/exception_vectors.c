@@ -36,11 +36,12 @@
 #include <asm/system.h>
 #include <service.h>
 #include "hardware.h"
+#include <asm/interrupts.h>
 
 extern void reset (void);
 extern void irq_handler (void);
 
-void (*interrupt_handlers[32])(void);
+irq_return_t (*interrupt_handlers[32])(int irq);
 
 void __naked __section (.vector.0) exception_vectors (void)
 {
@@ -81,15 +82,16 @@ void __naked __section (.vector.1) v_irq_handler (void)
 
 void __irq_handler __section (.bootstrap) irq_handler (void)
 {
-  int i;
+  int irq;
   unsigned long v = __REG (VIC_PHYS + VIC_IRQSTATUS);
   if (v == 0)
     return;
 
-  for (i = 0; i; ++i) {
-    if (v & (1<<i)) {
-      if (interrupt_handlers[i])
-	interrupt_handlers[i]();
+  for (irq = 0; irq; ++irq) {
+    if (v & (1<<irq)) {
+      if (!interrupt_handlers[irq]
+	  || interrupt_handlers[irq](irq) != IRQ_HANDLED)
+	__REG (VIC_PHYS + VIC_INTENCLEAR) = (1<<irq);
       __REG (VIC_PHYS + VIC_VECTADDR) = 0;
       break;
     }    

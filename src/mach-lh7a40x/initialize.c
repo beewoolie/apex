@@ -211,7 +211,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   {
     unsigned long l;
     __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
-		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
+//		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
+		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
 		    "mcr	p15, 0, %0, c1, c0, 0"
 		    : "=r" (l));
   }
@@ -234,9 +235,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   usleep (8);
   __REG (SDRC_PHYS + SDRC_RFSHTMR) = SDRAM_REFRESH;
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_MODE;
+#if defined (CONFIG_MEM_BANK0_START)
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
+#endif
+#if defined (CONFIG_MEM_BANK1_START)
   __REG (SDRAM_BANK1_PHYS + SDRAM_CHIP_MODE);
+#endif
+#if defined (CONFIG_MEM_BANK2_START)
   __REG (SDRAM_BANK2_PHYS + SDRAM_CHIP_MODE);
+#endif
   __REG (SDRC_PHYS + SDRC_GBLCNFG) = SDRAM_CMD_NORMAL;
   __REG (SDRC_PHYS + SDRC_SDCSC0) = SDRAM_MODE;
   

@@ -20,7 +20,7 @@
 #include <config.h>
 
 #if defined (CONFIG_INTERRUPTS)
-extern void (*interrupt_handlers[32])(void);
+//#define IRQ_COUNT	32
 #endif
 
 #if defined (CONFIG_MACH_LH79520)

@@ -30,13 +30,14 @@
 #include <config.h>
 #include <service.h>
 #include "hardware.h"
+#include <asm/interrupts.h>
 
 #if defined (CONFIG_INTERRUPTS)
 # include <linux/compiler-gcc.h>
 #endif
 
 #if defined (CONFIG_INTERRUPTS)
-static void timer_isr (void)
+static irq_return_t timer_isr (int irq)
 {
   static int v;
 
@@ -45,6 +46,7 @@ static void timer_isr (void)
   if (v++ %8 == 0) {
     __REG (UART + UART_DR) = '.';
   }
+  return IRQ_HANDLED;
 }
 #endif
 

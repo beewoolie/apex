@@ -570,6 +570,22 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
   }
 }
 
+#if !defined (CONFIG_SMALL)
+
+static void nor_report (void)
+{
+  if (chip) {
+    printf ("  nor:");
+    printf (" %ldMiB total, %dKiB erase", 
+	    chip->total_size/(1024*1024), chip->erase_size/1024);
+    printf (", %dB write buffer, %d erase blocks", 
+	    chip->writebuffer_size, chip->erase_count);
+    printf ("\r\n");
+  }
+}
+
+#endif
+
 static __driver_3 struct driver_d nor_driver = {
   .name = "nor-lpd7a40x",
   .description = "NOR flash driver",
@@ -588,4 +604,7 @@ static __driver_3 struct driver_d nor_driver = {
 
 static __service_6 struct service_d lpd7a40x_nor_service = {
   .init = nor_init,
+#if !defined (CONFIG_SMALL)
+  .report = nor_report,
+#endif 
 };

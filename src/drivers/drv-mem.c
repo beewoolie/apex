@@ -109,7 +109,7 @@ static void memory_report (void)
 {
   int i;
 
-  printf ("  mem:\r\n");
+  printf ("  memory:\r\n");
 
   for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i)
     if (regions[i].length)

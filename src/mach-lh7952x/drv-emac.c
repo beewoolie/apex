@@ -397,9 +397,9 @@ void emac_init (void)
     unsigned char rgb[6];
     if (!emac_read_mac (rgb)) {
       EMAC_SPECAD1BOT 
-	= (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
+	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
       EMAC_SPECAD1TOP 
-	= (rgb[0]<<8)|(rgb[1]<<0);
+	= (rgb[5]<<8)|(rgb[4]<<0);
       printf ("emac: mac address\r\n"); 
       dump (rgb, 6, 0);
     }
@@ -758,9 +758,9 @@ static int cmd_emac (int argc, const char** argv)
       }
 
       EMAC_SPECAD1BOT 
-	= (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
+	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
       EMAC_SPECAD1TOP 
-	= (rgb[0]<<8)|(rgb[1]<<0);
+	= (rgb[5]<<8)|(rgb[4]<<0);
       printf ("emac: mac address\r\n"); 
       dump (rgb, 6, 0);
     }
@@ -773,12 +773,12 @@ static int cmd_emac (int argc, const char** argv)
       rgb[1] = 0x01;		/* OP: MAC address */
       rgb[8] = 0xff;		/* OP: end */
 
-      rgb[2] = EMAC_SPECAD1BOT >> 24;
-      rgb[3] = EMAC_SPECAD1BOT >> 16;
-      rgb[4] = EMAC_SPECAD1BOT >>  8;
-      rgb[5] = EMAC_SPECAD1BOT >>  0;
-      rgb[6] = EMAC_SPECAD1TOP >>  8;
-      rgb[7] = EMAC_SPECAD1TOP >>  0;
+      rgb[2] = EMAC_SPECAD1BOT >>  0;
+      rgb[3] = EMAC_SPECAD1BOT >>  8;
+      rgb[4] = EMAC_SPECAD1BOT >> 16;
+      rgb[5] = EMAC_SPECAD1BOT >> 24;
+      rgb[6] = EMAC_SPECAD1TOP >>  0;
+      rgb[7] = EMAC_SPECAD1TOP >>  8;
       
       {
 	struct descriptor_d d;

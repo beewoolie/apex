@@ -1,3 +1,11 @@
+2005-01-21  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-nor-cfi.c (nor_report): Added report
+	function to nor driver.
+
+	* src/mach-lh7a40x/drv-nor.c (nor_report): Added report funtion to
+	nor driver.
+
 2005-01-13  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-version.c (cmd_version): Rewording signon.

@@ -181,7 +181,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (IOCON_PHYS + IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
   __REG (IOCON_PHYS + IOCON_RESCTL7)  = IOCON_RESCTL7_V;	/* no pull */
   __REG (IOCON_PHYS + IOCON_MUXCTL14) = IOCON_MUXCTL14_V;	/* nCS0 norm */
-  __REG16 (CPLD_FLASH)		     &= ~(CPLD_FLASH_NANDSPD);	/* Fast NAND */
+  CPLD_FLASH			     &= ~(CPLD_FLASH_NANDSPD);	/* Fast NAND */
 #endif
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
@@ -271,7 +271,7 @@ static void target_init (void)
 static void target_release (void)
 {
   /* Flash is enabled for the kernel */
-  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |= CPLD_FLASH_FL_VPEN;
 }
 
 static __service_0 struct service_d lh79524_target_service = {

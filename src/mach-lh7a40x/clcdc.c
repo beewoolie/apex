@@ -61,8 +61,6 @@ static void clcdc_init (void)
   }
 
   __REG(GPIO_PHYS + GPIO_PINMUX) |= (1<<1) | (1<<0); /* LCDVD[15:4] */
-  __REG(GPIO_PHYS + GPIO_PADD)	 |= (1<<2);	     /* PA2 output */
-  __REG(GPIO_PHYS + GPIO_PAD)	 |= (1<<2);	     /* PA2 high */
 
   __REG(CLCDC_PHYS + CLCDC_TIMING0)   = 0x0e143c38;
   __REG(CLCDC_PHYS + CLCDC_TIMING1)   = 0x075f013f;
