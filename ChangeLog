@@ -1,3 +1,12 @@
+2004-12-05  Marc Singer  <elf@buici.com>
+
+	* src/lib/env.c (_env_check_magic): Magic number inserted at the
+	start of the environment to protect user from bogus data.
+
+	* src/mach-lh7a40x/drv-nor.c (nor_write): LPD7A40X targets
+	completely supported though buffered writes to NOR flash not yet
+	implemented.
+
 2004-12-01  Marc Singer  <elf@buici.com>
 
 	* README: New README(s) in preparation to release the source.

@@ -8,6 +8,14 @@ easy to extend.  It uses some code and the build system form the Linux
 kernel.  There are pieces of code taken from BLOB and UBoot as well.
 
 
+  Supported Targets
+  -----------------
+
+The loader is fully functional for the LPD79524, LPD7A400, LPD7A404.
+It builds for the LPD79520, but there is presently no version of the
+Linux kernel that uses the correct architecture number.
+
+
   Building APEX
   -------------
 
@@ -18,15 +26,14 @@ platform.  For example,
 
   CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 
-In this first release, the only target that may be build is the
-LPD79524.
+To build for the LPD79524:
 
   # make lpd79524_config
 
 After executing this command, there will be a link in the root
 directory called 'config' that points to the configuration file for
-the target.  This file may be modified to change which features to
-include or exclude.  
+the LPD79524.  This file may be modified to include or exclude some
+features.
 
 APEX uses the Linux kernel build scripts so that rebuilding is
 (nearly) optimal.  Changes to the configuration are automatically
@@ -39,7 +46,7 @@ generate a dumped binary, build the apex.bin target.
 
   # make apex.bin
 
-This dumped file is src/arc-arm/rom/apex.bin.
+The dumped file is found in src/arc-arm/rom/apex.bin.
 
 
   Running APEX

@@ -47,11 +47,6 @@
    TODO
    ----
 
-   - We may need to add a magic number to the top of the environment
-     so that the indices used in non-volatile storage are guaranteed
-     to match the APEX variable list.
-   - There should be a checksum at the top of the environment that
-     make it impossible to load the values incorrectly.  
    - There may be a desire to be able to erase all of the environment
      and start again.  This might mitigate the issue of using EEPROM
      in that we would force the user to do the erase by hand.
@@ -144,6 +139,7 @@ static int _env_check_magic (void)
     return 1;
   return -1;
 } 
+
 
 /* _env_find
 
