@@ -32,6 +32,8 @@
 #include <linux/string.h>
 #include <apex.h>
 #include "hardware.h"
+//#include <splash/apex-240x320.h>
+#include <splash/apex-240x320m.h>
 
 static unsigned short __attribute__((section(".clcdc.bss"))) 
      buffer[320*240];
@@ -56,6 +58,24 @@ static void msleep (int ms)
 
 static void clcdc_init (void)
 {
+
+#if 1
+  {
+    char* pb = header_data;
+    int i;
+    for (i = 0; i < width*height; ++i, ++pb) {
+      buffer[i] = 0
+	| ((*pb & 0xf8) << 7)
+	| ((*pb & 0xe0) << 0)	/* Reduced green */
+	//| ((*pb & 0xf8) << 2)
+	//| ((*pb & 0xf8) >> 3)
+;
+    }
+  }
+#endif
+
+#if 0
+  /* Color bars */
   {
     int i;
     for (i = 0; i < 320*240; ++i) {
@@ -69,6 +89,7 @@ static void clcdc_init (void)
 	buffer[i] = I(0x1f,(i%240)*255/255)<<0;
     }
   }
+#endif
 
   RCPC_CTRL |= (1<<9); /* Unlock */
   RCPC_PCLKCTRL1 &= ~(1<<0);
