@@ -113,7 +113,7 @@
 #define PRINTF3(f...)		do {} while (0)
 #endif
 
-#define DO_RESET_PHY
+//#define DO_RESET_PHY
 
 #define PHY_CONTROL	0
 #define PHY_STATUS	1
@@ -139,12 +139,20 @@ static int phy_address;
 
 #define C_BUFFER	2	/* Number of buffers for each rx/tx */
 #define CB_BUFFER	1536
-static long __attribute__((section("ethernet.bss"))) 
+static long // __attribute__((section("ethernet.bss"))) 
      rgl_rx_descriptor[C_BUFFER*2];
-static long __attribute__((section("ethernet.bss"))) 
+static long // __attribute__((section("ethernet.bss"))) 
      rgl_tx_descriptor[C_BUFFER*2];
 static char __attribute__((section("ethernet.bss")))
-     rgbBuffer[CB_BUFFER*C_BUFFER];	/* Memory for buffers */
+     rgbRxBuffer[CB_BUFFER*C_BUFFER];
+static char __attribute__((section("ethernet.bss")))
+     rgbTxBuffer[CB_BUFFER*C_BUFFER];
+
+struct ethernet_header {
+  unsigned char dest[6];
+  unsigned char src[6];
+  unsigned short protocol;
+};
 
 static void msleep (int ms)
 {
@@ -159,29 +167,30 @@ static void emac_setup (void)
   int i;
   for (i = 0; i < C_BUFFER; ++i) {
     /* RX */
-    rgl_rx_descriptor[i*2] = ((unsigned long)(rgbBuffer + i*CB_BUFFER) & ~3)
+    rgl_rx_descriptor[i*2]     = ((unsigned long)(rgbRxBuffer + i*CB_BUFFER) 
+				  & ~3)
       | ((i == C_BUFFER - 1) ? (1<<1) : 0);
     rgl_rx_descriptor[i*2 + 1] = 0;
     /* TX */
-    rgl_tx_descriptor[i*2]     = 0;
-    rgl_tx_descriptor[i*2 + 1] = (1<<31)|(1<<15)
-      | ((i == C_BUFFER - 1) ? (1<<30) : 0);
+    //    rgl_tx_descriptor[i*2]     = (unsigned long)(rgbTxBuffer + i*CB_BUFFER);
+    //    rgl_tx_descriptor[i*2 + 1] = (1<<31)|(1<<15)
+    //      | ((i == C_BUFFER - 1) ? (1<<30) : 0);
   }
   PRINTF ("emac: setup rgl_rx_descriptor %p\r\n", rgl_rx_descriptor);
-  __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rgl_rx_descriptor;
-  __REG (EMAC_PHYS + EMAC_RXSTATUS) &= 
+  EMAC_RXBQP = (unsigned long) rgl_rx_descriptor;
+  EMAC_RXSTATUS &= 
     ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC 
       | EMAC_RXSTATUS_BUFNOTAVAIL);
   PRINTF ("emac: setup rgl_tx_descriptor %p\r\n", rgl_tx_descriptor);
-  __REG (EMAC_PHYS + EMAC_TXBQP) = (unsigned long) rgl_tx_descriptor;
-  __REG (EMAC_PHYS + EMAC_TXSTATUS) &=
+  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+  EMAC_TXSTATUS &=
     ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
 	 
-  __REG (EMAC_PHYS + EMAC_NETCONFIG)
+  EMAC_NETCONFIG
     = EMAC_NETCONFIG_DIV32 | EMAC_NETCONFIG_FULLDUPLEX
     | EMAC_NETCONFIG_100MB | EMAC_NETCONFIG_CPYFRM;
-//  __REG (EMAC_PHYS + EMAC_NETCONFIG) |= EMAC_NETCONFIG_RECBYTE;
-  __REG (EMAC_PHYS + EMAC_NETCTL) 
+//  EMAC_NETCONFIG |= EMAC_NETCONFIG_RECBYTE;
+  EMAC_NETCTL 
     = EMAC_NETCTL_RXEN | EMAC_NETCTL_TXEN | EMAC_NETCTL_CLRSTAT;
 }
 
@@ -191,21 +200,22 @@ static int emac_phy_read (int phy_address, int phy_register)
 
   PRINTF3 ("emac_phy_read %d %d\r\n", phy_address, phy_register);
 
-  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
-  __REG (EMAC_PHYS + EMAC_PHYMAINT)
+  EMAC_NETCTL |= EMAC_NETCTL_MANGEEN;
+  EMAC_PHYMAINT
     = (1<<30)|(2<<28)
     |((phy_address  & 0x1f)<<23)
     |((phy_register & 0x1f)<<18)
     |(2<<16);
 
   usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  while ((__REG (EMAC_PHYS + EMAC_NETSTATUS) & (1<<2)) == 0)
+  while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
 
-  result = __REG (EMAC_PHYS + EMAC_PHYMAINT) & 0xffff;
+  result = EMAC_PHYMAINT & 0xffff;
 
-  __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
+  EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
 
+  //  printf ("epr: %d -> %x\r\n", phy_register, result);
   PRINTF3 ("emac_phy_read => 0x%x\r\n", result);
 
   return result;
@@ -213,8 +223,9 @@ static int emac_phy_read (int phy_address, int phy_register)
 
 static void emac_phy_write (int phy_address, int phy_register, int phy_data)
 {
-  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
-  __REG (EMAC_PHYS + EMAC_PHYMAINT)
+  //  printf ("epw: %d %x\r\n", phy_register, phy_data);
+  EMAC_NETCTL |= EMAC_NETCTL_MANGEEN;
+  EMAC_PHYMAINT
     = (1<<30)|(1<<28)
     |((phy_address & 0x1f)<<23)
     |((phy_register & 0x1f)<<18)
@@ -222,9 +233,9 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
     |(phy_data & 0xffff);
 
   usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  while ((__REG (EMAC_PHYS + EMAC_NETSTATUS) & (1<<2)) == 0)
+  while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
-  __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
+  EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
 }
 
 static void emac_phy_reset (int phy_address)
@@ -237,6 +248,18 @@ static void emac_phy_reset (int phy_address)
 		  | emac_phy_read (phy_address, 0));
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
     ;
+
+  /* Disable auto MDI/MDIX.  Force MDI. */
+ {
+   unsigned long l = emac_phy_read (phy_address, 23);
+   emac_phy_write (phy_address, 23, (l & ~((1<<7)|(1<<6)))|(1<<7));
+ }
+ /* Disable SPD100 */
+ {
+   unsigned long l = emac_phy_read (phy_address, 0);
+   emac_phy_write (phy_address, 0, l & ~(1<<13));
+ }
+
 #else
   printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
   __REG8 (CPLD_CONTROL) &= ~CPLD_CONTROL_WRLAN_ENABLE;
@@ -359,9 +382,9 @@ void emac_init (void)
   {
     unsigned char rgb[6];
     if (!emac_read_mac (rgb)) {
-      __REG (EMAC_PHYS + EMAC_SPECAD1BOT) 
+      EMAC_SPECAD1BOT 
 	= (rgb[2]<<24)|(rgb[3]<<16)|(rgb[4]<<8)|(rgb[5]<<0);
-      __REG (EMAC_PHYS + EMAC_SPECAD1TOP) 
+      EMAC_SPECAD1TOP 
 	= (rgb[0]<<8)|(rgb[1]<<0);
       printf ("emac: mac address\r\n"); 
       dump (rgb, 6, 0);
@@ -380,7 +403,7 @@ void emac_init (void)
   }
 #endif
 
-  if ((__REG (EMAC_PHYS + EMAC_INTSTATUS) & EMAC_INT_LINKCHG) == 0)
+  if ((EMAC_INTSTATUS & EMAC_INT_LINKCHG) == 0)
     PRINTF ("emac: no link detected\r\n");
   else
     PRINTF ("emac: link change detected\r\n");
@@ -390,6 +413,32 @@ static __service_6 struct service_d lh7952x_emac_service = {
   .init = emac_init,
 };
 
+void emac_send_packet (void)
+{
+  struct ethernet_header* header = (struct ethernet_header*)rgbTxBuffer;
+  int length = 128;
+
+  {
+    int i;
+    for (i = 0; i < 128; ++i)
+      rgbTxBuffer[i] = (unsigned char) i;
+  }
+
+  header->dest[0] = 0xff;
+  header->dest[1] = 0xff;
+  header->dest[2] = 0xff;
+  header->dest[3] = 0xff;
+  header->dest[4] = 0xff;
+  header->dest[5] = 0xff;
+  memcpy (&header->src, &header->dest, sizeof (header->src));
+  header->protocol = htons (0x0806);
+
+  rgl_tx_descriptor[0] = (unsigned long) rgbTxBuffer;
+  rgl_tx_descriptor[1] = (1<<30)|(1<<15)|(length<<0);
+  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+  EMAC_NETCTL |= EMAC_NETCTL_STARTTX;
+}
+
 #if defined (CONFIG_CMD_EMAC)
 
 int cmd_emac (int argc, const char** argv)
@@ -398,6 +447,66 @@ int cmd_emac (int argc, const char** argv)
 
   if (argc == 1) {
 #if defined (TALK)
+    {
+      unsigned i;
+      struct regs {
+	int reg;
+	char label[5];
+      };
+      static struct regs rgRegs[] = {
+	{  0, "ctrl" },
+	{  1, "stat" },
+	{  2, "id1 " },
+	{  3, "id2 " },
+	{  4, "anad" },
+	{  5, "anp " },
+	{  6, "anex" },
+	{  7, "anpg" },
+	{ 16, "btic" },
+	{ 17, "intr" },
+	{ 18, "diag" },
+	{ 19, "loop" },
+	{ 20, "cabl" },
+	{ 21, "rxer" },
+	{ 22, "powr" },
+	{ 23, "oper" },
+	{ 24, "rcrc" },
+	{ 28|(1<<8)|(0<<12), "mode" },
+	{ 29|(1<<8)|(0<<12), "test" },
+	{ 29|(1<<8)|(1<<12), "blnk" },
+	{ 30|(1<<8)|(1<<12), "l0s1" },
+	{ 31|(1<<8)|(1<<12), "l0s2" },
+	{ 29|(1<<8)|(2<<12), "l1s1" },
+	{ 30|(1<<8)|(2<<12), "l1s2" },
+	{ 31|(1<<8)|(2<<12), "l2s1" },
+	{ 29|(1<<8)|(3<<12), "l2s2" },
+	{ 30|(1<<8)|(3<<12), "l3s1" },
+	{ 31|(1<<8)|(3<<12), "l3s2" },
+      };
+      for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
+	   ++i) {
+	unsigned index = (i & 7) | ((i >> 1) & ~7);
+	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
+	  continue;
+	//	printf ("i %d (%x) index %d (%x)\r\n", i, i, index, index);
+	if (i & (1<<3)) {
+	  if (i && (index & 0x7) == 0)
+	    printf ("\r\n");
+	  if (rgRegs[index].reg & (1<<8))
+	    emac_phy_write (phy_address, 28, 
+			    (emac_phy_read (phy_address, 28) & 0x0fff)
+			    | (rgRegs[index].reg & 0xf000));
+	  printf ("%04x    ", emac_phy_read (phy_address, 
+					     rgRegs[index].reg & 0xff));
+	}
+	else {
+	  if (i && (index & 0x7) == 0)
+	    printf ("\r\n\n");
+	  printf ("%s-%-2d ", rgRegs[index].label, rgRegs[index].reg & 0xff);
+	}
+      }
+	  printf ("\r\n");
+    }
     {
       unsigned long l;
       l = emac_phy_read (phy_address, 0);
@@ -417,8 +526,8 @@ int cmd_emac (int argc, const char** argv)
       if (l&PHY_STATUS_10HALF)
 	PRINTF (" cap10H");
       printf ("\r\n");
-      l = emac_phy_read (phy_address, 4);
-      PRINTF ("phy_advertisement 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 4);
+      //      PRINTF ("phy_advertisement 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 5);
       PRINTF ("phy_partner 0x%lx", l);
       if (l & (1<<9))
@@ -441,10 +550,10 @@ int cmd_emac (int argc, const char** argv)
       if (l & (1<<0))
 	PRINTF (" partner-ANEN-able");
       PRINTF ("\r\n");
-      l = emac_phy_read (phy_address, 7);
-      PRINTF ("phy_autoneg_nextpage 0x%lx\r\n", l);
-      l = emac_phy_read (phy_address, 16);
-      PRINTF ("phy_bt_interrupt_level 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 7);
+      //      PRINTF ("phy_autoneg_nextpage 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 16);
+      //      PRINTF ("phy_bt_interrupt_level 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 17);
       PRINTF ("phy_interrupt_control 0x%lx", l);
       if (l & (1<<4))
@@ -461,21 +570,49 @@ int cmd_emac (int argc, const char** argv)
       if (l & (1<<13))
 	PRINTF (" force 10BT");
       PRINTF ("\r\n");
-      l = emac_phy_read (phy_address, 19);
-      PRINTF ("phy_power_loopback 0x%lx\r\n", l);
-      l = emac_phy_read (phy_address, 20);
-      PRINTF ("phy_cable 0x%lx\r\n", l);
-      l = emac_phy_read (phy_address, 21);
-      PRINTF ("phy_rxerr 0x%lx\r\n", l);
-      l = emac_phy_read (phy_address, 22);
-      PRINTF ("phy_power_mgmt 0x%lx\r\n", l);
-      l = emac_phy_read (phy_address, 23);
-      PRINTF ("phy_op_mode 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 19);
+      //      PRINTF ("phy_power_loopback 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 20);
+      //      PRINTF ("phy_cable 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 21);
+      //      PRINTF ("phy_rxerr 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 22);
+      //      PRINTF ("phy_power_mgmt 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 23);
+      //      PRINTF ("phy_op_mode 0x%lx\r\n", l);
+      //      l = emac_phy_read (phy_address, 24);
+      //      PRINTF ("phy_last_crc 0x%lx\r\n", l);
+
+      PRINTF ("emac_netctl 0x%lx\r\n", EMAC_NETCTL);
+      PRINTF ("emac_netconfig 0x%lx\r\n", EMAC_NETCONFIG);
+//      PRINTF ("emac_netstatus 0x%lx\r\n", EMAC_NETSTATUS);
+      PRINTF ("emac_txstatus 0x%lx\r\n", EMAC_TXSTATUS);
+      PRINTF ("emac_rxstatus 0x%lx\r\n", EMAC_RXSTATUS);
+      PRINTF ("emac_txbqp 0x%lx\r\n", EMAC_TXBQP);
+      PRINTF ("emac_rxbqp 0x%lx\r\n", EMAC_RXBQP);
+      printf ("emac:tx0 & %p 0 0x%lx  1 0x%lx\r\n", 
+	      rgl_tx_descriptor, rgl_tx_descriptor[0], rgl_tx_descriptor[1]);
+      printf ("emac:tx1 & %p 0 0x%lx  1 0x%lx\r\n", 
+	      &rgl_tx_descriptor[2], rgl_tx_descriptor[2], 
+	      rgl_tx_descriptor[3]);
+      printf ("emac:rx0 & %p 0 0x%lx  1 0x%lx\r\n", 
+	      rgl_rx_descriptor, rgl_rx_descriptor[0], rgl_rx_descriptor[1]);
+      printf ("emac:rx1 & %p 0 0x%lx  1 0x%lx\r\n", 
+	      &rgl_rx_descriptor[2], rgl_rx_descriptor[2], 
+	      rgl_rx_descriptor[3]);
     }
 #endif
   }
   else {
-    if (strcmp (argv[1], "loop") == 0) {
+    if (strcmp (argv[1], "clear") == 0) {
+      EMAC_TXSTATUS = 0x7f;
+      rgl_tx_descriptor[0] = 0;
+      rgl_tx_descriptor[1] = 0;
+    }
+    else if (strcmp (argv[1], "send") == 0) {
+      emac_send_packet ();
+    }
+    else if (strcmp (argv[1], "loop") == 0) {
       emac_phy_reset (phy_address);
       printf ("emac: loopback and restart anen\r\n");
       emac_phy_write (phy_address, 0,
@@ -483,6 +620,13 @@ int cmd_emac (int argc, const char** argv)
 		      | PHY_CONTROL_ANEN_ENABLE 
 		      | PHY_CONTROL_LOOPBACK
 		      | emac_phy_read (phy_address, 0));
+      EMAC_NETCONFIG |= 0
+	|EMAC_NETCONFIG_IGNORE
+	|EMAC_NETCONFIG_ENFRM
+	|EMAC_NETCONFIG_CPYFRM
+	|EMAC_NETCONFIG_CPYFRM
+	|EMAC_NETCONFIG_FULLDUPLEX
+	;
     }
     else if (strcmp (argv[1], "anen") == 0) {
       emac_phy_reset (phy_address);
