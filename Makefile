@@ -8,7 +8,7 @@ CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 
 VERSION = 1
 PATCHLEVEL = 0
-SUBLEVEL = 20
+SUBLEVEL = 21
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -482,6 +482,8 @@ endif # KBUILD_EXTMOD
 # every target builds all of the available configurations
 .PHONY: every
 every:
+	@if [ -L config ]; then rm config ; fi
+	@if [ -e config ]; then echo ./config must be a symbolic link ; exit 1 ; fi
 	@[ -d every ] && rm -rf every
 	@mkdir every
 	@for i in `find src/mach-*/ -name '*config' -printf ' %f'` ; do\
@@ -492,6 +494,7 @@ every:
 	mkdir every/$$i ;\
 	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ;\
 	done
+	@rm config
 
 ifeq ($(dot-config),1)
 ifeq "$(wildcard config)" ""

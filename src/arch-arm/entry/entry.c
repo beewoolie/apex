@@ -52,6 +52,8 @@ extern void init (void);
 void __naked __section (.reset) reset (void)
 {
 #if 1
+  /* *** It's enabled for the SLUG.  Perhaps this should be done by
+     *** the SLUG bootstrap itself.  */
   /* This would disable the MMU, but there is little reason to include
      it.  The only way this would be called would be if the CPU jumped
      to the loader while running something that needed the MMU.  In
