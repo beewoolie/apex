@@ -134,3 +134,9 @@ void __naked __section (.text) setup_c (void)
 
   __asm ("mov pc, lr");
 }
+
+void __div0 (void)
+{
+  while (1)
+    ;
+}
