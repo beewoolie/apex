@@ -71,14 +71,18 @@ int cmd_copy (int argc, const char** argv)
     char rgb[512];
     ssize_t cb;
     int report_last = -1;
+    int step = (dout.driver->flags >> DRIVER_WRITEPROGRESS_SHIFT)
+      &DRIVER_WRITEPROGRESS_MASK;
+    if (step)
+      step += 10;
 
     for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
 	 cbCopy += cb) {
       int report;
       SPINNER_STEP;
       dout.driver->write (&dout, rgb, cb);
-      report = cbCopy/(1024*4);
-      if (report != report_last && dout.driver->erase) {
+      report = cbCopy>>step;
+      if (step && report != report_last) {
 	printf ("\r   %d KiB\r", cbCopy/1024);
 	report_last = report;
       }

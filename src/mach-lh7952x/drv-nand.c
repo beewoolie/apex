@@ -321,6 +321,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 static __driver_3 struct driver_d nand_driver = {
   .name = "nand-79524",
   .description = "NAND flash driver",
+  .flags = DRIVER_WRITEPROGRESS(6),
   .open = nand_open,
   .close = close_helper,
   .read = nand_read,

@@ -43,7 +43,7 @@ static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM1"
 		   " root=/dev/hda1"
-//		   " root=/dev/mtdblock1 rootfstype=jffs2"
+  //		   " root=/dev/mtdblock1 rootfstype=jffs2"
 		   " mtdparts="
 		   "lpd79520_norflash:2m(boot)ro,-(root)"
   ,
@@ -58,7 +58,8 @@ static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0"
   //		   " root=/dev/hda1"
-		   " root=/dev/mtdblock1 rootfstype=jffs2"
+  //		   " root=/dev/mtdblock1 rootfstype=jffs2"
+		   " root=/dev/mtdblock3 rootfstype=jffs2"
 		   " mtdparts="
 		   "lpd79524_norflash:2m(boot)ro,-(root)"
 		   ";" 

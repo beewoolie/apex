@@ -46,6 +46,9 @@
    exactly which changes will help because of side effects and
    constant caching within the bodies of each function.
 
+   The buffered write is much faster and it is about 260 bytes longer.
+   It would probably be worth the trouble of optimizing the code size.
+
 */
 
 #include <driver.h>
@@ -59,6 +62,10 @@
 //#define TALK
 //#define EXTENDED
 
+#define USE_BUFFERED_WRITE	/* Use write buffer for faster operation */
+//#define NO_WRITE		/* Disable writes, for debugging */
+
+
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
 #define ReadArray	(0xff)
@@ -70,6 +77,7 @@
 #define EraseConfirm	(0xd0)
 #define Program		(0x40)
 #define ProgramBuffered	(0xe8)
+#define ProgramConfirm	(0xd0)
 #define Suspend		(0xb0)
 #define Resume		(0xd0)
 #define STSConfig	(0xb8)
@@ -165,6 +173,11 @@ static void nor_init (void)
   chip_probed.total_size 
     = (1<<__REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)))
 #if defined (NOR_1_PHYS)
+    /* *** FIXME: this isn't a valid hack.  The trouble is that we
+       don't have a reliable way to detect multiple chips.  I could do
+       it with some sort of trick with setting the status and looking
+       to see if the second bank changes too.  I could look to see how
+       the kernel does it. */
     *2
 #endif
     ;
@@ -209,15 +222,39 @@ static void nor_init (void)
   printf ("alternate address 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x19 << WIDTH_SHIFT)));
 
+  {
+    int typical;
+    int max;
+
+    typical = __REG16 (NOR_0_PHYS + (0x1f << WIDTH_SHIFT));
+    max	    = __REG16 (NOR_0_PHYS + (0x23 << WIDTH_SHIFT));
+    printf ("single word write %d us (%d us)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    typical = __REG16 (NOR_0_PHYS + (0x20 << WIDTH_SHIFT));
+    max	    = __REG16 (NOR_0_PHYS + (0x24 << WIDTH_SHIFT));
+    printf ("write-buffer write %d us (%d us)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    typical = __REG16 (NOR_0_PHYS + (0x21 << WIDTH_SHIFT));
+    max	    = __REG16 (NOR_0_PHYS + (0x25 << WIDTH_SHIFT));
+    printf ("block erase %d ms (%d ms)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    
+    typical = __REG16 (NOR_0_PHYS + (0x22 << WIDTH_SHIFT));
+    max     = __REG16 (NOR_0_PHYS + (0x26 << WIDTH_SHIFT));
+    if (typical) 
+      printf ("chip erase %d us (%d us)\r\n", 
+	      1<<typical, (1<<typical)*max);
+  }
+
   printf ("device size 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)));
   printf ("flash interface 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT))
 	  | (__REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT)) << 8));
-  printf ("write buffer size 0x%x\r\n",
-	  __REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
-	  | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8));
-  printf ("erase block regions x2c 0x%x\r\n",
+  printf ("write buffer size %d bytes\r\n",
+	  1<<(__REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
+	      | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8)));
+  printf ("erase block region count %d\r\n",
 	  __REG16 (NOR_0_PHYS + (0x2c << WIDTH_SHIFT)));
   printf ("erase block info 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
@@ -290,6 +327,120 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 }
 
 
+#if defined (USE_BUFFERED_WRITE)
+
+/* nor_write
+
+   performs a buffered write to the flash device.  The unbuffered
+   write, below, is adequate but this version is much faster.  Like
+   the single short write method below, we fuss a bit with the
+   alignment so that we emit the data efficiently.  Moreover, we make
+   an attempt to align the write buffer to a write buffer aligned
+   boundary.
+
+*/
+
+static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  size_t cbWrote = 0;
+  int pageLast = -1;
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
+  while (cb > 0) {
+    unsigned long index = d->start + d->index;
+    int page = d->index/chip->erase_size;
+    unsigned short status;
+    int available
+      = chip->writebuffer_size - (index & (chip->writebuffer_size - 1));
+
+    if (available > cb)
+      available = cb;
+
+    index = phys_from_index (index);
+
+    vpen_enable ();
+
+    if (page != pageLast) {
+      status = nor_unlock_page (index);
+      if (status & (ProgramError | VPEN_Low | DeviceProtected))
+	goto fail;
+      pageLast = page;
+    }
+
+#if defined (NO_WRITE)
+    printf ("  available %d  cb %d\r\n", available, cb);
+    printf ("0x%lx <= 0x%x\r\n", index & ~1, ProgramBuffered);
+#else
+    WRITE_ONE (index & ~1, ProgramBuffered);
+#endif
+    status = nor_status (index & ~1);
+    if (!(status & Ready))
+      goto fail;
+    
+#if defined (NO_WRITE)
+    printf ("0x%lx <= 0x%02x\r\n", index & ~1, available - available/2 - 1);
+#else
+    WRITE_ONE (index & ~1, available - available/2 - 1);
+#endif
+
+    if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
+      int i;
+      for (i = 0; i < available; i += 2)
+#if defined (NO_WRITE)
+	printf ("0x%lx := 0x%04x\r\n", index + i, ((unsigned short*)pv)[i/2]);
+#else
+	WRITE_ONE (index + i, ((unsigned short*)pv)[i/2]);
+#endif
+    }
+    else {
+      int i;
+      char rgb[chip->writebuffer_size];
+      rgb[0] = 0xff;						/* First */
+      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
+//      printf ("  last %ld\r\n", ((available + (index & 1) + 1)&~1) - 1);
+      memcpy (rgb + (index & 1), pv, available);
+      for (i = 0; i < available + (index & 1); i += 2)
+#if defined (NO_WRITE)
+	printf ("0x%lx #= 0x%04x\r\n", 
+		(index & ~1) + i, ((unsigned short*)rgb)[i/2]);
+#else
+	WRITE_ONE ((index & ~1) + i, ((unsigned short*)rgb)[i/2]);
+#endif
+    }
+
+#if defined (NO_WRITE)
+    printf ("0x%lx <= 0x%x\r\n", index & ~1, ProgramConfirm);
+#else
+    WRITE_ONE (index & ~1, ProgramConfirm);
+#endif
+    SPINNER_STEP;
+    status = nor_status (index);
+
+    vpen_disable ();
+
+    SPINNER_STEP;
+
+    if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
+    fail:
+      printf ("Program failed at 0x%p (%x)\r\n", (void*) index, status);
+      CLEAR_STATUS (index);
+      return cbWrote;
+    }
+
+    d->index += available;
+    pv += available;
+    cb -= available;
+    cbWrote += available;
+    //    printf ("  cb %x  cbWrote 0x%x  pv %p\r\n", cb, cbWrote, pv);
+  }
+
+  return cbWrote;
+}
+
+#else
+
 /* nor_write
 
    does a little bit of fussing in order to handle writing single
@@ -347,12 +498,12 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 	goto fail;
       pageLast = page;
     }
-#if 1
+#if defined (NO_WRITE)
+    status = Ready;
+#else
     WRITE_ONE (index, Program);
     WRITE_ONE (index, data);
     status = nor_status (index);
-#else
-    status = Ready;
 #endif
     vpen_disable ();
 
@@ -374,6 +525,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   return cbWrote;
 }
+
+#endif
 
 static void nor_erase (struct descriptor_d* d, size_t cb)
 {
@@ -409,12 +562,12 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 	goto fail;
       //      pageLast = page;
       //    }
-#if 1
+#if defined (NO_WRITE)
+    status = Ready;
+#else
     WRITE_ONE (index, Erase);
     WRITE_ONE (index, EraseConfirm);
     status = nor_status (index);
-#else
-    status = Ready;
 #endif
     vpen_disable ();
 
@@ -435,6 +588,11 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 static __driver_3 struct driver_d nor_driver = {
   .name = "nor-7952x",
   .description = "NOR flash driver",
+#if defined (USE_BUFFERED_WRITE)
+  .flags = DRIVER_WRITEPROGRESS(5),
+#else
+  .flags = DRIVER_WRITEPROGRESS(2),
+#endif
   .open = nor_open,
   .close = close_helper,
   .read = nor_read,

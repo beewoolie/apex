@@ -1,0 +1,8 @@
+2004-11-15  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-nor.c (nor_write): Implementing buffered
+	write.  It's about 16 times as fast.  Will leave other code for
+	the time being since it is smaller by about 260 bytes.
+
+	* First release, 1.0.
+

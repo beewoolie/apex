@@ -237,6 +237,10 @@ Spinner/Progress
  o would be nice to have a standard UI call to emit progress
    feedback.  Erasing, for example, takes quite a bit of time.
    o done
+ o The performance of each driver varies.  It might be handy to have a
+   stepping value for each driver when writing so that we can properly
+   scale them.  Or, we could add code to insert the current byte count
+   into the spinner code and let it determine when to write.
 
 NAND Flash Drivers
 

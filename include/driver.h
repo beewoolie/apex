@@ -56,6 +56,9 @@ struct descriptor_d {
 #define DRIVER_CONSOLE	(1<<2)
 #define DRIVER_MEMORY	(1<<3)
 #define DRIVER_PRESENT	(1<<8)
+#define DRIVER_WRITEPROGRESS_MASK (0xf)
+#define DRIVER_WRITEPROGRESS_SHIFT (24)
+#define DRIVER_WRITEPROGRESS(n) (((n)&0xf)<<24)	/* 2^(N+10) bytes per spin */
 
 #define driver_can_seek(p)  ((p)->seek != NULL)
 #define driver_can_read(p)  ((p)->read != NULL)
