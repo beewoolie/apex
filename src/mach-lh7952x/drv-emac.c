@@ -73,8 +73,8 @@
    1) IOCON muxctl1, muxctl23, muxctl24 (to 1's)
    2) RCPC ahbclkctrl
    3) EMAC specaddr1_bottom, specaddr1_top
-   4) EMAC rxqptr, rxstatus
-   5) EMAC txqptr, txstatus
+   4) EMAC rxqptr, rxstatus, buffer initializatoin
+   5) EMAC txqptr, txstatus, (buffer initialization not really necessary)
    6) EMAC netconfig
    7) EMAC netctrl
    8) Read EMAC irqstatus for LINK_INTR
@@ -249,17 +249,6 @@ static void emac_phy_reset (int phy_address)
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
     ;
 
-  /* Disable auto MDI/MDIX.  Force MDI. */
- {
-   unsigned long l = emac_phy_read (phy_address, 23);
-   emac_phy_write (phy_address, 23, (l & ~((1<<7)|(1<<6)))|(1<<7));
- }
- /* Disable SPD100 */
- {
-   unsigned long l = emac_phy_read (phy_address, 0);
-   emac_phy_write (phy_address, 0, l & ~(1<<13));
- }
-
 #else
   printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
   __REG8 (CPLD_CONTROL) &= ~CPLD_CONTROL_WRLAN_ENABLE;
@@ -275,18 +264,23 @@ static void emac_phy_reset (int phy_address)
   printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
 #endif
 #endif
+}
 
-#if 0
-  PRINTF ("emac: forcing power-up\r\n");
-  emac_phy_write (phy_address, 22, 0); /* Force power-up */
-#endif
 
-#if 0
-  printf ("emac: resetart anen\r\n");
-  emac_phy_write (phy_address, 0,
-		  PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
-		  | emac_phy_read (phy_address, 0));
-#endif
+static void emac_phy_configure (int phy_address)
+{
+  PRINTF ("emac: phy_configure\r\n");
+
+  /* Disable auto MDI/MDIX.  Force MDI. */
+ {
+   unsigned long l = emac_phy_read (phy_address, 23);
+   emac_phy_write (phy_address, 23, (l & ~((1<<7)|(1<<6)))|(1<<7));
+ }
+ /* Disable SPD100 */
+ {
+   unsigned long l = emac_phy_read (phy_address, 0);
+   emac_phy_write (phy_address, 0, l & ~(1<<13));
+ }
 }
 
 
@@ -316,6 +310,8 @@ static void emac_phy_detect (void)
 #if defined (DO_RESET_PHY)
   emac_phy_reset (phy_address);
 #endif
+  
+  emac_phy_configure (phy_address);
 }
 
 
@@ -373,8 +369,8 @@ void emac_init (void)
 //		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 //		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
 
-  PRINTF ("CPLD_CONTROL %x => %x\r\n", __REG8 (CPLD_CONTROL),
-	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
+//  PRINTF ("CPLD_CONTROL %x => %x\r\n", __REG8 (CPLD_CONTROL),
+//	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
   __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
   __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
@@ -391,9 +387,16 @@ void emac_init (void)
     }
   }
 
-  emac_setup ();
+  msleep (1000);
   __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  msleep (1000);
+  //  msleep (500);
+  //  phy_address = 1;
   emac_phy_detect ();
+
+  msleep (1000);
+
+  emac_setup ();
 
   /* Disable advertisement except for 100Base-TX  */
 #if 0
@@ -456,21 +459,21 @@ int cmd_emac (int argc, const char** argv)
       static struct regs rgRegs[] = {
 	{  0, "ctrl" },
 	{  1, "stat" },
-	{  2, "id1 " },
-	{  3, "id2 " },
-	{  4, "anad" },
-	{  5, "anp " },
-	{  6, "anex" },
-	{  7, "anpg" },
+	{  2, "id1" },
+	{  3, "id2" },
+	{  4, "anadv" },
+	{  5, "anpar" },
+	{  6, "anexp" },
+	{  7, "anpag" },
 	{ 16, "btic" },
 	{ 17, "intr" },
 	{ 18, "diag" },
 	{ 19, "loop" },
-	{ 20, "cabl" },
+	{ 20, "cable" },
 	{ 21, "rxer" },
-	{ 22, "powr" },
+	{ 22, "power" },
 	{ 23, "oper" },
-	{ 24, "rcrc" },
+	{ 24, "rxcrc" },
 	{ 28|(1<<8)|(0<<12), "mode" },
 	{ 29|(1<<8)|(0<<12), "test" },
 	{ 29|(1<<8)|(1<<12), "blnk" },
@@ -483,6 +486,25 @@ int cmd_emac (int argc, const char** argv)
 	{ 30|(1<<8)|(3<<12), "l3s1" },
 	{ 31|(1<<8)|(3<<12), "l3s2" },
       };
+#if 1
+#define WIDE 5
+#define ROWS (sizeof (rgRegs)/sizeof (rgRegs[0]) + WIDE - 1)/WIDE
+#define COUNT ROWS*WIDE
+      for (i = 0; i < COUNT; ++i) {
+	int index = (i%WIDE)*ROWS + i/WIDE;
+	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
+	  continue;
+	if (i && (i % WIDE) == 0)
+	  printf ("\r\n");
+	if (rgRegs[index].reg & (1<<8))
+	  emac_phy_write (phy_address, 28, 
+			  (emac_phy_read (phy_address, 28) & 0x0fff)
+			  | (rgRegs[index].reg & 0xf000));
+	printf ("%5s-%-2d %04x  ", 
+		rgRegs[index].label, rgRegs[index].reg & 0xff, 
+		emac_phy_read (phy_address, rgRegs[index].reg & 0xff));
+      }	
+#else
       for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
 	   ++i) {
 	unsigned index = (i & 7) | ((i >> 1) & ~7);
@@ -505,7 +527,9 @@ int cmd_emac (int argc, const char** argv)
 	  printf ("%s-%-2d ", rgRegs[index].label, rgRegs[index].reg & 0xff);
 	}
       }
-	  printf ("\r\n");
+#endif
+
+      printf ("\r\n");
     }
     {
       unsigned long l;
@@ -614,6 +638,7 @@ int cmd_emac (int argc, const char** argv)
     }
     else if (strcmp (argv[1], "loop") == 0) {
       emac_phy_reset (phy_address);
+      emac_phy_configure (phy_address);
       printf ("emac: loopback and restart anen\r\n");
       emac_phy_write (phy_address, 0,
 		      PHY_CONTROL_RESTART_ANEN
@@ -630,6 +655,7 @@ int cmd_emac (int argc, const char** argv)
     }
     else if (strcmp (argv[1], "anen") == 0) {
       emac_phy_reset (phy_address);
+      emac_phy_configure (phy_address);
       printf ("emac: restart anen\r\n");
       emac_phy_write (phy_address, 0,
 		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
@@ -637,6 +663,7 @@ int cmd_emac (int argc, const char** argv)
     }
     else if (strcmp (argv[1], "force") == 0) {
       emac_phy_reset (phy_address);
+      emac_phy_configure (phy_address);
       PRINTF ("emac: forcing power-up and restarting anen\r\n");
       emac_phy_write (phy_address, 22, 0); /* Force power-up */
       emac_phy_write (phy_address, 0, /* restart anen */
