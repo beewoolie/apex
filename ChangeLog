@@ -1,5 +1,9 @@
 2005-03-20  Marc Singer  <elf@buici.com>
 
+	* Makefile (SUBLEVEL): Rolling revision for integration of new
+	configuration support.  This is a big deal because it means that
+	configurations are easier to build and more robust.
+
 	* scripts/configtoh: Stripping the quotes from config options.
 	We're using the kernel configurator, so we have less control over
 	the user's actions.  This may prove to be overly zealous in
