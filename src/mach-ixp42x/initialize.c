@@ -40,13 +40,6 @@
 
 #include "hardware.h"
 
-
-#define COPROCESSOR_WAIT\
- ({ unsigned long v; \
-    __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
-		    "mov %0, %0\n\t" \
-		    "sub pc, pc, #4" : "=r" (v)); })
-
 /* *** FIXME: sdram config constants should go here.  The Integrated
    Circuit Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
 
@@ -102,8 +95,22 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+#if defined (CONFIG_DEBUG_LL)
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
+  UART_DLL  = 8;	// divisor_l;
+  UART_DLH  = 0;	// divisor_h;
+  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
+
+  UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
+				/* Clear interrupts? */
+  PUTC_LL('A');
+#endif
+
+  GPIO_ER &= ~0xf;
+  _L(LEDf);			/* Start with all on */
+
 	/* Configure GPIO */
-  GPIO_OUTR = 0x20c3; 
+  //  GPIO_OUTR = 0x20c3; 
   //  GPIO_ER   &= ~GPIO_ER_OUTPUTS;
   GPIO_ER   = GPIO_ER_V;
   //  GPIO_ISR  = 0x31f3;
@@ -111,11 +118,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   GPIO_IT2R = 0x0249;		/* GPIO8 AL; GPIO9 AL; GPIO10 AL; GPIO11 AL */
   GPIO_CLKR = GPIO_CLKR_V;
 
-  GPIO_ER &= ~0xf;
-  _L(LEDf);			/* Start with all on */
-
   /* *** FIXME: this CPSR and CP15 manipulation should not be
-     *** necessary as we don't allow warm resets. */
+     *** necessary as we don't allow warm resets.  This is here until
+     *** we get a working loader. */
 
      	/* Fixup the CP15 control word.  This is done for the cases
 	   where we are bootstrapping from redboot which does not
@@ -124,26 +129,28 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
 //		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
 //		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
-		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
-		  "mcr p15, 0, r0, c1, c0, 0");
+//		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
+//		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
+		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
   COPROCESSOR_WAIT;
 
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
 	/* Invalidate caches (I&D) and BTB (?) */
-  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
-  COPROCESSOR_WAIT;
+  //  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+  //  COPROCESSOR_WAIT;
 
 	/* Invalidate TLBs (I&D) */
-  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
-  COPROCESSOR_WAIT;
+  //  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
+  //  COPROCESSOR_WAIT;
 
 	/* Drain write buffer */
-  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-  COPROCESSOR_WAIT;
+//  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+//  COPROCESSOR_WAIT;
 
 	/* Disable write buffer coalescing */
+#if 0
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t" 
@@ -153,6 +160,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   }		
 
   COPROCESSOR_WAIT;
+#endif
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
@@ -173,6 +181,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	  /* Exit now if executing in SDRAM */ 
   if (EXP_CNFG0 & (1<<31)) {
     _L(LED1);
+
     /* Boot mode */
     __asm volatile ("cmp %0, %2\n\t"
 		    "bls 1f\n\t"
@@ -183,6 +192,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   }
   else {
     _L(LED2);
+
     /* Non-boot mode */
     __asm volatile ("cmp %0, %1\n\t"
 		    "movls r0, #0\n\t"
@@ -190,16 +200,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    : : "r" (lr), "i" (0x40000000));
   }
 
-  _L(LED3);
-
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 
   SDR_CONFIG = SDR_CONFIG_CAS3 | SDR_CONFIG_2x8Mx16;
   SDR_REFRESH = 0;		/* Disable refresh */
   SDR_IR = SDR_IR_NOP;
   usleep (200);			/* datasheet: maintain 200us of NOP */
-
-  _L(LED4);
 
   /* 133MHz timer cycle count, 0x81->969ns == ~1us */
   /* datasheet: not clear what the refresh requirement is.  */
@@ -223,7 +229,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   usleep (1);			/* Must wait for 3 CPU cycles before
 				   SDRAM access */
 
-  _L(LED5);
+  _L(LED3);
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));

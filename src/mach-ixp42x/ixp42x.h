@@ -40,6 +40,12 @@
 
 /* ----- Prototypes */
 
+#define COPROCESSOR_WAIT\
+ ({ unsigned long v; \
+    __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
+		    "mov %0, %0\n\t" \
+		    "sub pc, pc, #4" : "=r" (v)); })
+
 	/* Registers */
 
 #define SDR_PHYS	(0xcc000000)

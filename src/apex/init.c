@@ -32,6 +32,7 @@
 #include <apex.h>
 #include <command.h>
 #include <service.h>
+#include <debug_ll.h>
 
 extern int cmd_version (int, const char**);
 
@@ -42,14 +43,18 @@ static void init_services (void)
   struct service_d* service;
   int i = 0;
 
+  PUTC_LL ('S');
+
   for (service = (struct service_d*) &APEX_SERVICE_START;
        service < (struct service_d*) &APEX_SERVICE_END;
        ++service, ++i) {
+    PUTC_LL (i%8 + '0');
 //    printf ("init # %d %p\n", i, service->init);
     if (service->init)
       service->init ();
   }
-//  printf ("init complete\n");
+  PUTC_LL ('s');
+  //  printf ("init complete\n");
 }
 
 void release_services (void)
@@ -66,7 +71,9 @@ void release_services (void)
 
 void init (void)
 {
+  PUTC_LL ('I');
   init_services ();
   cmd_version (-1, NULL);	/* Signon */
+  PUTC_LL ('i');
   exec_monitor ();
 }

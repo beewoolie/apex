@@ -557,7 +557,7 @@ static void fat_report (void)
 
 #endif
 
-static __driver_3 struct driver_d fat_driver = {
+static __driver_6 struct driver_d fat_driver = {
   .name = DRIVER_NAME,
   .description = "FAT filesystem driver",
   .flags = DRIVER_DESCRIP_FS,

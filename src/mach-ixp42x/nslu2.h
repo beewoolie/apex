@@ -67,7 +67,8 @@
 			|(1<<3)		/* Disk1 LED */\
 			|(1<<4)		/* Buzzer */
 			
-#define GPIO_ER_V	(0x1f3f)	/* 0,1,6,7 are outputs */
+//#define GPIO_ER_V	(0x1f3f)	/* 0,1,6,7 are outputs */
+#define GPIO_ER_V	(0x1f30)	/* 0,1,6,7 are outputs */
 
 #define GPIO_CLKR_V	(0x1ff01ff)	/* MUX14&15 33MHz clocks */
 

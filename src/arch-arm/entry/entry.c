@@ -32,6 +32,7 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <debug_ll.h>
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
@@ -51,7 +52,7 @@ extern void init (void);
 
 void __naked __section (.reset) reset (void)
 {
-#if 1
+#if 0
   /* *** It's enabled for the SLUG.  Perhaps this should be done by
      *** the SLUG bootstrap itself.  */
   /* This would disable the MMU, but there is little reason to include
@@ -66,20 +67,33 @@ void __naked __section (.reset) reset (void)
 #endif
 
 #if defined (CONFIG_BIGENDIAN)
+
+  /* This doesn't belong here. */
+#define COPROCESSOR_WAIT\
+ ({ unsigned long v; \
+    __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
+		    "mov %0, %0\n\t" \
+		    "sub pc, pc, #4" : "=r" (v)); })
+
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (v));
-    __asm volatile ("mov r0, r0");
+    COPROCESSOR_WAIT;
     /* *** FIXME: the redboot code performed a read from the ttb
        register as a delay.  Not sure why. */
   }
 #endif
 
   initialize_bootstrap ();	/* Initialization critical to relocate */
+  PUTC_LL ('E');
+  PUTC_LL ('r');
   relocate_apex ();
+  PUTC_LL ('s');
   setup_c ();			/* Setups before executing C code */
+
+  PUTC_LL ('e');
 
 	/* Start loader proper which doesn't return */
   __asm volatile ("mov pc, %0" :: "r" (&init)); 

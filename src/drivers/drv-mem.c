@@ -34,17 +34,20 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
+#include <debug_ll.h>
 
 #if defined (CONFIG_ATAG)
 # include <atag.h>
 #endif
 
+
+
 //#define TALK
 
 #if defined (TALK)
-# define PRINTF(f,a...) printf (f, a)
+# define PRINTF(f...) printf (f)
 #else
-# define PRINTF(f,a...) do {} while (0)
+# define PRINTF(f...) do {} while (0)
 #endif
 
 struct mem_region {
@@ -62,6 +65,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   extern char APEX_VMA_COPY_END;
   unsigned long* pl;
 
+  PUTC_LL ('k');
   PRINTF ("  marking\n");
 
 	/* Mark */
@@ -77,6 +81,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
       break;
   }
 
+  PUTC_LL ('i');
   PRINTF ("  identifying\n");
 
 	/* Identify */
@@ -105,8 +110,11 @@ static void memory_init (void)
 {
   int i;
 
+  PUTC_LL ('M');
+
   i = 0;
 #if defined (CONFIG_MEM_BANK0_START)
+  PUTC_LL ('0');
   PRINTF ("Scanning bank 0 %x %x\n", 
 	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
@@ -114,18 +122,23 @@ static void memory_init (void)
 #endif
 
 #if defined (CONFIG_MEM_BANK1_START)
+  PUTC_LL ('1');
   PRINTF ("Scanning bank 1 %x %x\n", 
 	  CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
   i = memory_scan (i, CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
 #endif
 
 #if defined (CONFIG_MEM_BANK2_START)
+  PUTC_LL ('2');
   i = memory_scan (i, CONFIG_MEM_BANK2_START, CONFIG_MEM_BANK2_LENGTH);
 #endif
 
 #if defined (CONFIG_MEM_BANK3_START)
+  PUTC_LL ('3');
   i = memory_scan (i, CONFIG_MEM_BANK3_START, CONFIG_MEM_BANK3_LENGTH);
 #endif
+
+  PUTC_LL ('m');
 }
 
 #if !defined (CONFIG_SMALL)
@@ -172,7 +185,7 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 }
 
 
-static __driver_0 struct driver_d memory_driver = {
+static __driver_1 struct driver_d memory_driver = {
   .name = "memory",
   .description = "generic RAM driver",
   .open = memory_open,

@@ -46,6 +46,10 @@ extern void (*interrupt_handlers[32])(void);
 # include "nslu2.h"
 #endif
 
+#if defined (CONFIG_DEBUG_LL)
+# include "debug_ll.h"
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

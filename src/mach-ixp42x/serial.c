@@ -28,15 +28,18 @@
    Serial driver for the ixp42x UARTs.  These appear to be variants of
    the pl010 PrimeCell.
 
+   o Need to be careful with the includes.  Don't include "hardware.h"
+     or "debug_ll.h" as it will interfere with the UART_ macros.  One
+     solution would be to put these macros before the include and then
+     conditionally include them in the debug header. Yes, I could also
+     put them in a shared header, I won't do that for the sake of a
+     debug feature.
+ 
 */
 
 #include <config.h>
 #include <driver.h>
 #include <service.h>
-
-#if defined (CONFIG_MACH_IXP42X)
-# include "ixp42x.h"
-#endif
 
 #define UART_DR		__REG(UART_PHYS + 0x00)
 #define UART_DLL	__REG(UART_PHYS + 0x00)
@@ -64,6 +67,8 @@
 #define UART_LSR_OE	 (1<<1)
 #define UART_LSR_DR	 (1<<0)
 
+#include "hardware.h"
+
 extern struct driver_d* console_driver;
 
 static struct driver_d ixp42x_serial_driver;
@@ -74,6 +79,8 @@ void ixp42x_serial_init (void)
   u32 divisor_l = 0;
   u32 divisor_h = 0;
 
+  _L(LED5);
+
   switch (baudrate) {
   case 115200: 
     divisor_l = 8; break;
@@ -81,6 +88,8 @@ void ixp42x_serial_init (void)
   default:
     return;
   }
+
+  _L(LED6);
 
   UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
   UART_DLL  = divisor_l;
@@ -90,10 +99,13 @@ void ixp42x_serial_init (void)
   UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
 
+  _L(LED7);
+
   if (console_driver == 0)
     console_driver = &ixp42x_serial_driver;
 
 //  console_driver->write (0, "Console initialized\r\n", 21);
+  _L(LED8);
 }
 
 ssize_t ixp42x_serial_poll (struct descriptor_d* d, size_t cb)

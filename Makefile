@@ -530,6 +530,9 @@ include $(wildcard config)
 else
 # Dummy target needed, because used as prerequisite
 ## include/linux/autoconf.h: ;
+
+## *** it would be good to check that CONFIG_MACH was correct.
+
 endif
 
 # The all: target is the default when no target is given on the
@@ -807,7 +810,8 @@ endif
 # All the preparing..
 prepare-all: prepare0 prepare
 
-prepare-apex: include/asm include/linux/config.h include/envmagic.h
+prepare-apex: include/asm include/mach\
+	      include/linux/config.h include/envmagic.h
 
 include/linux/config.h:
 	@touch include/linux/config.h
@@ -861,6 +865,11 @@ include/config/MARKER: include/linux/autoconf.h
 	@echo '  SPLIT   include/linux/autoconf.h -> include/config/*'
 	@scripts/basic/split-include include/linux/autoconf.h include/config
 	@touch $@
+
+include/mach:
+	@echo  '  SYMLINK $@ -> src/mach-$(CONFIG_MACH)'
+	$(Q)if [ ! -d include ]; then mkdir -p include; fi;
+	@ln -fsn ../src/mach-$(CONFIG_MACH) $@
 
 # Generate some files
 # ---------------------------------------------------------------------------
