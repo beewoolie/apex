@@ -37,4 +37,6 @@ struct service_d {
 
 /* ----- Prototypes */
 
+extern void release_services (void);
+
 #endif  /* __SERVICE_H___ */

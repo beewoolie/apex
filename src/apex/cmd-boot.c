@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <config.h>
 #include <environment.h>
+#include <service.h>
 
 #if defined (CONFIG_ATAG) 
 # include <atag.h>
@@ -54,7 +55,8 @@ int cmd_boot (int argc, const char** argv)
   printf ("Booting kernel at 0x%p...\r\n", (void*) address);
 
   //serial_flush_output();
-  //exit_subsystems();
+
+  release_services ();
 
   ((void (*)(int, int, int)) address) 
     (0, CONFIG_ARCH_NUMBER, CONFIG_ATAG_PHYS);

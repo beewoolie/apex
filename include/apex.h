@@ -44,4 +44,6 @@ extern unsigned long timer_delta (unsigned long, unsigned long);
 extern void usleep (unsigned long); 
 
 
+extern void release_services (void);
+
 #endif  /* __INIT_H__ */

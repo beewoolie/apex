@@ -166,6 +166,8 @@ Weak Symbols
    compiler and linker are not going to know where the code is and may
    not be confident that it will be nearby.  I wonder if I can hint
    that the routine must be close?
+ o Libraries solve this problem as can be seen with the
+   relocate_apex () function (NAND version).
 
 Code Size
 
@@ -232,3 +234,22 @@ Spinner/Progress
  o would be nice to have a standard UI call to emit progress
    feedback.  Erasing, for example, takes quite a bit of time.
    o done
+
+NAND Flash Drivers
+
+  o There is a need to support the LPD method of controlling the NAND
+    flash as well as the Sharp method.
+  o The LPD method is implemented and tested.
+  o The Sharp method should be OK as long as we don't want to use
+    CompactFlash or large NOR flash.  CF would be OK as long as the
+    implementation didn't require the A23 line as Logic does.
+    Refer to CONFIG_NAND_LPD.
+
+Errors
+
+  o It might be handy to have some form of debug output available.  We
+    have situations where the system cannot get to the prompt, but it
+    might be helpful to know why.  For example, a system is booted
+    from NAND, but there is not NAND aware relocation function.
+    Generally, I'm OK with little error handling since it is usually
+    wasted space.

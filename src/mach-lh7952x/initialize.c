@@ -15,7 +15,7 @@
 
 */
 
-#include <blob/config.h>
+#include <config.h>
 #include <asm/bootstrap.h>
 
 #include "lh79524.h"
