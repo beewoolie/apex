@@ -5,8 +5,8 @@
 
 src := $(obj)
 
-#.PHONY: __build
-#__build:
+.PHONY: __build
+__build:
 
 # Gently read .config
 -include .config
@@ -15,12 +15,9 @@ include $(obj)/Makefile
 include scripts/Makefile.lib
 
 # Evaluate (dereference) each target as a macro
-_t := $(T)
-T := $(foreach t,$(T),$($(t)))
+targets := $(foreach t,$(targets),$($(t)))
 
-.PHONY: __build
-__build: $(T)
-	@echo building $(T)
+__build: $(targets)
 
 
 quiet_cmd_cc_s_c = CC $(quiet_modtag)  $@
@@ -55,6 +52,15 @@ endef
 
 %.o: %.c FORCE
 	$(call cmd,force_checksrc)
+#	@echo question $?
+#	@echo up $^
+#	@echo wild $(wildcard ($^))
+#	@echo at $@
+#	@echo cmd_at $(cmd_$@)
+#	@echo cmd_1 $(cmd_cc_o_c)
+#	@echo fo $(filter-out FORCE $(wildcard $^),$^)
+#	@echo fo $(filter-out $(cmd_$(1)),$(cmd_$@))
+#	@echo fo $(filter-out $(cmd_$@),$(cmd_$(1)))
 	$(call if_changed_rule,cc_o_c)
 
 # Compile assembler sources (.S)

@@ -16,7 +16,7 @@
 extern unsigned long APEX_LMA_START;
 extern unsigned long APEX_LMA_END;
 extern unsigned long APEX_VMA_START;
-extern unsigned long APEX_STACK;
+extern unsigned long APEX_STACK_START;
 extern unsigned long APEX_BSS_START;
 extern unsigned long APEX_BSS_END;
 
@@ -116,7 +116,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 void __naked __section (.text) setup_c (void)
 {
 	/* Setup stack, quite trivial */
-  __asm ("mov sp, %0" :: "r" (&APEX_STACK));
+  __asm ("mov sp, %0" :: "r" (&APEX_STACK_START));
 
 	/* Clear BSS */
   __asm (

@@ -4,10 +4,10 @@
 
 obj-y := entry.o
 
-apex-t := apex
+apex-t := apex apex.lds
 
-T := obj-y
+targets := obj-y apex-t
 
-#.PHONY: apex
-#apex:
-#	touch apex
+apex:
+	touch apex
+
