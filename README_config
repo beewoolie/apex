@@ -114,6 +114,13 @@ CONFIG_ARCH_NUMBER (number)
 
   The ARM architecture number passed to the Linux kernel at boot time.
 
+CONFIG_ARCH_NUMBER_FUNCTION (function_name)
+
+  Some platforms are similar enough that the bootloader can initialize
+  SDRAM and determine the architecture just before booting the kernel.
+  This option allows the platform code to determine the architecture
+  number at runtime.
+
 CONFIG_DRIVER_NAND (y/n)
 
   Include a region IO driver for NAND flash.
