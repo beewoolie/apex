@@ -32,6 +32,7 @@
 */
 
 #include <config.h>
+#include <apex.h>
 #include <asm/bootstrap.h>
 #include "nand.h"
 #include "lh79524.h"
@@ -107,16 +108,13 @@ void __naked __section (bootstrap) relocate_apex (void)
 	*((char*) pv++) = ch;
 	ENABLE_CE;
       }
-      {
-	unsigned char ch;
-	for (cb = 16; cb--; )
-	  ch = __REG8 (NAND_DATA);
-      }
+      for (cb = 16; cb--; )
+	__REG8 (NAND_DATA);
       wait_on_busy ();
     }
   }
 
-  __asm volatile ("0: b 0b");
+  //  __asm volatile ("0: b 0b");
 
   __asm volatile ("mov pc, %0" :: "r" (lr));
 }

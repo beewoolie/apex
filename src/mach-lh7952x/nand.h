@@ -63,10 +63,23 @@
 
 
 #if !defined (CONFIG_NAND_LPD)
+
+#if 1
+
 # define DISABLE_CE\
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+  do { __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); barrier (); } while (0)
 # define ENABLE_CE\
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
+  do { __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8); barrier (); } while (0)
+
+#else
+
+# define DISABLE_CE\
+  do { __REG (GPIO_MN_PHYS) |=   1<<0;  barrier (); } while (0)
+# define ENABLE_CE\
+  do { __REG (GPIO_MN_PHYS) &= ~(1<<0); barrier (); } while (0)
+
+#endif
+
 #else
 # define DISABLE_CE
 # define ENABLE_CE

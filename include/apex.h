@@ -41,6 +41,10 @@
 
 /* ----- Prototypes */
 
+#if !defined (barrier)
+# define barrier() __asm volatile ("":::"memory")
+#endif
+
 extern void init_drivers (void);
 extern int __attribute__((format (printf, 1, 2)))
      printf (const char * fmt, ...);
