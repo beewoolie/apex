@@ -232,7 +232,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 
-  SDR_CONFIG = SDR_CONFIG_CAS3 | SDR_CONFIG_2x8Mx16;
+  SDR_CONFIG = SDR_CONFIG_CAS3
+    /* *** FIXME: there should be enough information in the memory.h
+       *** header to completely configure SDRAM from config.  This is,
+       *** so far, kinda hackneyed. */
+#if defined CONFIG_SDRAM_BANK1
+    | SDR_CONFIG_4x8Mx16;
+#else
+    | SDR_CONFIG_2x8Mx16;
+#endif
   SDR_REFRESH = 0;		/* Disable refresh */
   SDR_IR = SDR_IR_NOP;
   usleep (200);			/* datasheet: maintain 200us of NOP */

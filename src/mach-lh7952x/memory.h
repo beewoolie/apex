@@ -1,8 +1,8 @@
-/* compactflash.h
+/* memory.h
      $Id$
 
    written by Marc Singer
-   7 Feb 2005
+   22 Feb 2005
 
    Copyright (C) 2005 Marc Singer
 
@@ -27,26 +27,23 @@
 
 */
 
-#if !defined (__COMPACTFLASH_H__)
-#    define   __COMPACTFLASH_H__
+#if !defined (__MEMORY_H__)
+#    define   __MEMORY_H__
 
 /* ----- Includes */
 
-/* ----- Types */
+#include <config.h>
 
-/* ----- Globals */
+/* ----- Constants */
 
-/* ----- Prototypes */
-
-#if !defined (CF_PHYS)
-# define CF_PHYS	(0x48200000)
+#if defined (CONFIG_SDRAM_BANK0)
+# define RAM_BANK0_START	0x20000000
+# define RAM_BANK0_LENGTH	0x10000000
 #endif
 
-/* LPD79524 specifics */
-#define CF_WIDTH	16
-#define CF_ADDR_MULT	2
-#define CF_REG		(1<<13)
-#define CF_ALT		(1<<12)
-#define CF_ATTRIB	(1<<10)
+#if defined (CONFIG_SDRAM_BANK1)
+# define RAM_BANK1_START	0x30000000
+# define RAM_BANK1_LENGTH	0x10000000
+#endif
 
-#endif  /* __COMPACTFLASH_H__ */
+#endif  /* __MEMORY_H__ */

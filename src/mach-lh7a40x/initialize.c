@@ -91,7 +91,7 @@
 
 */
 
-/* CONFIG_MEM_CONTIGUOUS - This bit changes the way that the SDRAM
+/* CONFIG_SDRAM_CONTIGUOUS - This bit changes the way that the SDRAM
    controller maps SDRAM to physical addresses.  In systems with 32MiB
    of RAM, this will make it contguous.  In systems with more memory,
    the memory is not all contiguous though it is supposed to be
@@ -134,7 +134,7 @@
 #define BCR6_MODE		(0x1000fbe0)	// CompactFlash
 #define BCR7_MODE		(0x1000b2c2)	// CPLD & Ethernet
 
-#if defined (CONFIG_MEM_CONTIGUOUS)
+#if defined (CONFIG_SDRAM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
 #else
 #define SDRAM_MODE_SROMLL	(0)

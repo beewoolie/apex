@@ -1,3 +1,10 @@
+2005-02-22  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-mem.c (memory_init): Reorganized the
+	configuration of SDRAM s.t. it is cleaner in the configuration
+	file and controlled by a mach- specific header.  This make it
+	easier to make sure the initialization is correct.
+
 2005-02-21  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): rolled to 1.1.0 for release with

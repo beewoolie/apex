@@ -40,6 +40,7 @@
 # include <atag.h>
 #endif
 
+#include <mach/memory.h>
 
 
 //#define TALK
@@ -113,29 +114,29 @@ static void memory_init (void)
   PUTC_LL ('M');
 
   i = 0;
-#if defined (CONFIG_MEM_BANK0_START)
+#if defined (RAM_BANK0_START)
   PUTC_LL ('0');
   PRINTF ("Scanning bank 0 %x %x\n", 
-	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
-  i = memory_scan (i, CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
+	  RAM_BANK0_START, RAM_BANK0_LENGTH);
+  i = memory_scan (i, RAM_BANK0_START, RAM_BANK0_LENGTH);
   PRINTF ("  %d blocks\n", i);
 #endif
 
-#if defined (CONFIG_MEM_BANK1_START)
+#if defined (RAM_BANK1_START)
   PUTC_LL ('1');
   PRINTF ("Scanning bank 1 %x %x\n", 
-	  CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
-  i = memory_scan (i, CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
+	  RAM_BANK1_START, RAM_BANK1_LENGTH);
+  i = memory_scan (i, RAM_BANK1_START, RAM_BANK1_LENGTH);
 #endif
 
-#if defined (CONFIG_MEM_BANK2_START)
+#if defined (RAM_BANK2_START)
   PUTC_LL ('2');
-  i = memory_scan (i, CONFIG_MEM_BANK2_START, CONFIG_MEM_BANK2_LENGTH);
+  i = memory_scan (i, RAM_BANK2_START, RAM_BANK2_LENGTH);
 #endif
 
-#if defined (CONFIG_MEM_BANK3_START)
+#if defined (RAM_BANK3_START)
   PUTC_LL ('3');
-  i = memory_scan (i, CONFIG_MEM_BANK3_START, CONFIG_MEM_BANK3_LENGTH);
+  i = memory_scan (i, RAM_BANK3_START, RAM_BANK3_LENGTH);
 #endif
 
   PUTC_LL ('m');
