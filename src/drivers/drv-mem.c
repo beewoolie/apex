@@ -17,6 +17,7 @@
 #include <driver.h>
 #include <linux/string.h>
 #include <apex.h>
+#include <config.h>
 
 struct mem_descriptor {
   void* pv;
@@ -30,6 +31,9 @@ static int memory_probe (void)
 {
   /* Need to probe memory here so that we can pass information to
      kernel.  Also, it should be used to bound open() calls.   */
+
+  printf ("probing 0x%08x # 0x%08x\r\n", 
+	  CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
 
   return 0;			/* Present and initialized */
 }

@@ -758,6 +758,9 @@ prepare-all: prepare0 prepare
 
 export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
+include/config.h: config
+	scripts/configtoh < config > include/config.h
+
 # Single targets
 # ---------------------------------------------------------------------------
 

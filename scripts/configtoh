@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+while (<>) {
+
+    next if m/^\s*#/;
+    
+    next if ! m/\s*([^=\s]+)\s*=\s*([^\s]+)/;
+    print "#define $1 ($2)\n";
+}
+
