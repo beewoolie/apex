@@ -34,6 +34,17 @@
      given access to a big-endian machine.  The hard part is that the
      CF standard has some built-in ordering.
 
+   o FAT
+
+     Some of the work here is to support FAT.  This will be moved to a
+     driver on its own before it is fully functional.
+
+   o Parameter Alignment
+
+     The 3 byte padding in the parameter structure is added because it
+     keeps the enclosing structure from misaligning.  This deserves
+     more exploration.
+
 */
 
 #include <config.h>
@@ -51,6 +62,13 @@
 #if CF_WIDTH == 16
 #define REG __REG16
 #endif
+
+#define FAT_READONLY	(1<<0)
+#define FAT_HIDDEN	(1<<1)
+#define FAT_SYSTEM	(1<<2)
+#define FAT_VOLUME	(1<<3)
+#define FAT_DIRECTORY	(1<<4)
+#define FAT_ARCHIVE	(1<<5)
 
 #define DRIVER_NAME	"cf-lpd79524"
 
@@ -91,6 +109,43 @@ struct partition {
   unsigned long length;
 };
 
+struct parameter {
+  unsigned char jump[3];
+  unsigned char oemname[8];
+  unsigned short bytes_per_sector;
+  unsigned char sectors_per_cluster;
+  unsigned short reserved_sectors;
+  unsigned char fats;
+  unsigned short root_entries;
+  unsigned short small_sectors;
+  unsigned char media;
+  unsigned short sectors_per_fat;
+  unsigned short sectors_per_track;
+  unsigned short heads;
+  unsigned long hidden_sectors;
+  unsigned long large_sectors;
+  unsigned char logical_drive;
+  unsigned char reserved;
+  unsigned char signature;	/* Must be 0x29 */
+  unsigned long serial;
+  unsigned char volume[11];
+  unsigned char type[8];
+  char dummy[2];
+} __attribute__ ((packed));
+
+struct directory {
+  unsigned char file[8];
+  unsigned char extension[3];
+  unsigned char attribute;
+  unsigned char type;
+  unsigned char checksum;
+  unsigned char name2[8];
+  unsigned short time;
+  unsigned short date;
+  unsigned short cluster;
+  unsigned long length;
+} __attribute__ ((packed));
+
 struct cf_info {
   int type;
   char szFirmware[9];		/* Card firmware revision */
@@ -101,14 +156,32 @@ struct cf_info {
   int total_sectors;
 
   char bootsector[SECTOR_SIZE];	/* *** Superfluous */
+  struct directory root[32];
 
   struct partition partition[4];
+  struct parameter parameter;	/* Parameter info for the partition */
 
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
 };
 
 static struct cf_info cf_d; 
+
+static inline unsigned short read_short (void* pv)
+{
+  unsigned char* pb = (unsigned char*) pv;
+  return  ((unsigned short) pb[0])
+       + (((unsigned short) pb[1]) << 8);
+}
+
+static inline unsigned long read_long (void* pv)
+{
+  unsigned char* pb = (unsigned char*) pv;
+  return  ((unsigned long) pb[0])
+       + (((unsigned long) pb[1]) <<  8);
+       + (((unsigned long) pb[2]) << 16);
+       + (((unsigned long) pb[3]) << 24);
+}
 
 static unsigned char read8 (int reg)
 {
@@ -229,13 +302,24 @@ static void cf_init (void)
   {
     struct descriptor_d d;
     int result;
-    if (   !(result = parse_descriptor (DRIVER_NAME ":+1s", &d))
+    if (   !(result = parse_descriptor (DRIVER_NAME ":+1024s", &d))
 	&& !(result = open_descriptor (&d))) {
       d.driver->read (&d, cf_d.bootsector, SECTOR_SIZE);
       d.driver->seek (&d, SECTOR_SIZE - 66, SEEK_SET);
       d.driver->read (&d, cf_d.partition, 16*4);
+      d.driver->seek (&d, SECTOR_SIZE*32, SEEK_SET); /* Hard coded */
+      d.driver->read (&d, &cf_d.parameter, sizeof (struct parameter));
+      d.driver->seek (&d, SECTOR_SIZE*(32
+				       + read_short (&cf_d.parameter
+						     .reserved_sectors)
+				       + cf_d.parameter.fats
+				       *read_short (&cf_d.parameter
+						    .sectors_per_fat)), 
+		      SEEK_SET);
+      d.driver->read (&d, cf_d.root, sizeof (cf_d.root));
       close_descriptor (&d);
 //      dump ((void*) cf_d.bootsector, 512, 0);
+      dump ((void*) &cf_d.parameter, 25, 0);
     }
   }
 }
@@ -311,6 +395,55 @@ static void cf_report (void)
 		cf_d.partition[i].type,
 		cf_d.partition[i].start,
 		cf_d.partition[i].length);
+    printf ("          bps %d spc %d res %d fats %d re %d sec %d\n", 
+	    read_short (&cf_d.parameter.bytes_per_sector),
+	    cf_d.parameter.sectors_per_cluster,
+	    read_short (&cf_d.parameter.reserved_sectors),
+	    cf_d.parameter.fats,
+	    read_short (&cf_d.parameter.root_entries), 
+	    read_short  (&cf_d.parameter.small_sectors));
+    printf ("          med 0x%x spf %d spt %d heads %d hidden %ld sec %ld\n",
+	    cf_d.parameter.media,
+	    read_short (&cf_d.parameter.sectors_per_fat),
+	    read_short (&cf_d.parameter.sectors_per_track),
+	    read_short (&cf_d.parameter.heads),
+	    read_long (&cf_d.parameter.hidden_sectors), 
+	    read_long  (&cf_d.parameter.large_sectors));
+    printf ("          log 0x%02x sig 0x%x serial %08lx vol %11.11s"
+	    " type %8.8s\n",
+	    read_short (&cf_d.parameter.logical_drive),
+	    cf_d.parameter.signature,
+	    read_long (&cf_d.parameter.serial),	    
+	    cf_d.parameter.volume,
+	    cf_d.parameter.type);
+
+    for (i = 0; i < SECTOR_SIZE/sizeof (struct directory); ++i) {
+      if (cf_d.root[i].attribute == 0xf) {
+	int j;
+	printf ("%12.12s0x%x ", "", cf_d.root[i].file[0]);
+	for (j = 0; j < 14; ++j) {
+	  char ch = 0;
+	  switch (j) {
+	  case 0 ... 5:   ch = ((char*) &cf_d.root[i])[ 1 -  0 + j*2]; break;
+	  case 6 ... 11:  ch = ((char*) &cf_d.root[i])[14 - 12 + j*2]; break;
+	  case 12 ... 13: ch = ((char*) &cf_d.root[i])[28 - 24 + j*2]; break;
+	  }
+	  if (!ch)
+	    break;
+	  printf ("%c", ch);
+	}
+	printf ("\n");
+      }
+      else if (cf_d.root[i].cluster == 0)
+	continue;
+      else
+	printf ("%12.12s%-11.11s 0x%x #%d %ld\n",
+		"",
+		cf_d.root[i].file, 
+		cf_d.root[i].attribute,
+		cf_d.root[i].cluster, 
+		cf_d.root[i].length); 
+    }
   }
 }
 
