@@ -111,7 +111,7 @@ void __naked __section (bootstrap) relocate_apex (void)
     }
   }
 
-  __asm volatile ("0: b 0b");
+  //  __asm volatile ("0: b 0b");
 
   __asm volatile ("mov pc, %0" :: "r" (lr));
 }

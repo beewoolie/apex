@@ -32,6 +32,15 @@
    optimizations.  However, since it already much smaller than the NOR
    driver, there isn't the same incentive to optimize.
 
+   There are two modes that this driver can operate in.  The default,
+   !CONFIG_NAND_LPD adheres to the SHARP design for using A22 and A23
+   to control the nOE and nWE signals.  This mode ought to work
+   regardless of whether or not the system has an LPD CPLD chip.  The
+   CONFIG_NAND_LPD mode is more efficient because the CPLD controls
+   the NAND nCE signal and the A22 and A23 address lines can be used
+   as address lines.  The SHARP design may impose restrictions on
+   systems designed to require these higher order address lines.
+
 */
 
 #include <config.h>
@@ -49,7 +58,7 @@ struct nand_chip {
   unsigned char device;
   unsigned long total_size;
   int erase_size;
-  //  int address_size;		/* Better than relying on Boot code */
+  //  int address_size;	/* *** FIXME: Better than Boot code */
 };
 
 const static struct nand_chip chips[] = {
@@ -76,10 +85,10 @@ static void nand_enable (void)
 #if !defined (CONFIG_NAND_LPD)
   __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8); 
   __REG (GPIO_MN_PHYS) &= ~(1<<0);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<24);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0xa<<24);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<24);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0xa<<24);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0xa<<12);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0xa<<12);
 #endif
 }
 
@@ -88,10 +97,10 @@ static void nand_disable (void)
 #if !defined (CONFIG_NAND_LPD)
   __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
   __REG (GPIO_MN_PHYS) |=   1<<0;
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<24);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0x5<<24);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<24);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0x5<<24);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0x5<<12);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0x5<<12);
 #endif
 }
 
@@ -123,7 +132,6 @@ static void nand_init (void)
 
   __REG8 (NAND_CLE) = ReadID;
   __REG8 (NAND_ALE) = 0;
-  //  wait_on_busy ();
 
   manufacturer = __REG8 (NAND_DATA);
   device       = __REG8 (NAND_DATA);
@@ -180,9 +188,6 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     if (available > cb)
       available = cb;
 
-//    printf ("nand-read  page %ld  index %d  available %d\r\n",
-//	    page, index, available);
-
     d->index += available;
     cb -= available;
     cbRead += available;
@@ -195,6 +200,7 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     __REG8 (NAND_ALE) = ((page >>  8) & 0xff);
     wait_on_busy ();
 #if !defined (CONFIG_NAND_LPD)
+		/* Switch back to read mode */
     __REG8 (NAND_CLE) = (index < 256) ? Read1 : Read2;
 #endif
     while (available--)		/* May optimize with assembler...later */
@@ -230,9 +236,6 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
       available = cb;
     tail = 528 - index - available;
     
-//  printf ("nand_write (%ld) page %ld  index %ld  available %d  tail %d\r\n",
-//   cb, page, index, available, tail);
-
     __REG8 (NAND_CLE) = SerialInput;
     __REG8 (NAND_ALE) = 0;	/* Always start at page beginning */
     __REG8 (NAND_ALE) = ( page        & 0xff);
@@ -270,18 +273,6 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   return cbWrote;
 }
 
-#if 0
-#define LH79524_GPIO_NAND_CE  ((volatile u32*)0xFFFD9000)
-#define NAND_DISABLE_CE(nand) do { *LH79524_GPIO_NAND_CE |= GPIO_PMDR_PM0;} while(0)
-#define NAND_ENABLE_CE(nand) do { *LH79524_GPIO_NAND_CE &= ~GPIO_PMDR_PM0;} while(0)
-
-#define WRITE_NAND_COMMAND(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT | _BIT(4)) = (u8)(d); } while(0)
-#define WRITE_NAND_ADDRESS(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT | _BIT(3)) = (u8)(d); } while(0)
-#define WRITE_NAND(d, adr) do{ *(volatile u8 *)((unsigned long)adr | NAND_EN_BIT) = (u8)d; } while(0)
-#define READ_NAND(adr) ((volatile unsigned char)(*(volatile u8 *)((unsigned long)adr | _BIT(23))))
-#endif
-
-
 static void nand_erase (struct descriptor_d* d, size_t cb)
 {
   if (!chip)
@@ -294,20 +285,10 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 
   SPINNER_STEP;
 
-#if 0
-  __REG (GPIO_MN_PHYS | 0x08) &= ~(1<<0); /* PM0 output */
-  __REG (GPIO_MN_PHYS | 0x00) &= ~(1<<0); /* PM0 low */
-
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
-#endif
-
   do {
     unsigned long page = (d->start + d->index)/512;
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
-
-//    printf ("nand erase %ld, %ld\r\n", page, available);
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = ( page & 0xff);
@@ -341,7 +322,6 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 static __driver_3 struct driver_d nand_driver = {
   .name = "nand-79524",
   .description = "NAND flash driver",
-  //  .flags = DRIVER_ | DRIVER_CONSOLE,
   .open = nand_open,
   .close = close_helper,
   .read = nand_read,

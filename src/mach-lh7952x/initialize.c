@@ -50,11 +50,6 @@
 # define SDRAM_CHIP_MODE	(0x22<<11)	// CAS2 BURST4
 #endif
 
-	// SRAM devices
-#define BCR0_MODE		(0x200039af)	// Bootflash
-#define BCR6_MODE		(0x1000fbe0)	// CompactFlash
-#define BCR7_MODE		(0x1000b2c2)	// CPLD & Ethernet
-
 	// SDRAM
 #define SDRAM_RASCAS		EMC_RASCAS_V
 #define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
@@ -156,9 +151,27 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 	/* NAND flash, 8 bit */
   __REG (EMC_PHYS | EMC_SCONFIG0)    = 0x80;
+  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
+  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
+  __REG (EMC_PHYS | EMC_STURN0)      = 2;
+  //  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
+  //  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
+  //  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
+  //  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
+  //  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
+  //  __REG (EMC_PHYS | EMC_STURN0)      = 1;
 
 	/* NOR flash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG1)    = 0x81;
+  __REG (EMC_PHYS | EMC_SWAITWEN1)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITOEN1)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITRD1)    = 6;
+  __REG (EMC_PHYS | EMC_SWAITPAGE1)  = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR1)    = 6;
+  __REG (EMC_PHYS | EMC_STURN1)      = 1;
 
 	/* CPLD, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG3)    = 0x81;
@@ -236,28 +249,6 @@ void __naked initialize_target (void)
   __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;   /* A23,A22 */
   __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;  /* nCS0 normalize */
 #endif
-
-	/* NAND flash */
-  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
-  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
-  __REG (EMC_PHYS | EMC_STURN0)      = 2;
-  //  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  //  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
-  //  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
-  //  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  //  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
-  //  __REG (EMC_PHYS | EMC_STURN0)      = 1;
-
-	/* NOR flash */
-  __REG (EMC_PHYS | EMC_SWAITWEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD1)    = 6;
-  __REG (EMC_PHYS | EMC_SWAITPAGE1)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR1)    = 6;
-  __REG (EMC_PHYS | EMC_STURN1)      = 1;
 
 	/* CompactFlash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;

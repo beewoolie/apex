@@ -278,4 +278,11 @@ Relocation
   o The relocation code, too, will not restart the loader, but must
     always continue with a proper return.  If we only have the NAND
     relocator, then we have no way of moving the loader in SDRAM if it
-    has been put there.  I think that this may be a shortcoming.
+    has been put in SRAM or SDRAM at some random location.  This may
+    be a shortcoming.
+
+Performance
+
+  o The load time from flash to SDRAM is partially goverened by the
+    EMC controller setup.  It may be desirable to make sure that the
+    EMC is optimally configured before relocate_apex.
