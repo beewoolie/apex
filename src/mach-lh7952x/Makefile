@@ -25,6 +25,7 @@ obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
 obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
+obj-$(CONFIG_DRIVER_CPLD_SPI)	+= drv-cpld-spi.o
 obj-$(CONFIG_DRIVER_EMAC)	+= drv-emac.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-y				+= cmd-reset.o

@@ -40,7 +40,7 @@ struct driver_d;
 
 struct descriptor_d {
   struct driver_d* driver;
-  char driver_name[16];
+  char driver_name[32];		/* *** FIXME: should be removed */
   unsigned long start;
   unsigned long length;
   size_t index;
@@ -59,6 +59,9 @@ struct descriptor_d {
 #define DRIVER_WRITEPROGRESS_MASK (0xf)
 #define DRIVER_WRITEPROGRESS_SHIFT (24)
 #define DRIVER_WRITEPROGRESS(n) (((n)&0xf)<<24)	/* 2^(N+10) bytes per spin */
+#define DRIVER_PRIVATE_SHIFT (16)
+#define DRIVER_PRIVATE_MASK  (0xff)
+#define DRIVER_PRIVATE(n) (((n)&0xff)<<16)
 
 #define driver_can_seek(p)  ((p)->seek != NULL)
 #define driver_can_read(p)  ((p)->read != NULL)

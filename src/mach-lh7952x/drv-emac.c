@@ -78,14 +78,6 @@
 #include "hardware.h"
 #include <linux/kernel.h>
 
-/* *** FIXME: these timing values are substantially larger than the
-   *** chip requires. We may implement an nsleep () function. */
-#define T_SKH	1		/* Clock time high (us) */
-#define T_SKL	1		/* Clock time low (us) */
-#define T_CS	1		/* Minimum chip select low time (us)  */
-#define T_CSS	1		/* Minimum chip select setup time (us)  */
-#define T_DIS	1		/* Data setup time (us) */
-
 //#define TALK
 
 //#define NOISY 
@@ -114,20 +106,6 @@ static long __attribute__((section("ethernet.bss")))
      rlDescriptor[C_BUFFER*2];
 static char __attribute__((section("ethernet.bss")))
      rgbBuffer[CB_BUFFER*C_BUFFER];	/* Memory for buffers */
-
-#define P_START		(1<<9)
-#define P_WRITE		(1<<7)
-#define P_READ		(2<<7)
-#define P_ERASE		(3<<7)
-#define P_EWDS		(0<<7)
-#define P_WRAL		(0<<7)
-#define P_ERAL		(0<<7)
-#define P_EWEN		(0<<7)
-#define P_A_EWDS	(0<<5)
-#define P_A_WRAL	(1<<5)
-#define P_A_ERAL	(2<<5)
-#define P_A_EWEN	(3<<5)
-
 
 static void msleep (int ms)
 {
@@ -232,82 +210,6 @@ static void emac_phy_detect (void)
   emac_phy_reset (phy_address);
 }
 
-void enable_cs (void)
-{
-  __REG16 (CPLD_SPI) |=  CPLD_SPI_CS_MAC;
-  usleep (T_CSS);
-}
-
-static void disable_cs (void)
-{
-  __REG16 (CPLD_SPI) &= ~CPLD_SPI_CS_MAC;
-  usleep (T_CS);
-}
-
-static void pulse_clock (void)
-{
-  __REG16 (CPLD_SPI) |=  CPLD_SPI_SCLK;
-  usleep (T_SKH);
-  __REG16 (CPLD_SPI) &= ~CPLD_SPI_SCLK;
-  usleep (T_SKL);
-}
-
-
-/* execute_spi_command
-
-   sends a spi command to a device.  It first sends cwrite bits from
-   v.  If cread is greater than zero it will read cread bits
-   (discarding the leading 0 bit) and return them.  If cread is less
-   than zero it will check for completetion status and return 0 on
-   success or -1 on timeout.  If cread is zero it does nothing other
-   than sending the command.
-
-*/
-
-static int execute_spi_command (int v, int cwrite, int cread)
-{
-  unsigned long l = 0;
-
-  PRINTF ("0x%08x %d", v, cwrite);
-
-  enable_cs ();
-
-  v <<= CPLD_SPI_TX_SHIFT;	/* Correction for the position of SPI_TX bit */
-  while (cwrite--) {
-    __REG16 (CPLD_SPI) 
-      = (__REG16 (CPLD_SPI) & ~CPLD_SPI_TX)
-      | ((v >> cwrite) & CPLD_SPI_TX);
-    usleep (T_DIS);
-    pulse_clock ();
-  }
-
-  if (cread < 0) {
-    unsigned long time;
-    disable_cs ();
-    time = timer_read ();
-    enable_cs ();
-	
-    l = -1;
-    do {
-      if (__REG16 (CPLD_SPI) & CPLD_SPI_RX) {
-	l = 0;
-	break;
-      }
-    } while (timer_delta (time, timer_read ()) < 10*1000);
-  }
-  else
-	/* We pulse the clock before the data to skip the leading zero. */
-    while (cread-- > 0) {
-      pulse_clock ();
-      l = (l<<1) 
-	| (((__REG16 (CPLD_SPI) & CPLD_SPI_RX) >> CPLD_SPI_RX_SHIFT) & 0x1);
-    }
-
-  disable_cs ();
-  PRINTF (" -> %lx\r\n", l);
-  return l;
-}
-
 
 /* emac_read_mac
 
@@ -316,16 +218,26 @@ static int execute_spi_command (int v, int cwrite, int cread)
 
 */
 
-static int emac_read_mac (char rgb[6])
+static int emac_read_mac (char rgbResult[6])
 {
-  int i;
-  if (   execute_spi_command (P_START|P_READ|0, 10, 8) != 0x94
-      || execute_spi_command (P_START|P_READ|1, 10, 8) != 0x01)
-    return -1;
+  struct descriptor_d d;
+  char rgb[8];
+  int result = 0;
 
-  for (i = 0; i < 6; ++i)
-    rgb[i] = execute_spi_command (P_START|P_READ|(i + 2), 10, 8);
-  return 0;
+  if (parse_descriptor ("mac:0#8", &d)
+      || open_descriptor (&d))
+    return -1;			/* No driver */
+
+  if (d.driver->read (&d, rgb, 8) == 8 
+      && rgb[0] == 0x94
+      && rgb[1] == 0x01)
+    memcpy (rgbResult, rgb + 2, 6);
+  else
+    result = -1;
+
+  close_descriptor (&d);
+
+  return result;
 }
 
 
@@ -369,6 +281,7 @@ void emac_init (void)
       __REG (EMAC_PHYS + EMAC_SPECAD1TOP) 
 	= (rgb[0]<<8)|(rgb[1]<<0);
     }
+    //    dump (rgb, 6, 0);
   }
 
   emac_setup ();
@@ -389,16 +302,9 @@ static __service_6 struct service_d lh7952x_emac_service = {
 
 int cmd_emac (int argc, const char** argv)
 {
+  int result = 0;
+
   if (argc == 1) {
-    static const int cbMax = 0x20;
-    char rgb[cbMax]; 
-    int i;
-
-    for (i = 0; i < cbMax; ++i)
-      rgb[i] = (unsigned char) execute_spi_command (P_START|P_READ|i, 10, 8);
-
-    dump (rgb, cbMax, 0);
-
 #if 0
     {
       unsigned long l;
@@ -467,26 +373,24 @@ int cmd_emac (int argc, const char** argv)
     //    dump (rgb, 9, 0);
 
     {
-      int i;
-
-      execute_spi_command (P_START|P_EWEN|P_A_EWEN, 10, 0);
-
-		/* Erase everything */
-//      if (execute_spi_command (P_START|P_ERAL|P_A_ERAL, 10, -1))
-//	return ERROR_FAILURE;
-
-      for (i = 0; i < 9; ++i) {
-	if (execute_spi_command (P_START|P_ERASE|i, 10, -1))
-	  return ERROR_FAILURE;
-
-	if (execute_spi_command (((P_START|P_WRITE|i)<<8)|rgb[i], 18, -1))
-	  return ERROR_FAILURE;
+      struct descriptor_d d;
+      static const char sz[] = "mac:0#9";
+      if (   !parse_descriptor (sz, &d)
+	  && !open_descriptor (&d)) {
+	d.driver->erase (&d, 9);
+	d.driver->seek (&d, 0, SEEK_SET);
+	if (d.driver->write (&d, rgb, 9) != 9)
+	  result = ERROR_FAILURE;
+	close_descriptor (&d);
       }
-      execute_spi_command (P_START|P_EWDS|P_A_EWDS, 10, 0);
+      else
+	result = ERROR_NODRIVER;
+      if (result)
+	printf ("unable to write MAC address to <%s>\r\n", sz);
     }
   }
 
-  return 0;
+  return result;
 }
 
 static __command struct command_d c_emac = {
