@@ -24,8 +24,10 @@ extern void init_drivers (void);
 
 void signon (void)
 {
-  printf ("Hello\n");
+  printf ("\r\nAPEX Boot Loader\r\n"
+	  "Copyright (c) 2004, Marc Singer\r\n\r\n");
 
+  printf ("apex> ");
   while (1)
     ;
 }
@@ -33,4 +35,5 @@ void signon (void)
 void init (void)
 {
   init_drivers ();
+  signon ();
 }

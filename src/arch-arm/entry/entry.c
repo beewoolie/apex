@@ -24,13 +24,13 @@ extern char APEX_BSS_END;
 #define __naked __attribute__((naked))
 #define __section(s) __attribute__((section(#s)))
 
-extern void __weak reset (void);
-extern void __weak exception_error (void);
+extern void reset (void);
+extern void exception_error (void);
 extern void initialize_bootstrap (void);
 extern void initialize_target (void);
 extern void initialize (void);
-extern void __weak relocate_apex (void);
-extern void __weak setup_c (void);
+extern void relocate_apex (void);
+extern void setup_c (void);
 extern void init (void);
 
 
@@ -114,12 +114,10 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  "stmia %0!, {r3-r10}\n\t"
 		  "cmp %0, %1\n\t"
 		  "ble 0b\n\t"
-		  "add pc, r11, lr\n\t"
+		  "add pc, ip, lr\n\t"
 		  :
 		  : "r" (&APEX_VMA_START), "r" (&APEX_VMA_END)
 		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "ip"
-
-
 		  );		  
 }
 

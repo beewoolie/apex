@@ -86,12 +86,18 @@ static void __attribute__((naked, section(".bootstrap")))
 
    performs vital SDRAM initialization as well as some other memory
    controller initializations.  It will perform no work if we are
-   already running from SDRAM.
+   already running from SDRAM.  It will 
 
    The assembly output of this implementation of the initialization is
    more dense than the assembler version using a table of
    initializations.  This is primarily due to the compiler's ability
    to keep track of the register set offsets and value being output.
+
+   *** FIXME: I want to make this code more robust about determining
+   *** if SDRAM is already initialized.  Moreover, I want to make sure
+   *** that we initialize everything else even if SDRAM isn't being
+   *** reinitialized.  We may, for example, be coming from another
+   *** loader that only does half of the job.
 
 */
 
@@ -99,11 +105,11 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr\n\t"
-//	 "tst %0, #0xf0000000\n\t"
-//	 "beq 1f\n\t"
+	 "tst %0, #0xf0000000\n\t"
+	 "beq 1f\n\t"
 	 "cmp %0, %1\n\t" //");
-	 "movge pc, lr\n\t"
-	 "1:" : "=r" (lr): "i" (SDRAM_BANK0_PHYS));
+	 "movls pc, lr\n\t"
+	 "1:" : "=r" (lr): "i" (SDRAM_BANK1_PHYS));
 
 	/* Setup HCLK, FCLK and peripheral clocks */
   __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_UNLOCK;

@@ -130,3 +130,12 @@ Kernel Build Scripts
    the arch/$(ARCH) directory to build a target necessary for the
    vmlinux file.  Instead, it only calls arch/$(ARCH)/Makefile to build
    boot targets.
+
+Weak Symbols
+
+ o Using weak symbols in the entry code would make it easy to replace
+   startup features with a platform specific implementation.  Trouble
+   is, weak symbols cannot be called with a simple "bl" because the
+   compiler and linker are not going to know where the code is and may
+   not be confident that it will be nearby.  I wonder if I can hint
+   that the routine must be close?
