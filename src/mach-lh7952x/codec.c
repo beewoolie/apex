@@ -628,15 +628,6 @@ static int cmd_codec_test (int argc, const char** argv)
   DMA0_DESTHI   = (((unsigned long)&cap) >> 16) & 0xffff;
   DMA0_MAX	= 0xffff;
 #endif
-//  DMA0_CTRL
-//    = (0<<13)			/* Peripheral source */
-//    | (0<<9)			/* Load base addresses on start  */
-//    | (1<<7)			/* Destination size 2 bytes */
-//    | (1<<3)			/* Source size is 2 bytes */
-//    | (0<<2)			/* Destination fixed */
-//    | (0<<1);			/* Source fixed */
-
-  //  msleep (10);			/* Fill the pipe */
 
   SSP_CTRL1 |= SSP_CTRL1_SSE;		/* Enable SSP  */
 
@@ -665,22 +656,6 @@ static int cmd_codec_test (int argc, const char** argv)
   DMA1_DESTLO   =  SSP_DR_PHYS        & 0xffff;
   DMA1_DESTHI   = (SSP_DR_PHYS >> 16) & 0xffff;
   DMA1_MAX	= count;
-//  DMA1_CTRL
-//    = (1<<13)			/* Peripheral destination */
-//#if defined (USE_16)
-//    | (1<<7)			/* Destination size 2 bytes */
-//    | (1<<3)			/* Source size is 2 bytes */
-////    | (1<<5)			/* Source burst 4 incrementing */
-//#else
-//    | (0<<7)			/* Destination size 1 bytes */
-//    | (0<<3)			/* Source size is 1 byte */
-//    | (1<<5)			/* Source burst 4 incrementing */
-//#endif
-//    | (0<<9)			/* Wrapping: Load base addresses on start  */
-//    | (0<<2)			/* Destination fixed */
-//    | (1<<1);			/* Source incremented */
-
-//  return 0;			/* *** FIXME */
 
   DMA_CLR = 0xff;
 
@@ -704,17 +679,6 @@ static int cmd_codec_test (int argc, const char** argv)
 #else
 
   codec_unmute ();
-
-  PRINTF ("I2S_CTRL 0x%lx\r\n", I2S_CTRL);
-
-  while ((SSP_SR & SSP_SR_TNF) == SSP_SR_TNF) {
-    SSP_DR = buffer[0];
-    if (I2S_RIS & 0x70) {
-      printf ("priming I2S_RIS %lx\r\n", I2S_RIS);
-    }
-  }
-  printf ("primed and going\r\n");
-  printf ("I2S_CTRL 0x%lx\r\n", I2S_CTRL);
 
   SSP_CTRL1 |= (1<<1);		/* Enable SSP */
 #if defined (USE_I2S)
@@ -747,7 +711,6 @@ static int cmd_codec_test (int argc, const char** argv)
 
 #endif /* !USE_DMA */
 
-//  codec_disable ();
   codec_mute ();
   return 0;
 }
