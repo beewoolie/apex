@@ -1,3 +1,7 @@
+2005-02-11  Marc Singer  <elf@buici.com>
+
+	* src/lib/spinner.c (spinner_step): Smoothed out the spinner.
+
 2005-02-11  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile 1.0.23 for the nslu2 spinner.

@@ -39,6 +39,7 @@ void (*hook_spinner) (unsigned value);
 
 void spinner_step (void)
 {
+  static int value;
   static int step;
   static const unsigned char rgch[]
     = { '|', '/', '-', '\\', '|', '/', '-', '\\' } ;
@@ -47,11 +48,12 @@ void spinner_step (void)
   if (hook_spinner)
     hook_spinner (v);
 
-  v = (v/128)%8;
-  if (v == step)
+  v = v/128;
+  if (v == value)
     return;
-  step = v;
+  value = v;
 
   putchar ('\r');
   putchar (rgch[step]);
+  step = (step + 1)%8;
 }
