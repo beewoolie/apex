@@ -19,13 +19,13 @@
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0 root=/dev/hda1",
-  .description = "Linux kernel boot command",
+  .description = "Linux kernel command line",
 };
 
 static __env struct env_d e_bootaddr = {
   .key = "bootaddr",
   .default_value = "0x20008000",
-  .description = "Linux kernel start address",
+  .description = "Linux start address",
 };
 
 static __env struct env_d e_startup = {
@@ -34,5 +34,5 @@ static __env struct env_d e_startup = {
     "copy nor:256k#1536k mem:0x20008000;"
     "wait 20 Autoboot in 2 seconds.;"
     "boot",
-  .description = "Startup command string",
+  .description = "Startup commands",
 };
