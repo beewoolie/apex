@@ -48,7 +48,7 @@
 #include "lh7a40x.h"
 #include <spinner.h>
 
-#define TALK
+//#define TALK
 //#define NOISY
 
 #if defined TALK
