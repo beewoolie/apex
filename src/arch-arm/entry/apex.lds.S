@@ -28,8 +28,10 @@ SECTIONS
 		*(.glue_7t)
 	}
 	.vector : {	/* Exception vector support, if there is any */
+		APEX_VMA_VECTOR_START = .;
 		*(.vector.0)
 		*(.vector.1)
+		APEX_VMA_VECTOR_END = .;
 		*(.vector)
 	}
 	. = ALIGN (4);

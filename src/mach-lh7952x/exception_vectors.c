@@ -23,9 +23,15 @@
 
    We map SDRAM at 0 and create vectors there.
 
+   Sections .vector.? are copied to 0x0.  The vectoring code will jump
+   back to the loader for anything substantial.  This code *must*
+   *must* *must* be smaller than 256 bytes so it doesn't get stomped
+   by the ATAGS structures.
+
 */
 
 #include <config.h>
+#include <apex.h>
 #include <asm/bootstrap.h>
 #include <asm/system.h>
 #include <service.h>
@@ -36,7 +42,7 @@ extern void irq_handler (void);
 
 void (*interrupt_handlers[32])(void);
 
-void __naked __section(.vector.0) exception_vectors (void)
+void __naked __section (.vector.0) exception_vectors (void)
 {
   __asm ("b v_reset\n\t"		/* reset */
 	 "b v_exception_error\n\t"	/* undefined instruction */
@@ -49,19 +55,26 @@ void __naked __section(.vector.0) exception_vectors (void)
 	 );
 }
 
-void __naked __section(.vector.1) v_reset (void)
+void __naked __section (.vector.1) v_reset (void)
 {
+	/* Disable MMU */
+  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
+		  "bic r0, r0, #1\n\t"
+		  "mcr p15, 0, r0, c1, c0, 0");
+
+
+	/* Reenter the loader */
   __asm volatile ("mov pc, %0" :: "r" (reset));
 }
 
-void __naked __section(.vector.1) v_exception_error (void)
+void __naked __section (.vector.1) v_exception_error (void)
 {
+	/* *** FIXME: this might be a good place to reset the system */
   while (1)
     ;
-  //  __asm volatile ("mov pc, %0" :: "r" (exception_error));
 }
 
-void __naked __section(.vector.1) v_irq_handler (void)
+void __naked __section (.vector.1) v_irq_handler (void)
 {
   __asm volatile ("mov pc, %0" :: "r" (irq_handler));
 }
@@ -85,15 +98,33 @@ void __irq_handler __section (.bootstrap) irq_handler (void)
 
 void lh7952x_exception_init (void)
 {
+  __REG (RCPC_PHYS + RCPC_CTRL)       |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_REMAP) = 0x1;	/* SDRAM at 0x0 */
+  __REG (RCPC_PHYS + RCPC_CTRL)       &= ~RCPC_CTRL_UNLOCK;
 
-  /* Clear V for exception vectors at 0x0 */
+	/* Clear V for exception vectors at 0x0 */
   { 
     unsigned long l;
     __asm volatile ("mrs %0, cpsr\n\t"
 		    "bic %0, %0, #(1<<13)\n\t"
-		    "msr cpsr, %0" :: "r" (l));
+		    "msr cpsr, %0" : "=r" (l));
   }
+	/* Install vectors.
+	   I didn't use memcpy because the target address is 0! */
+  __asm volatile (
+	       "0: ldmia %1!, {r3}\n\t"
+		  "stmia %0!, {r3}\n\t"
+		  "cmp %1, %2\n\t"
+		  "bne 0b\n\t"
+		  :
+		  : "r" (0), 
+		    "r" (&APEX_VMA_VECTOR_START),
+		    "r" (&APEX_VMA_VECTOR_END)
+		  : "r3"
+		  );		  
+
+  printf ("exceptions %p %p\r\n", 
+	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END);
 
   __REG (VIC_PHYS + VIC_INTSELECT) = 0;
   __REG (VIC_PHYS + VIC_INTENABLE) = 0;
@@ -113,7 +144,7 @@ void lh7952x_exception_init (void)
 		  : "r2","r3"
 		  );
 
-  local_irq_enable ();
+//  local_irq_enable ();
 }
 
 void lh7952x_exception_release (void)
