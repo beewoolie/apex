@@ -450,7 +450,7 @@ scripts_basic: include/linux/autoconf.h
 init-y		:= # init/
 drivers-y	:= # drivers/ sound/
 net-y		:= # net/
-libs-y		:= # lib/
+libs-y		:= src/lib/
 core-y		:= # usr/
 endif # KBUILD_EXTMOD
 
