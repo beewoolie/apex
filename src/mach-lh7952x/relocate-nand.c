@@ -53,9 +53,9 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 void __naked __section (.bootstrap) relocate_apex (void)
 {
   int cb;
-  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
+  const int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
   int page;
-  void* pv = &APEX_VMA_COPY_START;
+  void* pv = &APEX_VMA_ENTRY;
 
   __REG8 (NAND_CLE) = Reset;
   wait_on_busy ();
@@ -71,6 +71,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
     for (cb = 512; cb--; )
       *((char*) pv++) = __REG8 (NAND_DATA); /* *** Optimize with assembler */
   }
+
+  __asm ("mov pc, %0" : : "r" (&APEX_VMA_ENTRY));
 
 #if 0
   extern char reloc;

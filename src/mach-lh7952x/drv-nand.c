@@ -13,17 +13,17 @@
    NAND flash block IO driver for LPD 79524.
 
    Unlike the NOR driver, this one hasn't received the same attention
-   for reducing the size of the loader.  It is probably amenable to
-   the same optimizations.  However, since it is so much shorter than
-   the nor dirver, there isn't the same need to perform the
-   optimization.
+   for reducing code size.  It is probably amenable to the same
+   optimizations.  However, since it already much smaller than the NOR
+   driver, there isn't the same incentive to optimize.
 
 */
 
-#include <driver.h>
-#include <linux/string.h>
-#include <apex.h>
 #include <config.h>
+#include <apex.h>
+#include <driver.h>
+#include <service.h>
+#include <linux/string.h>
 #include <spinner.h>
 
 #include "lh79524.h"
@@ -57,7 +57,6 @@ static void nand_init (void)
   __REG8 (NAND_CLE) = Status;
   wait_on_busy ();
   if ((__REG8 (NAND_DATA) & Ready) == 0) {
-//    printf ("NAND flash not found\r\n");
     return;
   }
 

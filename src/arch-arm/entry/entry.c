@@ -14,7 +14,7 @@
 
 extern void reset (void);
 extern void exception_error (void);
-extern void initialize_bootstrap (void);
+extern int  initialize_bootstrap (void);
 extern void initialize_target (void);
 extern void initialize (void);
 extern void relocate_apex (void);
@@ -60,9 +60,9 @@ void __naked __section (.bootstrap) reset (void)
 		  "mcr p15, 0, r0, c1, c0, 0");
 #endif
 
-  initialize_bootstrap ();	/* Initialization critical to relocate */
-  relocate_apex ();
-  initialize_target ();		/* Reset of platform initialization */
+  if (initialize_bootstrap ())	/* Initialization critical to relocate */
+    relocate_apex ();
+  initialize_target ();		/* Rest of platform initialization */
   setup_c ();			/* Setups before executing C code */
 
 	/* Start loader proper which doesn't return */

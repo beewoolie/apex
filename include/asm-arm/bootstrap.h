@@ -21,6 +21,7 @@
 
 /* ----- Globals */
 
+extern char APEX_VMA_ENTRY;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 extern char APEX_VMA_STACK_START;

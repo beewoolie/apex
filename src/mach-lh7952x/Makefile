@@ -7,5 +7,5 @@ obj-y :=
 obj-y += initialize.o serial.o timer.o
 obj-$(CONFIG_DRIVER_NAND) += drv-nand.o
 obj-$(CONFIG_DRIVER_NOR) += drv-nor.o
-obj-y += relocate-nand.o
+obj-$(CONFIG_RELOCATE_NAND) += relocate-nand.o
 obj-y += env.o

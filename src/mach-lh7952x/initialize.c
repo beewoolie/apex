@@ -19,7 +19,8 @@
 # include <blob/config.h>
 #endif
 
-//#include <blob/arch.h>
+#include <asm/bootstrap.h>
+
 #include "lh79524.h"
 
 //#define USE_SLOW
@@ -46,9 +47,6 @@
 #define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
-#define __naked __attribute__((naked))
-#define __start __attribute__((section(".start")))
-
 
 /* usleep
 
@@ -67,13 +65,13 @@
    (and less than 16 bits) will return immediately.
 
    To be precise, the interval is HCLK/64 or 1.2597us.  In other
-   words, it is about 25% longer than the given.  The routine
-   compensates by removing 25% of the requested delay.  The clever ARM
-   instruction set makes this a single instruction.
+   words, it is about 25% longer than desired.  The code compensates
+   by removing 25% of the requested delay.  The clever ARM instruction
+   set makes this a single operation.
 
  */
 
-void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
+void __section(.bootstrap) usleep (unsigned long us)
 {
   __asm ("str %1, [%0, #0]\n\t"
 	 "str %2, [%0, #0xc]\n\t"
@@ -81,7 +79,6 @@ void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
       "0: ldr %2, [%0, #0xc]\n\t"
 	 "tst %2, %4\n\t"
 	 "beq 0b\n\t"
-//	 "mov pc, lr"
 	 :
 	 : "r" (TIMER1_PHYS), 
 	   "r" (0),
@@ -103,23 +100,21 @@ void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
    initializations.  This is primarily due to the compiler's ability
    to keep track of the register set offsets and value being output.
 
-   *** FIXME: I want to make this code more robust about determining
-   *** if SDRAM is already initialized.  Moreover, I want to make sure
-   *** that we initialize everything else even if SDRAM isn't being
-   *** reinitialized.  We may, for example, be coming from another
-   *** loader that only does half of the job.
+   The return value is true if SDRAM has been initialized and false if
+   this initialization has already been performed.  Note that the
+   non-SDRAM initializations are performed regardless of whether or
+   not we're running in SDRAM.
+
+   *** FIXME: The memory region 0x1000000-0x20000000 will be
+   *** incorrectly detected as SDRAM with code below.  It is OK as
+   *** long as the loader never runs from high nCS0 memory.
 
 */
 
-void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
+void __naked __section(.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
-  __asm volatile ("mov %0, lr\n\t"
-	 "tst %0, #0xf0000000\n\t"
-	 "beq 1f\n\t"
-	 "cmp %0, %1\n\t" //");
-	 "movls pc, lr\n\t"
-	 "1:" : "=r" (lr): "i" (SDRAM_BANK1_PHYS));
+  __asm volatile ("mov %0, lr" : "=r" (lr));
 
 	/* Setup HCLK, FCLK and peripheral clocks */
   __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_UNLOCK;
@@ -181,6 +176,13 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
   __REG (EMC_PHYS | EMC_SWAITWR3)    = 5;
   __REG (EMC_PHYS | EMC_STURN3)      = 2;
 
+  __asm volatile ("tst %0, #0xf0000000\n\t"
+		  "beq 1f\n\t"
+		  "cmp %0, %1\n\t"
+		  "movls r0, #0\n\t"
+		  "movls pc, %0\n\t"
+		  "1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+
 	/* SDRAM */
   __REG (EMC_PHYS | EMC_READCONFIG)  = EMC_READCONFIG_CMDDELAY;
   __REG (EMC_PHYS | EMC_DYNCFG0)     = SDRAM_CFG_SETUP;
@@ -217,7 +219,8 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
   __REG (EMC_PHYS | EMC_DYNCFG0)     = SDRAM_CFG;
   __REG (EMC_PHYS | EMC_DYNCFG1)     = SDRAM_CFG;
   
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("mov r0, #-1\t\n"
+		  "mov pc, %0" : : "r" (lr));
 }
 
 
@@ -228,7 +231,7 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
 
 */
 
-void  __attribute__((naked, section(".text"))) initialize_target (void)
+void __naked __section(.text) initialize_target (void)
 {
 	/* CompactFlash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;
@@ -240,5 +243,4 @@ void  __attribute__((naked, section(".text"))) initialize_target (void)
   __REG (EMC_PHYS | EMC_STURN2)      = 1;
 
   __asm volatile ("mov pc, lr");
-
 }
