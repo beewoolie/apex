@@ -90,12 +90,22 @@ static unsigned long phys_from_ib (unsigned long ib)
   return ib + ((ib < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
 }
 
+static void vpen_enable (void)
+{
+  __REG16 (CPLD_REG_FLASH) |= FL_VPEN;
+}
+
+static void vpen_disable (void)
+{
+  __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+}
+
 static int nor_probe (void)
 {
   unsigned char manufacturer;
   unsigned char device;
 
-  __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+  vpen_disable ();
 
   __REG16 (NOR_0_PHYS) = ReadArray;
   __REG16 (NOR_0_PHYS) = ReadID;
@@ -266,7 +276,7 @@ static void nor_erase (unsigned long fh, size_t cb)
 
     index &= ~(chip->erase_size - 1);
 
-    __REG16 (CPLD_REG_FLASH) |= FL_VPEN;
+    vpen_enable ();
     __REG16 (index) = Erase;
     __REG16 (index) = EraseConfirm;
 
@@ -274,7 +284,7 @@ static void nor_erase (unsigned long fh, size_t cb)
       status = __REG16 (index);
     } while ((status & Ready) == 0);
     
-    __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+    vpen_disable ();
 
     if (status & EraseError) {
       printf ("Erase failed at 0x%p (%x)\r\n", (void*) index, status);

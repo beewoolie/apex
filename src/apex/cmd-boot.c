@@ -59,7 +59,7 @@ int cmd_boot (int argc, const char** argv)
 
 static __command struct command_d c_boot = {
   .command = "boot",
-  .description = "boot the Linux",
+  .description = "boot Linux",
   .func = cmd_boot,
 };
 

@@ -186,3 +186,12 @@ NAND
  o A rudimentary driver is working.  Reading seems to be OK.  The code
    to write data must come next.
 
+NOR
+
+ o Driver is kinda big and there isn't even a write function.
+ o Can we aggregate some of the common driver logic, descriptors and all?
+ o Available and start address calc can be handled by a function for
+   all cases...maybe.  There is a difference between blocking and
+   banking.  Perhaps it would be good to limit all operations to
+   blocks so that the code can be identical in all cases.
+
