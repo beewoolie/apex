@@ -40,3 +40,7 @@ number, and may followed by a suffix 'm' for for megabytes (1024*1024),
   nand:0	 - Starting with the first byte using the only NAND driver
   nand-eb501:0   - Starting with the first byte using a specific NAND driver
 
+
+*** An @ in a pathname will terminate parsing of the path and begin
+    parsing a region descriptor
+

@@ -5,6 +5,27 @@ APEX Boot Loader
 
 TODO:
 
+  o The default length for descriptors needs to be thought out.  If we
+    set the default length to the greatest length available, then we
+    run into trouble with dump.  We could communicate something about
+    the use to the open call such that the driver knows if it needs to
+    set a default length.  Or we could let the user do something
+    interesting such as giving a @+. to indicate that the maximum
+    length should be used.  The problem is one of use.  In files, the
+    default length is usually going to be the whole file.  In memory
+    regions, the default length is OK where it is.  I think it is best
+    to add a more mode to dump and call it good.  Also, we might need
+    a way to cancel some commands that run awry because of the
+    (possibly) excessive elength.
+
+  o It would be good to add a checksum function that can be compared
+    to a command line tool.  MD5 or SHA1.  We want something that can
+    be small, though.  Grrr.  We could also write a utility that can
+    do the same checksum on the UNIX command line.
+    o Yipee!  The cksfv program does the right thing.
+    o Add to the documentation that the cksfv program can be used to
+    compare checksums.
+
   o Need a function like ls or info that can list the contents of a
     directory or give data on a device.  Perhaps we can overload the
     info function to allow a complete descriptor instead of just a

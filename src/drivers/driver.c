@@ -112,6 +112,10 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       case 0:
 	if (d->rgb[ib] == '/')
 	  ++state;
+	else if (d->rgb[ib] == '@') {
+	  d->rgb[ib] = 0;
+	  goto region_parse;
+	}
 	else {
 	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
@@ -123,6 +127,10 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  ++d->iRoot;
 	  ++state;
 	}
+	else if (d->rgb[ib] == '@') {
+	  d->rgb[ib] = 0;
+	  goto region_parse;
+	}
 	else {
 	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
@@ -132,11 +140,19 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       case 2:
 	if (d->rgb[ib] == '/')
 	  return ERROR_FAILURE;
+	if (d->rgb[ib] == '@') {
+	  d->rgb[ib] = 0;
+	  goto region_parse;
+	}
 	d->rgb[ib] = tolower (d->rgb[ib]);
 	d->pb[d->c++] = &d->rgb[ib];
 	state = 9;
 	break;
       case 9:
+	if (d->rgb[ib] == '@') {
+	  d->rgb[ib] = 0;
+	  goto region_parse;
+	}
 	if (d->rgb[ib] != '/') {
 	  d->rgb[ib] = tolower (d->rgb[ib]);
 	  continue;
@@ -145,13 +161,11 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	state = 2;
       }
     }
-		/* Make sure there is an empty field when there are /'s */
-    if (d->c == 0 && d->rgb[0])
-      d->pb[d->c++] = &d->rgb[ib];
   }
   else 
 #endif
   {			/* Region descriptor parse */
+  region_parse:
     while (sz[ib]) {
       char* pchEnd;
       unsigned long* pl = 0;
@@ -189,6 +203,13 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       }
     }
   }
+
+#if defined (CONFIG_DRIVER_FAT)
+		/* Make sure there is an empty field when there are /'s */
+  if (d->c == 0 && d->rgb[0])
+    d->pb[d->c++] = &d->rgb[ib];
+#endif
+
   return 0;
 }
 

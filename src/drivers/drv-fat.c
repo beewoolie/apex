@@ -59,6 +59,22 @@
      it is read.  However, we don't really care how long it takes to
      find a file.
 
+   o SECTOR_SIZE and parameter.bytes_per_sector
+
+     We cannot handle a sector size that isn't 512 bytes.  So, for the
+     time being, the parameter entry for the size of a sector is
+     ignored.
+
+   o FAT formats
+
+     Only FAT16 is supported.  Others may be, but only when we have a
+     sample to test.
+
+   o FILE I/O
+
+     Information about the current file is cached in the fat info
+     structure.  Thus precluding operations on two files.  Be warned.
+
 */
 
 #include <config.h>
@@ -141,11 +157,13 @@ struct directory {
 
 struct fat_info {
 //  char bootsector[SECTOR_SIZE];	/* *** Superfluous */
-  struct directory root[32];
+//  struct directory root[32];
 
   int fOK;			/* True when the block device recognizabled */
   struct partition partition[4];
   struct parameter parameter;	/* Parameter info for the partition */
+  size_t index_cluster_2;	/* Partition index of first cluster */
+  size_t bytes_per_cluster;	/* Precomputed cluster size */
 
   struct descriptor_d d;	/* Descriptor for underlying driver */
 
@@ -155,6 +173,7 @@ struct fat_info {
   char fat[SECTOR_SIZE];	/* Cached FAT sector  */
   int sector_fat;		/* Sector number of the cached FAT */
 
+  struct directory file;	/* Directory entry for the current file */
   unsigned cluster_file; 	/* Current file cluster being read */
   size_t index_cluster_file;	/* Index at base of the cluster */
 };
@@ -257,18 +276,21 @@ static unsigned fat_next_cluster (unsigned cluster)
 
 /* fat_find
 
-   is most of the meat of this driver.  It takes a descriptor, fat.d
-   having been opened on the partition, and the parameter block read
-   from the partition and it returns the first cluster of the
-   indicated file.  It returns -1 if there is no such file.
+   is a good part of the meat of this driver.  It takes a descriptor,
+   fat.d having been opened on the partition, and the parameter block
+   read from the partition and it find the directory entry of the
+   indicated file.  It returns an error code.
 
    The root directory is simple, a contiguous sequence of directory
    entries.  Subdirectories are themselves files, so the traversal is
    a little more complex.
 
+   Storing of the file information is a side-effect of this call.  The
+   returned cluster number is, really, just informative.  
+
 */
 
-static unsigned fat_find (struct descriptor_d* d)
+static int fat_find (struct descriptor_d* d)
 {
   int i;
 
@@ -278,39 +300,41 @@ static unsigned fat_find (struct descriptor_d* d)
 		       + fat.parameter.reserved_sectors)*SECTOR_SIZE, 
 		      SEEK_SET);
   for (i = 0; i < fat.parameter.root_entries; ++i) {
-    struct directory dir;
     char sz[12];
-    int cbRead = fat.d.driver->read (&fat.d, &dir, sizeof (dir));
-    if (cbRead != sizeof (dir))
+    int cbRead = fat.d.driver->read (&fat.d, &fat.file, sizeof (fat.file));
+    if (cbRead != sizeof (fat.file))
       break;
-    if (dir.attribute == 0xf) {	/* vfat entry */
+    if (fat.file.attribute == 0xf) {	/* vfat entry */
       continue;
     }
-    if (dir.cluster == 0 || !dir.file[0] || dir.file[0] == 0xe5)
+    if (fat.file.cluster == 0
+	|| fat.file.file[0] == 0
+	|| fat.file.file[0] == 0xe5)
       continue;
     {
       int j, k = 0;
       for (j = 0; j < 11; ++j) {
-	if (dir.file[j] != ' ') {
+	if (fat.file.file[j] != ' ') {
 	  if (j == 8)
 	    sz[k++] = '.';
-	  sz[k++] = tolower (dir.file[j]);
+	  sz[k++] = tolower (fat.file.file[j]);
 	}
       }
       sz[k] = 0;
     }
-#if 0
+#if 1
     {
-      unsigned cluster_next = fat_next_cluster (dir.cluster);
+      unsigned cluster_next = fat_next_cluster (fat.file.cluster);
       printf ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n", 
-	      sz, dir.cluster, dir.length, cluster_next, cluster_next);
+	      sz, fat.file.cluster, fat.file.length, 
+	      cluster_next, cluster_next);
     }
 #endif
     if (strcmp (d->pb[d->iRoot], sz) == 0)
-      return dir.cluster;
+      return 0;
   }
 
-  return -1;
+  return ERROR_FILENOTFOUND;
 }
 
 static int fat_open (struct descriptor_d* d)
@@ -363,12 +387,26 @@ static int fat_open (struct descriptor_d* d)
 	/* Read parameter block */
   fat.d.driver->seek (&fat.d, 0, SEEK_SET);
   fat.d.driver->read (&fat.d, &fat.parameter, sizeof (struct parameter));
+  fat.index_cluster_2
+    = (fat.parameter.reserved_sectors
+       + fat.parameter.fats*fat.parameter.sectors_per_fat)
+    *SECTOR_SIZE
+    + fat.parameter.root_entries*32;
+  fat.bytes_per_cluster = fat.parameter.sectors_per_cluster*SECTOR_SIZE;
 
-	/* Open file by finding first cluster */
-  fat.cluster_file = fat_find (d);
+	/* Open file by finding directory entry and thus, the first cluster */
+  result = fat_find (d);
+  fat.cluster_file = fat.file.cluster;
   fat.index_cluster_file = 0;
 
-  return 0;
+  if (d->start > fat.file.length)
+    d->start = fat.file.length;
+  if (d->start + d->length > fat.file.length)
+    d->length = fat.file.length - d->start;
+
+  /* *** Do we want to set the default length to be the whole file?  */
+
+  return result;
 }
 
 static void fat_close (struct descriptor_d* d)
@@ -381,26 +419,53 @@ static void fat_close (struct descriptor_d* d)
 
 static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  ssize_t cbRead;
+  ssize_t cbRead = 0;
 
   ENTRY (0);
 
-  /* *** We have a cluster number and an index that is the base of
-     *** that cluster.  We can now seek in the partition and give the
-     *** user some data to read.  The only hassle is that if the user
-     *** asks for more than can be read from the current cluster, we
-     *** should truncate the read and restart at the next cluster.
-     *** A little ouch-y. */
+  while (cb) {
+    size_t available = cb;
+    size_t index = d->index + d->start;
+    if (index < fat.index_cluster_file) {
+      /* Rewinding not supported   */
+      return -1;
+    }
+    
+    /* Find next cluster */
+    while (index >= fat.index_cluster_file + fat.bytes_per_cluster) {
+      fat.cluster_file = fat_next_cluster (fat.cluster_file);
+      if (fat.cluster_file == 0xffff)
+	return -1;		/* An unrecoverable error */
+      fat.index_cluster_file += fat.parameter.sectors_per_cluster*SECTOR_SIZE;
+    }
 
-  //  printf ("  i %d s %ld l %ld\n", d->index, d->start, d->length);
-  /* We may want to limit the range of the read */
+    /* Bound within the cluster */
+    if (index + available > fat.index_cluster_file + fat.bytes_per_cluster)
+      available = fat.index_cluster_file + fat.bytes_per_cluster - index;
 
-  fat.d.driver->seek (&fat.d, d->index - d->start
-		      + (fat.parameter.sectors_per_fat*fat.parameter.fats
-			 + fat.parameter.reserved_sectors)
-		      *SECTOR_SIZE, SEEK_SET);
-  cbRead = fat.d.driver->read (&fat.d, pv, cb);
-  d->index += cbRead;
+    printf (" fat.idx_clus_2 %d (%x) "
+	    " fat.clus_file %d "
+	    " fat.by_p_clus %d\n"
+	    " idx %d (%x) "
+	    " fat.idx_clus_f %d (%x)\n",
+	    fat.index_cluster_2, fat.index_cluster_2, 
+	    fat.cluster_file,
+	    fat.bytes_per_cluster,
+	    index, index,
+	    fat.index_cluster_file, fat.index_cluster_file);
+
+    fat.d.driver->seek (&fat.d, 
+			fat.index_cluster_2 
+			+ (fat.cluster_file - 2)*fat.bytes_per_cluster
+			+ index - fat.index_cluster_file,
+			SEEK_SET);
+
+    cbRead = fat.d.driver->read (&fat.d, pv, available);
+    if (cbRead <= 0)
+      return cbRead;		/* Unrecoverable error */
+    d->index += cbRead;
+    cb -= cbRead;
+  }
   return cbRead;
 }
 
