@@ -34,9 +34,6 @@
 #include <driver.h>
 #include <service.h>
 
-#define _s(v) #v 
-#define _t(v) _s(v)
-
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM1 root=/dev/hda1 "

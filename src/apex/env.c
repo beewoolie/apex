@@ -51,17 +51,17 @@ static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
 #if defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA)
-    "copy " _t(CONFIG_ENV_REGION_KERNEL) " " _t(CONFIG_KERNEL_LMA) ";"
+    "copy " CONFIG_ENV_REGION_KERNEL " " _t(CONFIG_KERNEL_LMA) ";"
 #endif
 #if defined (CONFIG_ENV_REGION_RAMDISK) && defined (CONFIG_RAMDISK_LMA)
-    "copy " _t(CONFIG_ENV_REGION_RAMDISK) " " _t(CONFIG_RAMDISK_LMA) ";"
+    "copy " CONFIG_ENV_REGION_RAMDISK " " _t(CONFIG_RAMDISK_LMA) ";"
 #endif
 #if defined (CONFIG_ENV_STARTUP)
     CONFIG_ENV_STARTUP
 #endif
 #if defined (CONFIG_ENV_AUTOBOOT)
 # if CONFIG_ENV_AUTOBOOT != 0
-    "wait " _t(CONFIG_ENV_AUTOBOOT) " Press a key to cancel autoboot.;"
+    "wait " CONFIG_ENV_AUTOBOOT " Press a key to cancel autoboot.;"
 # endif
     "boot"
 #endif
@@ -75,7 +75,7 @@ extern struct descriptor_d env_d;
 
 static void env_init (void)
 {
-  if (parse_descriptor (_t(CONFIG_ENV_REGION), &env_d))
+  if (parse_descriptor (CONFIG_ENV_REGION, &env_d))
     return;
   if (env_d.driver->open (&env_d))
     env_d.driver->close (&env_d);

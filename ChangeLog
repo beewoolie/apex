@@ -1,3 +1,8 @@
+2005-03-22  Marc Singer  <elf@buici.com>
+
+	* src/apex/env.c (_s): Fixed references to CONFIG_ macros that may
+	already be quoted.
+
 2005-03-20  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/initialize.c (__section): initializing the SMC

@@ -36,9 +36,6 @@
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 
-#define _s(v) #v 
-#define _t(v) _s(v)
-
 int cmd_version (int argc, const char** argv)
 {
   printf (
@@ -62,7 +59,7 @@ int cmd_version (int argc, const char** argv)
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
 #if defined (CONFIG_ENV_REGION)
-  printf ("  env  => %s\n", _t(CONFIG_ENV_REGION));
+  printf ("  env  => %s\n", CONFIG_ENV_REGION);
 #endif
 #endif
 

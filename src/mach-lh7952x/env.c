@@ -34,9 +34,6 @@
 #include <driver.h>
 #include <service.h>
 
-#define _s(v) #v 
-#define _t(v) _s(v)
-
 #if defined (CONFIG_MACH_LPD79520)
 
 static __env struct env_d e_cmdline = {
