@@ -36,6 +36,7 @@
 
 struct service_d {
   void (*init) (void);
+  void (*report) (void);	/* Informative output from service */
   void (*release) (void);
 };
 

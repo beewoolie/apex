@@ -112,8 +112,8 @@
 
 #define EMC_DYNCFG0	(0x100)
 #define EMC_DYNRASCAS0	(0x104)
-#define EMC_DYNCFG1	(0x108)
-#define EMC_DYNRASCAS1	(0x10c)
+#define EMC_DYNCFG1	(0x120)
+#define EMC_DYNRASCAS1	(0x124)
 
 #define EMC_SCONFIG0	(0x200)
 #define EMC_SWAITWEN0	(0x204)

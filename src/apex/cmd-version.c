@@ -31,6 +31,7 @@
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
+#include <service.h>
 
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
@@ -62,6 +63,20 @@ int cmd_version (int argc, const char** argv)
 
   if (hook_cmd_version)
     hook_cmd_version (argc, argv);
+
+#if !defined (CONFIG_SMALL)
+ {
+   extern char APEX_SERVICE_START;
+   extern char APEX_SERVICE_END;
+   struct service_d* service;
+
+   for (service = (struct service_d*) &APEX_SERVICE_START;
+	service < (struct service_d*) &APEX_SERVICE_END;
+	++service)
+     if (service->report)
+       service->report ();
+ }
+#endif
 
   putchar ('\n');
 

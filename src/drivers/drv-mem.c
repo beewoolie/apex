@@ -39,8 +39,6 @@
 # include <atag.h>
 #endif
 
-//#define TALK
-
 struct mem_region {
   unsigned long start;
   size_t length;
@@ -104,17 +102,22 @@ static void memory_init (void)
 #if defined (CONFIG_MEM_BANK3_START)
   i = memory_scan (i, CONFIG_MEM_BANK3_START, CONFIG_MEM_BANK3_LENGTH);
 #endif
+}
 
-#if defined (TALK)
-  printf ("\r\nmemory\r\n");
+#if !defined (CONFIG_SMALL)
+static void memory_report (void)
+{
+  int i;
+
+  printf ("  mem:\r\n");
 
   for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i)
     if (regions[i].length)
-      printf (" 0x%lx 0x%08x (%d MiB)\r\n", 
+      printf ("    0x%lx 0x%08x (%d MiB)\r\n", 
 	      regions[i].start, regions[i].length, 
 	      regions[i].length/(1024*1024));
-#endif
 }
+#endif
 
 static int memory_open (struct descriptor_d* d)
 {
@@ -157,6 +160,9 @@ static __driver_0 struct driver_d memory_driver = {
 
 static __service_4 struct service_d memory_service = {
   .init = memory_init,
+#if !defined (CONFIG_SMALL)
+  .report = memory_report,
+#endif
 };
 
 
