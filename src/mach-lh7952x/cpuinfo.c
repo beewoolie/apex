@@ -2,7 +2,7 @@
      $Id$
 
    written by Marc Singer
-   3 Feb 2005
+   15 Jan 2005
 
    Copyright (C) 2005 Marc Singer
 
@@ -27,11 +27,10 @@
 
 */
 
-
-#include <apex.h>
 #include <config.h>
-#include "hardware.h"
+#include <apex.h>
 #include <service.h>
+#include "hardware.h"
 
 #if !defined (CONFIG_SMALL)
 
@@ -40,15 +39,29 @@ static void cpuinfo_report (void)
   unsigned long id;
   unsigned long ctrl;
   unsigned long cpsr;
+  unsigned short chipid = __REG16 (RCPC_PHYS + RCPC_CHIPID);
+  char* sz = NULL;
 
-  __asm volatile ("mrc p15,0,%0,c0,c0": "=r" (id));
-  __asm volatile ("mrc p15,0,%0,c1,c0": "=r" (ctrl));
-  __asm volatile ("mrs %0, cpsr": "=r" (cpsr));
-  printf ("  cpu: id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n", id, ctrl, cpsr);
+  switch (chipid>>4) {
+  default   : sz = "lh?"; break;
+  case 0x520: sz = "lh79520"; break;
+  case 0x524: sz = "lh79524"; break;
+  case 0x525: sz = "lh79525"; break;
+  }
+
+  __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));
+  __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
+  __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
+  printf ("  cpu: id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n    chipid 0x%x, %s\n",
+	  id, ctrl, cpsr, chipid, sz);
+
+#if defined (CPLD_REVISION)
+  printf ("  cpld: revision 0x%x\n", CPLD_REVISION);
+#endif
 }
 
 static __service_7 struct service_d cpuinfo_service = {
   .report = cpuinfo_report,
-};
 
+};
 #endif

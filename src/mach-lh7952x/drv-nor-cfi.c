@@ -668,7 +668,6 @@ static void nor_report (void)
 	    chip->region[i].count, 
 	    (chip->region[i].count > 1) ? 's' : ' ',
 	    chip->region[i].size, chip->region[i].size);
-  printf ("\n");
 }
 
 #endif

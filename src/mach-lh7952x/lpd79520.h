@@ -24,6 +24,7 @@
 /* ----- Prototypes */
 
 #define CPLD_FLASH		__REG16 (0x55000000)
+#define CPLD_REVISION		__REG16 (0x55400000)
 #define CPLD_FLASH_VPEN		(1<<0)
 #define CPLD_FLASH_FL_VPEN	CPLD_FLASH_VPEN
 
