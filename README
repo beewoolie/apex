@@ -54,3 +54,11 @@ generate a dumped binary, build the apex.bin target.
 APEX is designed to start from any address and to relocate itself when
 necessary.  If the binary is small enough (less than 16KiB), it may be
 copied to the internal SRAM of the LH79524 and executed from there.
+
+
+  Getting Help
+  ------------
+
+You can send mail directly to me, the author.
+
+  Marc Singer <elf@buici.com>
