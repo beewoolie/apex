@@ -1,3 +1,9 @@
+2005-03-09  Marc Singer  <elf@buici.com>
+
+	* Makefile (ENV_CROSS_COMPILE): Fixed the selection of the cross
+	compiler so that the environment will override the configured
+	value.
+
 2005-03-07  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-ext2.c: ext2 driver is working.  It supports
