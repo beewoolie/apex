@@ -474,11 +474,13 @@ ifeq ($(dot-config),1)
 # oldconfig if changes are detected.
 -include .config.cmd
 
-include .config
+include config 
+#include .config
 
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.
 # To avoid any implicit rule to kick in, define an empty command
+#.config: ;
 .config: ;
 
 # If .config is newer than include/linux/autoconf.h, someone tinkered
@@ -494,7 +496,7 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults vmlinux but it is usually overriden in the arch makefile
-all: apex
+all: include/config.h apex
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 CFLAGS		+= -Os

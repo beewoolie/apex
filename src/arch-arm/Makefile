@@ -16,5 +16,5 @@ libs-y += src/arch-arm/lib/
 
 rom := src/arch-arm/rom
 
-apex.bin apex.srec : apex
+apex.bin apex.srec : include/config.h apex
 	$(Q)$(MAKE) $(build)=$(rom) $(rom)/$@
