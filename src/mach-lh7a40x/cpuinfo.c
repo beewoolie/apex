@@ -39,13 +39,13 @@ static void cpuinfo_report (void)
   unsigned long id;
   unsigned long ctrl;
   unsigned long cpsr;
-  unsigned short csc = CSC_PWRSR;
+  unsigned long csc = CSC_PWRSR;
   char* sz = NULL;
 
   switch (((csc>>CSC_PWRSR_CHIPID_SHIFT) & CSC_PWRSR_CHIPID_MASK) & 0xf0) {
-  default   : sz = "lh?"; break;
-  case 0: sz = "lh7a400"; break;
-  case 2: sz = "lh7a404"; break;
+  default  : sz = "lh?";     break;
+  case 0x00: sz = "lh7a400"; break;
+  case 0x20: sz = "lh7a404"; break;
   }
 
   __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));

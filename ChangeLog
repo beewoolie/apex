@@ -1,5 +1,8 @@
 2005-03-17  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/cpuinfo.c (cpuinfo_report): Fixed the CPUID
+	reporting for the lh7a404.
+
 	* src/mach-lh7a40x/initialize.c: Added hack to the lpd7a40x
 	initialization to enable PCMCIA.  May be a work-around for a NOR
 	flash problem.

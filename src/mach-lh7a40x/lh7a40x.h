@@ -73,9 +73,9 @@
 #define VIC2_PHYS	(0x8000a000)	/* Vectored Interrupt Controller 2 */
 
 
-#define CSC_PWRSR	__REG(CSC_PHYS + 0x00)	/* Power reset */
-#define CSC_PWRCNT	__REG(CSC_PHYS + 0x04)	/* Power control */
-#define CSC_CLKSET	__REG(CSC_PHYS + 0x20)	/* Clock speed control */ 
+#define CSC_PWRSR	__REG (CSC_PHYS + 0x00)	/* Power reset */
+#define CSC_PWRCNT	__REG (CSC_PHYS + 0x04)	/* Power control */
+#define CSC_CLKSET	__REG (CSC_PHYS + 0x20)	/* Clock speed control */ 
 
 #define CSC_PWRSR_CHIPMAN_SHIFT	(24)
 #define CSC_PWRSR_CHIPMAN_MASK	(0xff)
