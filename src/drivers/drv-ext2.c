@@ -249,6 +249,18 @@ enum {
   EXT2_FT_MAX
 };
 
+enum {
+  S_IFMT		= 0170000,
+  S_IFLNK		= 0120000,
+  S_IFREG		= 0100000,
+  S_IFDIR		= 0040000,
+};
+
+#define S_ISLNK(m)      (((m) & S_IFMT) == S_IFLNK)
+#define S_ISREG(m)      (((m) & S_IFMT) == S_IFREG)
+#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
+
+
 #define EXT2_FILENAME_LENGTH_MAX 255
 
 struct directory {
@@ -436,6 +448,10 @@ int ext2_find_inode (int inode)
       != sizeof (struct inode))
     return 1;
 
+  PRINTF ("inode: mode %07o  flags %x  size %d (0x%x)\n", 
+	  ext2.inode.i_mode, ext2.inode.i_flags, 
+	  ext2.inode.i_size, ext2.inode.i_size); 
+
   return 0;
 }
 
@@ -489,9 +505,12 @@ static ssize_t ext2_show_directory (int inode)
   if (ext2_find_inode (inode))
     return -1;
 
+  if (!S_ISDIR (ext2.inode.i_mode))
+    return -1;
+
   /* debug */
-  ext2_update_block_cache (0);
-  dump (ext2.rgbCache, 64, 0);
+  //  ext2_update_block_cache (0);
+  //  dump (ext2.rgbCache, 64, 0);
 
 //  dump ((void*) &ext2.inode, sizeof (ext2.inode), 0);
 
