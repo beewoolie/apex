@@ -7,19 +7,30 @@ Goals
 
   o Simple structure
   o Memory image may be directly written to flash
+    o This may be challenged by structures that have defaults and are
+      later modified.  If we can avoid doing this, then all will be
+      well.
   o Use of tables of pointers to handle features, commands, drivers
   o Driver self-discovery when relevent
   o Small image, less than 16K for basic loader
+    o This will be hard when using the kernel's printf
   o Reasonably configurable at ./configure time
   o Good command line support
   o Code sharing among targets is *not* of the highest priority
   o No assembler files
+    o There is some hand assembly in the start-up, but that's probably
+      unavoidable.
   o No external dependencies aside from a tool chain
-  o Staged execution
+  o Staged execution (see below)
   o Support for over-the-wire and NAND booting--teeny tiny bootstrap
   o Multiple targets
   o May execute from FLASH, XIP
   o Stack storage will be required
+  o Automatically relocating
+    o This is done in the relocate_apex() routine.  It's position
+      independent up to the point that this function executes.
+      Afterward, absolute symbols may be used.  Note that weak
+      symbols, at the moment, cannot be used until after relocation.
 
   o IO descriptor: "device:path"
     o "nor:@0x44000000#0x20000"
@@ -47,18 +58,16 @@ Staged Execution
 
 Configuration parameters
 
-  o Initial base address (may not be necessary)
+  o Initial base address (turns out not to be necessary on ARM)
   o Execution base address
   o Base RAM address for 4K stack, data, BSS
   o Layout of SDRAM memory
 
-
 Parameters
 
   o APEX_STACK - Linker calculated top of stack
-  o APEX_LMA_START - Load memory address for start loader image
-  o APEX_LMA_END - Load memory address for end of loader image
   o APEX_VMA_START - Execution (virtual) memory address for image
+  o APEX_VMA_END   - Linker calculated end of the execution memory image
   o APEX_BSS_START - Linker calculated start of BSS region
   o APEX_BSS_END - Linker calculated End of BSS region
 
@@ -71,13 +80,16 @@ Symbols
   o initialize_bootstrap () - pre-relocate initialization
   o initialize_target () - completion of target (non-driver) initialization
   o setup_c () - prepare C exection environment
+  o after setup_c() we can use traditional C code for the rest of
+    initialization
 
 Drivers
 
   o read/write, block/byte
   o erase
   o status/info
-  o init/detect
+  o init/detect -> probe()
+  o exit -> release()
 
 Basic commands
 

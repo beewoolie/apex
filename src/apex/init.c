@@ -26,14 +26,14 @@ void signon (void)
 {
   printf ("\r\nAPEX Boot Loader\r\n"
 	  "Copyright (c) 2004, Marc Singer\r\n\r\n");
-
-  printf ("apex> ");
-  while (1)
-    ;
 }
 
 void init (void)
 {
   init_drivers ();
   signon ();
+
+  printf ("apex> ");
+  while (1)
+    ;
 }
