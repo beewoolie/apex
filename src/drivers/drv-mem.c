@@ -16,6 +16,7 @@
 
 #include <driver.h>
 #include <linux/string.h>
+#include <apex.h>
 
 struct mem_descriptor {
   void* pv;
@@ -33,7 +34,7 @@ static int memory_probe (void)
   return 0;			/* Present and initialized */
 }
 
-static unsigned long memory_open (const char* sz)
+static unsigned long memory_open (struct open_d* d)
 {
   int fh;
 
@@ -44,9 +45,9 @@ static unsigned long memory_open (const char* sz)
   if (fh >= sizeof (descriptors)/sizeof(struct mem_descriptor))
     return -1;
 
-  descriptors[fh].pv = NULL;
-  descriptors[fh].cb = 4096;
-  descriptors[fh].pv = 0;
+  descriptors[fh].pv = (void*) d->start;
+  descriptors[fh].cb = d->length;
+  descriptors[fh].ib = 0;
       
   return fh;
 }

@@ -43,8 +43,11 @@ void call_command (int argc, const char** argv)
 	break;
     }
   }
-  if (command_match)
-    command_match->func (argc, argv);
+  if (command_match) {
+    int result = command_match->func (argc, argv);
+    if (result)
+      printf ("Error %d\r\n", result);
+  }
 }
 
 

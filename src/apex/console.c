@@ -21,19 +21,15 @@
 
 struct driver_d* console_driver;
 
-#if 0
 int puts (const char* fmt)
 {
   return console_driver->write (0, fmt, strlen (fmt));
 }
-#endif
 
-#if 0
 int putchar (int ch)
 {
   return console_driver->write (0, &ch, 1);
 }
-#endif
 
 int read_command (int* pargc, const char*** pargv)
 {
@@ -49,9 +45,12 @@ int read_command (int* pargc, const char*** pargv)
       console_driver->write (0, "\r\n", 2);
       break;
     case '\b':
-      if (cb--)
+      if (cb) {
 	console_driver->write (0, "\b \b", 3);
-      --cb;			/* Stay at the start */
+	cb -= 2;
+      }
+      else
+	--cb;			/* Stay at the start */
       break;
     case '\x15':		/* ^U */
       while (cb--)
