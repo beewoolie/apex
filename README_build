@@ -18,5 +18,7 @@ the build.
 
 So, envmagic and all of any relevent components of the build process
 will ignore directories that are called .svn or begin with an
-underscore.
+underscore.  It also ignores files that begin with '.#' which are
+created by emacs.
+
 
