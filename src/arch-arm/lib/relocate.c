@@ -29,6 +29,11 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+
+#if defined (CONFIG_MACH_IXP42X)
+# include <mach/hardware.h>
+#endif
+
 #include <debug_ll.h>
 
 
@@ -52,13 +57,11 @@ void __naked __section (.bootstrap) relocate_apex (void)
   unsigned long lr;
 
   PUTC_LL ('R');
-  __asm volatile ("mov r0, lr\n\t"
+  __asm volatile ("mov %1, lr\n\t"
 		  "bl reloc\n\t"
 	   "reloc: subs %0, %2, lr\n\t"
 	   ".globl reloc\n\t"
-		  "moveq pc, r0\n\t"	/* Return when already reloc'd  */
-		  "mov %2, r0\n\t"
-		  "mov %1, lr\n\t"
+		  "moveq pc, %1\n\t"	/* Return when already reloc'd  */
 		  : "=r" (offset), "=r" (lr)
 		  : "r" (&reloc)
 		  : "r0", "lr");
@@ -84,6 +87,17 @@ void __naked __section (.bootstrap) relocate_apex (void)
   PUTHEX_LL (*(unsigned long*) (offset + lr));
 
   PUTC_LL ('j');
+
+#if defined (CONFIG_MACH_IXP42X)
+	/* Drain write buffer */
+  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+//  COPROCESSOR_WAIT;
+
+	/* Invalidate caches (I&D) and branch buffer (BTB) */
+  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+  COPROCESSOR_WAIT;
+#endif
+
 				/* Return to SDRAM */
   __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
 }

@@ -126,35 +126,23 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
      *** necessary as we don't allow warm resets.  This is here until
      *** we get a working loader. */
 
-     	/* Fixup the CP15 control word.  This is done for the cases
-	   where we are bootstrapping from redboot which does not
-	   cleanup before jumping to code.  */
-  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
-		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
-//		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
-//		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
-//		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
-//		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
-		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
-  COPROCESSOR_WAIT;
-
 	/* Disable interrupts and set supervisor mode */
-  //  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
+  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
 	/* Drain write buffer */
-//  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-//  COPROCESSOR_WAIT;
+  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+  COPROCESSOR_WAIT;
 
 	/* Invalidate caches (I&D) and branch buffer (BTB) */
-  //  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
-  //  COPROCESSOR_WAIT;
+  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+  COPROCESSOR_WAIT;
 
 	/* Invalidate TLBs (I&D) */
-  //  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
-  //  COPROCESSOR_WAIT;
+  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
+  COPROCESSOR_WAIT;
 
 	/* Disable write buffer coalescing */
-#if 0
+#if 1
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t" 
@@ -165,6 +153,19 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   COPROCESSOR_WAIT;
 #endif
+
+     	/* Fixup the CP15 control word.  This is done for the cases
+	   where we are bootstrapping from redboot which does not
+	   cleanup before jumping to code.  */
+  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
+		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
+//		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
+		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
+//		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
+		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
+		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
+  COPROCESSOR_WAIT;
+
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
@@ -216,6 +217,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     PUTC_LL ('#');
   }
   else {
+    PUTC_LL ('n');
     _L(LED2);
 
     /* Non-boot mode */
@@ -224,6 +226,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "movls pc, %0\n\t"
 		    : : "r" (lr), "i" (0x40000000));
   }
+
+  PUTC_LL ('X');
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 
