@@ -294,11 +294,13 @@ static int cmd_codec_test (int argc, const char** argv)
     while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
       ;
     __REG (SSP_PHYS + SSP_DR) = ((rgbPCM[i] << 8)|rgbPCM[i]);
+    //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i]>>1)<<7;
 				/* Wait for room in the FIFO */
     //    while ((__REG (SSP_PHYS + SSP_SR) & SSP_SR_TNF) == 0)
     //      ;
     //    __REG (SSP_PHYS + SSP_DR) = (rgbPCM[i] << 8)|rgbPCM[i];
   }
+//  __REG (SSP_PHYS + SSP_DR) = 0x7f7f;
   return 0;
 }
 
