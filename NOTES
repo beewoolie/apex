@@ -5,6 +5,12 @@ APEX Boot Loader
 
 TODO:
 
+  o We can write an erase function that can cope with erasing a
+    portion of a flash block.  Actually, not really too hard.
+
+  o Dump command needs a MORE mode.  Or, we need to limit the extent
+    of the dump. 
+
   o Let's add a target to build all
     o We should be able to build all of the default configurations
     o Then, output of each binary is proof that build works
