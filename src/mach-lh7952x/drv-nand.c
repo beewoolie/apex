@@ -43,12 +43,6 @@
 #define CPLD_REG_FLASH	(0x4c800000)
 #define RDYnBSY		(1<<2)
 
-struct nand_descriptor {
-  size_t ibStart;
-  size_t cb;
-  size_t ib;
-};
-
 struct nand_chip {
   unsigned char device;
   unsigned long total_size;
@@ -60,8 +54,6 @@ const static struct nand_chip chips[] = {
 };
 
 const static struct nand_chip* chip;
-
-static struct nand_descriptor descriptors[2];
 
 static void wait_on_busy (void)
 {
@@ -111,47 +103,29 @@ static int nand_probe (void)
   return chip == NULL;		/* Present and initialized */
 }
 
-static unsigned long nand_open (struct open_d* d)
+static int nand_open (struct descriptor_d* d)
 {
-  int fh;
-
   if (!chip)
     return -1;
 
-  for (fh = 0; fh < sizeof (descriptors)/sizeof(struct nand_descriptor); ++fh)
-    if (descriptors[fh].cb == 0)
-      break;
+  /* Perform bounds check */
 
-  if (fh >= sizeof (descriptors)/sizeof(struct nand_descriptor))
-    return -1;
-
-  descriptors[fh].ibStart = d->start;
-  descriptors[fh].cb = d->length;
-  descriptors[fh].ib = 0;
-      
-  /* *** FIXME: bounding of the cb is a good idea here */
-
-  return fh;
+  return 0;
 }
 
-static void nand_close (unsigned long fh)
-{
-  descriptors[fh].cb = 0;
-} 
-
-static ssize_t nand_read (unsigned long fh, void* pv, size_t cb)
+static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
 
   if (!chip)
     return cbRead;
 
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   while (cb) {
-    unsigned long page  = (descriptors[fh].ibStart + descriptors[fh].ib)/512;
-    int index = (descriptors[fh].ibStart + descriptors[fh].ib)%512;
+    unsigned long page  = (d->start + d->index)/512;
+    int index = (d->start + d->index)%512;
     int available = 512 - index;
 
     if (available > cb)
@@ -160,7 +134,7 @@ static ssize_t nand_read (unsigned long fh, void* pv, size_t cb)
     //    printf ("nand-read %ld page  %d index  %d available\r\n",
     //	    page, index, available);
 
-    descriptors[fh].ib += available;
+    d->index += available;
     cb -= available;
     cbRead += available;
 
@@ -178,19 +152,19 @@ static ssize_t nand_read (unsigned long fh, void* pv, size_t cb)
   return cbRead;
 }
 
-static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
+static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int cbWrote = 0;
 
   if (!chip)
     return cbWrote;
 
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   while (cb) {
-    unsigned long page  = descriptors[fh].ib/512;
-    unsigned long index = descriptors[fh].ib%512;
+    unsigned long page  = d->index/512;
+    unsigned long index = d->index%512;
     int available = 512 - index;
     int tail;
 
@@ -206,7 +180,7 @@ static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
     while (index--)	   /* Skip to the portion we want to change */
       __REG8 (NAND_DATA) = 0xff;
 
-    descriptors[fh].ib += available;
+    d->index += available;
     cb -= available;
     cbWrote += available;
 
@@ -230,16 +204,18 @@ static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
   return cbWrote;
 }
 
-static void nand_erase (unsigned long fh, size_t cb)
+static void nand_erase (struct descriptor_d* d, size_t cb)
 {
   if (!chip)
     return;
 
-  if (cb > descriptors[fh].ib + descriptors[fh].cb)
-    cb = descriptors[fh].cb + descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   do {
-    unsigned long block = descriptors[fh].ib/chip->erase_size;
+    unsigned long block = d->index/chip->erase_size;
+    unsigned long step
+      = chip->erase_size - (d->index & ~(chip->erase_size - 1));
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = (block & 0xff);
@@ -254,39 +230,15 @@ static void nand_erase (unsigned long fh, size_t cb)
       return;
     }
 
-    if (cb > chip->erase_size) {
-      cb -= chip->erase_size;	/* *** FIXME round properly!  */
-      descriptors[fh].ib += chip->erase_size;
+    if (step < cb) {
+      cb -= step;
+      d->index += step;
     }
     else {
       cb = 0;
-      descriptors[fh].ib = descriptors[fh].cb;
+      d->index = d->length;
     }
   } while (cb > 0);
-}
-
-
-static size_t nand_seek (unsigned long fh, ssize_t ib, int whence)
-{
-  switch (whence) {
-  case SEEK_SET:
-    break;
-  case SEEK_CUR:
-    ib += descriptors[fh].ib;
-    break;
-  case SEEK_END:
-    ib = descriptors[fh].cb - ib;
-    break;
-  }
-
-  if (ib < 0)
-    ib = 0;
-  if (ib > descriptors[fh].cb)
-    ib = descriptors[fh].cb;
-
-  descriptors[fh].ib = ib;
-
-  return (size_t) ib;
 }
 
 
@@ -296,10 +248,10 @@ static __driver_3 struct driver_d nand_driver = {
   //  .flags = DRIVER_ | DRIVER_CONSOLE,
   .probe = nand_probe,
   .open = nand_open,
-  .close = nand_close,
+  .close = close_descriptor,
   .read = nand_read,
   .write = nand_write,
   .erase = nand_erase,
-  .seek = nand_seek,
+  .seek = seek_descriptor,
 };
 

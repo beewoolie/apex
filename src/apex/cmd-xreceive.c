@@ -19,12 +19,11 @@
 #include <driver.h>
 #include <error.h>
 
-extern int xmodem_receive (struct open_d*, int);
+extern int xmodem_receive (struct descriptor_d*);
 
 int cmd_xreceive (int argc, const char** argv)
 {
-  struct open_d d;
-  unsigned long fh;
+  struct descriptor_d d;
   int result;
 
   if (argc != 2)
@@ -38,16 +37,17 @@ int cmd_xreceive (int argc, const char** argv)
   if (!d.length)
     d.length = DRIVER_LENGTH_MAX;
 
-  fh = open_descriptor (&d);
-  if (fh == -1)
+  if (d.driver->open (&d)) {
+    d.driver->close (&d);
     return ERROR_OPEN;
+  }
   
   {
-    int cbRead = xmodem_receive (&d, fh);
+    int cbRead = xmodem_receive (&d);
     printf ("%d bytes received\r\n", cbRead);
   }
   
-  close_descriptor (&d);
+  d.driver->close (&d);
 
   return 0;
 }

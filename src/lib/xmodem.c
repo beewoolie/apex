@@ -88,7 +88,7 @@ static int _receive (unsigned int timeout)
   return -1;
 }
 
-int xmodem_receive (struct open_d* d, int fh)
+int xmodem_receive (struct descriptor_d* d)
 {
   unsigned int errors = 0;
   unsigned int wantBlockNo = 1;
@@ -237,7 +237,7 @@ int xmodem_receive (struct open_d* d, int fh)
     }
 #endif
 
-    if (d->driver->write (fh, rgbXmodem, blockLength) < blockLength) {
+    if (d->driver->write (d, rgbXmodem, blockLength) < blockLength) {
       ERROR ("out of space\n");
       return -1;		/* There's nothing else we can do */
     }

@@ -47,12 +47,12 @@ int lh79524_serial_probe (void)
   return 0;			/* Present and initialized */
 }
 
-ssize_t lh79524_serial_poll (unsigned long fh, size_t cb)
+ssize_t lh79524_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb ? ((__REG (UART + UART_FR) & UART_FR_RXFE) ? 0 : 1) : 0;
 }
 
-ssize_t lh79524_serial_read (unsigned long fh, void* pv, size_t cb)
+ssize_t lh79524_serial_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cRead = 0;
   unsigned char* pb;
@@ -72,7 +72,8 @@ ssize_t lh79524_serial_read (unsigned long fh, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t lh79524_serial_write (unsigned long fh, const void* pv, size_t cb)
+ssize_t lh79524_serial_write (struct descriptor_d* d, 
+			      const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;
   const unsigned char* pb = pv;

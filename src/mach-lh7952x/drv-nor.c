@@ -68,12 +68,6 @@
 #define ProgramSuspended (1<<2)
 #define DeviceProtected	(1<<1)
 
-struct nor_descriptor {
-  size_t ibStart;
-  size_t cb;
-  size_t ib;
-};
-
 struct nor_chip {
   unsigned char manufacturer;
   unsigned char device;
@@ -82,12 +76,10 @@ struct nor_chip {
 };
 
 const static struct nor_chip chips[] = {
-  { 0xb0, 0x18, 16*1024*1024, 128*1024 },
+  { 0xb0, 0x18, 16*1024*1024, 128*1024 }, /* LH28F128SPHTD */
 };
 
 const static struct nor_chip* chip;
-
-static struct nor_descriptor descriptors[2];
 
 static unsigned long phys_from_ib (unsigned long ib)
 {
@@ -145,53 +137,34 @@ static int nor_probe (void)
   return chip == NULL;		/* Present and initialized */
 }
 
-
-static unsigned long nor_open (struct open_d* d)
+static int nor_open (struct descriptor_d* d)
 {
-  int fh;
-
   if (!chip)
     return -1;
 
-  for (fh = 0; fh < sizeof (descriptors)/sizeof(struct nor_descriptor); ++fh)
-    if (descriptors[fh].cb == 0)
-      break;
+  /* perform bounds check */
 
-  if (fh >= sizeof (descriptors)/sizeof(struct nor_descriptor))
-    return -1;
-
-  descriptors[fh].ibStart = d->start;
-  descriptors[fh].cb = d->length;
-  descriptors[fh].ib = 0;
-      
-  /* *** FIXME: bounding of the cb is a good idea here */
-
-  return fh;
+  return 0;
 }
 
-static void nor_close (unsigned long fh)
-{
-  descriptors[fh].cb = 0;
-} 
-
-static ssize_t nor_read (unsigned long fh, void* pv, size_t cb)
+static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
 
   if (!chip)
     return cbRead;
 
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   while (cb) {
-    unsigned long index = descriptors[fh].ibStart + descriptors[fh].ib;
+    unsigned long index = d->start + d->index;
     int available = cb;
     if (index < NOR_0_LENGTH && index + available > NOR_0_LENGTH)
       available = NOR_0_LENGTH - index;
     index = phys_from_ib (index);
 
-    descriptors[fh].ib += available;
+    d->index += available;
     cb -= available;
     cbRead += available;
 
@@ -261,17 +234,17 @@ static ssize_t nor_write (unsigned long fh, const void* pv, size_t cb)
 
 #endif
 
-static void nor_erase (unsigned long fh, size_t cb)
+static void nor_erase (struct descriptor_d* d, size_t cb)
 {
   if (!chip)
     return;
 
-  if (cb > descriptors[fh].ib + descriptors[fh].cb)
-    cb = descriptors[fh].cb + descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
   while (cb > 0) {
     unsigned long index
-      = phys_from_ib (descriptors[fh].ibStart + descriptors[fh].ib);
+      = phys_from_ib (d->start + d->index);
     unsigned long available
       = ((index + chip->erase_size)&~(chip->erase_size - 1)) - index;
     unsigned short status; 
@@ -297,33 +270,10 @@ static void nor_erase (unsigned long fh, size_t cb)
     }
 
     cb -= available;
-    descriptors[fh].ib += cb;
+    d->index += cb;
 
     __REG16 (index) = ReadArray;
   }
-}
-
-static size_t nor_seek (unsigned long fh, ssize_t ib, int whence)
-{
-  switch (whence) {
-  case SEEK_SET:
-    break;
-  case SEEK_CUR:
-    ib += descriptors[fh].ib;
-    break;
-  case SEEK_END:
-    ib = descriptors[fh].cb - ib;
-    break;
-  }
-
-  if (ib < 0)
-    ib = 0;
-  if (ib > descriptors[fh].cb)
-    ib = descriptors[fh].cb;
-
-  descriptors[fh].ib = ib;
-
-  return (size_t) ib;
 }
 
 static __driver_3 struct driver_d nor_driver = {
@@ -331,10 +281,10 @@ static __driver_3 struct driver_d nor_driver = {
   .description = "NOR flash driver",
   .probe = nor_probe,
   .open = nor_open,
-  .close = nor_close,
+  .close = close_descriptor,
   .read = nor_read,
   //  .write = nor_write,
   .erase = nor_erase,
-  .seek = nor_seek,
+  .seek = seek_descriptor,
 };
 

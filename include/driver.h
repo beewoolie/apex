@@ -23,12 +23,12 @@
 
 struct driver_d;
 
-struct open_d {
-  int fh;			/* file handle */
+struct descriptor_d {
   struct driver_d* driver;
   char driver_name[16];
   unsigned long start;
   unsigned long length;
+  size_t index;
 };
 
 #define DRIVER_LENGTH_MAX	(0x7fffffff)
@@ -52,13 +52,13 @@ struct driver_d {
   unsigned long flags;
   void* priv;			/* Driver's private data */
   int           (*probe) (void);
-  unsigned long (*open)  (struct open_d*);
-  void		(*close) (unsigned long fd);
-  ssize_t	(*read)  (unsigned long fd, void* pv, size_t cb);
-  ssize_t	(*write) (unsigned long fd, const void* pv, size_t cb);
-  ssize_t	(*poll)  (unsigned long fh, size_t cb);
-  void		(*erase) (unsigned long fd, size_t cb);
-  size_t	(*seek)  (unsigned long fd, ssize_t cb, int whence);
+  int		(*open)  (struct descriptor_d*);
+  void		(*close) (struct descriptor_d*);
+  ssize_t	(*read)  (struct descriptor_d*, void* pv, size_t cb);
+  ssize_t	(*write) (struct descriptor_d*, const void* pv, size_t cb);
+  ssize_t	(*poll)  (struct descriptor_d*, size_t cb);
+  void		(*erase) (struct descriptor_d*, size_t cb);
+  size_t	(*seek)  (struct descriptor_d*, ssize_t cb, int whence);
   void		(*info)  (void); /* User information request */
 };
 
@@ -72,8 +72,9 @@ struct driver_d {
 
 /* ----- Prototypes */
 
-extern int parse_descriptor (const char* sz, struct open_d* descriptor);
-extern int open_descriptor (struct open_d* descriptor);
-extern void close_descriptor (struct open_d* descriptor);
+extern void close_descriptor (struct descriptor_d* d);
+extern int is_descriptor_open (struct descriptor_d* d);
+extern int parse_descriptor (const char* sz, struct descriptor_d* d);
+extern size_t seek_descriptor (struct descriptor_d* d, ssize_t ib, int whence);
 
 #endif  /* __DRIVER_H__ */

@@ -18,47 +18,56 @@
 #include <error.h>
 #include <apex.h>
 
-int parse_descriptor (const char* sz, struct open_d* descriptor)
+void close_descriptor (struct descriptor_d* d)
+{
+  d->length = 0;
+}
+
+int is_descriptor_open (struct descriptor_d* d)
+{
+  return d->length != 0;
+}
+
+int parse_descriptor (const char* sz, struct descriptor_d* d)
 {
   size_t cb;
   size_t ib;
 
-  memset (descriptor, 0, sizeof (*descriptor));
-  descriptor->fh = -1;
+  memset (d, 0, sizeof (*d));
 
   ib = cb = strcspn (sz, ":");
   if (sz[ib] == ':') {
     cb = ++ib;
-    if (cb > sizeof (descriptor->driver_name))
-      cb = sizeof (descriptor->driver_name);
-    strlcpy (descriptor->driver_name, sz, cb);
+    if (cb > sizeof (d->driver_name))
+      cb = sizeof (d->driver_name);
+    strlcpy (d->driver_name, sz, cb);
   }
   else {
-    strcpy (descriptor->driver_name, "memory");
+    strcpy (d->driver_name, "memory");
     ib = 0;
   }
-  cb = strlen (descriptor->driver_name);
+  cb = strlen (d->driver_name);
 
   {
     extern char APEX_DRIVER_START;
     extern char APEX_DRIVER_END;
-    struct driver_d* d;
-    struct driver_d* d_match = NULL;
-    for (d = (struct driver_d*) &APEX_DRIVER_START;
-	 d < (struct driver_d*) &APEX_DRIVER_END;
-	 ++d) {
-      if (d->name && strnicmp (descriptor->driver_name, d->name, cb) == 0) {
-	if (d_match)
+    struct driver_d* driver;
+    struct driver_d* driver_match = NULL;
+    for (driver = (struct driver_d*) &APEX_DRIVER_START;
+	 driver < (struct driver_d*) &APEX_DRIVER_END;
+	 ++driver) {
+      if (driver->name && strnicmp (d->driver_name, driver->name, cb) == 0) {
+	if (driver_match)
 	  return ERROR_AMBIGUOUS;
-	d_match = d;
-	if (descriptor->driver_name[cb] == 0)
+	driver_match = driver;
+	if (d->driver_name[cb] == 0)
 	  break;
       }
     }
-    descriptor->driver = d_match;
+    d->driver = driver_match;
   }
 
-  if (!descriptor->driver)
+  if (!d->driver)
     return ERROR_NODRIVER;
 
   while (sz[ib]) {
@@ -67,12 +76,12 @@ int parse_descriptor (const char* sz, struct open_d* descriptor)
     case '@':
       ++ib;
     case '0'...'9':
-      descriptor->start = simple_strtoul (sz + ib, &pchEnd, 0);
+      d->start = simple_strtoul (sz + ib, &pchEnd, 0);
       ib = pchEnd - sz;
       break;
     case '#':
       ++ib;
-      descriptor->length = simple_strtoul (sz + ib, &pchEnd, 0);
+      d->length = simple_strtoul (sz + ib, &pchEnd, 0);
       ib = pchEnd - sz;
       break;
     default:
@@ -84,13 +93,25 @@ int parse_descriptor (const char* sz, struct open_d* descriptor)
   return 0;
 }
 
-int open_descriptor (struct open_d* descriptor)
+size_t seek_descriptor (struct descriptor_d* d, ssize_t ib, int whence)
 {
-  return (descriptor->fh = descriptor->driver->open (descriptor));
-}
+  switch (whence) {
+  case SEEK_SET:
+    break;
+  case SEEK_CUR:
+    ib += d->index;
+    break;
+  case SEEK_END:
+    ib = d->length - ib;
+    break;
+  }
 
-void close_descriptor (struct open_d* descriptor)
-{
-  if (descriptor->fh != -1)
-    descriptor->driver->close (descriptor->fh);
+  if (ib < 0)
+    ib = 0;
+  if (ib > d->length)
+    ib = d->length;
+
+  d->index = ib;
+
+  return (size_t) ib;
 }

@@ -22,10 +22,8 @@
 
 int cmd_copy (int argc, const char** argv)
 {
-  struct open_d din;
-  struct open_d dout;
-  unsigned long fhIn;
-  unsigned long fhOut;
+  struct descriptor_d din;
+  struct descriptor_d dout;
   int result;
   ssize_t cbCopy = 0;
 
@@ -48,12 +46,9 @@ int cmd_copy (int argc, const char** argv)
   if (!dout.length)
     dout.length = DRIVER_LENGTH_MAX;
 
-  fhIn = open_descriptor (&din);
-  if (fhIn == -1)
-    return ERROR_OPEN;
-  fhOut = open_descriptor (&dout);
-  if (fhOut == -1) {
-    close_descriptor (&din);
+  if (din.driver->open (&din) || dout.driver->open (&dout)) {
+    din.driver->close (&din);
+    dout.driver->close (&dout);
     return ERROR_OPEN;
   }
 
@@ -61,13 +56,13 @@ int cmd_copy (int argc, const char** argv)
     char rgb[512];
     ssize_t cb;
 
-    for (; (cb = din.driver->read (fhIn, rgb, sizeof (rgb))) > 0;
+    for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
 	 cbCopy += cb)
-      dout.driver->write (fhOut, rgb, cb);
+      dout.driver->write (&dout, rgb, cb);
   }
 
-  close_descriptor (&din);
-  close_descriptor (&dout);
+  din.driver->close (&din);
+  dout.driver->close (&dout);
 
   printf ("%d bytes transferred\r\n", cbCopy);
 

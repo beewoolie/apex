@@ -23,19 +23,12 @@
 # include <atag.h>
 #endif
 
-struct mem_descriptor {
-  void* pv;
-  size_t cb;
-  size_t ib;
-};
-
 struct mem_region {
   unsigned long start;
   size_t length;
 };
 
 static struct mem_region regions[32];
-static struct mem_descriptor descriptors[2];
 
 #define CB_BLOCK	     (1024*1024)
 
@@ -105,85 +98,44 @@ static int memory_probe (void)
   return 0;			/* Present and initialized */
 }
 
-static unsigned long memory_open (struct open_d* d)
+static int memory_open (struct descriptor_d* d)
 {
-  int fh;
-
-  for (fh = 0; fh < sizeof (descriptors)/sizeof(struct mem_descriptor); ++fh)
-    if (descriptors[fh].cb == 0)
-      break;
-
-  if (fh >= sizeof (descriptors)/sizeof(struct mem_descriptor))
-    return -1;
-
-  descriptors[fh].pv = (void*) d->start;
-  descriptors[fh].cb = d->length;
-  descriptors[fh].ib = 0;
-      
-  return fh;
+  /* Should do a bounds check */
+  return 0;			/* OK */
 }
 
-static void memory_close (unsigned long fh)
+static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  descriptors[fh].cb = 0;
-} 
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
-static ssize_t memory_read (unsigned long fh, void* pv, size_t cb)
-{
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
-
-  memcpy (pv, descriptors[fh].pv + descriptors[fh].ib, cb);
-  descriptors[fh].ib += cb;
+  memcpy (pv, (void*) (d->start + d->index), cb);
+  d->index += cb;
   
   return cb;
 }
 
-static ssize_t memory_write (unsigned long fh, const void* pv, size_t cb)
+static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
-  if (descriptors[fh].ib + cb > descriptors[fh].cb)
-    cb = descriptors[fh].cb - descriptors[fh].ib;
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
 
-  memcpy (descriptors[fh].pv + descriptors[fh].ib, pv, cb);
-  descriptors[fh].ib += cb;
+  memcpy ((void*) (d->start + d->index), pv, cb);
+  d->index += cb;
   
   return cb;
-}
-
-static size_t memory_seek (unsigned long fh, ssize_t ib, int whence)
-{
-  switch (whence) {
-  case SEEK_SET:
-    break;
-  case SEEK_CUR:
-    ib += descriptors[fh].ib;
-    break;
-  case SEEK_END:
-    ib = descriptors[fh].cb - ib;
-    break;
-  }
-
-  if (ib < 0)
-    ib = 0;
-  if (ib > descriptors[fh].cb)
-    ib = descriptors[fh].cb;
-
-  descriptors[fh].ib = ib;
-
-  return (size_t) ib;
 }
 
 
 static __driver_0 struct driver_d memory_driver = {
   .name = "memory",
   .description = "memory driver (SDRAM/DRAM/SRAM)",
-  //  .flags = DRIVER_ | DRIVER_CONSOLE,
   .probe = memory_probe,
   .open = memory_open,
-  .close = memory_close,
+  .close = close_descriptor,
   .read = memory_read,
   .write = memory_write,
-  .seek = memory_seek,
+  .seek = seek_descriptor,
 };
 
 

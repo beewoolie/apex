@@ -22,8 +22,7 @@
 
 int cmd_erase (int argc, const char** argv)
 {
-  struct open_d d;
-  unsigned long fh;
+  struct descriptor_d d;
   int result;
 
   if (argc != 2)
@@ -40,13 +39,14 @@ int cmd_erase (int argc, const char** argv)
   if (!d.length)
     d.length = 1;
 
-  fh = open_descriptor (&d);
-  if (fh == -1)
+  if (d.driver->open (&d)) {
+    d.driver->close (&d);
     return ERROR_OPEN;
+  }
 
-  d.driver->erase (fh, d.length);
+  d.driver->erase (&d, d.length);
 
-  close_descriptor (&d);
+  d.driver->close (&d);
 
   return 0;
 }
