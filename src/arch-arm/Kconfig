@@ -125,7 +125,7 @@ config NAND_BOOT
 endchoice
 
 config AUTOBOOT
-	bool "Automatically boot operating system."
+	bool "Automatically boot operating system"
 	default n
 
 config AUTOBOOT_DELAY

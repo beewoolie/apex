@@ -78,7 +78,7 @@ config NOR_BANK0_LENGTH
 config NOR_BANK1
 	bool "Enable NOR flash bank 1"
 	depends on NOR_BANK0
-	default y
+	default y if MACH_LPD79524
 
 config NOR_BANK1_START
 	hex "Physical address of NOR flash bank 1"
@@ -92,7 +92,7 @@ config NOR_BANK1_LENGTH
 
 config NAND_LPD
 	bool "Enable LPD enhanced NAND flash access"
-	default y
+	default y if MACH_LPD79524
 	help
 	  This options enables a mode for accessing NAND flash that
 	  makes it possible to read NAND flash, NOR flash, and
