@@ -29,6 +29,8 @@
 
 #define WARN_ON(v) 
 
+#define SMALL
+
 /**
  * simple_strtoul - convert a string to an unsigned long
  * @cp: The start of the string
@@ -259,6 +261,9 @@ static char * number(char * buf, char * end, unsigned long long num, int base, i
  */
 int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 {
+#if defined (SMALL)
+  return 0;
+#else
 	int len;
 	unsigned long long num;
 	int i, base;
@@ -492,9 +497,12 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 	* ++str;
 	*/
 	return str-buf;
+#endif
 }
 
 EXPORT_SYMBOL(vsnprintf);
+
+#if !defined (SMALL)
 
 /**
  * vscnprintf - Format a string and place it in a buffer
@@ -519,6 +527,8 @@ int vscnprintf(char *buf, size_t size, const char *fmt, va_list args)
 }
 
 EXPORT_SYMBOL(vscnprintf);
+
+#endif
 
 /**
  * snprintf - Format a string and place it in a buffer
@@ -545,6 +555,8 @@ int snprintf(char * buf, size_t size, const char *fmt, ...)
 
 EXPORT_SYMBOL(snprintf);
 
+#if !defined (SMALL)
+
 /**
  * scnprintf - Format a string and place it in a buffer
  * @buf: The buffer to place the result into
@@ -568,6 +580,8 @@ int scnprintf(char * buf, size_t size, const char *fmt, ...)
 	return (i >= size) ? (size - 1) : i;
 }
 EXPORT_SYMBOL(scnprintf);
+
+#endif
 
 /**
  * vsprintf - Format a string and place it in a buffer
