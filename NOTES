@@ -3,6 +3,15 @@ Apex -- Arm Boot Loader
 NOTES
 =======================
 
+TODO:
+
+  o writable environment
+  o blob write command from SDRAM 
+  o driver info functions, especially memory
+  o look for more unused symbols
+  o Doc on XIP kernel?  We *can* linux run completely from flash
+  o relocate_apex for NAND flash 
+
 Goals
 
   o Simple structure
@@ -165,6 +174,7 @@ Code Size
    parameter and folding the descriptor functionality into a single
    structure.  This also means that the open call can be global as can
    seek.
+   o Done.
 
 Toolchain
 
@@ -186,16 +196,14 @@ Glitches
    device, switched to the other bank, and finally unlock/erase
    worked.  I think it might be wise to operate the VPEN line in the
    flash driver.
-
-NAND
-
- o A rudimentary driver is working.  Reading seems to be OK.  The code
-   to write data must come next.
+   o I think that this might be part of a problem with writing to
+     flash when VPEN is enabled as we don't intend to do so.
 
 NOR
 
  o Driver is kinda big and there isn't even a write function.
  o Can we aggregate some of the common driver logic, descriptors and all?
+   o some of this has been done with good effect
  o Available and start address calc can be handled by a function for
    all cases...maybe.  There is a difference between blocking and
    banking.  Perhaps it would be good to limit all operations to
@@ -205,6 +213,7 @@ Environment and Startup
 
  o There is a single environment variable that contains a startup
    command.  This will be executed when the loader starts.
+   o  done
  o There is a timed delay function that will wait the specified number
    of seconds (tenths) before continuing to execute the script
    command line.
