@@ -99,15 +99,21 @@
 #include "hardware.h"
 #include <linux/kernel.h>
 
-//#define TALK
+#define TALK 1
 
-//#define NOISY 
-
-#if defined (NOISY)
+#if defined (TALK)
 #define PRINTF(f...)		printf (f)
 #else
 #define PRINTF(f...)		do {} while (0)
 #endif
+
+#if TALK > 2
+#define PRINTF3(f...)		printf (f)
+#else
+#define PRINTF3(f...)		do {} while (0)
+#endif
+
+//#define DO_RESET_PHY
 
 #define PHY_CONTROL	0
 #define PHY_STATUS	1
@@ -144,7 +150,7 @@ static void emac_setup (void)
       | ((i == C_BUFFER - 1) ? (1<<1) : 0);
     rlDescriptor[i*2 + 1] = 0;
   }
-  printf ("rlDescriptor %p\r\n", rlDescriptor);
+  PRINTF ("emac: setup rlDescriptor %p\r\n", rlDescriptor);
   __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rlDescriptor;
 //  __REG (emac_PHYS + EMAC_NETCONFIG) |= EMAC_NETCONFIG_RECBYTE;
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_RXEN; /* Enable RX */
@@ -155,7 +161,7 @@ static int emac_phy_read (int phy_address, int phy_register)
 {
   unsigned short result;
 
-  PRINTF ("emac_phy_read %d %d\r\n", phy_address, phy_register);
+  PRINTF3 ("emac_phy_read %d %d\r\n", phy_address, phy_register);
 
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
   __REG (EMAC_PHYS + EMAC_PHYMAINT)
@@ -172,7 +178,7 @@ static int emac_phy_read (int phy_address, int phy_register)
 
   __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
 
-  PRINTF ("emac_phy_read => 0x%lx\r\n", result);
+  PRINTF3 ("emac_phy_read => 0x%x\r\n", result);
 
   return result;
 }
@@ -196,7 +202,7 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
 static void emac_phy_reset (int phy_address)
 {
   int v = 0;
-  printf ("reset phy\r\n");
+  PRINTF ("emac: phy_reset\r\n");
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESET
 		  | emac_phy_read (phy_address, 0));
@@ -228,12 +234,15 @@ static void emac_phy_detect (void)
 
     if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
-      printf ("0x%x  0x%x\r\n", phy_address & 0x1f, (id1 << 16) | id2);
+      PRINTF ("emac: phy_detect 0x%x  0x%x\r\n", 
+	      phy_address & 0x1f, (id1 << 16) | id2);
       break;
     }
   }
 
+#if defined (DO_RESET_PHY)
   emac_phy_reset (phy_address);
+#endif
 }
 
 
@@ -269,9 +278,7 @@ static int emac_read_mac (char rgbResult[6])
 
 void emac_init (void)
 {
-#if defined (TALK)
-  PRINTF ("  EMAC\r\n");
-#endif
+  PRINTF ("emac: init\r\n");
   
 	/* Hardware setup */
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
@@ -313,10 +320,12 @@ void emac_init (void)
   emac_phy_detect ();
 
   /* Disable advertisement except for 100Base-TX  */
+#if 0
   {
     unsigned long l = emac_phy_read (phy_address, 4);
     emac_phy_write (phy_address, 4, l & ~((1<<8)|(1<<6)|(1<<5)));
   }
+#endif
 
   if ((__REG (EMAC_PHYS + EMAC_INTSTATUS) & EMAC_INT_LINKCHG) == 0)
     PRINTF ("emac: no link detected\r\n");
@@ -335,45 +344,45 @@ int cmd_emac (int argc, const char** argv)
   int result = 0;
 
   if (argc == 1) {
-#if 0
+#if defined (TALK)
     {
       unsigned long l;
       l = emac_phy_read (phy_address, 0);
-      printf ("phy_control 0x%lx\r\n", l);
+      PRINTF ("phy_control 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 1);
-      printf ("phy_status 0x%lx %ld %ld\r\n",
+      PRINTF ("phy_status 0x%lx %ld %ld\r\n",
 	      l,
 	      l&PHY_STATUS_ANEN_COMPLETE,
 	      l&PHY_STATUS_LINK);
       l = emac_phy_read (phy_address, 4);
-      printf ("phy_advertisement 0x%lx\r\n", l);
+      PRINTF ("phy_advertisement 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 5);
-      printf ("phy_partner 0x%lx", l);
+      PRINTF ("phy_partner 0x%lx", l);
       if (l & (1<<9))
-	printf ("  100Base-T4");
+	PRINTF ("  100Base-T4");
       if (l & (1<<8))
-	printf ("  100Base-TX-full");
+	PRINTF ("  100Base-TX-full");
       if (l & (1<<7))
-	printf ("  100Base-TX");
+	PRINTF ("  100Base-TX");
       if (l & (1<<6))
-	printf ("  10Base-T-full");
+	PRINTF ("  10Base-T-full");
       if (l & (1<<5))
-	printf ("  10Base-T");
-      printf ("\r\n");
+	PRINTF ("  10Base-T");
+      PRINTF ("\r\n");
       l = emac_phy_read (phy_address, 6);
-      printf ("phy_autoneg_expansion 0x%lx\r\n", l);
+      PRINTF ("phy_autoneg_expansion 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 7);
-      printf ("phy_autoneg_nextpage 0x%lx\r\n", l);
+      PRINTF ("phy_autoneg_nextpage 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 16);
-      printf ("phy_bt_interrupt_level 0x%lx\r\n", l);
+      PRINTF ("phy_bt_interrupt_level 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 17);
-      printf ("phy_interrupt_control 0x%lx\r\n", l);
+      PRINTF ("phy_interrupt_control 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 18);
-      printf ("phy_diagnostic 0x%lx\r\n", l);
+      PRINTF ("phy_diagnostic 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 19);
-      printf ("phy_power 0x%lx\r\n", l);
+      PRINTF ("phy_power 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 20);
-      printf ("phy_cable 0x%lx\r\n", l);
+      PRINTF ("phy_cable 0x%lx\r\n", l);
     }
 #endif
   }
