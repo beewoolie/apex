@@ -21,6 +21,13 @@ config MACH_LPD79524
 	select USES_NOR_BOOTFLASH
 	select USES_NAND_BOOTFLASH
 
+config MACH_KEV79524
+	bool "Sharp KEV79524"
+	select ARCH_LH79524
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select USES_NAND_BOOTFLASH
+
 endchoice
 
 menu "Platform Setup"
@@ -55,7 +62,7 @@ config SDRAM_BANK0
 config SDRAM_BANK1
 	bool "Enable SDRAM bank 1"
 	depends on SDRAM_BANK0
-	default n 
+	default y if MACH_KEV79524 
 
 config NOR_BUSWIDTH
 	int "Width of NOR flash bus"
@@ -72,7 +79,8 @@ config NOR_BANK0_START
 
 config NOR_BANK0_LENGTH
 	hex "Physical address of NOR flash bank 0"
-	default "0x00800000"
+	default "0x00800000" if MACH_LPD7952X
+	default "0x00400000" if MACH_KEV79524
 	depends on NOR_BANK0
 
 config NOR_BANK1
@@ -98,6 +106,14 @@ config NAND_LPD
 	  makes it possible to read NAND flash, NOR flash, and
 	  CompactFlash simultaneously.
 
+config ENV_STARTUP
+	string "Extra commands for startup"
+	default "emac mac 00:08:ee:00:51:e1;" if MACH_KEV79524
+	help
+	  This string is added to the default startup command string.
+	  This is generally not needed, but the facility is available
+	  ust in case.
+
 endmenu
 
 menu "Platform Drivers"
@@ -105,7 +121,7 @@ menu "Platform Drivers"
 config DRIVER_EMAC_LH79524
 	bool "LH79524 EMAC"
 	depends on ARCH_LH79524
-	select DRIVER_CPLD_SPI
+	select DRIVER_CPLD_SPI if MACH_LPD79524
 	default y
 	help
 	  This driver initialize the built-in Ethernet MAC of the

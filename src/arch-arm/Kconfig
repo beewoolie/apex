@@ -153,6 +153,7 @@ config ENV_REGION
 	default "nor:128k+64k" if (MACH_LPD79524 && NOR_BOOT)
 	default "nand:64k+32k" if (MACH_LPD79524 && NAND_BOOT)
 	default "nor:128k+64k" if MACH_NSLU2
+	default "nor:120k+8k"  if MACH_KEV79524
 	help
 	  This region stores the user configurable environment.   
 
@@ -165,6 +166,7 @@ config ENV_REGION_KERNEL
 	depends on ENV_STARTUP_KERNEL_COPY
 	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
 	default "nor:0x60010+0xffff0" if MACH_NSLU2
+	default "nor:128k+1536k" if MACH_KEV79524
 	help
 	  At startup, APEX copies this region to the kernel start address.
 

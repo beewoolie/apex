@@ -1,3 +1,11 @@
+2005-03-20  Marc Singer  <elf@buici.com>
+
+	* scripts/configtoh: Stripping the quotes from config options.
+	We're using the kernel configurator, so we have less control over
+	the user's actions.  This may prove to be overly zealous in
+	situations where the configuration option needs quotes.
+	...Now it is really fixed.  Needed it and there was no way around it.
+
 2005-03-17  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/cpuinfo.c (cpuinfo_report): Fixed the CPUID

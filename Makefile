@@ -529,8 +529,6 @@ ifeq ($(CROSS_COMPILE_),)
  CROSS_COMPILE_=$(CONFIG_CROSS_COMPILE)
 endif
 
-#CONFIG_MACH:=$(subst ",,$(CONFIG_MACH))
-
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.
 # To avoid any implicit rule to kick in, define an empty command
@@ -879,8 +877,9 @@ include/config/MARKER: include/linux/autoconf.h
 	@scripts/basic/split-include include/linux/autoconf.h include/config
 	@touch $@
 
-include/mach:
+include/mach: FORCE
 	@echo  '  SYMLINK $@ -> src/mach-$(CONFIG_MACH)'
+	@if [ -L include/mach ]; then rm include/mach ; fi
 	$(Q)if [ ! -d include ]; then mkdir -p include; fi;
 	@ln -fsn ../src/mach-$(CONFIG_MACH) $@
 
