@@ -25,6 +25,8 @@ lib-y += crc32.o xmodem.o
 lib-y += env.o spinner.o
 lib-y += dump.o
 lib-y += zlib.o
+lib-y += png.o
+
 #lib-y += div64.o
 #lib-y += udiv.o
 #CFLAGS_vsprintf.o += -mthumb

@@ -52,7 +52,7 @@ typedef unsigned short ush;
 typedef ush FAR ushf;
 typedef unsigned long  ulg;
 
-extern char *z_errmsg[]; /* indexed by 1-zlib_error */
+extern const char * const z_errmsg[]; /* indexed by 1-zlib_error */
 
 #define ERR_RETURN(strm,err) return (strm->msg=z_errmsg[1-err], err)
 /* To be used only when the state is known to be valid */
@@ -2113,9 +2113,9 @@ z_stream *z;
 
 /* From: zutil.c,v 1.8 1995/05/03 17:27:12 jloup Exp */
 
-char *zlib_version = ZLIB_VERSION;
+const char* const zlib_version = ZLIB_VERSION;
 
-char *z_errmsg[] = {
+const char* const z_errmsg[] = {
 "stream end",          /* Z_STREAM_END    1 */
 "",                    /* Z_OK            0 */
 "file error",          /* Z_ERRNO        (-1) */
