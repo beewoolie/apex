@@ -219,3 +219,4 @@ Spinner/Progress
 
  o would be nice to have a standard UI call to emit progress
    feedback.  Erasing, for example, takes quite a bit of time.
+   o done

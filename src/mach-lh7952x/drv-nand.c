@@ -12,12 +12,20 @@
 
    NAND flash block IO driver for LPD 79524.
 
+   Unlike the NOR driver, this one hasn't received the same attention
+   for reducing the size of the loader.  It is probably amenable to
+   the same optimizations.  However, since it is so much shorter than
+   the nor dirver, there isn't the same need to perform the
+   optimization.
+
 */
 
 #include <driver.h>
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
+#include <spinner.h>
+
 #include "lh79524.h"
 
 #define NAND_PHYS	(0x40800000)
@@ -162,6 +170,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  SPINNER_STEP;
+
   while (cb) {
     unsigned long page  = d->index/512;
     unsigned long index = d->index%512;
@@ -194,6 +204,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     wait_on_busy ();
 
+    SPINNER_STEP;
+
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
       printf ("Write failed at page %ld\r\n", page);
@@ -212,6 +224,8 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  SPINNER_STEP;
+
   do {
     unsigned long block = (d->start + d->index)/chip->erase_size;
     unsigned long available
@@ -223,6 +237,8 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     __REG8 (NAND_CLE) = EraseConfirm;
 
     wait_on_busy ();
+
+    SPINNER_STEP;
 
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
