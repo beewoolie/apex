@@ -1,7 +1,7 @@
-Index: ixp400_xscale_sw/Makefile
+Index: _intel/ixp400_xscale_sw/Makefile
 ===================================================================
---- a/ixp400_xscale_sw.orig/Makefile	2004-11-17 22:36:07.000000000 -0800
-+++ b/ixp400_xscale_sw/Makefile	2005-03-07 20:32:39.000000000 -0800
+--- _intel.orig/ixp400_xscale_sw/Makefile	2004-11-17 22:36:07.000000000 -0800
++++ _intel/ixp400_xscale_sw/Makefile	2005-03-08 11:01:23.310574734 -0800
 @@ -222,10 +222,12 @@
  else # IX_TARGET_OS == vxworks
  
@@ -30,10 +30,10 @@ Index: ixp400_xscale_sw/Makefile
  
  # Linux linker flags
  LDFLAGS := -r
-Index: ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h
+Index: _intel/ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h
 ===================================================================
---- a/ixp400_xscale_sw.orig/src/ethDB/include/IxEthDB_p.h	2004-11-17 22:37:22.000000000 -0800
-+++ b/ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h	2005-03-07 21:12:21.000000000 -0800
+--- _intel.orig/ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h	2004-11-17 22:37:22.000000000 -0800
++++ _intel/ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h	2005-03-08 11:01:23.311574495 -0800
 @@ -633,7 +633,7 @@
  IX_ETH_DB_PUBLIC UINT32 ixEthDBKeyXORHash(void *macAddress);
  
@@ -43,10 +43,10 @@ Index: ixp400_xscale_sw/src/ethDB/include/IxEthDB_p.h
  IX_ETH_DB_PUBLIC void ixEthDBUpdatePortLearningTrees(IxEthDBPortMap triggerPorts);
  IX_ETH_DB_PUBLIC void ixEthDBNPEAccessRequest(IxEthDBPortId portID);
  IX_ETH_DB_PUBLIC void ixEthDBUpdateLock(void);
-Index: ixp400_xscale_sw/src/usb/include/usbprivatetypes.h
+Index: _intel/ixp400_xscale_sw/src/usb/include/usbprivatetypes.h
 ===================================================================
---- a/ixp400_xscale_sw.orig/src/usb/include/usbprivatetypes.h	2004-11-17 22:37:32.000000000 -0800
-+++ b/ixp400_xscale_sw/src/usb/include/usbprivatetypes.h	2005-03-07 21:29:17.000000000 -0800
+--- _intel.orig/ixp400_xscale_sw/src/usb/include/usbprivatetypes.h	2004-11-17 22:37:32.000000000 -0800
++++ _intel/ixp400_xscale_sw/src/usb/include/usbprivatetypes.h	2005-03-08 11:01:23.312574256 -0800
 @@ -164,6 +164,53 @@
  } USBEventProcessor;
  
@@ -109,10 +109,10 @@ Index: ixp400_xscale_sw/src/usb/include/usbprivatetypes.h
  typedef struct /* USBDeviceContext */
  {
      UINT32 checkPattern;                      /* Check pattern for verifying the context */
-Index: ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h
+Index: _intel/ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h
 ===================================================================
---- a/ixp400_xscale_sw.orig/src/codelets/dmaAcc/IxDmaAccCodelet_p.h	2005-03-07 21:24:58.000000000 -0800
-+++ b/ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h	2005-03-07 21:25:48.000000000 -0800
+--- _intel.orig/ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h	2004-11-17 22:37:08.000000000 -0800
++++ _intel/ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h	2005-03-08 11:01:23.312574256 -0800
 @@ -113,7 +113,7 @@
   * @return IX_FAIL - Error initialising codelet
   */
@@ -122,10 +122,10 @@ Index: ixp400_xscale_sw/src/codelets/dmaAcc/IxDmaAccCodelet_p.h
  
  /**
   * @fn ixDmaAccCodeletTestPerform( UINT16 transferLength, 
-Index: ixp_osal/Makefile
+Index: _intel/ixp_osal/Makefile
 ===================================================================
---- a/ixp_osal.orig/Makefile	2004-11-17 22:37:37.000000000 -0800
-+++ b/ixp_osal/Makefile	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/Makefile	2004-11-17 22:37:37.000000000 -0800
++++ _intel/ixp_osal/Makefile	2005-03-08 11:01:23.313574017 -0800
 @@ -172,7 +172,7 @@
  
  # TODO push this to linux make
@@ -135,10 +135,10 @@ Index: ixp_osal/Makefile
  endif
  
  CFLAGS += $(INCLUDE_DIRS:%=-I%)
-Index: ixp_osal/include/linux-2.6.h
+Index: _intel/ixp_osal/include/linux-2.6.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ b/ixp_osal/include/linux-2.6.h	2005-03-08 10:38:44.798955280 -0800
++++ _intel/ixp_osal/include/linux-2.6.h	2005-03-08 11:01:23.314573778 -0800
 @@ -0,0 +1,65 @@
 +/* */
 +
@@ -205,10 +205,10 @@ Index: ixp_osal/include/linux-2.6.h
 +	/* We don't care about symbol querying  */
 +#define MOD_CAN_QUERY(mod) 0
 +#endif
-Index: ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
+Index: _intel/ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
 ===================================================================
---- a/ixp_osal.orig/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2004-11-17 22:37:35.000000000 -0800
-+++ b/ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2004-11-17 22:37:35.000000000 -0800
++++ _intel/ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2005-03-08 11:01:23.314573778 -0800
 @@ -53,6 +53,8 @@
  #include "asm/hardware.h"
  #include "asm/arch/irqs.h"
@@ -218,10 +218,10 @@ Index: ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
  /* physical addresses to be used when requesting memory with IX_OSAL_MEM_MAP */
  #define IX_OSAL_IXP400_INTC_PHYS_BASE          IXP425_INTC_BASE_PHYS
  #define IX_OSAL_IXP400_GPIO_PHYS_BASE          IXP425_GPIO_BASE_PHYS
-Index: ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
+Index: _intel/ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
 ===================================================================
---- a/ixp_osal.orig/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2004-11-17 22:37:36.000000000 -0800
-+++ b/ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2004-11-17 22:37:36.000000000 -0800
++++ _intel/ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2005-03-08 11:01:23.315573540 -0800
 @@ -45,6 +45,7 @@
   * -- End Intel Copyright Notice --
   */
@@ -230,10 +230,10 @@ Index: ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
  #include <asm/io.h>
  #include <linux/ioport.h>
  
-Index: ixp_osal/os/linux/src/core/IxOsalOsThread.c
+Index: _intel/ixp_osal/os/linux/src/core/IxOsalOsThread.c
 ===================================================================
---- a/ixp_osal.orig/os/linux/src/core/IxOsalOsThread.c	2004-11-17 22:37:35.000000000 -0800
-+++ b/ixp_osal/os/linux/src/core/IxOsalOsThread.c	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/src/core/IxOsalOsThread.c	2004-11-17 22:37:35.000000000 -0800
++++ _intel/ixp_osal/os/linux/src/core/IxOsalOsThread.c	2005-03-08 11:01:23.316573301 -0800
 @@ -65,12 +65,10 @@
      void *arg = IxOsalOsThreadData.arg;
      static int seq = 0;
@@ -248,10 +248,10 @@ Index: ixp_osal/os/linux/src/core/IxOsalOsThread.c
      up (&IxOsalThreadMutex);
  
      entryPoint (arg);
-Index: ixp_osal/os/linux/make/macros.mk
+Index: _intel/ixp_osal/os/linux/make/macros.mk
 ===================================================================
---- a/ixp_osal.orig/os/linux/make/macros.mk	2004-11-17 22:37:35.000000000 -0800
-+++ b/ixp_osal/os/linux/make/macros.mk	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/make/macros.mk	2004-11-17 22:37:35.000000000 -0800
++++ _intel/ixp_osal/os/linux/make/macros.mk	2005-03-08 11:01:23.316573301 -0800
 @@ -71,10 +71,12 @@
  ################################################################
  # Linux Compiler & linker commands
@@ -282,10 +282,10 @@ Index: ixp_osal/os/linux/make/macros.mk
  # Linux linker flags
  LDFLAGS := -r
  
-Index: ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
+Index: _intel/ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
 ===================================================================
---- a/ixp_osal.orig/os/linux/src/core/IxOsalOsMsgQ.c	2004-11-17 22:37:35.000000000 -0800
-+++ b/ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2005-03-07 20:33:56.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2004-11-17 22:37:35.000000000 -0800
++++ _intel/ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2005-03-08 11:01:23.317573062 -0800
 @@ -45,9 +45,9 @@
   * -- End Intel Copyright Notice --
   */
@@ -297,10 +297,10 @@ Index: ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
  #include <linux/interrupt.h>
  
  #include "IxOsal.h"
-Index: ixp_osal/os/linux/src/core/IxOsalOsServices.c
+Index: _intel/ixp_osal/os/linux/src/core/IxOsalOsServices.c
 ===================================================================
---- a/ixp_osal.orig/os/linux/src/core/IxOsalOsServices.c	2004-11-17 22:37:35.000000000 -0800
-+++ b/ixp_osal/os/linux/src/core/IxOsalOsServices.c	2005-03-07 20:46:22.000000000 -0800
+--- _intel.orig/ixp_osal/os/linux/src/core/IxOsalOsServices.c	2004-11-17 22:37:35.000000000 -0800
++++ _intel/ixp_osal/os/linux/src/core/IxOsalOsServices.c	2005-03-08 11:01:23.317573062 -0800
 @@ -53,6 +53,7 @@
  #include <linux/time.h>
  #include <linux/sched.h>
