@@ -50,7 +50,7 @@
 #define __start __attribute__((section(".start")))
 
 
-/* usdelay
+/* usleep
 
    this function accepts a count of microseconds and will wait at
    least that long before returning.  It depends on the timer being
@@ -68,7 +68,7 @@
 
  */
 
-void __attribute__((section(".bootstrap"))) usdelay (unsigned long us)
+void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
 {
   __asm ("str %1, [%0, #0]\n\t"
 	 "str %2, [%0, #0xc]\n\t"
@@ -144,12 +144,18 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
 
 	/* NAND flash, 8 bit */
   __REG (EMC_PHYS | EMC_SCONFIG0)    = 0x80;
+//  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
+//  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
+//  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
+//  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
+//  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
+//  __REG (EMC_PHYS | EMC_STURN0)      = 2;
   __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
+  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
+  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
   __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
-  __REG (EMC_PHYS | EMC_STURN0)      = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
+  __REG (EMC_PHYS | EMC_STURN0)      = 1;
 
 	/* NOR flash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG1)    = 0x81;
@@ -190,12 +196,12 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
   __REG (EMC_PHYS | EMC_DYNAMICTMRD) = NS_TO_HCLK(40);
 
   __REG (EMC_PHYS | EMC_DYNMCTRL)    = ((1<<1)|(1<<0));
-  usdelay (200);
+  usleep (200);
   __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(3<<7); /* NOP command */
-  usdelay (200);
+  usleep (200);
   __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(2<<7); /* PRECHARGE ALL*/
   __REG (EMC_PHYS | EMC_DYNMREF)     = NS_TO_HCLK(100)/16 + 1;
-  usdelay (250);
+  usleep (250);
   __REG (EMC_PHYS | EMC_DYNMREF)     = NS_TO_HCLK(7812)/16;
   __REG (EMC_PHYS | EMC_DYNMCTRL)    = (1<<1)|(1<<0)|(1<<7); /* MODE command */
 

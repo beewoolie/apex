@@ -31,9 +31,15 @@ extern int __attribute__((format (printf, 1, 2)))
 extern int putchar (int ch);
 extern int puts (const char * fmt);
 extern int snprintf(char * buf, size_t size, const char * fmt, ...);
-extern int read_command (int* pargc, const char*** pargv);
+extern int read_command (const char* szPrompt, 
+			 int* pargc, const char*** pargv);
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 
 extern void __attribute__((noreturn)) exec_monitor (void);
+
+extern unsigned long timer_read (void);
+extern unsigned long timer_delta (unsigned long, unsigned long);
+extern void usleep (unsigned long); 
+
 
 #endif  /* __INIT_H__ */

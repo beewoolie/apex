@@ -31,11 +31,13 @@ int putchar (int ch)
   return console_driver->write (0, &ch, 1);
 }
 
-int read_command (int* pargc, const char*** pargv)
+int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 {
   static char rgb[1024];	/* Command line buffer */
   static const char* argv[64];	/* Command words */
   int cb;
+
+  puts (szPrompt);
 
   for (cb = 0; cb < sizeof (rgb) - 1 && (cb == 0 || rgb[cb - 1]); ++cb) {
     console_driver->read (0, &rgb[cb], 1);
@@ -55,9 +57,13 @@ int read_command (int* pargc, const char*** pargv)
     case '\x15':		/* ^U */
       while (cb--)
 	console_driver->write (0, "\b \b", 3);
+      printf ("\r%s", szPrompt);
       break;
     default:
-      console_driver->write (0, &rgb[cb], 1);
+      if (isprint (rgb[cb]))
+	console_driver->write (0, &rgb[cb], 1);
+      else
+	--cb;
       break;
     }
   }

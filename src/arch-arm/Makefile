@@ -2,7 +2,7 @@
 # Makefile for APEX loader
 #
 
-LDFLAGS_apex := -p --no-undefined -X
+LDFLAGS_apex := -p --no-undefined -X -g
 OBJCOPYFLAGS := -O binary -R .note -R .comment -R .bss
 GZFLAGS      := -9
 

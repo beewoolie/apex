@@ -19,8 +19,6 @@
 
 int cmd_pause (int argc, const char** argv)
 {
-  extern unsigned long timer_read (void);
-  extern unsigned long timer_delta (unsigned long, unsigned long);
   unsigned long time = timer_read ();
 
   printf ("pausing for 2 seconds\r\n");
