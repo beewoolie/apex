@@ -70,4 +70,11 @@ static __command struct command_d c_erase = {
   .command = "erase",
   .description = "erase device region",
   .func = cmd_erase,
+  COMMAND_HELP(
+"erase DST\n"
+"  Erases the DST region.  The default length is 1 which will\n"
+"  erase a single flash block.  APEX will report an error if the\n"
+"  DST driver does not support an erase function.\n"
+"  e.g.  erase nor:0           # Erase first flash block\n"
+  )
 };

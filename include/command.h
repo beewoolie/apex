@@ -38,11 +38,18 @@ typedef int (*command_func_t) (int argc, const char** argv);
  
 struct command_d {
   const char* command;
-  const char* description;
-  const char* help;
-  int cbPrefix;			/* Length of prefix (?) */
   command_func_t func;
+  const char* description;
+#if !defined (CONFIG_SMALL)
+  const char* help;
+#endif
 };
+
+#if !defined (CONFIG_SMALL)
+# define COMMAND_HELP(s) .help = s,
+#else
+# define COMMAND_HELP(s) 
+#endif
 
 #define __command __attribute__((used,section(".command")))
 

@@ -108,4 +108,10 @@ static __command struct command_d c_copy = {
   .command = "copy",
   .description = "copy data between devices",
   .func = cmd_copy,
+  COMMAND_HELP(
+"copy SRC DST\n"
+"  Copied data from SRC region to DST region.\n"
+"  The length of the DST region is ignored.\n"
+"  e.g.  copy mem:0x20200000+0x4500 nor:0\n"
+  )
 };
