@@ -57,6 +57,9 @@ static __env struct env_d e_cmdline = {
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0"
+#if 1
+		   " root=/dev/hda2 3" /* Boot to CF card */
+#else
   //		   " root=/dev/hda1"
   //		   " root=/dev/mtdblock1 rootfstype=jffs2"
 		   " root=/dev/mtdblock3 rootfstype=jffs2"
@@ -64,6 +67,7 @@ static __env struct env_d e_cmdline = {
 		   "lpd79524_norflash:2m(boot)ro,-(root)"
 		   ";" 
 		   "lpd79524_nandflash:2m(boot)ro,-(root)"
+#endif
   ,
   .description = "Linux kernel command line",
 };

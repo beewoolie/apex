@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o I am suspicious that the nor-cfi erase code isn't quite right.
+    When asked to erase nor:0+120k, I think it erased the block at
+    nor:120k.
+
   o Checksum function doesn't appear to work over fat read files.  It
     needs to clever about summing in the case that the descriptor
     itself knows the length.
