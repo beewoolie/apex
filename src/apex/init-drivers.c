@@ -14,8 +14,8 @@
 
 #include <driver.h>
 
-char APEX_DRIVER_INIT_START;
-char APEX_DRIVER_INIT_END;
+extern char APEX_DRIVER_INIT_START;
+extern char APEX_DRIVER_INIT_END;
 
 extern struct driver_d* console_driver;
 

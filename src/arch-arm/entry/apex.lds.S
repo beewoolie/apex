@@ -29,6 +29,11 @@ SECTIONS
 	.data . : {
 		*(.data)
 	}
+	.service . : {
+		APEX_SERVICE_START = .;
+		*(.service)
+		APEX_SERVICE_END = .;
+	}
 	.driver_init . : {
 		APEX_DRIVER_INIT_START = .;
 		*(.driver_init)

@@ -12,16 +12,16 @@
 
 */
 
-#include <driver.h>
+#include <service.h>
 #include "lh79524.h"
 
-static void timer_init (void)
+static void lh79524_timer_init (void)
 {
   __REG (RCPC_PHYS + RCPC_PCLKSEL0) |= 3<<7; /* 32KHz oscillator for RTC */
   __REG (RTC_PHYS + RTC_CR) = RTC_CR_EN;  
 }
 
-static void timer_release (void)
+static void lh79524_timer_release (void)
 {
   __REG (RTC_PHYS + RTC_CR) &= ~RTC_CR_EN;  
   __REG (RCPC_PHYS + RCPC_PCLKSEL0) &= ~(3<<7); /* 1Hz RTC */
@@ -42,3 +42,8 @@ unsigned long timer_delta (unsigned long start, unsigned long end)
 {
   return (end - start)*1000/32768;
 }
+
+static __service struct service_d lh79524_timer_service = { 
+  .init = lh79524_timer_init,
+  .release = lh79524_timer_release,
+};
