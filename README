@@ -13,7 +13,7 @@ kernel.  There are pieces of code taken from BLOB and UBoot as well.
 
 The loader is fully functional for the LPD79524, LPD7A400, LPD7A404.
 It builds for the LPD79520, but there is presently no version of the
-Linux kernel that uses the correct architecture number.
+Linux kernel that recognizes the correct architecture number.
 
 
   Building APEX
@@ -37,16 +37,15 @@ features.
 
 APEX uses the Linux kernel build scripts so that rebuilding is
 (nearly) optimal.  Changes to the configuration are automatically
-propagated such that only affected source files are rebuilt.
+propagated such that only affected source files are rebuilt.  It isn't
+as optimal as the kernel because it lacks the fancy config splitter
+that kbuild executes.  This will be implemented, eventually.
 
   # make
 
-The ELF format binary, apex, will be put into the root directory.  To
+The ELF format binary, apex, as well as the dumped
+src/arch-arm/rom/apex.bin will be put into the root directory.  To
 generate a dumped binary, build the apex.bin target.
-
-  # make apex.bin
-
-The dumped file is found in src/arc-arm/rom/apex.bin.
 
 
   Running APEX
