@@ -43,8 +43,7 @@ extern void (*interrupt_handlers[32])(void);
 #endif
 
 #if defined (CONFIG_MACH_NSLU2)
-/* *** not yet needed */
-//# include "nslu2.h"
+# include "nslu2.h"
 #endif
 
 /* ----- Types */

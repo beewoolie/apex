@@ -102,6 +102,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+	/* Configure GPIO */
+  GPIO_OUTR = 0x20c3; 
+  //  GPIO_ER   &= ~GPIO_ER_OUTPUTS;
+  GPIO_ER   = GPIO_ER_V;
+  //  GPIO_ISR  = 0x31f3;
+  GPIO_IT1R = 0x9240;		/* GPIO2 AL; GPIO3 AL; GPIO5 RE; GPIO6 RE */
+  GPIO_IT2R = 0x0249;		/* GPIO8 AL; GPIO9 AL; GPIO10 AL; GPIO11 AL */
+  GPIO_CLKR = GPIO_CLKR_V;
+
   GPIO_ER &= ~0xf;
   _L(LEDf);			/* Start with all on */
 
@@ -141,8 +150,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "orr %0, %0, #(1<<0)\n\t"
 		    "mcr p15, 0, %0, c1, c0, 1"
 		    : "=r" (v));
-    COPROCESSOR_WAIT;
   }		
+
+  COPROCESSOR_WAIT;
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in

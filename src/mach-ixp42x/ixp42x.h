@@ -114,7 +114,8 @@
 #define GPIO_PHYS	(0xc8004000)
 #define GPIO_OUTR	__REG(GPIO_PHYS + 0x00)
 #define GPIO_ER		__REG(GPIO_PHYS + 0x04)
-#define GPIO_ISR	__REG(GPIO_PHYS + 0x08)
+#define GPIO_INR	__REG(GPIO_PHYS + 0x08)
+#define GPIO_ISR	__REG(GPIO_PHYS + 0x0c)
 #define GPIO_IT1R	__REG(GPIO_PHYS + 0x10)
 #define GPIO_IT2R	__REG(GPIO_PHYS + 0x14)
 #define GPIO_CLKR	__REG(GPIO_PHYS + 0x18)
@@ -140,6 +141,5 @@
 #define LEDf	((1<<1)|(1<<0)|(0<<2)|(0<<3))
 
 #define _L(l) MASK_AND_SET(GPIO_OUTR, LED_MASK, l)
-
 
 #endif  /* __IXP42X_H__ */
