@@ -41,7 +41,7 @@
 static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
   printf ("Performing watchdog reset\n");
-  /* *** Need to flush console, or something here. */
+  /* *** FIXME: need to flush console, or something here. */
 
   OST_WDOG_KEY = KEY;		/* Unlock watchdog registers */
   OST_WDOG = 1;			/* Short count */
