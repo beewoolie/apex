@@ -406,8 +406,8 @@ scripts_basic:
 # of make so .config is not included in this case either (for *config).
 
 no-dot-config-targets := clean mrproper distclean tidy complete_release\
-			 cscope TAGS tags help %docs check% every\
-			 scripts_basic config
+			 cscope TAGS tags help %docs check% every
+
 
 config-targets := 0
 mixed-targets  := 0
@@ -470,7 +470,7 @@ scripts: scripts_basic include/config/MARKER
 	$(Q)$(MAKE) $(build)=$(@)
 
 # *** FIXME: we may want this dependency
-#scripts_basic: include/linux/autoconf.h
+scripts_basic: include/linux/autoconf.h
 
 # Objects we will link into vmlinux / subdirs we need to visit
 init-y		:= # init/
@@ -535,11 +535,11 @@ endif
 
 # If .config is newer than include/linux/autoconf.h, someone tinkered
 # with it and forgot to run make oldconfig
-## include/linux/autoconf.h: .config
-## 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
+include/linux/autoconf.h: .config
+	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
 else
 # Dummy target needed, because used as prerequisite
-## include/linux/autoconf.h: ;
+include/linux/autoconf.h: ;
 
 ## *** it would be good to check that CONFIG_MACH was correct.
 
@@ -774,7 +774,7 @@ $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 # Error messages still appears in the original language
 
 .PHONY: $(apex-dirs)
-$(apex-dirs): prepare-apex # prepare-all scripts
+$(apex-dirs): prepare-all scripts
 	$(Q)$(MAKE) $(build)=$@
 
 # Things we need to do before we recursively start building the kernel
@@ -811,7 +811,9 @@ ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree)/include/asm-$(ARCH) include2/asm
 endif
 
-prepare0: prepare1 include/linux/version.h include/asm include/config/MARKER
+#prepare0: prepare1 include/linux/version.h include/asm include/config/MARKER
+prepare0: include/asm include/mach include/linux/config.h include/envmagic.h \
+	  include/config/MARKER
 ifneq ($(KBUILD_MODULES),)
 	$(Q)rm -rf $(MODVERDIR)
 	$(Q)mkdir -p $(MODVERDIR)
@@ -819,9 +821,6 @@ endif
 
 # All the preparing..
 prepare-all: prepare0 prepare
-
-prepare-apex: include/asm include/mach\
-	      include/linux/config.h include/envmagic.h
 
 include/linux/config.h:
 	@touch include/linux/config.h
@@ -876,11 +875,11 @@ include/config/MARKER: include/linux/autoconf.h
 	@scripts/basic/split-include include/linux/autoconf.h include/config
 	@touch $@
 
-include/mach: FORCE
-	@echo  '  SYMLINK $@ -> src/mach-$(CONFIG_MACH)'
-	@if [ -L include/mach ]; then rm include/mach ; fi
-	$(Q)if [ ! -d include ]; then mkdir -p include; fi;
-	@ln -fsn ../src/mach-$(CONFIG_MACH) $@
+include/mach: include/.mach FORCE
+include/.mach: include/config/MARKER
+	@echo  '  SYMLINK include/mach -> src/mach-$(CONFIG_MACH)'
+	@ln -fsn ../src/mach-$(CONFIG_MACH) include/mach
+	@touch include/.mach
 
 # Generate some files
 # ---------------------------------------------------------------------------
