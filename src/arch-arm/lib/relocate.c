@@ -31,11 +31,12 @@
 
 void __naked __section (.bootstrap) relocate_apex (void)
 {
-  extern char reloc;
+  extern unsigned long reloc;
   __asm volatile ("mov r0, lr\n\t"
 		  "bl reloc\n\t"
-	   "reloc: sub ip, %0, lr\n\t"
+	   "reloc: subs ip, %0, lr\n\t"
 	   ".globl reloc\n\t"
+		  "moveq pc, r0\n\t"
 		  "mov lr, r0\n\t"
 		  :
 		  : "r" (&reloc)

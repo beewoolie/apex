@@ -43,8 +43,14 @@ const static struct nand_chip* chip;
 
 static void wait_on_busy (void)
 {
+#if defined CONFIG_NAND_LPD
   while ((__REG8 (CPLD_REG_FLASH) & RDYnBSY) == 0)
     ;
+#else
+  do {
+    __REG8 (NAND_CLE) = Status;
+  } while ((__REG8 (NAND_DATA) & Ready) == 0);
+#endif
 }
 
 static void nand_init (void)
@@ -207,6 +213,8 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     unsigned long block = (d->start + d->index)/chip->erase_size;
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
+
+    printf ("nand erase %ld, %ld\r\n", block, available);
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = (block & 0xff);

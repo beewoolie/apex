@@ -36,11 +36,14 @@ extern char APEX_VMA_COPY_END;
 
 int cmd_version (int argc, const char** argv)
 {
-  printf ("\r\n\nAPEX Boot Loader " APEXRELEASE "  mem:@0x%p#0x%lx\r\n"
-	  "Copyright (c) 2004, Marc Singer\r\n"
-	  "APEX comes with ABSOLUTELY NO WARRANTY. It is free software and\r\n"
-	  "you are welcome to redistribute it under certain circumstances.\r\n"
-	  "Refer to the file COPYING in the source for details.\r\n\n",
+  printf (
+"\r\n\nAPEX Boot Loader " APEXRELEASE
+" -- Copyright (c) 2004, Marc Singer\r\n\n"
+"APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you\r\n"
+"are welcome to redistribute it under certain circumstances.\r\n"
+"Refer to the file COPYING among the source for details.\r\n\n"
+"> mem:@0x%p#0x%lx\r\n\n"
+	  ,
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
   return 0;

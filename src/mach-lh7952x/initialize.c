@@ -132,11 +132,11 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
 	/* Setup IO pin multiplexers */
   __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL6)  = IOCON_MUXCTL6_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;
 #if defined (CONFIG_NAND_LPD)
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
 #endif
   __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;
@@ -233,6 +233,12 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
 
 void __naked __section(.text) initialize_target (void)
 {
+#if !defined (CONFIG_NAND_LPD)
+	/* IOCON to clear special NAND modes */
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
+#endif
+
 	/* CompactFlash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;
   __REG (EMC_PHYS | EMC_SWAITWEN2)   = 2;
