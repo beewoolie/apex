@@ -40,8 +40,7 @@ unpack:
 	-rm -rf $HERE/ixp400_xscale_sw $HERE/ixp_osal
 	(cd $HERE; unzip ixp400AccessLibrary-1_5.zip)
 	(cd $HERE; unzip ixp400NpeLibrary-1_5.zip)
-	(cd $HERE/ixp_osal;         patch -p1 ../ixp_osal_linux26.patch)
-	(cd $HERE/ixp400_xscale_sw; patch -p1 ../ixp400_xscale.patch)
+	(cd $HERE; patch -p1 ../ixp400_xscale_1.5_linux26.patch)
 
 prep:
 	ln -s src/mach-ixp42x/_intel/ixp400_xscale_sw/lib/linuxbe \
