@@ -83,7 +83,7 @@
 
  */
 
-void __section(.bootstrap) usleep (unsigned long us)
+void __section(bootstrap) usleep (unsigned long us)
 {
   __asm ("str %1, [%0, #0]\n\t"
 	 "str %2, [%0, #0xc]\n\t"
@@ -123,7 +123,7 @@ void __section(.bootstrap) usleep (unsigned long us)
 
 */
 
-void __naked __section(.bootstrap) initialize_bootstrap (void)
+void __naked __section(bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
@@ -227,7 +227,7 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
 
 */
 
-void __naked __section(.text) initialize_target (void)
+void __naked initialize_target (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));

@@ -49,7 +49,7 @@ extern void init (void);
 
 */
 
-void __naked __section(.entry) exception_vectors (void)
+void __naked __section(entry) exception_vectors (void)
 {
   __asm ("b reset\n\t"
 	 "b exception_error\n\t"
@@ -67,7 +67,7 @@ void __naked __section(.entry) exception_vectors (void)
 
 */
 
-void __naked __section (.bootstrap) reset (void)
+void __naked __section (bootstrap) reset (void)
 {
 #if 0
   /* This would disable the MMU, but there is little reason to include
@@ -97,7 +97,7 @@ void __naked __section (.bootstrap) reset (void)
 
 */
 
-void __naked __section (.bootstrap) exception_error (void)
+void __naked __section (bootstrap) exception_error (void)
 {
   while (1)
     ;
@@ -111,7 +111,7 @@ void __naked __section (.bootstrap) exception_error (void)
 
 */
 
-void __naked __section (.text) setup_c (void)
+void __naked setup_c (void)
 {
 	/* Setup stack, quite trivial */
   __asm ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));

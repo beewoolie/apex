@@ -46,13 +46,13 @@ struct atag_d {
 };
 
 
-#define __atag_0 __attribute__((used,section(".atag_0")))
-#define __atag_1 __attribute__((used,section(".atag_1")))
-#define __atag_2 __attribute__((used,section(".atag_2")))
-#define __atag_3 __attribute__((used,section(".atag_2")))
-#define __atag_4 __attribute__((used,section(".atag_2")))
-#define __atag_5 __attribute__((used,section(".atag_2")))
-#define __atag_6 __attribute__((used,section(".atag_2")))
-#define __atag_7 __attribute__((used,section(".atag_2")))
+#define __atag_0 __attribute__((used,section("atag.0")))
+#define __atag_1 __attribute__((used,section("atag.1")))
+#define __atag_2 __attribute__((used,section("atag.2")))
+#define __atag_3 __attribute__((used,section("atag.2")))
+#define __atag_4 __attribute__((used,section("atag.2")))
+#define __atag_5 __attribute__((used,section("atag.2")))
+#define __atag_6 __attribute__((used,section("atag.2")))
+#define __atag_7 __attribute__((used,section("atag.2")))
 
 #endif  /* __ATAG_H__ */

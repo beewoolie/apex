@@ -44,7 +44,7 @@
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (bootstrap) relocate_apex (void)
 {
   extern unsigned long reloc;
   __asm volatile ("mov r0, lr\n\t"

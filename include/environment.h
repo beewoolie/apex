@@ -38,7 +38,7 @@ struct env_d {
   char* description;
 };
 
-#define __env  __attribute__((used,section(".env")))
+#define __env  __attribute__((used,section("env")))
 
 #define ENV_CB_MAX	(512)
 

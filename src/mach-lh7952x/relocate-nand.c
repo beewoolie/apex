@@ -43,7 +43,7 @@
 
 */
 
-static __naked __section (.bootstrap) void wait_on_busy (void)
+static __naked __section (bootstrap) void wait_on_busy (void)
 {
 #if defined CONFIG_NAND_LPD
   while ((__REG8 (CPLD_REG_FLASH) & RDYnBSY) == 0)
@@ -69,7 +69,7 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (bootstrap) relocate_apex (void)
 {
   unsigned long lr;
   extern char reloc;

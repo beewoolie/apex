@@ -42,7 +42,7 @@ struct command_d {
   int (*func)(int argc, const char** argv);
 };
 
-#define __command __attribute__((used,section(".command")))
+#define __command __attribute__((used,section("command")))
 
 
 /* ----- Globals */

@@ -39,7 +39,7 @@ void spinner_step (void)
 {
   static int step;
   int v = (timer_delta (0, timer_read ())/128)%8;
-  static unsigned char rgch[]
+  static const unsigned char rgch[]
     = { '|', '/', '-', '\\', '|', '/', '-', '\\' } ;
 
   if (v == step)
