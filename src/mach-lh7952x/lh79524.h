@@ -53,9 +53,9 @@
 #define ADC_IS		__REG(ADC_PHYS + 0x1c)	/* Interrupt Status */
 #define ADC_FS		__REG(ADC_PHYS + 0x20)	/* FIFO Status */
 #define ADC_LWC_BASE	__REG(ADC_PHYS + 0x64)	/* Low Word Control (0-15) */
-#define ADC_HWC_BASE_PHYS	0x24
+#define ADC_HWC_BASE_PHYS	(ADC_PHYS + 0x24)
 #define ADC_HWC_BASE	__REG(ADC_PHYS + 0x24)	/* High Word Control (0-15) */
-#define ADC_LWC_BASE_PHYS	0x64
+#define ADC_LWC_BASE_PHYS	(ADC_PHYS + 0x64)
 #define ADC_IHWCTRL	__REG(ADC_PHYS + 0xa4)	/* Idle High Word Control */
 #define ADC_ILWCTRL	__REG(ADC_PHYS + 0xa8)	/* Idle Low word Control */
 #define ADC_MIS		__REG(ADC_PHYS + 0xac)	/* Masked Interrupt Status  */

@@ -10,6 +10,7 @@ TODO:
       driver hook so that the environment can report describe it's
       descriptor.
     o started.
+    o hook removed, switched to a service entry point 
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
   o command history
@@ -20,12 +21,6 @@ TODO:
     o Not much incentive to be small with 80k of SRAM
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole
     environment...there is already a configuration option for this. 
-
-  o Command hooks need some thinking.  Does it make sense to
-    generalize the feature?  Or would it be better to make a special
-    handler for a mach-level info report?
-    o Probably can rid ourselves of the hooks and just use
-      service.report.    
 
   o Exceptions vectors at the start of the loader probably don't make
     sense.  
@@ -42,12 +37,13 @@ TODO:
     o 32 entry function table
     o irq disabled if the function is empty.
     o no priorities
+    o partially implemented, but non-functional 
 
   o Need to regularize the sdram and nor flash config parameters.  The
     arch determines some of these parameters.  Config should only
     enable.  For example, CONFIG_SDRAM_BANK0=y and the rest comes from
     the platform.  Perhaps the config should specify info on the SDRAM
-    chip.
+    chip(s).
 
 Goals
 

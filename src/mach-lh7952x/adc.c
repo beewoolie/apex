@@ -55,6 +55,8 @@
 #include <command.h>
 #include "hardware.h"
 
+#define ENTRY(l) printf ("%s\n", __FUNCTION__)
+
 #define ADC_FS_FFF		(1<<3)
 #define ADC_FS_FEMPTY		(1<<2)
 
@@ -135,6 +137,8 @@ static void adc_setup (void)
 {
   int i;
 
+  ENTRY (0);
+
   printf ("adc: A2DCLK %d  SETTIME(US) %d\n", A2DCLK, SETTIME(US_SETTLING));
 
   ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
@@ -145,7 +149,7 @@ static void adc_setup (void)
 
   MASK_AND_SET (ADC_PC, 
 		ADC_PC_NOC_MASK | ADC_PC_PWM_MASK,
-		(11<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_STANDBY)
+		(11<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_OFF)
 		|ADC_PC_REFEN);
 
   MASK_AND_SET (ADC_GC,
@@ -208,11 +212,15 @@ static void adc_setup (void)
       break;
     }
   }
+
+  MASK_AND_SET (ADC_PC, ADC_PC_PWM_MASK, ADC_PC_PWM_STANDBY);
 }
 
 static void adc_init (void)
 {
   int i;
+
+  ENTRY (0);
 
   __REG (RCPC_PHYS + RCPC_CTRL)      |=  (1<<9);	/* Unlock */
   __REG (RCPC_PHYS + RCPC_ADCPRE)     =  RCPC_ADCPRE_V/2;
@@ -222,15 +230,11 @@ static void adc_init (void)
   __REG (RCPC_PHYS + RCPC_CTRL)      &= ~(1<<9);	/* Lock */
 
 
-  __REG (IOCON_PHYS + IOCON_MUXCTL25) = 0;
-  //  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL25),
-  //		(3<<6)|(3<<0),
-  //		(0<<6)|(0<<0));
+  __REG (IOCON_PHYS + IOCON_MUXCTL25) = 0;	/* Take all of the ADC pins */
 
   ADC_IM = 0; /* Disable all interrupts */
 
-  ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF 
-    | (1<<ADC_PC_NOC_SHIFT);
+  ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF | (1<<ADC_PC_NOC_SHIFT);
   ADC_GC = ADC_GC_SSM_SSB | (1<<ADC_GC_FIFOWMK_SHIFT);
 
 
@@ -244,15 +248,50 @@ static void adc_init (void)
     | ADC_HW_INP_AN0 | ADC_HW_INN_GND | ADC_HW_REFP_VREFP;
   ADC_ILWCTRL = ADC_LW_REFN_VREFN;
   
-  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
-
 				/* Flush the results FIFO */
   while ((ADC_FS & ADC_FS_FEMPTY) == 0)
     ADC_RR;
 
+  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
+
   adc_setup ();
 }
 
+
+static int cmd_adc (int argc, const char** argv)
+{
+  unsigned long status = ADC_GS;
+  int i;
+
+  printf ("fifo %lx\n", ADC_FS);
+  printf ("start %lx\n", status);
+  ADC_GC |= (1<<2);		/* Start sampling */
+
+  while (1) {
+    unsigned long l = ADC_GS;
+    if ((l & (0xf<<4)) != (status & (0xf<<4)))
+      printf ("state %lx\n", (l >> 4) & 0xf);
+    status = l;
+    if (((status >> 4) & 0xf) == 0x4)
+      break;
+  }
+  printf ("done\n");
+  printf ("fifo %lx\n", ADC_FS);
+
+  for (i = 0; i < 12; ++i) {
+    unsigned long v = ADC_RR;
+    printf (" rr %5ld (%lx) - (%lx)\n", (v >> 6), (v & 0xf), ADC_FS);
+  }
+
+  return 0;
+}
+
+
+static __command struct command_d c_adc = {
+  .command = "adc",
+  .description = "test ADC controller",
+  .func = cmd_adc,
+};
 
 static __service_7 struct service_d lpd79524_adc_service = {
   .init = adc_init,

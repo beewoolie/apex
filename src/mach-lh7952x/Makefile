@@ -28,7 +28,6 @@ obj-x$(CONFIG_MACH_LPD79520)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
 obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_MACH_LPD79524)     += cmd-version-hook.o
 obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
-obj-x$(CONFIG_MACH_LPD79524)$(CONFIG_ADC) += adc.o
 obj-$(CONFIG_MACH_KEV79524)     += init-kev79524.o timer-lh79524.o
 obj-x$(CONFIG_MACH_KEV79524)$(CONFIG_DRIVER_NOR) += drv-nor-cfi.o
 obj-$(CONFIG_MACH_KEV79524)     += cmd-version-hook.o
@@ -40,6 +39,7 @@ obj-$(CONFIG_DRIVER_EMAC)	+= drv-emac.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o
 obj-$(CONFIG_CODEC)		+= codec.o
+obj-$(CONFIG_ADC)		+= adc.o
 obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)
