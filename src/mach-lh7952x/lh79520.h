@@ -41,6 +41,9 @@
 #define RCPC_PERIPHCLKSEL2		0x34
 #define RCPC_CORECLKCONFIG		0x88
 
+#define RCPC_CTRL			0x00
+#define RCPC_SOFTRESET			0x0c
+
 #define RCPC_AHBCLK_SDC			(1<<1)
 #define RCPC_AHBCLK_DMA			(1<<0)
 #define RCPC_PERIPHCLK_T02		(1<<5)

@@ -27,6 +27,7 @@
 
 */
 
+#include <config.h>
 #include <apex.h>
 #include <command.h>
 
