@@ -1,8 +1,8 @@
-/* env.c
+/* reg.h
      $Id$
 
    written by Marc Singer
-   7 Nov 2004
+   11 Nov 2004
 
    Copyright (C) 2004 Marc Singer
 
@@ -25,21 +25,31 @@
    DESCRIPTION
    -----------
 
-   Environment for the LH7A40X.
+   Macros to make register file access somewhat efficient in C.  The
+   4K constant comes from the fact that ARM instructions are limited
+   to a 4K immediate offset. 
 
 */
 
-#include <config.h>
-#include <environment.h>
-#include <driver.h>
-#include <service.h>
+#if !defined (__REG_H__)
+#    define   __REG_H__
 
-#define _s(v) #v 
-#define _t(v) _s(v)
+/* ----- Includes */
 
-static __env struct env_d e_cmdline = {
-  .key = "cmdline",
-  .default_value = "console=ttyAM1 root=/dev/hda1 "
-		   "mtdparts=lpd7a40x_norflash:2m(boot),-(root)",
-  .description = "Linux kernel command line",
-};
+/* ----- Types */
+
+/* ----- Globals */
+
+/* ----- Prototypes */
+
+typedef struct { volatile unsigned long  offset[4096>>2]; } __reg32;
+typedef struct { volatile unsigned short offset[4096>>1]; } __reg16;
+typedef struct { volatile unsigned char  offset[4096>>0]; } __reg08;
+
+#define __REG_M(t,x,s) ((t*)((x)&~(4096-1)))->offset[((x)&(4096-1))>>s]
+
+#define __REG(x)	__REG_M (__reg32, (x), 2)
+#define __REG16(x)	__REG_M (__reg16, (x), 1)
+#define __REG8(x)	__REG_M (__reg08, (x), 0)
+
+#endif  /* __REG_H__ */

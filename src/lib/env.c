@@ -256,6 +256,7 @@ void env_erase (const char* szKey)
 
   if ((ch = _env_locate (i)) != ENV_END) {
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
+    _env_back ();
     _env_write (&ch, 1);
   }
 }

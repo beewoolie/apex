@@ -39,8 +39,13 @@
 
 static __env struct env_d e_cmdline = {
   .key = "cmdline",
-  .default_value = "console=ttyAM0 root=/dev/hda1 "
-		   "mtdparts=lpd79524_flash:2m(boot),-(root)",
+  .default_value = "console=ttyAM0"
+		   " root=/dev/hda1"
+		   " mtdparts="
+		   "lpd79524_norflash:2m(boot),-(root)"
+		   ";" 
+		   "lpd79524_nandflash:32k(apex)ro,-(root)"
+  ,
   .description = "Linux kernel command line",
 };
 

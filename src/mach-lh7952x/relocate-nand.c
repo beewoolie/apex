@@ -36,6 +36,16 @@
 #include "nand.h"
 #include "lh79524.h"
 
+#if !defined (CONFIG_NAND_LPD)
+# define DISABLE_CE\
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+# define ENABLE_CE\
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
+#else
+# define DISABLE_CE
+# define ENABLE_CE
+#endif
+
 
 /* wait_on_busy
 
@@ -83,23 +93,6 @@ void __naked __section (bootstrap) relocate_apex (void)
 		  : "r" (&reloc)
 		  : "r0", "r1");
 
-#if !defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf000);
-//  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=   0xa000; /* nFRE/nFWE select */
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=   0x5000; /* nFRE/nFWE select */
-
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf000);
-//  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=   0xa000; /* Pull-up */
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=   0x5000;
-
-//  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); /* nCS0 override */
-//  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); /* nCS0 normalize */
-
-//  __REG (GPIO_MN_PHYS | 0x08) &= ~(1<<0); /* PM0 output */
-//  __REG (GPIO_MN_PHYS | 0x00) &= ~(1<<0); /* PM0 low */
-#endif
-
   {
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
     void* pv = &APEX_VMA_ENTRY;
@@ -117,8 +110,13 @@ void __naked __section (bootstrap) relocate_apex (void)
       int cb;
 
       __REG8 (NAND_CLE) = Read1;
-      for (cb = 512; cb--; )
-	*((char*) pv++) = __REG8 (NAND_DATA); /* *** Optimize with assembler */
+      for (cb = 512; cb--; ) {
+				/* *** Optimize with assembler */
+	unsigned char ch = __REG8 (NAND_DATA);
+	DISABLE_CE;
+	*((char*) pv++) = ch;
+	ENABLE_CE;
+      }
       {
 	unsigned char ch;
 	for (cb = 16; cb--; )
@@ -128,7 +126,7 @@ void __naked __section (bootstrap) relocate_apex (void)
     }
   }
 
-  //  __asm volatile ("0: b 0b");
+  __asm volatile ("0: b 0b");
 
   __asm volatile ("mov pc, %0" :: "r" (lr));
 }

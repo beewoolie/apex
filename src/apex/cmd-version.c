@@ -42,7 +42,7 @@ int cmd_version (int argc, const char** argv)
 {
   printf (
 "\r\n\nAPEX Boot Loader " APEXRELEASE
-" -- Copyright (c) 2004, Marc Singer\r\n\n"
+" -- Copyright (c) 2004 Marc Singer\r\n\n"
 "APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you\r\n"
 "are welcome to redistribute it under certain circumstances.\r\n"
 "Refer to the source the COPYING for details.\r\n\n"

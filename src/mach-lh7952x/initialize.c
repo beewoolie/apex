@@ -234,8 +234,8 @@ void __naked initialize_target (void)
 
 #if !defined (CONFIG_NAND_LPD)
 	/* IOCON to clear special NAND modes */
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V; /* A23,A22 */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V; /* nCS0 normalize */
 #endif
 
 	/* NAND flash */
