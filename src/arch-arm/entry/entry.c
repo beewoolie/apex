@@ -13,7 +13,6 @@
 # include <config.h>
 #endif
 
-extern char APEX_LMA_START;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 extern char APEX_STACK_START;

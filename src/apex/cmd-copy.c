@@ -12,12 +12,14 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <linux/ctype.h>
 #include <apex.h>
 #include <command.h>
 #include <driver.h>
 #include <error.h>
+#include <spinner.h>
 
 
 int cmd_copy (int argc, const char** argv)
@@ -57,8 +59,10 @@ int cmd_copy (int argc, const char** argv)
     ssize_t cb;
 
     for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
-	 cbCopy += cb)
+	 cbCopy += cb) {
+      SPINNER_STEP;
       dout.driver->write (&dout, rgb, cb);
+    }
   }
 
   din.driver->close (&din);
