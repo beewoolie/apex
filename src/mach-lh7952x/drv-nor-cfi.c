@@ -27,11 +27,6 @@
 
    Generic NOR flash IO driver
 
-   *** This driver, along with the other two, should be more
-   *** self-discovering.  We don't want to waste code doing needless
-   *** searching, but it would be helpful to use the device's internal
-   *** data structures to discover how the device is layed out.
-
    o This driver has been hacked to only support a 32 bit NOR
      meta-device consisting of a pair of 16 bit flash chips.  It would
      be good to have a single driver that uses compile-time macros to
