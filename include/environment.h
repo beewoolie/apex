@@ -30,6 +30,8 @@
 #if !defined (__ENVIRONMENT_H__)
 #    define   __ENVIRONMENT_H__
 
+#include <attributes.h>
+
 /* ----- Types */
 
 struct env_d {
@@ -38,7 +40,7 @@ struct env_d {
   char* description;
 };
 
-#define __env  __attribute__((used,section(".env")))
+#define __env  __used __section(.env)
 
 #define ENV_CB_MAX	(512)
 

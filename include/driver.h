@@ -33,6 +33,7 @@
 /* ----- Includes */
 
 #include <linux/types.h>
+#include <attributes.h>
 
 /* ----- Types */
 
@@ -93,10 +94,10 @@ struct driver_d {
   void		(*info)  (void); /* User information request */
 };
 
-#define __driver_0 __attribute__((used,section(".driver.0")))
-#define __driver_1 __attribute__((used,section(".driver.1")))
-#define __driver_2 __attribute__((used,section(".driver.2")))
-#define __driver_3 __attribute__((used,section(".driver.3")))
+#define __driver_0 __used __section(.driver.0)
+#define __driver_1 __used __section(.driver.1)
+#define __driver_2 __used __section(.driver.2)
+#define __driver_3 __used __section(.driver.3)
 
 /* ----- Globals */
 

@@ -33,6 +33,7 @@
 /* ----- Includes */
 
 #include "config.h"
+#include <attributes.h>
 
 /* ----- Types */
 
@@ -53,7 +54,7 @@ struct command_d {
 # define COMMAND_HELP(s) 
 #endif
 
-#define __command __attribute__((used,section(".command")))
+#define __command __used __section(.command)
 
 /* ----- Globals */
 

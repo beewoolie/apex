@@ -1,3 +1,8 @@
+2005-02-10  Marc Singer  <elf@buici.com>
+
+	* include/attributes.h (__attribute__): Builds with 2.95.3.  Not
+	yet tested.
+
 2005-01-26  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/adc.c (cmd_adc): Basic adc code working.

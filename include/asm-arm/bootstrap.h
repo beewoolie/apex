@@ -32,6 +32,8 @@
 
 /* ----- Includes */
 
+#include <attributes.h>
+
 /* ----- Types */
 
 /* ----- Globals */
@@ -48,13 +50,5 @@ extern char APEX_VMA_BSS_END;
 
 /* ----- Prototypes */
 
-#define __weak __attribute__((weak))
-#define __naked __attribute__((naked))
-#define __section(s) __attribute__((section(#s)))
-#define __irq_handler __attribute__((interrupt ("IRQ")))
-#define __fiq_handler __attribute__((interrupt ("FIQ")))
-#define __swi_handler __attribute__((interrupt ("SWI")))
-#define __abort_handler __attribute__((interrupt ("ABORT")))
-#define __undef_handler __attribute__((interrupt ("UNDEF")))
 
 #endif  /* __BOOTSTRAP_H__ */
