@@ -21,10 +21,18 @@
 
 /* ----- Types */
 
+#define SEEK_SET	0
+#define SEEK_CUR	1
+#define SEEK_END	2
+
 #define DRIVER_SERIAL	(1<<1)
 #define DRIVER_CONSOLE	(1<<2)
 #define DRIVER_MEMORY	(1<<3)
 #define DRIVER_PRESENT	(1<<8)
+
+#define driver_can_seek(p)  ((p)->seek != NULL)
+#define driver_can_read(p)  ((p)->read != NULL)
+#define driver_can_write(p) ((p)->write != NULL)
 
 struct driver_d {
   const char* name;
@@ -37,6 +45,7 @@ struct driver_d {
   ssize_t (*write)(unsigned long fd, const void* pv, size_t cb);
   size_t (*seek)(unsigned long fd, ssize_t cb, int whence);
   void (*info)(void);		/* User information request */
+  void (*close) (unsigned long fd);
 };
 
 #define __driver  __attribute__((used,section(".driver")))
