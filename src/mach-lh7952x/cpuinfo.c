@@ -41,8 +41,10 @@ static void cpuinfo_report (void)
   unsigned long cpsr;
   unsigned short chipid = RCPC_CHIPID;
   char* sz = NULL;
+#if defined (BOOT_PBC)
   unsigned char bootmode = BOOT_PBC;
   char* szBootmode = NULL;
+#endif
 
   switch (chipid>>4) {
   default   : sz = "lh?"; break;
@@ -51,6 +53,7 @@ static void cpuinfo_report (void)
   case 0x525: sz = "lh79525"; break;
   }
 
+#if defined (BOOT_PBC)
   switch (bootmode) {
   case 0 ... 3:
   case 8:
@@ -69,6 +72,7 @@ static void cpuinfo_report (void)
     szBootmode = "UART";
     break;
   }
+#endif
 
   __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));
   __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
@@ -76,8 +80,16 @@ static void cpuinfo_report (void)
 
   printf ("  cpu:    id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n",
 	  id, ctrl, cpsr);
-  printf ("          chipid 0x%x, %s  bootmode 0x%x, %s\n", 
-	  chipid, sz, bootmode, szBootmode);
+  printf ("          chipid 0x%x, %s"
+#if defined (BOOT_PBC)
+	  "  bootmode 0x%x, %s"
+#endif
+	  "\n", 
+	  chipid, sz
+#if defined (BOOT_PBC)
+	  ,bootmode, szBootmode
+#endif
+	  );
 
 #if defined (CPLD_REVISION)
   printf ("  cpld:   revision 0x%x\n", CPLD_REVISION);

@@ -50,6 +50,8 @@
 #define REG __REG16
 #endif
 
+#define DRIVER_NAME	"cf-lpd79524"
+
 #define SECTOR_SIZE	512
 
 #define IDE_IDENTIFY	0xec
@@ -86,6 +88,8 @@ struct cf_info {
   int heads;
   int sectors_per_track;
   int total_sectors;
+
+  char bootsector[SECTOR_SIZE];
 
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
@@ -145,7 +149,7 @@ static void seek (unsigned sector)
   unsigned head;
   unsigned cylinder;
 
-  printf ("[%d", sector);
+//  printf ("[%d", sector);
 
 #if defined (USE_LBA)
   head      = (sector >> 24) & 0xf;
@@ -164,7 +168,7 @@ static void seek (unsigned sector)
 
   ready_wait ();
 
-  printf (" %d %d %d]\n", head, cylinder, sector);
+//  printf (" %d %d %d]\n", head, cylinder, sector);
 }
 
 static void cf_init (void)
@@ -204,6 +208,16 @@ static void cf_init (void)
   }
 
   cf_d.sector = -1;
+
+  {
+    struct descriptor_d d;
+    int result;
+    result = parse_descriptor (DRIVER_NAME ":", &d);
+    if (!result) {
+      d.driver->read (&d, cf_d.bootsector, SECTOR_SIZE);
+      close_descriptor (&d);
+    }
+  }
 }
 
 static int cf_open (struct descriptor_d* d)
@@ -265,12 +279,13 @@ static void cf_report (void)
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
 	  cf_d.szFirmware, cf_d.szName);
+  printf ("          media %d\n", cf_d.bootsector[21]);
 }
 
 #endif
 
 static __driver_3 struct driver_d cf_driver = {
-  .name = "cf-lpd79524",
+  .name = DRIVER_NAME,
   .description = "CompactFlash flash driver",
   .flags = DRIVER_WRITEPROGRESS(6),
   .open = cf_open,
