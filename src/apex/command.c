@@ -18,6 +18,7 @@
 #include <command.h>
 #include <error.h>
 #include <linux/ctype.h>
+#include <environment.h>
 
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
@@ -94,6 +95,24 @@ void call_command (int argc, const char** argv)
 
 void exec_monitor (void)
 {
+  const char* szStartup = env_fetch ("startup");
+  if (szStartup) {
+    char sz[strlen (szStartup) + 1];
+    char* pch = sz;
+    int argc;
+    const char** argv;
+    strcpy (sz, szStartup);
+    printf ("startup '%s'\r\n", sz);
+    
+    while (*pch) {
+      char* pchEnd = strchr (sz, ';');
+      *pchEnd = 0;
+      parse_command (sz, &argc, &argv);
+      call_command (argc, argv);
+      pch = pchEnd + 1;
+    }
+  }
+
   do {
     const char** argv;
     int argc;
@@ -104,3 +123,8 @@ void exec_monitor (void)
   } while (1);
 }
 
+static __env struct env_d e_startup = {
+  .key = "startup",
+  .default_value = "wait 50 Autoboot in 5 seconds. ; wait 50 Autoboot in 5 seconds. ",
+  .description = "Startup command string",
+};

@@ -28,7 +28,7 @@
 
 #define BUG_ON(v)
 
-#ifndef __HAVE_ARCH_STRNICMP
+#if 1
 /**
  * strnicmp - Case insensitive, length-limited string comparison
  * @s1: One string
@@ -104,7 +104,7 @@ char * strncpy(char * dest,const char *src,size_t count)
 EXPORT_SYMBOL(strncpy);
 #endif
 
-#ifndef __HAVE_ARCH_STRLCPY
+#if 1
 /**
  * strlcpy - Copy a %NUL terminated string into a sized buffer
  * @dest: Where to copy the string to
@@ -130,7 +130,7 @@ size_t strlcpy(char *dest, const char *src, size_t size)
 EXPORT_SYMBOL(strlcpy);
 #endif
 
-#ifndef __HAVE_ARCH_STRCAT
+#if 0
 /**
  * strcat - Append one %NUL-terminated string to another
  * @dest: The string to be appended to
@@ -150,7 +150,7 @@ char * strcat(char * dest, const char * src)
 EXPORT_SYMBOL(strcat);
 #endif
 
-#ifndef __HAVE_ARCH_STRNCAT
+#if 0
 /**
  * strncat - Append a length-limited, %NUL-terminated string to another
  * @dest: The string to be appended to
@@ -180,7 +180,7 @@ char * strncat(char *dest, const char *src, size_t count)
 EXPORT_SYMBOL(strncat);
 #endif
 
-#ifndef __HAVE_ARCH_STRLCAT
+#if 0
 /**
  * strlcat - Append a length-limited, %NUL-terminated string to another
  * @dest: The string to be appended to
@@ -207,7 +207,7 @@ size_t strlcat(char *dest, const char *src, size_t count)
 EXPORT_SYMBOL(strlcat);
 #endif
 
-#ifndef __HAVE_ARCH_STRCMP
+#if 1
 /**
  * strcmp - Compare two strings
  * @cs: One string
@@ -227,7 +227,7 @@ int strcmp(const char * cs,const char * ct)
 EXPORT_SYMBOL(strcmp);
 #endif
 
-#ifndef __HAVE_ARCH_STRNCMP
+#if 0
 /**
  * strncmp - Compare two length-limited strings
  * @cs: One string
@@ -249,7 +249,7 @@ int strncmp(const char * cs,const char * ct,size_t count)
 EXPORT_SYMBOL(strncmp);
 #endif
 
-#ifndef __HAVE_ARCH_STRCHR
+#if 1
 /**
  * strchr - Find the first occurrence of a character in a string
  * @s: The string to be searched
@@ -265,7 +265,7 @@ char * strchr(const char * s, int c)
 EXPORT_SYMBOL(strchr);
 #endif
 
-#ifndef __HAVE_ARCH_STRRCHR
+#if 0
 /**
  * strrchr - Find the last occurrence of a character in a string
  * @s: The string to be searched
@@ -283,7 +283,7 @@ char * strrchr(const char * s, int c)
 EXPORT_SYMBOL(strrchr);
 #endif
 
-#ifndef __HAVE_ARCH_STRNCHR
+#if 0
 /**
  * strnchr - Find a character in a length limited string
  * @s: The string to be searched
@@ -300,7 +300,7 @@ char *strnchr(const char *s, size_t count, int c)
 EXPORT_SYMBOL(strnchr);
 #endif
 
-#ifndef __HAVE_ARCH_STRNLEN
+#if 1
 /**
  * strnlen - Find the length of a length-limited string
  * @s: The string to be sized
@@ -370,7 +370,7 @@ size_t strcspn(const char *s, const char *reject)
 }	
 EXPORT_SYMBOL(strcspn);
 
-#ifndef __HAVE_ARCH_STRPBRK
+#if 0
 /**
  * strpbrk - Find the first occurrence of a set of characters
  * @cs: The string to be searched
@@ -391,7 +391,7 @@ char * strpbrk(const char * cs,const char * ct)
 EXPORT_SYMBOL(strpbrk);
 #endif
 
-#ifndef __HAVE_ARCH_STRSEP
+#if 0
 /**
  * strsep - Split a string into tokens
  * @s: The string to be searched
@@ -421,7 +421,7 @@ char * strsep(char **s, const char *ct)
 EXPORT_SYMBOL(strsep);
 #endif
 
-#ifndef __HAVE_ARCH_MEMSET
+#if 0
 /**
  * memset - Fill a region of memory with the given value
  * @s: Pointer to the start of the area.
@@ -442,7 +442,7 @@ void * memset(void * s,int c,size_t count)
 EXPORT_SYMBOL(memset);
 #endif
 
-#ifndef __HAVE_ARCH_BCOPY
+#if 0
 /**
  * bcopy - Copy one area of memory to another
  * @srcp: Where to copy from
@@ -466,7 +466,7 @@ void bcopy(const void * srcp, void * destp, size_t count)
 EXPORT_SYMBOL(bcopy);
 #endif
 
-#ifndef __HAVE_ARCH_MEMCPY
+#if 0
 /**
  * memcpy - Copy one area of memory to another
  * @dest: Where to copy to
@@ -488,7 +488,7 @@ void * memcpy(void * dest,const void *src,size_t count)
 EXPORT_SYMBOL(memcpy);
 #endif
 
-#ifndef __HAVE_ARCH_MEMMOVE
+#if 0
 /**
  * memmove - Copy one area of memory to another
  * @dest: Where to copy to
@@ -519,7 +519,7 @@ void * memmove(void * dest,const void *src,size_t count)
 EXPORT_SYMBOL(memmove);
 #endif
 
-#ifndef __HAVE_ARCH_MEMCMP
+#if 0
 /**
  * memcmp - Compare two areas of memory
  * @cs: One area of memory
@@ -539,7 +539,7 @@ int memcmp(const void * cs,const void * ct,size_t count)
 EXPORT_SYMBOL(memcmp);
 #endif
 
-#ifndef __HAVE_ARCH_MEMSCAN
+#if 0
 /**
  * memscan - Find a character in an area of memory.
  * @addr: The memory area
@@ -564,7 +564,7 @@ void * memscan(void * addr, int c, size_t size)
 EXPORT_SYMBOL(memscan);
 #endif
 
-#ifndef __HAVE_ARCH_STRSTR
+#if 0
 /**
  * strstr - Find the first substring in a %NUL terminated string
  * @s1: The string to be searched
@@ -589,7 +589,7 @@ char * strstr(const char * s1,const char * s2)
 EXPORT_SYMBOL(strstr);
 #endif
 
-#ifndef __HAVE_ARCH_MEMCHR
+#if 0
 /**
  * memchr - Find a character in an area of memory.
  * @s: The memory area
