@@ -36,16 +36,6 @@
 #include "nand.h"
 #include "lh79524.h"
 
-#if !defined (CONFIG_NAND_LPD)
-# define DISABLE_CE\
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
-# define ENABLE_CE\
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
-#else
-# define DISABLE_CE
-# define ENABLE_CE
-#endif
-
 
 /* wait_on_busy
 
@@ -97,13 +87,14 @@ void __naked __section (bootstrap) relocate_apex (void)
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
     void* pv = &APEX_VMA_ENTRY;
 
+    char unsigned cAddr = NAM_DECODE (__REG (BOOT_PHYS | BOOT_PBC));
+
     __REG8 (NAND_CLE) = Reset;
     wait_on_busy ();
 
     __REG8 (NAND_CLE) = Read1;
-    __REG8 (NAND_ALE) = 0;
-    __REG8 (NAND_ALE) = 0;
-    __REG8 (NAND_ALE) = 0;
+    while (cAddr--)
+      __REG8 (NAND_ALE) = 0;
     wait_on_busy ();
 
     while (cPages--) {
@@ -111,7 +102,6 @@ void __naked __section (bootstrap) relocate_apex (void)
 
       __REG8 (NAND_CLE) = Read1;
       for (cb = 512; cb--; ) {
-				/* *** Optimize with assembler */
 	unsigned char ch = __REG8 (NAND_DATA);
 	DISABLE_CE;
 	*((char*) pv++) = ch;

@@ -42,6 +42,12 @@
 
 	/* Registers */
 
+#define BOOT_PHYS	(0xfffe6000)
+
+#define BOOT_PBC	(0x00)
+#define BOOT_CS1OV	(0x04)
+#define BOOT_EPM	(0x08)
+
 #define RCPC_PHYS	(0xfffe2000)
 
 #define RCPC_CTRL	(0x00)

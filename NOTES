@@ -15,6 +15,10 @@ TODO:
   o Rename segments to remove the leading period.  Also, make the
     underscores into periods.
 
+  o *** I need to test the NAND driver, still.  The relocator may not
+    be working with the PM0 mode.  Damn.  Also, need to add code for
+    the NAND addressing bytes to the driver.
+
 Goals
 
   o Simple structure
@@ -252,6 +256,11 @@ NAND Flash Drivers
   o relocate_apex for NAND flash 
     o This is finally working reliably.  It really won't work without
     the CPLD, but it close.
+  o At this point, the relocate_nand function (should) work regardless
+    of whether or not the board is running with a Logic style CPLD.
+    Kurt is not coming to my way of thinking which is that there is a
+    boot-up mode that mimics the Sharp method and a CPLD configurable
+    mode that is faster.
 
 Errors
 

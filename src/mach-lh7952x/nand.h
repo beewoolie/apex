@@ -62,5 +62,41 @@
 #define RDYnBSY		(1<<2)
 
 
+#if !defined (CONFIG_NAND_LPD)
+# define DISABLE_CE\
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+# define ENABLE_CE\
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
+#else
+# define DISABLE_CE
+# define ENABLE_CE
+#endif
+
+
+/* The NAND address map converts the boot code from the CPU into the
+   number of address bytes used by the device.  Refer to the LH79524
+   documentation for the boot codes.  The map is a 32 bit number where
+   each boot code is represented by two bits.  Boot code zero occupies
+   the least significant bits of the map.  The values in the map are 0
+   for non-NAND boot, 1 for 3 address bytes, 2 for 4 address bytes,
+   and 3 for five address bytes.  The simple decode macro will return
+   2 for non-NAND boot codes.
+
+   The reason for this is two-fold.  First, we want to be space
+   efficient when we can.  This stragety yields a correct result in
+   only a few instructions.  Second, a lookup using a byte array is
+   infeasible when the loader is still trying to get itself into
+   SDRAM.  The compiler wants to put the array into constant storage
+   and not in the code segment.  Most importantly, though, this method
+   is compact.
+
+ */
+
+#define _NAM(bootcode,address_bytes) \
+	    ((((address_bytes) - 2)&0x3)<<(((bootcode) & 0xf)*2))
+#define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)\
+		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
+
+#define NAM_DECODE(bootcode) (NAND_ADDR_MAP >> ((bootcode)*2)) + 2;
 
 #endif  /* __NAND_H__ */
