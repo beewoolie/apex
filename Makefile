@@ -528,6 +528,10 @@ ifeq ($(CROSS_COMPILE_),)
  CROSS_COMPILE_=$(CONFIG_CROSS_COMPILE)
 endif
 
+quote:="
+# "
+CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
+
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.
 # To avoid any implicit rule to kick in, define an empty command
@@ -540,8 +544,6 @@ include/linux/autoconf.h: .config
 else
 # Dummy target needed, because used as prerequisite
 include/linux/autoconf.h: ;
-
-## *** it would be good to check that CONFIG_MACH was correct.
 
 endif
 
