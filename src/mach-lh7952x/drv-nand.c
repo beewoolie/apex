@@ -55,11 +55,11 @@ struct nand_chip {
   int erase_size;
 };
 
-static struct nand_chip chips[] = {
+const static struct nand_chip chips[] = {
   { 0x75, 32*1024*1024, 16*1024 },
 };
 
-static struct nand_chip* chip;
+const static struct nand_chip* chip;
 
 static struct nand_descriptor descriptors[2];
 

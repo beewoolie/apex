@@ -172,3 +172,17 @@ Toolchain
    from the constant pool.  Adding -fno-builtin-printf fixes the
    problem.
 
+Glitches
+
+ o Every now and then, the NOR flash gets wedged.  Power cycling is
+   not enough.  In this most recent case, it because corrupt and would
+   not accept erase commands.  I sent a couple of commands to the
+   device, switched to the other bank, and finally unlock/erase
+   worked.  I think it might be wise to operate the VPEN line in the
+   flash driver.
+
+NAND
+
+ o A rudimentary driver is working.  Reading seems to be OK.  The code
+   to write data must come next.
+
