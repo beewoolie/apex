@@ -1,12 +1,14 @@
 ARCH=arm
+
 #CROSS_COMPILE=/usr/arm-linux/gcc-3.3-glibc-2.3.2/bin/arm-linux-
-#CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 #CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1t-glibc-2.3.3/bin/arm-linux-
-CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
+
+CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+#CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
 
 VERSION = 1
 PATCHLEVEL = 0
-SUBLEVEL = 14
+SUBLEVEL = 15
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
