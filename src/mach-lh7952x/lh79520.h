@@ -28,6 +28,7 @@
 #define RCPC_PHYS	0xfffe2000
 
 #define RCPC_CTRL			0x00
+#define RCPC_CHIPID			0x04
 #define RCPC_REMAP			0x08
 #define RCPC_SOFTRESET			0x0c
 #define RCPC_RESETSTATUS		0x10
