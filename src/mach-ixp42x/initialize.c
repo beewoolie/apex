@@ -184,7 +184,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 
-  SDR_CONFIG = SDR_CONFIG_CAS3 | SDR_CONFIG_2x16Mx16;
+  SDR_CONFIG = SDR_CONFIG_CAS3 | SDR_CONFIG_2x8Mx16;
   SDR_REFRESH = 0;		/* Disable refresh */
   SDR_IR = SDR_IR_NOP;
   usleep (200);			/* datasheet: maintain 200us of NOP */
