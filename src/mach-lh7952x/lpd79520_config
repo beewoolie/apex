@@ -1,5 +1,9 @@
 # lpd79520_config
 
+# Makefile macros
+ARCH=arm
+CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+
 CONFIG_ARCH=arm
 CONFIG_MACH=lh7952x
 

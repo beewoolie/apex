@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o I'd like to mode the CROSS_COMPILER assignment to the
+    configuration file *and* allow the user to override it.  The ?=
+    operator isn't working for some reason.  I'll leave it for now.
+
   o Need to add an info function.  I can be used to get info from a
     driver or to look at a directory listing from FAT.  This idea
     isn't quite complete.  It would be good to combine the driver info

@@ -19,7 +19,7 @@ Linux kernel that recognizes the correct architecture number.
   Building APEX
   -------------
 
-Near the top of the root Makefile is the declaration of the
+Near the top of each config file is the declaration of the
 cross-compiler path.  This must be set to point to the prefix for the
 cross compiling toolchain, unless you are building on an ARM host
 platform.  For example,

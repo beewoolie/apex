@@ -1,5 +1,7 @@
 2005-02-12  Marc Singer  <elf@cerise.buici.com>
 
+	* Makefile: Moved the compiler declarations to the config files.
+
 	* include/debug_ll.h: Added low-level debug support via the serial
 	console.
 

@@ -1,13 +1,4 @@
-ARCH=arm
-
-#CROSS_COMPILE=/usr/arm-linux/gcc-3.3-glibc-2.3.2/bin/arm-linux-
-#CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1t-glibc-2.3.3/bin/arm-linux-
-
-#CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
-
-#CROSS_COMPILE=/usr/arm-linux/gcc-2.95.3-glibc-2.2.2/bin/arm-linux-
-
-CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
+ARCH ?= arm
 
 VERSION = 1
 PATCHLEVEL = 0
@@ -212,7 +203,9 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 
 ARCH		?= $(SUBARCH)
-CROSS_COMPILE	?=
+
+# elf: Removed in favor of the config file
+#CROSS_COMPILE	?=
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)
