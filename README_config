@@ -51,6 +51,11 @@ CONFIG_MEM_CONTIGUOUS
   Beware, in some configurations the memory will not *all* be
   contiguous.  32MiB systems are known to work properly.
 
+CONFIG_SMALL (y/n)
+
+  Reduce code size whenever possible.  This is used when the loader
+  must be as small as possible.  It may sacrifice speed for size.
+
 CONFIG_SPINNER (y/n)
  
   Declare as y to enable a progress feedback spinner while the loader

@@ -79,8 +79,13 @@ int cmd_copy (int argc, const char** argv)
     for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
 	 cbCopy += cb) {
       int report;
+      size_t cbWrote;
       SPINNER_STEP;
-      dout.driver->write (&dout, rgb, cb);
+      cbWrote = dout.driver->write (&dout, rgb, cb);
+      if (cbWrote != cb) {
+	result = ERROR_FAILURE;
+	goto fail;
+      }
       report = cbCopy>>step;
       if (step && report != report_last) {
 	printf ("\r   %d KiB\r", cbCopy/1024);

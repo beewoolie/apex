@@ -39,6 +39,10 @@ extern void (*interrupt_handlers[32])(void);
 # include "lpd79524.h"
 #endif
 
+#if defined (CONFIG_MACH_KEV79524)
+# include "kev79524.h"
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

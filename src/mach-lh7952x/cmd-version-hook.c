@@ -31,13 +31,29 @@
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
+#include <service.h>
 #include "hardware.h"
 
-command_func_t hook_cmd_verson;
+extern command_func_t hook_cmd_version;
 
 int lh7952x_cmd_version (int argc, const char** argv)
 {
+  unsigned short v = __REG16 (RCPC_PHYS + RCPC_CHIPID);
+  char* sz = NULL;
+
+  switch (v>>4) {
+  default   : sz = "lh?"; break;
+  case 0x524: sz = "lh79524"; break;
+  case 0x525: sz = "lh79525"; break;
+  }
+
+  printf ("  CPU  id 0x%x, %s\r\n", v, sz);
+
+#if defined (CONFIG_MACH_LPD79524)
   printf ("  CPLD revision 0x%x\r\n", __REG8 (0x4ca00000));
+#endif
+
+  return 0;
 }
 
 static void hook_init (void)

@@ -45,9 +45,13 @@ int cmd_version (int argc, const char** argv)
   printf (
 "\r\n\nAPEX Boot Loader " APEXRELEASE
 " -- Copyright (c) 2004 Marc Singer\r\n\n"
-"APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you\r\n"
+"APEX comes with ABSOLUTELY NO WARRANTY."
+#if !defined (CONFIG_SMALL)
+"  It is free software and you\r\n"
 "are welcome to redistribute it under certain circumstances.\r\n"
-"For details, refer to the file COPYING in the program source.\r\n\n"
+"For details, refer to the file COPYING in the program source."
+#endif
+"\r\n\n"
 "  apex => mem:0x%p#0x%lx\r\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
