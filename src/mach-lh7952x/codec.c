@@ -21,6 +21,23 @@
 
      hexdump -v -s 0x108b0 -n 100000 -e '8 2 "0x%04x, " "\n\t"' track01.wav
 
+  NOTES
+  -----
+
+  o There seems to be more at play in the signed versus unsigned
+    arena.  The WAV format certainly uses signed integers for the
+    sample values. 
+  o As slave, the CPU appears to properly sequence data out in that
+    the data starts one (or perhaps two) cycles after the start of the
+    IWS signal transition.
+  o As master, the CPU appears to correctly delay the data for one
+    clock cycle, but does not give time for the LSB.  The IWS
+    frequency is exactly sample_width*2*SSP_CLK.  In fact, the MSB
+    appears within the next frame.  This does not conform to the
+    Philips standard for I2S.
+  o In I2S CPU master mode, setting WSDEL to 1 breaks I2S framing.
+    The SSP pulse isn't converted to a proper IWS pulse.
+
 */
 
 #include <config.h>
@@ -34,31 +51,35 @@
 //#define USE_ERIC
 
 #define USE_I2S
-//#define USE_CPU_MASTER
+#define USE_CPU_MASTER
 #define USE_DMA
 //#define USE_DMA_CAP
 #define USE_16
 #define USE_STEREO
 #define USE_LOOPBACK_I2S
 //#define USE_LOOPBACK_SSP
-#define USE_8KHZ
+//#define USE_8KHZ
 //#define USE_22KHZ
-//#define USE_44KHZ
+#define USE_44KHZ
 #define USE_LOOPS	2000	/* Only works without DMA */
 
 //#define USE_E5
+//#define USE_E5_RIGHT
 
 
 #if defined (USE_8KHZ)
 # include "pcm8-8.h"
+# define SAMPLE_FREQUENCY 8021
 #endif
 
 #if defined (USE_22KHZ)// || defined (USE_44KHZ)
 # include "pcm2205-16.h"
+# define SAMPLE_FREQUENCY 22050
 #endif
 
 #if defined (USE_44KHZ)// && 0 // || defined (USE_22KHZ)
 # include "pcm441-16b.h"
+# define SAMPLE_FREQUENCY 44100
 #endif
 
 #define T_SKH	1		/* Clock time high (us) */
@@ -126,16 +147,10 @@
 
 #define CODEC_ADDR_SHIFT	(9)
 
-#define FREQUENCY_4K		(0) /* 8kHz with MCLK/2 */
-#define FREQUENCY_8K		(1)
-#define FREQUENCY_22K05		(2) /* 44.1kHz with MCLK/2 */
-#define FREQUENCY_32K1		(3)
-#define FREQUENCY_44K1		(4)
-#define FREQUENCY_48K		(5)
-#define FREQUENCY_88K2		(6)
-#define FREQUENCY_96K		(7)
 
 #define CMD(a,c)	((((a) & 0x7f)<<CODEC_ADDR_SHIFT)|((c) & 0x1ff))
+
+void ssp_set_speed (int speed);
 
 static void msleep (int ms)
 {
@@ -266,43 +281,52 @@ static void codec_configure (int frequency, int sample_size)
     ;
   switch (frequency) {
   default:
-  case FREQUENCY_4K:
+  case 4010:			/* 4 kHz */
     v |= (0xb<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     v |= (1<<7)|(1<<6);		/* MCLK/2 */
     break;
-  case FREQUENCY_8K:
+  case 8021:			/* 8 kHz */
     v |= (0xb<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     break;
-  case FREQUENCY_32K1:
+  case 32100:
     break;
-  case FREQUENCY_22K05:
+  case 22050:
     v |= (0x8<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     v |= (1<<7)|(1<<6);		/* MCLK/2 */
     break;
-  case FREQUENCY_44K1:
+  case 44100:
     v |= (0x8<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     break;
-  case FREQUENCY_48K:
+  case 48000:
     break;
-  case FREQUENCY_88K2:
+  case 88200:
     v |= (0xf<<2) /* SR3-SR0 */
       |  (0<<1); /* BOSR */
     break;
-  case FREQUENCY_96K:
+  case 96000:
     break;
   }
 
   printf ("configuring codec for %d Hz with 0x%x\r\n", frequency, v);
   execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16);
 
-  //  MASK_AND_SET (SSP_CTRL0, 0xf, (sample_size - 1) & 0xf);
+  MASK_AND_SET (SSP_CTRL0, 0xf, (sample_size - 1) & 0xf);
   //  SSP_CTRL0 
   //    = (1<<4)			/* TI synchronous mode */
   //    | ((sample_size - 1) & 0xf)<<0;
+
+#if defined (USE_CPU_MASTER)
+  ssp_set_speed (frequency);
+#else
+  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
+  MASK_AND_SET (__REG (RCPC_PHYS + RCPC_CTRL),  /* System osc. -> CLKOUT */
+		3<<5, 0<<5);
+  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+#endif
 }
 #endif
 
@@ -313,19 +337,8 @@ static void codec_configure (int frequency, int sample_size)
 #define MAX_SSP_FREQ (hclk_freq / SSP_PRESCALE_MIN)
 #define SSP_MAX_TIMEOUT 0xffff
 
-void ssp_set_speed (void)
+void ssp_set_speed (int speed)
 {
-  int speed = 
-#if defined (USE_8KHZ)
-    8012
-#endif
-#if defined (USE_22KHZ) 
-    22050
-#endif
-#if defined (USE_44KHZ)
-    44100
-#endif
-    ;
   int rcpc_prescale;
   int ssp_dvsr;
   int ssp_cpd;
@@ -334,7 +347,7 @@ void ssp_set_speed (void)
   default:
   case 8012:
     /* .08% error at HCLK 50MHz */
-    rcpc_prescale = 32 ;
+    rcpc_prescale = 32;
     ssp_dvsr = 2;
     ssp_cpd = 99;
     break;
@@ -352,12 +365,16 @@ void ssp_set_speed (void)
     break;
   }
 
-  rcpc_prescale /= 32;		/* Compensate for the SSP speed */
+  if (ssp_cpd == 0)
+    ssp_cpd = 1;
+
+  rcpc_prescale /= 32;		/* Compensate for the frame size */
 
   printf ("ssp_set_speed  rcpc_ssppre %d  dvsr %d  cpd %d\r\n", 
 	  rcpc_prescale, ssp_dvsr, ssp_cpd);
 
   __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS + RCPC_PCLKSEL1) &= ~(1<<1);	/* HCLK -> SSP clock */
   __REG (RCPC_PHYS + RCPC_SSPPRE) = rcpc_prescale>>1;
   SSP_CPSR = ssp_dvsr;
   MASK_AND_SET (SSP_CTRL0, (0xff<<8), (ssp_cpd - 1)<<8);
@@ -690,15 +707,7 @@ static void codec_init (void)
 #endif
 			    ), 16);
   //  usleep (1);
-#if defined (USE_8KHZ)
-  codec_configure (FREQUENCY_8K, 16);
-#endif
-#if defined (USE_22KHZ)
-  codec_configure (FREQUENCY_22K05, 16);
-#endif
-#if defined (USE_44KHZ)
-  codec_configure (FREQUENCY_44K1, 16);
-#endif
+  codec_configure (SAMPLE_FREQUENCY, 16);
   //  usleep (1);
 //  execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
 
@@ -808,15 +817,20 @@ static int convert_source (void)
       int l = v + 0x80;
       v = (unsigned long) l;
     }
-#endif
+# endif
 #endif
 
-    /* Modulate everyone */
-//    v >>= 1;
+    /* Modulate everyone for the sake of headphones */
+    v >>= 1;
+    v >>= 1;
+
+# if defined (USE_CPU_MASTER)
+    v &= ~1;			/* As master, CPU drops LS bit */
+# endif
+
 
 #if defined (USE_E5)
 # if defined (USE_16)
-//    v = 0xe5e5;
     if (is & 1)
       v = 0x80bb;
     else
@@ -826,6 +840,16 @@ static int convert_source (void)
       v = 0x8b;
     else
       v = 0x7f;
+# endif
+#endif
+
+#if defined (USE_E5_RIGHT)
+# if defined (USE_16)
+    if (is & 1)
+      v = 0x80bb;
+# else
+    if (is & 1)
+      v = 0x8b;
 # endif
 #endif
 
@@ -975,6 +999,8 @@ static int cmd_codec_test (int argc, const char** argv)
 static int cmd_codec_test (int argc, const char** argv)
 {
   int samples = convert_source ();
+  int index;			/* Index for DMA */
+  int count;
   int loops = 
 #if defined USE_LOOPS
       USE_LOOPS
@@ -1032,12 +1058,21 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
 
  restart:
+  index = 0;
+
+ play_more:
+  count = samples;
+  if (index + count > samples)
+    count = samples - index;
+  if (count > 65534)
+    count = 65534;
+
   DMA1_CTRL     &= ~(1<<0); /* Disable */
-  DMA1_SOURCELO =  ((unsigned long)buffer)        & 0xffff;
-  DMA1_SOURCEHI = (((unsigned long)buffer) >> 16) & 0xffff;
+  DMA1_SOURCELO =  ((unsigned long)(buffer + index))        & 0xffff;
+  DMA1_SOURCEHI = (((unsigned long)(buffer + index)) >> 16) & 0xffff;
   DMA1_DESTLO   =  SSP_DR_PHYS        & 0xffff;
   DMA1_DESTHI   = (SSP_DR_PHYS >> 16) & 0xffff;
-  DMA1_MAX	= samples;
+  DMA1_MAX	= count;
 //  DMA1_CTRL
 //    = (1<<13)			/* Peripheral destination */
 //#if defined (USE_16)
@@ -1065,6 +1100,10 @@ static int cmd_codec_test (int argc, const char** argv)
 				/* Wait for completion */
   while ((DMA_STATUS & (1<<1)) == 0)
     ;
+
+  index += count;
+  if (index < samples)
+    goto play_more;
 
   if (loops--) {
     goto restart;
