@@ -1,5 +1,7 @@
 2005-01-13  Marc Singer  <elf@buici.com>
 
+	* src/apex/cmd-version.c (cmd_version): Rewording signon.
+
 	* src/mach-lh7952x/Makefile (obj-$(CONFIG_MACH_LPD79524)): Moved
 	adc to 79524 specific build.
 

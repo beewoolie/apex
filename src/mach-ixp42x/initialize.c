@@ -222,11 +222,13 @@ static void target_init (void)
   EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
 }
 
+#if 0
 static void target_release (void)
 {
 }
+#endif
 
 static __service_0 struct service_d lh79524_target_service = {
   .init    = target_init,
-  .release = target_release,
+  //  .release = target_release,
 };

@@ -47,7 +47,7 @@ int cmd_version (int argc, const char** argv)
 " -- Copyright (c) 2004 Marc Singer\r\n\n"
 "APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you\r\n"
 "are welcome to redistribute it under certain circumstances.\r\n"
-"Refer to the source the COPYING for details.\r\n\n"
+"For details, refer to the file COPYING in the program source.\r\n\n"
 "  apex => mem:0x%p#0x%lx\r\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,

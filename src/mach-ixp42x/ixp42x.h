@@ -103,6 +103,9 @@
 #define OST_PHYS	(0xc8005000)
 #define OST_TS		__REG(OST_PHYS + 0x00) /* Time-stamp timer */
 #define OST_TS_PHYS	(OST_PHYS + 0x00)
+#define OST_WDOG	__REG(OST_PHYS + 0x14) /* Watchdog timer */
+#define OST_WDOG_ENAB	__REG(OST_PHYS + 0x18) /* Watchdog enable */
+#define OST_WDOG_KEY	__REG(OST_PHYS + 0x1c) /* Watchdog enable */
 
 #define UART0_PHYS	(0xc8000000)
 #define UART1_PHYS	(0xc8001000)

@@ -30,21 +30,19 @@
 #include <config.h>
 #include <apex.h>
 #include <command.h>
+#include "hardware.h"
 
-#if defined (CONFIG_MACH_LH79524)
-#include "lh79524.h"
-#endif
-
-#if defined (CONFIG_MACH_LH79520)
-# include "lh79520.h"
-#endif
+#define KEY 0x482e
+#define OTS_WDOG_ENABLE_RESET	(1<<0) /* Allow watchdog to reset CPU */
+#define OTS_WDOG_ENABLE_CNT_EN	(1<<2) /* Enable watchdog countdown */
 
 static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
-  /* *** FIXME: we can use the watchdog to reset.  */
-
-  //  __REG (RCPC_PHYS + RCPC_CTRL) |= (1<<9); /* Unlock */
-  //  __REG (RCPC_PHYS + RCPC_SOFTRESET) = 0xdead;
+  OTS_WDOG_KEY = KEY;		/* Unlock watchdog registers */
+  OTS_WDOG = 1;			/* Short count */
+  OTS_WDOG_ENABLE = 0
+    | OTS_WDOG_ENABLE_RESET
+    | OTS_WDOG_ENABLE_CNT_EN;
 }
 
 static __command struct command_d c_reset = {
