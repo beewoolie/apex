@@ -207,11 +207,11 @@ static void codec_mute (void)
 
 static void codec_configure (int frequency, int sample_size)
 {
-  unsigned short v = 0;
+  unsigned short v = 0
   //      (0<<7) /* MCLK input */
   //    | (0<<6) /* MCLK output */
   //    | (0<<0); /* Normal */
-
+    ;
   switch (frequency) {
   default:
   case FREQUENCY_4K:
@@ -258,7 +258,11 @@ static void codec_init (void)
   MASK_AND_SET (__REG (RCPC_PHYS + RCPC_CTRL),  /* System osc. -> CLKOUT */
 		3<<5, 0<<5);
   __REG (RCPC_PHYS + RCPC_PCLKSEL1) |= 1<<1;	/* System osc. -> SSP clock */
-  __REG (RCPC_PHYS + RCPC_SSPPRE) = (1 - 1);	/* Prescalar = 1 */
+#if defined (USE_CPU_MASTER)
+  __REG (RCPC_PHYS + RCPC_SSPPRE) = (8>>1);	/* Prescalar = 8 */
+#else
+  __REG (RCPC_PHYS + RCPC_SSPPRE) = (1>>1);	/* Prescalar = 1 */
+#endif
   __REG (RCPC_PHYS + RCPC_PCLKCTRL1) &= ~(1<<1); /* Enable SSP clock */
   __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 
@@ -275,7 +279,11 @@ static void codec_init (void)
 #endif
     | (1<<1)			/* enabled */
     | (0<<3);			/* SSP can driver SSPTX */
+#if defined (USE_CPU_MASTER)
+  __REG (SSP_PHYS + SSP_CPSR) = 16;
+#else
   __REG (SSP_PHYS + SSP_CPSR) = 2; /* Smallest prescalar is 2 */
+#endif
 #if defined (USE_I2S)
   __REG (I2S_PHYS + I2S_CTRL)
     = I2S_CTRL_I2SEN
@@ -352,9 +360,16 @@ static int cmd_codec_test (int argc, const char** argv)
 #if defined (USE_16)
   cSampleMax = sizeof (buffer)/sizeof (buffer[0]);
   for (i = 0; i < cSampleMax; ++i) {
+#if defined (USE_CPU_MASTER)
+    unsigned short v = (rgbPCM[i]<<8) | rgbPCM[i];
+    v = v/2;// + 0x8000/2;
+    buffer[i++] = v;		/* Go stereo */
+    buffer[i] = v;
+#else
     unsigned short v = (rgbPCM[i]<<8) | rgbPCM[i];
     v = v/2;// + 0x8000/2;
     buffer[i] = v;
+#endif
   }
 #endif
 
