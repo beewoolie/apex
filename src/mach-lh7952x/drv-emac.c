@@ -113,7 +113,7 @@
 #define PRINTF3(f...)		do {} while (0)
 #endif
 
-//#define DO_RESET_PHY
+#define DO_RESET_PHY
 
 #define PHY_CONTROL	0
 #define PHY_STATUS	1
@@ -121,6 +121,7 @@
 #define PHY_ID2		3
 
 #define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_POWERDOWN		(1<<11)
 #define PHY_CONTROL_RESTART_ANEN	(1<<12)
 #define PHY_STATUS_ANEN_COMPLETE	(1<<5)
 #define PHY_STATUS_LINK			(1<<2)
@@ -203,12 +204,29 @@ static void emac_phy_reset (int phy_address)
 {
   int v = 0;
   PRINTF ("emac: phy_reset\r\n");
+  //  emac_phy_write (phy_address, 22, 0); /* Force power-up */
+#if 1
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESET
 		  | emac_phy_read (phy_address, 0));
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
     ++v;
-#if 0
+#else
+  printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
+  __REG8 (CPLD_CONTROL) &= ~CPLD_CONTROL_WRLAN_ENABLE;
+  emac_phy_write (phy_address, 0,
+		  PHY_CONTROL_POWERDOWN
+		  | emac_phy_read (phy_address, 0));
+  msleep (1000);
+  printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
+  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  emac_phy_write (phy_address, 0,
+		  emac_phy_read (phy_address, 0)
+		  & ~PHY_CONTROL_POWERDOWN); 
+  printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
+#endif
+
+#if 1
   printf ("  resetart anen %d\r\n", v);
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESTART_ANEN
@@ -300,7 +318,9 @@ void emac_init (void)
 		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
 
-  __REG16 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  PRINTF ("CPLD_CONTROL %x => %x\r\n", __REG8 (CPLD_CONTROL),
+	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
+  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
   __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
   __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
@@ -350,10 +370,12 @@ int cmd_emac (int argc, const char** argv)
       l = emac_phy_read (phy_address, 0);
       PRINTF ("phy_control 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 1);
-      PRINTF ("phy_status 0x%lx %ld %ld\r\n",
-	      l,
-	      l&PHY_STATUS_ANEN_COMPLETE,
-	      l&PHY_STATUS_LINK);
+      PRINTF ("phy_status 0x%lx", l);
+      if (l&PHY_STATUS_ANEN_COMPLETE)
+	PRINTF (" anen_complete");
+      if (l&PHY_STATUS_LINK)
+	PRINTF (" link");
+      printf ("\r\n");
       l = emac_phy_read (phy_address, 4);
       PRINTF ("phy_advertisement 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 5);
@@ -370,19 +392,44 @@ int cmd_emac (int argc, const char** argv)
 	PRINTF ("  10Base-T");
       PRINTF ("\r\n");
       l = emac_phy_read (phy_address, 6);
-      PRINTF ("phy_autoneg_expansion 0x%lx\r\n", l);
+      PRINTF ("phy_autoneg_expansion 0x%lx", l);
+      if (l & (1<<4))
+	PRINTF (" parallel-fault");
+      if (l & (1<<1))
+	PRINTF (" page-received");
+      if (l & (1<<0))
+	PRINTF (" partner-ANEN-able");
+      PRINTF ("\r\n");
       l = emac_phy_read (phy_address, 7);
       PRINTF ("phy_autoneg_nextpage 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 16);
       PRINTF ("phy_bt_interrupt_level 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 17);
-      PRINTF ("phy_interrupt_control 0x%lx\r\n", l);
+      PRINTF ("phy_interrupt_control 0x%lx", l);
+      if (l & (1<<4))
+	PRINTF (" parallel_fault");
+      if (l & (1<<2))
+	PRINTF (" link_not_ok");
+      if (l & (1<<0))
+	PRINTF (" anen_complete");
+      PRINTF ("\r\n");
       l = emac_phy_read (phy_address, 18);
-      PRINTF ("phy_diagnostic 0x%lx\r\n", l);
+      PRINTF ("phy_diagnostic 0x%lx", l);
+      if (l & (1<<12))
+	PRINTF (" force 100TX");
+      if (l & (1<<13))
+	PRINTF (" force 10BT");
+      PRINTF ("\r\n");
       l = emac_phy_read (phy_address, 19);
-      PRINTF ("phy_power 0x%lx\r\n", l);
+      PRINTF ("phy_power_loopback 0x%lx\r\n", l);
       l = emac_phy_read (phy_address, 20);
       PRINTF ("phy_cable 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 21);
+      PRINTF ("phy_rxerr 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 22);
+      PRINTF ("phy_power_mgmt 0x%lx\r\n", l);
+      l = emac_phy_read (phy_address, 23);
+      PRINTF ("phy_op_mode 0x%lx\r\n", l);
     }
 #endif
   }
