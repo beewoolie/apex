@@ -37,6 +37,10 @@ static struct mem_descriptor descriptors[2];
 
 static int memory_scan (int i, unsigned long start, unsigned long length)
 {
+  extern char APEX_VMA_START;
+  extern char APEX_VMA_END;
+  unsigned long* pl;
+
 	/* Mark */
   for (pl = (unsigned long*) (start + length - CB_BLOCK
 			      + (&APEX_VMA_END - &APEX_VMA_START));
@@ -45,7 +49,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
     *pl = (unsigned long) pl;
 
 	/* Identify */
-  for (pl = (unsigned long*) (START + (&APEX_VMA_END - &APEX_VMA_START));
+  for (pl = (unsigned long*) (start + (&APEX_VMA_END - &APEX_VMA_START));
        pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
        pl += CB_BLOCK/sizeof (*pl)) {
@@ -64,12 +68,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 
 static int memory_probe (void)
 {
-  extern char APEX_VMA_START;
-  extern char APEX_VMA_END;
-  unsigned long* pl;
   int i;
-
-  memset (&regions, 0, sizeof (regions));
 
   i = 0;
 #if defined (CONFIG_MEM_BANK0_START)
