@@ -5,6 +5,11 @@ APEX Boot Loader
 
 TODO:
 
+  o Let's add a target to build all
+    o We should be able to build all of the default configurations
+    o Then, output of each binary is proof that build works
+    o This needs a way to change the compiler without editing the makefile. 
+
   o Let's add a driver alias function.
     o once we get into the thick of driver-land, we may have some
       cumbersome driver specs
