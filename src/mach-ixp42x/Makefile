@@ -39,7 +39,8 @@ CFLAGS_npe-interface.o\
      -Isrc/mach-ixp42x/_intel/ixp_osal/include/platforms/ixp400/bufferMgt\
      -Isrc/mach-ixp42x/_intel/linux/include\
      -Isrc/mach-ixp42x/_intel/linux/include/linux\
-     -Isrc/mach-ixp42x/_intel/linux/include/asm/arch
+     -Isrc/mach-ixp42x/_intel/linux/include/asm/arch\
+     -Isrc/mach-ixp42x/_intel/ixp400_xscale_sw/npeLib
 
 obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o

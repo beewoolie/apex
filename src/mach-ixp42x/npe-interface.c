@@ -23,6 +23,7 @@
 #include <ix_ossl.h>
 
 //#include <_intel/include/npe_info.h>
+#include <IxNpeMicrocode.c>
 
 #undef printf
 extern int __attribute__((format (printf, 1, 2)))
