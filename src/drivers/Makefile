@@ -24,3 +24,4 @@ obj-y += drv-mem.o
 
 obj-$(CONFIG_DRIVER_FAT)	+= drv-fat.o
 obj-$(CONFIG_DRIVER_EXT2)	+= drv-ext2.o
+obj-$(CONFIG_DRIVER_NOR_CFI)	+= drv-nor-cfi.o
