@@ -121,11 +121,16 @@
 #define PHY_ID2		3
 
 #define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_LOOPBACK		(1<<14)
 #define PHY_CONTROL_POWERDOWN		(1<<11)
 #define PHY_CONTROL_ANEN_ENABLE		(1<<12)
 #define PHY_CONTROL_RESTART_ANEN	(1<<9)
 #define PHY_STATUS_ANEN_COMPLETE	(1<<5)
 #define PHY_STATUS_LINK			(1<<2)
+#define PHY_STATUS_100FULL		(1<<14)
+#define PHY_STATUS_100HALF		(1<<13)
+#define PHY_STATUS_10FULL		(1<<12)
+#define PHY_STATUS_10HALF		(1<<11)
 
 static int phy_address;
 
@@ -403,6 +408,14 @@ int cmd_emac (int argc, const char** argv)
 	PRINTF (" anen_complete");
       if (l&PHY_STATUS_LINK)
 	PRINTF (" link");
+      if (l&PHY_STATUS_100FULL)
+	PRINTF (" cap100F");
+      if (l&PHY_STATUS_100HALF)
+	PRINTF (" cap100H");
+      if (l&PHY_STATUS_10FULL)
+	PRINTF (" cap10F");
+      if (l&PHY_STATUS_10HALF)
+	PRINTF (" cap10H");
       printf ("\r\n");
       l = emac_phy_read (phy_address, 4);
       PRINTF ("phy_advertisement 0x%lx\r\n", l);
@@ -462,7 +475,16 @@ int cmd_emac (int argc, const char** argv)
 #endif
   }
   else {
-    if (strcmp (argv[1], "anen") == 0) {
+    if (strcmp (argv[1], "loop") == 0) {
+      emac_phy_reset (phy_address);
+      printf ("emac: loopback and restart anen\r\n");
+      emac_phy_write (phy_address, 0,
+		      PHY_CONTROL_RESTART_ANEN
+		      | PHY_CONTROL_ANEN_ENABLE 
+		      | PHY_CONTROL_LOOPBACK
+		      | emac_phy_read (phy_address, 0));
+    }
+    else if (strcmp (argv[1], "anen") == 0) {
       emac_phy_reset (phy_address);
       printf ("emac: restart anen\r\n");
       emac_phy_write (phy_address, 0,
