@@ -55,7 +55,7 @@ int cmd_checksum (int argc, const char** argv)
     int index = 0;
     unsigned long crc = 0;
     while (index < d.length) {
-      char rgb[512];
+      char rgb[1024];
       int cb = d.driver->read (&d, rgb, sizeof (rgb));
       SPINNER_STEP;
       crc = compute_crc32 (crc, rgb, cb);

@@ -81,8 +81,8 @@
 #define EXP_WR_EN	       (1<<1)	/* Enable writes */
 #define EXP_SPLIT_EN	       (1<<3)	/* Enable split transfers */
 #define EXP_MUX_EN	       (1<<4)	/* Multiplexed A/D */
-#define EXP_HRDY_POL	       (1<<4)	/* HRDY polarity */
-#define EXP_BYTE_RD16	       (1<<4)	/* Byte access to 16 bit device */
+#define EXP_HRDY_POL	       (1<<5)	/* HRDY polarity */
+#define EXP_BYTE_RD16	       (1<<6)	/* Byte access to 16 bit device */
 #define EXP_CNFG_SHIFT	       (10)	/* Device addressing range */
 #define EXP_CNFG_MASK	       (0xf)
 #define EXP_CYC_TYPE_SHIFT     (14)	/* Cycle type */

@@ -233,6 +233,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 static void target_init (void)
 {
   EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
+  __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
 }
 
 #if 0

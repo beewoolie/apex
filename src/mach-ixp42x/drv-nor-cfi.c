@@ -78,8 +78,6 @@
 #define NOR_0_LENGTH	CONFIG_NOR_BANK0_LENGTH
 #define CHIP_MULTIPLIER	(1)		/* Number of chips at REGA */
 
-#define USE_FULL_ALIGNMENT 1	/* Array can only be accessed in width */
-
 #if WIDTH == 32
 # define REGA		__REG		/* Array I/O macro */
 typedef unsigned long array_t;
@@ -404,44 +402,14 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
       available = NOR_0_LENGTH - index;
     index = phys_from_index (index);
 
-    WRITE_ONE (index, CMD (ReadArray));
-
-#if defined (USE_FULL_ALIGNMENT)
-    /* *** FIXME this is a mess. This implementation only works on big
-       *** endian.  Ouch.*/
-
-    if (index & 1) {
-      array_t v = REGA (index & ~1);
-      available = 1;		/* Degenerate */
-      *(unsigned char*) pv = (v >> 8) & 0xff;
-    } 
-    else if (available == 1) {
-      array_t v = REGA (index & ~1);
-      available = 1;		/* Degenerate */
-      *(unsigned char*) pv = v & 0xff;
-    }
-    else {
-      int i;
-      available &= ~1;
-      // *** fixme: this is a bottleneck It deserves to be optimized.
-      // *** Probably, we can let it perform word-sized reads
-
-//      memcpy (pv, (void*) index, available);
-      for (i = 0; i < available; i += 2)
-	*(array_t*)(pv + i) = REGA (index + i);
-    }
-
-#else
+    d->index += available;
+    cb -= available;
+    cbRead += available;
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     WRITE_ONE (index, CMD (ReadArray));
     memcpy (pv, (void*) index, available);
 
-#endif
-
-    d->index += available;
-    cb -= available;
-    cbRead += available;
     pv += available;
   }    
   
