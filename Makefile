@@ -1071,7 +1071,7 @@ tgz: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 
 complete_release: tgz FORCE
-	cp apex-$(APEXRELEASE).tgz ~ftp/pub/apex
+	cp apex-$(APEXRELEASE).tar.gz ~ftp/pub/apex
 	svn cp -m "$(APEXRELEASE)" file:///svn/tool/trunk/apex file:///svn/tool/tags/apex/$(APEXRELEASE)
 
 # Brief documentation of the typical targets used
