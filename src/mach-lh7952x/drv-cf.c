@@ -46,6 +46,8 @@
 #include "hardware.h"
 #include "compactflash.h"
 
+#define TALK
+
 #if CF_WIDTH == 16
 #define REG __REG16
 #endif
@@ -80,6 +82,15 @@ enum {
   typeSecurity = 9,
 };
 
+struct partition {
+  unsigned char boot;
+  unsigned char begin_chs[3];
+  unsigned char type;
+  unsigned char end_chs[3];
+  unsigned long start;
+  unsigned long length;
+};
+
 struct cf_info {
   int type;
   char szFirmware[9];		/* Card firmware revision */
@@ -89,7 +100,9 @@ struct cf_info {
   int sectors_per_track;
   int total_sectors;
 
-  char bootsector[SECTOR_SIZE];
+  char bootsector[SECTOR_SIZE];	/* *** Superfluous */
+
+  struct partition partition[4];
 
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
@@ -149,7 +162,9 @@ static void seek (unsigned sector)
   unsigned head;
   unsigned cylinder;
 
-//  printf ("[%d", sector);
+#if defined (TALK)
+  printf ("[%d", sector);
+#endif
 
 #if defined (USE_LBA)
   head      = (sector >> 24) & 0xf;
@@ -168,7 +183,9 @@ static void seek (unsigned sector)
 
   ready_wait ();
 
-//  printf (" %d %d %d]\n", head, cylinder, sector);
+#if defined (TALK)
+  printf (" %d %d %d]\n", head, cylinder, sector);
+#endif
 }
 
 static void cf_init (void)
@@ -190,7 +207,7 @@ static void cf_init (void)
     for (i = 0; i < 128; ++i)
       rgs[i] = read16 (IDE_DATA);
 
-    dump ((void*) rgs, 256, 0);
+//    dump ((void*) rgs, 256, 0);
 
     cf_d.cylinders         = rgs[1];
     cf_d.heads		   = rgs[3];
@@ -212,10 +229,13 @@ static void cf_init (void)
   {
     struct descriptor_d d;
     int result;
-    result = parse_descriptor (DRIVER_NAME ":", &d);
-    if (!result) {
+    if (   !(result = parse_descriptor (DRIVER_NAME ":+1s", &d))
+	&& !(result = open_descriptor (&d))) {
       d.driver->read (&d, cf_d.bootsector, SECTOR_SIZE);
+      d.driver->seek (&d, SECTOR_SIZE - 66, SEEK_SET);
+      d.driver->read (&d, cf_d.partition, 16*4);
       close_descriptor (&d);
+//      dump ((void*) cf_d.bootsector, 512, 0);
     }
   }
 }
@@ -250,7 +270,9 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
 		/* Read sector into buffer  */
     if (sector != cf_d.sector) {
       int i;
+#if defined (TALK)
       printf ("cf reading %d\n", sector);
+#endif
       seek (sector);
       write8 (IDE_COMMAND, IDE_READSECTOR);
       ready_wait ();
@@ -279,7 +301,17 @@ static void cf_report (void)
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
 	  cf_d.szFirmware, cf_d.szName);
-  printf ("          media %d\n", cf_d.bootsector[21]);
+  if (   cf_d.bootsector[SECTOR_SIZE - 2] == 0x55 
+      && cf_d.bootsector[SECTOR_SIZE - 1] == 0xaa) {
+    int i;
+    for (i = 0; i < 4; ++i)
+      if (cf_d.partition[i].type)
+	printf ("          partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+		cf_d.partition[i].boot ? '*' : ' ',
+		cf_d.partition[i].type,
+		cf_d.partition[i].start,
+		cf_d.partition[i].length);
+  }
 }
 
 #endif
