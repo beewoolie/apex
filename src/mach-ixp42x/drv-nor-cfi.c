@@ -68,7 +68,7 @@
 # define PRINTF(v...)	do {} while (0)
 #endif
 
-//#define NO_WRITE		/* Disable writes, for debugging */
+#define NO_WRITE		/* Disable writes, for debugging */
 
 /* Here are the parameters that ought to be changed to align the
    driver with the expected flash layout. */
@@ -705,7 +705,7 @@ static void nor_report (void)
   printf ("  nor: %ldMiB total  %dB write buffer\n",
 	  chip->total_size/(1024*1024), chip->writebuffer_size);
   for (i = 0; i < chip->regions; ++i)
-    printf ("    region %d: %3d block%c at %6d (0x%05x) bytes\n",
+    printf ("    region %d: %3d block%c of %6d (0x%05x) bytes\n",
 	    i,
 	    chip->region[i].count, 
 	    (chip->region[i].count > 1) ? 's' : ' ',
