@@ -1,5 +1,8 @@
 2005-03-16  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7952x/timer-lh79520.c (lh79520_timer_init): Fixed the
+	initialization of the boot loader timer.
+
 	* src/mach-lh7952x/lpd79520_config (CONFIG_NOR_BANK0_START): Fixed
 	the starting address of the NOR flash so that the REMAP register
 	doesn't make a difference.

@@ -40,7 +40,7 @@
 
 /* ----- Prototypes */
 
-#define RCPC_PHYS	0xfffe2000
+#define RCPC_PHYS			0xfffe2000
 
 #define RCPC_CTRL			__REG (RCPC_PHYS + 0x00)
 #define RCPC_CHIPID			__REG (RCPC_PHYS + 0x04)
@@ -60,14 +60,15 @@
 #define RCPC_CTRL_UNLOCK		(1<<9)
 #define RCPC_AHBCLK_SDC			(1<<1)
 #define RCPC_AHBCLK_DMA			(1<<0)
-#define RCPC_PERIPHCLK_T02		(1<<5)
+#define RCPC_PERIPHCLK_RTC		(1<<9)
+#define RCPC_PERIPHCLK_T23		(1<<5)
 #define RCPC_PERIPHCLK_T01		(1<<4)
 #define RCPC_PERIPHCLK_U2		(1<<2)
 #define RCPC_PERIPHCLK_U1		(1<<1)
 #define RCPC_PERIPHCLK_U0		(1<<0)
-#define RCPC_PERIPHCLK_RTC_32KHZ	(3<<7)
-#define RCPC_PERIPHCLK_RTC_1HZ		(0<<7)
-#define RCPC_PERIPHCLK_RTC_MASK		(3<<7)
+#define RCPC_PERIPHCLKSEL_RTC_32KHZ	(3<<7)
+#define RCPC_PERIPHCLKSEL_RTC_1HZ	(0<<7)
+#define RCPC_PERIPHCLKSEL_RTC_MASK	(3<<7)
 
 #define RCPC_CPUCLKPRESCALE_78		0x2
 #define RCPC_CPUCLKPRESCALE_52		0x3
