@@ -1,4 +1,4 @@
-/* initialize.c
+/* init-lpd79524.c
      $Id$
 
    written by Marc Singer
@@ -25,8 +25,8 @@
    DESCRIPTION
    -----------
 
-   Hardware initializations.  Some initializationmay be left to
-   drivers, such as the serial interface initialization.
+   Hardware initializations for the LPD79524.  Some initializations
+   may be left to drivers, such as the serial interface and timer.
 
 */
 
