@@ -2,7 +2,8 @@
 # Makefile for APEX loader
 #
 
-obj-y := entry.o relocate.o
+obj-y := entry.o
+#lib-y += relocate.o
 
 CPPFLAGS_apex.lds += -DAPEX_VMA=$(CONFIG_APEX_VMA)
 

@@ -77,12 +77,12 @@ SECTIONS
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (8);
 	.bss . : {
-		APEX_BSS_START = .;
+		APEX_VMA_BSS_START = .;
 		*(.bss)
-		APEX_BSS_END = .;
+		APEX_VMA_BSS_END = .;
 	}
 	. += 8192;
-	APEX_STACK_START = .;
+	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
 	APEX_VMA_END = .;
 }

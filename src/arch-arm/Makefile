@@ -9,7 +9,6 @@ GZFLAGS      := -9
 #CFLAGS_entry.o += -Os
 CFLAGS += -Os
 
-
 init-y += src/arch-arm/entry/ 
 core-y += src/mach-lh7952x/ src/drivers/ src/arch-arm/linux/
 libs-y += src/arch-arm/lib/

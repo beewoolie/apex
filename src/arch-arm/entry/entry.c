@@ -10,7 +10,7 @@
 */
 
 #include <config.h>
-#include "bootstrap.h"
+#include <asm/bootstrap.h>
 
 extern void reset (void);
 extern void exception_error (void);
@@ -49,16 +49,21 @@ void __naked __section(.entry) exception_vectors (void)
 void __naked __section (.bootstrap) reset (void)
 {
 #if 0
-				/* Disable MMU */
+  /* This would disable the MMU, but there is little reason to include
+     it.  The only way this would be called would be if the CPU jumped
+     to the loader while running something that needed the MMU.  In
+     the unusual situation where the MMU maps the loader in a place
+     where it can execute, this might make things work.  I'd rather
+     wait for a legitimate use for this operation.  */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #1\n\t"
 		  "mcr p15, 0, r0, c1, c0, 0");
 #endif
 
-  initialize_bootstrap ();
+  initialize_bootstrap ();	/* Initialization critical to relocate */
   relocate_apex ();
-  initialize_target ();
-  setup_c ();
+  initialize_target ();		/* Reset of platform initialization */
+  setup_c ();			/* Setups before executing C code */
 
 	/* Start loader proper which doesn't return */
   __asm volatile ("mov pc, %0" :: "r" (&init)); 
@@ -88,15 +93,15 @@ void __naked __section (.bootstrap) exception_error (void)
 void __naked __section (.text) setup_c (void)
 {
 	/* Setup stack, quite trivial */
-  __asm ("mov sp, %0" :: "r" (&APEX_STACK_START));
+  __asm ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
 
 	/* Clear BSS */
-  if (&APEX_BSS_START != &APEX_BSS_END)
+  if (&APEX_VMA_BSS_START != &APEX_VMA_BSS_END)
     __asm (
 	   "0: stmia %0!, {%2}\n\t"
 	   "   cmp %0, %1\n\t"
 	   "   ble 0b\n\t"
-	   : : "r" (&APEX_BSS_START), "r" (&APEX_BSS_END), "r" (0));
+	   : : "r" (&APEX_VMA_BSS_START), "r" (&APEX_VMA_BSS_END), "r" (0));
 
   __asm ("mov pc, lr");
 }
