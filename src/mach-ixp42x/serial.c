@@ -144,6 +144,11 @@ ssize_t ixp42x_serial_write (struct descriptor_d* d,
 
     ++cWrote;
   }
+  
+	/* Wait for completion */
+  while (!(UART_LSR & UART_LSR_TEMT))
+    ;
+
   return cWrote;
 }
 

@@ -1,5 +1,19 @@
 2005-03-07  Marc Singer  <elf@buici.com>
 
+	* src/mach-ixp42x/serial.c (ixp42x_serial_write): Waiting for all
+	data to write before returning.
+
+	* src/mach-ixp42x/cmd-reset.c (cmd_reset): Resetting services
+	before reset so that the nor flash has a chance to enter
+	array-read mode.
+
+	* src/mach-lh7952x/cmd-reset.c (cmd_reset): Resetting services
+	before reset so that the nor flash has a chance to enter
+	array-read mode.
+
+	* src/mach-lh7952x/drv-nor-cfi.c (nor_release): Release function
+	added so that cmd-reset will reliably perform.
+
 	* src/drivers/drv-fat.c (fat_find): Fat filename comparisions are
 	not case insensitive without requiring the descriptor parser to
 	lower-case the path elements.

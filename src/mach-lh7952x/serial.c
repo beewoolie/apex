@@ -165,6 +165,10 @@ ssize_t lh7952x_serial_write (struct descriptor_d* d,
 {
   ssize_t cWrote = 0;
   const unsigned char* pb = pv;
+
+  while (!(UART_FR & UART_FR_TXFE))
+    ;
+
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
     while (UART_FR & UART_FR_TXFF)
@@ -174,6 +178,15 @@ ssize_t lh7952x_serial_write (struct descriptor_d* d,
 
     ++cWrote;
   }
+
+	/* Wait for completion */
+  /* *** This should not be necessary.  However, without it, the
+     *** driver sometimes fails to send all of the output.  There is a
+	 secondary benefit to this check in that it guarantees that
+	 output is visible before execution continues. */
+  while (!(UART_FR & UART_FR_TXFE))
+    ;
+
   return cWrote;
 }
 

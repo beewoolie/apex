@@ -1,4 +1,4 @@
-/* drv-nor-generic.c
+/* drv-nor-cfi.c
      $Id$
 
    written by Marc Singer
@@ -708,6 +708,26 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
   }
 }
 
+
+/* nor_release
+
+   has the sole mission to put the nor flash into read-array mode.
+   This is necessary to guarantee that the reset command will be able
+   to execute from flash.  Without this, it it possible that the reset
+   command will pass control to a NOR flash array where the data read
+   is the array status.
+
+*/
+
+static void nor_release (void)
+{
+  REGA (NOR_0_PHYS) = CMD (ReadArray);
+#if defined (NOR_1_PHYS)
+  REGA (NOR_1_PHYS) = CMD (ReadArray);
+#endif
+}
+
+
 #if !defined (CONFIG_SMALL)
 
 static void nor_report (void)
@@ -743,6 +763,7 @@ static __driver_3 struct driver_d nor_driver = {
 
 static __service_6 struct service_d cfi_nor_service = {
   .init = nor_init,
+  .release = nor_release,
 #if !defined (CONFIG_SMALL)
   .report = nor_report,
 #endif

@@ -30,6 +30,7 @@
 #include <config.h>
 #include <apex.h>
 #include <command.h>
+#include <service.h>
 
 #if defined (CONFIG_MACH_LH79524)
 #include "lh79524.h"
@@ -41,6 +42,8 @@
 
 static void cmd_reset (int argc, const char** argv)
 {
+  release_services ();		/* Primarily to prep NOR flash */
+
   RCPC_CTRL      |= (1<<9); /* Unlock */
   RCPC_SOFTRESET  = 0xdead;
 }

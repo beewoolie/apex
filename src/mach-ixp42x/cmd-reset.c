@@ -32,6 +32,7 @@
 #include <config.h>
 #include <apex.h>
 #include <command.h>
+#include <service.h>
 #include "hardware.h"
 
 #define KEY			0x482e
@@ -40,6 +41,8 @@
 
 static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
+  release_services ();
+
   printf ("Performing watchdog reset\n");
   /* *** FIXME: need to flush console, or something here. */
 
