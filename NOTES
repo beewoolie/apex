@@ -12,12 +12,11 @@ TODO:
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
   o command history
-  o Rename segments to remove the leading period.  Also, make the
-    underscores into periods.
 
-  o *** I need to test the NAND driver, still.  The relocator may not
-    be working with the PM0 mode.  Damn.  Also, need to add code for
-    the NAND addressing bytes to the driver.
+  o lh7a40x
+    o Nor driver init's, but it won't erase or write
+    o Should be little else since there is only one memory device
+    o Not much incentive to be small with 80k of SRAM
 
 Goals
 
@@ -261,6 +260,10 @@ NAND Flash Drivers
     Kurt is not coming to my way of thinking which is that there is a
     boot-up mode that mimics the Sharp method and a CPLD configurable
     mode that is faster.
+  o Latest CPLD from Kurt works correctly in both modes.  We can now
+    perform IO in the Sharp way and in the Logic way.  Relocator
+    tested in both as is the drv-nand.  Kernel driver is likely to be
+    Logic mode only for now.
 
 Errors
 

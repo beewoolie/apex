@@ -3,3 +3,37 @@ APEX Boot Loader
  README_region
 ================
 
+APEX uses a common notation when describing regions of memory, data
+sources, and data sinks.  The form is similar to that used by the
+Linux kernel, but it is different in a significant way.
+
+  [DRIVER:][@]START[#LENGTH]
+
+The DRIVER is the name of an IO driver that handles the requests.
+Without an explicit driver, the 'memory:' driver is the default.
+Driver names may be shortened to a unique prefix.  If there is only
+one driver that begins with the letter 'm', then 'm:' uniquely
+identifies it.  If there are two nor drivers, APEX will require a
+driver name long enough to distinguish which one to use.  The command
+'drvinfo' lists the available drivers.
+
+The START address is the beginning of the region relative to the
+driver's domain.  In the case of the memory driver, this is the start
+of addressable memory.  For other devices such as flash memory, the
+first memory location in the device is zero.  Thus, for a flash part
+mapped at 0x40000000, nor:0 to the first byte at physical address
+0x40000000.
+
+The LENGTH is a count of bytes.  It may be omitted when the length is
+either self-evident or when there is a reasonable default.  For
+example, when displaying a region, the default length is about 64.
+When erasing a flash block, the default length is 1.
+
+START and LENGTH may be specifed as a decimal number, a hexadecimal
+number, and may followed by a suffix 'm' or 'k' for megabytes
+(1024*1024) or kilobytes (1024).
+
+  nor:16k#4k	 - 4096 bytes, 16384 bytes from the start of NOR flash
+  nand:0	 - The only NAND driver
+  nand-eb501:0   - A specific NAND driver
+
