@@ -115,7 +115,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
 //		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
 //		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
+		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
 		  "mcr p15, 0, r0, c1, c0, 0");
+  COPROCESSOR_WAIT;
 
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
@@ -157,15 +159,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | EXP_WR_EN
     | EXP_CS_EN
     ;
-
-	/* Enable instruction cache */
-  { 
-    unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "orr %0, %0, #(1<<12)\n\t"
-		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (v));
-    COPROCESSOR_WAIT;
-  }
 
 	  /* Exit now if executing in SDRAM */ 
   if (EXP_CNFG0 & (1<<31)) {
@@ -240,7 +233,7 @@ static void target_release (void)
 {
   /* *** FIXME: I don't think this is necessary.  I'm trying to figure
      *** out why the kernel fails to boot.  */
-
+ 
 	/* Invalidate caches (I&D) and BTB (?) */
   __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
