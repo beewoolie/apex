@@ -117,11 +117,10 @@ static int cmd_setenv (int argc, const char** argv)
   static char sz[ENV_CB_MAX];
 
   if (!is_descriptor_open (&env_d))
-    return ERROR_UNSUPPORTED;
+    ERROR_RETURN (ERROR_UNSUPPORTED, "environment descriptor not open");
 
   if (argc < 3)
-    return ERROR_PARAM; 
-
+    return ERROR_PARAM;
 
 #if 0
   SerialOutputString ("set ");

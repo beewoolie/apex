@@ -35,6 +35,8 @@
 #include <linux/ctype.h>
 #include <environment.h>
 
+const char* error_description;
+
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
   static const char* argv[64];	/* Command words */
@@ -101,9 +103,14 @@ int call_command (int argc, const char** argv)
     }
   }
   if (command_match) {
-    int result = command_match->func (argc, argv);
-    if (result < 0)
-      printf ("Error %d\r\n", result);
+    int result;
+    error_description = NULL;
+    result = command_match->func (argc, argv);
+    if (result < 0) {
+      printf ("Error %d", result);
+      printf (" (%s)", error_description);
+      printf ("\r\n");
+    }
     return result;
   }
   return ERROR_NOCOMMAND;

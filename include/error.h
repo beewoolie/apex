@@ -30,6 +30,8 @@
 #if !defined (__ERROR_H__)
 #    define   __ERROR_H__
 
+extern const char* error_description;
+
 #define ERROR_FAILURE	(-7)
 #define ERROR_NOCOMMAND (-8)
 #define ERROR_PARAM	(-9)
@@ -37,5 +39,7 @@
 #define ERROR_AMBIGUOUS (-11)
 #define ERROR_NODRIVER	(-12)
 #define ERROR_UNSUPPORTED (-13)
+
+#define ERROR_RETURN(v,m) ({ error_description = m; return v; })
 
 #endif  /* __ERROR_H__ */
