@@ -873,7 +873,7 @@ include/asm:
 include/config/MARKER: include/linux/autoconf.h
 	@echo '  SPLIT   include/linux/autoconf.h -> include/config/*'
 	@scripts/basic/split-include include/linux/autoconf.h include/config
-	@[ -f .config ] 
+	@[ -f .config ] \
 	  && scripts/configtohfunc .config > include/.configfunc.h
 	@if ( cmp -s include/configfunc.h include/.configfunc.h ) ; \
 	  then rm include/.configfunc.h ; \

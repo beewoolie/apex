@@ -35,7 +35,7 @@ config ATAG_PHYS
 	  value unless you know what you are doing. 
 
 config ARCH_NUMBER_FUNCTION
-	string "function"
+	string
 	default "determine_arch_number"
 
 config APEX_VMA
