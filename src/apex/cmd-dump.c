@@ -4,7 +4,7 @@
    written by Marc Singer
    4 Nov 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -38,24 +38,22 @@
 int cmd_dump (int argc, const char** argv)
 {
   struct descriptor_d d;
-  int result;
+  int result = 0;
   unsigned long index;
 
   if (argc < 2)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target (%d)\r\n", result);
-    return ERROR_OPEN;
+    printf ("Unable to open target (%s)\r\n", argv[1]);
+    goto fail;
   }
 
   if (!d.length)
     d.length = 16*8;		/* ** FIXME: get from environment */
 
-  if (d.driver->open (&d)) {
-    d.driver->close (&d);
-    return ERROR_OPEN;
-  }
+  if ((result = open_descriptor (&d)))
+    goto fail;
 
   index = d.start;
   /* *** FIXME: it would be a very good idea to let this function read
@@ -87,9 +85,10 @@ int cmd_dump (int argc, const char** argv)
     index += cb;
   }
 
-  d.driver->close (&d);
+ fail:
+  close_descriptor (&d);
 
-  return 0;
+  return result;
 }
 
 static __command struct command_d c_dump = {

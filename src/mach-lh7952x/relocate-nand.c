@@ -4,7 +4,22 @@
    written by Marc Singer
    9 Nov 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
 
    -----------
    DESCRIPTION
@@ -20,6 +35,7 @@
 #include <asm/bootstrap.h>
 #include "nand.h"
 #include "lh79524.h"
+
 
 /* wait_on_busy
 
@@ -51,29 +67,8 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
    *** more efficient.  Probably, this isn't a big deal, but it would
    *** be handy.
 
-   Without the high-order byte, we can only read 128KiB from NAND
-   flash.  It should be adequate as is.
-
 */
 
-#if 0
-void __naked __section (.bootstrap) relocate_apex (void)
-{
-  extern unsigned long reloc;
-  __asm volatile ("mov r0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: subs ip, %0, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, lr\n\t" /* Simple return if we're reloc'd  */
-		  "mov lr, r0\n\t"
-		  :
-		  : "r" (&reloc)
-		  : "r0", "ip");
-  
-
-
-}
-#else
 void __naked __section (.bootstrap) relocate_apex (void)
 {
   unsigned long lr;
@@ -88,9 +83,25 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  : "r" (&reloc)
 		  : "r0", "r1");
 
+#if !defined (CONFIG_NAND_LPD)
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf000);
+//  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=   0xa000; /* nFRE/nFWE select */
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=   0x5000; /* nFRE/nFWE select */
+
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf000);
+//  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=   0xa000; /* Pull-up */
+  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=   0x5000;
+
+//  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); /* nCS0 override */
+//  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8);
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8); /* nCS0 normalize */
+
+//  __REG (GPIO_MN_PHYS | 0x08) &= ~(1<<0); /* PM0 output */
+//  __REG (GPIO_MN_PHYS | 0x00) &= ~(1<<0); /* PM0 low */
+#endif
+
   {
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
-    //    int page;
     void* pv = &APEX_VMA_ENTRY;
 
     __REG8 (NAND_CLE) = Reset;
@@ -98,15 +109,14 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
     __REG8 (NAND_CLE) = Read1;
     __REG8 (NAND_ALE) = 0;
-//  __REG8 (NAND_ALE) = ( page        & 0xff);
     __REG8 (NAND_ALE) = 0;
-//  __REG8 (NAND_ALE) = ((page >>  8) & 0xff);
     __REG8 (NAND_ALE) = 0;
     wait_on_busy ();
 
     while (cPages--) {
       int cb;
-//    for (page = 0; page < cPages; ++page) {
+
+      __REG8 (NAND_CLE) = Read1;
       for (cb = 512; cb--; )
 	*((char*) pv++) = __REG8 (NAND_DATA); /* *** Optimize with assembler */
       {
@@ -115,17 +125,10 @@ void __naked __section (.bootstrap) relocate_apex (void)
 	  ch = __REG8 (NAND_DATA);
       }
       wait_on_busy ();
-      __REG8 (NAND_CLE) = Read1;
     }
   }
 
-  __asm volatile ("0: b 0b");
+  //  __asm volatile ("0: b 0b");
+
   __asm volatile ("mov pc, %0" :: "r" (lr));
-
-  /* *** Starting at the top is OK as long as we don't call
-     *** relocate_apex again. */
-//  __asm ("mov pc, %0" : : "r" (&APEX_VMA_ENTRY));
 }
-#endif
-
-

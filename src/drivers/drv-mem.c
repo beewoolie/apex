@@ -131,10 +131,10 @@ static __driver_0 struct driver_d memory_driver = {
   .name = "memory",
   .description = "memory driver (SDRAM/DRAM/SRAM)",
   .open = memory_open,
-  .close = close_descriptor,
+  .close = close_helper,
   .read = memory_read,
   .write = memory_write,
-  .seek = seek_descriptor,
+  .seek = seek_helper,
 };
 
 static __service_0 struct service_d memort_service = {

@@ -4,7 +4,22 @@
    written by Marc Singer
    31 Oct 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
 
    -----------
    DESCRIPTION
@@ -115,6 +130,7 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define IOCON_MUXCTL5	(0x20)
 #define IOCON_MUXCTL6	(0x28)
 #define IOCON_MUXCTL7	(0x30)
+#define IOCON_RESCTL7	(0x34)
 #define IOCON_MUXCTL10	(0x48)
 #define IOCON_MUXCTL11	(0x50)
 #define IOCON_MUXCTL12	(0x58)
@@ -161,6 +177,8 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 
  /* -- */
 
+    /* Register values and bits */
+
 #define RCPC_CTRL_UNLOCK	(0x263)	/* Unlock; CLKOUT <= HCLK; Active */
 #define RCPC_CTRL_LOCK		(0x63)	/* Lock; CLKOUT <= HCLK; Active */
 #define RCPC_CORECONFIG_FASTBUS	(3)
@@ -198,24 +216,24 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define IOCON_MUXCTL19_V	(0x0441)	/* Enable D31-D29 */
 #define IOCON_MUXCTL20_V	(0x1110)	/* Enable D28-D26 */
 
-#define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000) /* works with 1:1 clock mode */
+		/* *** FIXME: works with 1:1 clock mode only */
+#define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000)
 
-#define UART_FR_RXFE (1<<4)
-#define UART_FR_TXFF (1<<5)
-#define UART_FR_TXFE (1<<7)
-#define UART_DR_PE (1<<9)
-#define UART_DR_OE (1<<11)
-#define UART_DR_FE (1<<8)
-#define UART_FR_BUSY (1<<3)
-#define UART_CR_EN (1<<0)
-#define UART_CR_TXE (1<<8)
-#define UART_CR_RXE (1<<9)
-#define UART_LCR_WLEN8 (3<<5)
-#define UART_LCR_FEN (1<<4)
-#define UART_DR_DATAMASK (0xff)
+#define UART_FR_RXFE		(1<<4)
+#define UART_FR_TXFF		(1<<5)
+#define UART_FR_TXFE		(1<<7)
+#define UART_DR_PE		(1<<9)
+#define UART_DR_OE		(1<<11)
+#define UART_DR_FE		(1<<8)
+#define UART_FR_BUSY		(1<<3)
+#define UART_CR_EN		(1<<0)
+#define UART_CR_TXE		(1<<8)
+#define UART_CR_RXE		(1<<9)
+#define UART_LCR_WLEN8		(3<<5)
+#define UART_LCR_FEN		(1<<4)
+#define UART_DR_DATAMASK	(0xff)
 
 #define RTC_CR_EN	(1)
-
 
 
 #endif  /* __LH79524_H__ */

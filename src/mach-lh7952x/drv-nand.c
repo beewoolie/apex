@@ -4,7 +4,22 @@
    written by Marc Singer
    4 Nov 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
 
    -----------
    DESCRIPTION
@@ -53,13 +68,26 @@ static void wait_on_busy (void)
 #endif
 }
 
+/* nand_init
+
+   probes the NAND flash device.
+
+   Note that the status check redundantly sends the Status command
+   when we are not using the CONFIG_NAND_LPD mode.  It's left in for
+   now.
+
+*/
+
 static void nand_init (void)
 {
   unsigned char manufacturer;
   unsigned char device;
 
+  printf ("nand init\r\n");
+
   __REG8 (NAND_CLE) = Reset;
   wait_on_busy ();
+
   __REG8 (NAND_CLE) = Status;
   wait_on_busy ();
   if ((__REG8 (NAND_DATA) & Ready) == 0) {
@@ -68,7 +96,7 @@ static void nand_init (void)
 
   __REG8 (NAND_CLE) = ReadID;
   __REG8 (NAND_ALE) = 0;
-  wait_on_busy ();
+  //  wait_on_busy ();
 
   manufacturer = __REG8 (NAND_DATA);
   device       = __REG8 (NAND_DATA);
@@ -136,6 +164,9 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     __REG8 (NAND_ALE) = ( page        & 0xff);
     __REG8 (NAND_ALE) = ((page >>  8) & 0xff);
     wait_on_busy ();
+#if !defined (CONFIG_NAND_LPD)
+    __REG8 (NAND_CLE) = (index < 256) ? Read1 : Read2;
+#endif
     while (available--)		/* May optimize with assembler...later */
       *((char*) pv++) = __REG8 (NAND_DATA);
   }    
@@ -274,11 +305,11 @@ static __driver_3 struct driver_d nand_driver = {
   .description = "NAND flash driver",
   //  .flags = DRIVER_ | DRIVER_CONSOLE,
   .open = nand_open,
-  .close = close_descriptor,
+  .close = close_helper,
   .read = nand_read,
   .write = nand_write,
   .erase = nand_erase,
-  .seek = seek_descriptor,
+  .seek = seek_helper,
 };
 
 static __service_2 struct service_d lh79524_nand_service = {

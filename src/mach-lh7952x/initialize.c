@@ -4,7 +4,22 @@
    written by Marc Singer
    28 Oct 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
 
    -----------
    DESCRIPTION
@@ -130,42 +145,23 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
   __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_LOCK;
 
 	/* Setup IO pin multiplexers */
-  __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL6)  = IOCON_MUXCTL6_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;
+  __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V; 	/* UART */
+  __REG (IOCON_PHYS | IOCON_MUXCTL6)  = IOCON_MUXCTL6_V;	/* UART */
+  __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;	/* D */
+  __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;	/* D */
+  __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;	/* D */
 #if defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
+  __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;	/* nCS0 */
 #endif
-  __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;
-  __REG (IOCON_PHYS | IOCON_MUXCTL20) = IOCON_MUXCTL20_V;
+  __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;	/* D */
+  __REG (IOCON_PHYS | IOCON_MUXCTL20) = IOCON_MUXCTL20_V;	/* D */
 
 	/* NAND flash, 8 bit */
   __REG (EMC_PHYS | EMC_SCONFIG0)    = 0x80;
-//  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-//  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
-//  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
-//  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-//  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
-//  __REG (EMC_PHYS | EMC_STURN0)      = 2;
-  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
-  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
-  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
-  __REG (EMC_PHYS | EMC_STURN0)      = 1;
 
 	/* NOR flash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG1)    = 0x81;
-  __REG (EMC_PHYS | EMC_SWAITWEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITOEN1)   = 1;
-  __REG (EMC_PHYS | EMC_SWAITRD1)    = 6;
-  __REG (EMC_PHYS | EMC_SWAITPAGE1)  = 2;
-  __REG (EMC_PHYS | EMC_SWAITWR1)    = 6;
-  __REG (EMC_PHYS | EMC_STURN1)      = 1;
-
 
 	/* CPLD, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG3)    = 0x81;
@@ -233,11 +229,36 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
 
 void __naked __section(.text) initialize_target (void)
 {
+  unsigned long lr;
+  __asm volatile ("mov %0, lr" : "=r" (lr));
+
 #if !defined (CONFIG_NAND_LPD)
 	/* IOCON to clear special NAND modes */
   __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
 #endif
+
+	/* NAND flash */
+  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITRD0)    = 2;
+  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR0)    = 2;
+  __REG (EMC_PHYS | EMC_STURN0)      = 2;
+  //  __REG (EMC_PHYS | EMC_SWAITWEN0)   = 1;
+  //  __REG (EMC_PHYS | EMC_SWAITOEN0)   = 3;
+  //  __REG (EMC_PHYS | EMC_SWAITRD0)    = 5;
+  //  __REG (EMC_PHYS | EMC_SWAITPAGE0)  = 2;
+  //  __REG (EMC_PHYS | EMC_SWAITWR0)    = 3;
+  //  __REG (EMC_PHYS | EMC_STURN0)      = 1;
+
+	/* NOR flash */
+  __REG (EMC_PHYS | EMC_SWAITWEN1)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITOEN1)   = 1;
+  __REG (EMC_PHYS | EMC_SWAITRD1)    = 6;
+  __REG (EMC_PHYS | EMC_SWAITPAGE1)  = 2;
+  __REG (EMC_PHYS | EMC_SWAITWR1)    = 6;
+  __REG (EMC_PHYS | EMC_STURN1)      = 1;
 
 	/* CompactFlash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;
@@ -248,5 +269,5 @@ void __naked __section(.text) initialize_target (void)
   __REG (EMC_PHYS | EMC_SWAITWR2)    = 6;
   __REG (EMC_PHYS | EMC_STURN2)      = 1;
 
-  __asm volatile ("mov pc, lr");
+  __asm volatile ("mov pc, %0" : : "r" (lr));
 }

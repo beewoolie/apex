@@ -4,7 +4,7 @@
    written by Marc Singer
    6 Nov 2004
 
-   Copyright (C) 2004 The Buici Company
+   Copyright (C) 2004 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -38,21 +38,16 @@ extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
 int cmd_checksum (int argc, const char** argv)
 {
   struct descriptor_d d;
-  int result;
+  int result = 0;
 
   if (argc < 2)
     return ERROR_PARAM;
 
-  if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target (%d)\r\n", result);
-    return ERROR_OPEN;
+  if (   (result = parse_descriptor (argv[1], &d))
+      || (result = open_descriptor (&d))) {
+    printf ("Unable to open target (%s)\r\n", argv[1]);
+    goto fail;
   }
-
-  if (d.driver->open (&d)) {
-    d.driver->close (&d);
-    return ERROR_OPEN;
-  }
-
 
   {
     int index = 0;
@@ -67,7 +62,10 @@ int cmd_checksum (int argc, const char** argv)
     printf ("\rcrc32 %d bytes 0x%lx (%lu)\r\n", index, crc, crc);
   }
 
-  return 0;
+ fail:
+  close_descriptor (&d);
+
+  return result;
 }
 
 static __command struct command_d c_checksum = {

@@ -18,14 +18,27 @@
 #include <error.h>
 #include <apex.h>
 
-void close_descriptor (struct descriptor_d* d)
+void close_helper (struct descriptor_d* d)
 {
   d->length = 0;
+}
+
+void close_descriptor (struct descriptor_d* d)
+{
+  if (d->driver && d->driver->close)
+    d->driver->close (d);
 }
 
 int is_descriptor_open (struct descriptor_d* d)
 {
   return d->length != 0;
+}
+
+int open_descriptor (struct descriptor_d* d)
+{
+  if (!d->driver || !d->driver->open)
+    return ERROR_UNSUPPORTED;
+  return d->driver->open (d);
 }
 
 int parse_descriptor (const char* sz, struct descriptor_d* d)
@@ -104,7 +117,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   return 0;
 }
 
-size_t seek_descriptor (struct descriptor_d* d, ssize_t ib, int whence)
+size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
 {
   switch (whence) {
   case SEEK_SET:
