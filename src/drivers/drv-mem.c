@@ -35,30 +35,18 @@ static struct mem_descriptor descriptors[2];
 
 #define CB_BLOCK	     (1024*1024)
 
-static int memory_probe (void)
+static int memory_scan (int i, unsigned long start, unsigned long length)
 {
-  extern char APEX_VMA_START;
-  extern char APEX_VMA_END;
-  unsigned long* pl;
-  int i;
-
-  memset (&regions, 0, sizeof (regions));
-
 	/* Mark */
-  for (pl = (unsigned long*) (CONFIG_MEM_BANK0_START
-			      + (CONFIG_MEM_BANK0_LENGTH & ~3)
-			      - CB_BLOCK
+  for (pl = (unsigned long*) (start + length - CB_BLOCK
 			      + (&APEX_VMA_END - &APEX_VMA_START));
-       pl >= (unsigned long*) CONFIG_MEM_BANK0_START;
+       pl >= (unsigned long*) start;
        pl -= CB_BLOCK/sizeof (*pl))
     *pl = (unsigned long) pl;
 
 	/* Identify */
-  i = 0;
-  for (pl = (unsigned long*) (CONFIG_MEM_BANK0_START
-			      + (&APEX_VMA_END - &APEX_VMA_START));
-       pl < (unsigned long*) (CONFIG_MEM_BANK0_START 
-			      + (CONFIG_MEM_BANK0_LENGTH & ~3))
+  for (pl = (unsigned long*) (START + (&APEX_VMA_END - &APEX_VMA_START));
+       pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
        pl += CB_BLOCK/sizeof (*pl)) {
     //    if (testram ((u32) pl) != 0)
@@ -72,6 +60,33 @@ static int memory_probe (void)
       if (regions[i].cb)
 	++i;
   }
+}
+
+static int memory_probe (void)
+{
+  extern char APEX_VMA_START;
+  extern char APEX_VMA_END;
+  unsigned long* pl;
+  int i;
+
+  memset (&regions, 0, sizeof (regions));
+
+  i = 0;
+#if defined (CONFIG_MEM_BANK0_START)
+  i = memory_scan (i, CONFIG_MEM_BANK0_START, CONFIG_MEM_BANK0_LENGTH);
+#endif
+
+#if defined (CONFIG_MEM_BANK1_START)
+  i = memory_scan (i, CONFIG_MEM_BANK1_START, CONFIG_MEM_BANK1_LENGTH);
+#endif
+
+#if defined (CONFIG_MEM_BANK2_START)
+  i = memory_scan (i, CONFIG_MEM_BANK2_START, CONFIG_MEM_BANK2_LENGTH);
+#endif
+
+#if defined (CONFIG_MEM_BANK3_START)
+  i = memory_scan (i, CONFIG_MEM_BANK3_START, CONFIG_MEM_BANK3_LENGTH);
+#endif
 
 #if 0
   printf ("\r\nmemory\r\n");
