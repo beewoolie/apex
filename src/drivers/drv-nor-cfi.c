@@ -270,8 +270,10 @@ static void nor_init_chip (unsigned long phys)
     return;
   }
 
+#if defined (TALK)
   PRINTF ("%s: success\n", __FUNCTION__);
   dump ((void*) phys, 256, 0);
+#endif
 
   start = chip_probed.total_size;
   i = chip_probed.regions;
