@@ -55,3 +55,20 @@ static __env struct env_d e_startup = {
   .description = "Startup commands",
 };
 #endif
+
+#if defined (CONFIG_ENV_REGION)
+extern struct descriptor_d env_d;
+
+static void env_init (void)
+{
+  if (parse_descriptor (_t(CONFIG_ENV_REGION), &env_d))
+    return;
+  if (env_d.driver->open (&env_d))
+    env_d.driver->close (&env_d);
+}
+
+static __service_3 struct service_d env_service = { 
+  .init = env_init,
+};
+#endif
+

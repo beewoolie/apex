@@ -27,12 +27,16 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
 
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
+
+#define _s(v) #v 
+#define _t(v) _s(v)
 
 int cmd_version (int argc, const char** argv)
 {
@@ -42,10 +46,16 @@ int cmd_version (int argc, const char** argv)
 "APEX comes with ABSOLUTELY NO WARRANTY.  It is free software and you\r\n"
 "are welcome to redistribute it under certain circumstances.\r\n"
 "Refer to the source the COPYING for details.\r\n\n"
-"> mem:@0x%p#0x%lx\r\n\n"
+"  apex => mem:0x%p#0x%lx\r\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+#if defined (CONFIG_ENV_REGION)
+  printf ("  env  => %s\r\n", _t(CONFIG_ENV_REGION));
+#endif
+
+  putchar ('\n');
+
   return 0;
 }
 

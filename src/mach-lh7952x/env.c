@@ -44,16 +44,3 @@ static __env struct env_d e_cmdline = {
   .description = "Linux kernel command line",
 };
 
-extern struct descriptor_d env_d;
-
-static void lh79524_env_init (void)
-{
-  if (parse_descriptor ("nor:128K#16k", &env_d))
-    return;
-  if (env_d.driver->open (&env_d))
-    env_d.driver->close (&env_d);
-}
-
-static __service_3 struct service_d lh79524_env_service = { 
-  .init = lh79524_env_init,
-};

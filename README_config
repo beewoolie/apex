@@ -143,12 +143,22 @@ CONFIG_ENV_AUTOBOOT (number)
   command without letting the user an opportunite to intervene.
   Without this option, the loader will only boot interactively.
 
+CONFIG_ENV_REGION (string)
+
+  String describing the IO region where the environment is stored.  If
+  this parameter is present (or if the env_d descriptor is initialized
+  elsewhere), the user will be able to make and preserve changes to
+  the environment between executions of the loader.  Without an IO
+  region, the environment is statically defined at compile time.  E.g.
+
+  CONFIG_ENV_REGION=nor:128k#64k
+
 CONFIG_ENV_REGION_KERNEL (string)
 
   String describing the IO region where the kernel is stored.  If this
   parameter is present and if there is a CONFIG_KERNEL_VMA, then the
   startup string will include a command to copy the kernel from this
-  region to the VMA address.  Usually, it is something like
+  region to the VMA address.  E.g.
   
   CONFIG_ENV_REGION_KERNEL=nor:256k#1536k
 
