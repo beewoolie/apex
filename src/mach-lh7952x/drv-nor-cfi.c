@@ -660,10 +660,10 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 static void nor_report (void)
 {
   int i;
-  printf ("  nor: %ldMiB total  %dB write buffer\n",
+  printf ("  nor:    %ldMiB total  %dB write buffer\n",
 	  chip->total_size/(1024*1024), chip->writebuffer_size);
   for (i = 0; i < chip->regions; ++i)
-    printf ("    region %d: %3d block%c of %6d (0x%05x) bytes\n",
+    printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",
 	    i,
 	    chip->region[i].count, 
 	    (chip->region[i].count > 1) ? 's' : ' ',

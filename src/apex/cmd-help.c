@@ -131,7 +131,7 @@ static __command struct command_d c_help_commandline = {
   .command = "command-line",
   .description = "help on the APEX command line",
   COMMAND_HELP(
-"APEX command-line\n"
+"command-line\n"
 "  The command line interpreter is simple.  Command words are separated\n"
 "  separated into words and passed to the command interpreting function.\n"
 "  Quoting is not yet supported.  Command words are separated by\n"
