@@ -12,13 +12,19 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
+#include <spinner.h>
 
 int cmd_verify (int argc, const char** argv)
 {
-  printf ("unimplemented\r\n");
+  unsigned long time = timer_read ();
+
+  do {
+    SPINNER_STEP;
+  } while (timer_delta (time, timer_read ()) < 5*1000);
   return 0;
 }
 

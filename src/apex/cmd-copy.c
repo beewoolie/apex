@@ -64,7 +64,7 @@ int cmd_copy (int argc, const char** argv)
   din.driver->close (&din);
   dout.driver->close (&dout);
 
-  printf ("%d bytes transferred\r\n", cbCopy);
+  printf ("\r%d bytes transferred\r\n", cbCopy);
 
   return 0;
 }

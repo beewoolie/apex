@@ -38,6 +38,7 @@
 #include <apex.h>
 #include <config.h>
 #include "lh79524.h"
+#include <spinner.h>
 
 //#define TALK
 
@@ -257,14 +258,16 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     if (index & 1) {
       step = 1;
       index &= ~1;
-      WRITE_ONE (d->index, ReadArray);
-      data = READ_ONE (index);
+      //      WRITE_ONE (d->index, ReadArray);
+      //      data = READ_ONE (index);
+      data = 0xffff;
       ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
     }
     else if (cb == 1) {
       step = 1;
-      WRITE_ONE (d->index, ReadArray);
-      data = READ_ONE (index);
+      //      WRITE_ONE (d->index, ReadArray);
+      //      data = READ_ONE (index);
+      data = 0xffff;
       ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
     }
     else
@@ -281,6 +284,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     WRITE_ONE (index, data);
     status = nor_status (index);
     vpen_disable ();
+
+    SPINNER_STEP;
 
     if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
     fail:
@@ -304,6 +309,8 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
+
+  SPINNER_STEP;
 
   while (cb > 0) {
     unsigned long index = d->start + d->index;
@@ -330,6 +337,8 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     WRITE_ONE (index, EraseConfirm);
     status = nor_status (index);
     vpen_disable ();
+
+    SPINNER_STEP;
 
     if (status & (EraseError | VPEN_Low | DeviceProtected)) {
     fail:

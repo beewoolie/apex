@@ -5,7 +5,7 @@
 lib-y := vsprintf.o ctype.o udiv.o
 lib-y += strlen.o string.o
 lib-y += crc32.o xmodem.o
-lib-y += env.o
+lib-y += env.o spinner.o
 #lib-y += div64.o
 
 #CFLAGS_vsprintf.o += -mthumb
