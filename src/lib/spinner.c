@@ -42,7 +42,7 @@ void spinner_step (void)
   static int step;
   static const unsigned char rgch[]
     = { '|', '/', '-', '\\', '|', '/', '-', '\\' } ;
-  unsigned v = (timer_delta (0, timer_read ())/128)%8;
+  unsigned v = timer_delta (0, timer_read ())/128;
 
   if (hook_spinner)
     hook_spinner (v);
