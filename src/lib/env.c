@@ -211,7 +211,7 @@ void* env_enumerate (void* pv, const char** pszKey,
 
 const char* env_fetch (const char* szKey)
 {
-  const char* szValue;
+  const char* szValue = NULL;
   int i = _env_fetch (szKey, &szValue);
 
   if (i != -1 && szValue == NULL)

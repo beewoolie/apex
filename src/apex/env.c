@@ -37,6 +37,8 @@
 #define _s(v) #v 
 #define _t(v) _s(v)
 
+#if (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
+    || defined (CONFIG_ENV_AUTOBOOT)
 static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
@@ -52,3 +54,4 @@ static __env struct env_d e_startup = {
   ,
   .description = "Startup commands",
 };
+#endif
