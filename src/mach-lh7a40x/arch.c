@@ -42,7 +42,7 @@
 
 int determine_arch_number (void)
 {
-  switch (((__REG (CSC_PHYS + CSC_PWRSR) >> CSC_PWRSR_CHIPID_SHIFT)
+  switch (((CSC_PWRSR >> CSC_PWRSR_CHIPID_SHIFT)
 	   & CSC_PWRSR_CHIPID_MASK)
 	  & 0xf0) {
   default:

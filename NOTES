@@ -20,6 +20,10 @@ TODO:
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole
     environment...there is already a configuration option for this. 
 
+  o Command hooks need some thinking.  Does it make sense to
+    generalize the feature?  Or would it be better to make a special
+    handler for a mach-level info report?
+
 Goals
 
   o Simple structure

@@ -42,6 +42,8 @@ static void msleep (int ms)
 //#define I(c,i) ((c)*(i)/255)
 #define I(c,i) (c)
 
+extern int determine_arch_number (void); /* *** HACK */
+
 static void clcdc_init (void)
 {
   {

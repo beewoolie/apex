@@ -200,7 +200,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   }
 
 	/* Set the running clock speed */
-  __REG (CSC_PHYS + CSC_CLKSET) = CSC_CLKSET_V;
+  CSC_CLKSET = CSC_CLKSET_V;
 
   __asm volatile ("cmp %0, %1\n\t"
 		  "movhi r0, #0\n\t"

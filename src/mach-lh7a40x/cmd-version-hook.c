@@ -1,10 +1,10 @@
-/* command.h
+/* cmd-version-hook.c
      $Id$
 
    written by Marc Singer
-   3 Nov 2004
+   15 Jan 2005
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2005 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -27,29 +27,31 @@
 
 */
 
-#if !defined (__COMMAND_H__)
-#    define   __COMMAND_H__
+#include <config.h>
+#include <linux/types.h>
+#include <apex.h>
+#include <command.h>
+#include <service.h>
 
-/* ----- Includes */
+#include "hardware.h"
 
-/* ----- Types */
+extern command_func_t hook_cmd_version;
 
-typedef int (*command_func_t) (int argc, const char** argv);
- 
-struct command_d {
-  const char* command;
-  const char* description;
-  const char* help;
-  int cbPrefix;			/* Length of prefix (?) */
-  command_func_t func;
+int lh7952x_cmd_version (int argc, const char** argv)
+{
+  int chip = (((CSC_PWRSR >> CSC_PWRSR_CHIPID_SHIFT)
+	       & CSC_PWRSR_CHIPID_MASK) & 0xf0);
+  printf ("  CPU  id %lx, %s\r\n", (CSC_PWRSR >> 16), 
+	  chip ? "lh7a404" : "lh7a400");
+  printf ("  CPLD revision 0x%x\r\n", CPLD_REVISION);
+  return 0; 
+}
+
+static void hook_init (void)
+{
+  hook_cmd_version = lh7952x_cmd_version;
+}
+
+static __service_7 struct service_d hook_cmd_version_service = {
+  .init = hook_init,
 };
-
-#define __command __attribute__((used,section("command")))
-
-/* ----- Globals */
-
-/* ----- Prototypes */
-
-
-
-#endif  /* __COMMAND_H__ */

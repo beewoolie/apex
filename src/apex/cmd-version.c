@@ -32,13 +32,13 @@
 #include <apex.h>
 #include <command.h>
 
-#include <asm-arm/reg.h>	/* __REG8 */
-
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 
 #define _s(v) #v 
 #define _t(v) _s(v)
+
+command_func_t hook_cmd_version;
 
 int cmd_version (int argc, const char** argv)
 {
@@ -56,7 +56,8 @@ int cmd_version (int argc, const char** argv)
   printf ("  env  => %s\r\n", _t(CONFIG_ENV_REGION));
 #endif
 
-  printf ("  CPLD revision 0x%x\r\n", __REG8 (0x4ca00000));
+  if (hook_cmd_version)
+    hook_cmd_version (argc, argv);
 
   putchar ('\n');
 
