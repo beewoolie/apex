@@ -1,0 +1,118 @@
+=======================
+Apex -- Arm Boot Loader
+NOTES
+=======================
+
+Goals
+
+  o Simple structure
+  o Memory image may be directly written to flash
+  o Use of tables of pointers to handle features, commands, drivers
+  o Driver self-discovery when relevent
+  o Small image, less than 16K for basic loader
+  o Reasonably configurable at ./configure time
+  o Good command line support
+  o Code sharing among targets is *not* of the highest priority
+  o No assembler files
+  o No external dependencies aside from a tool chain
+  o Staged execution
+  o Support for over-the-wire and NAND booting--teeny tiny bootstrap
+  o Multiple targets
+  o May execute from FLASH, XIP
+  o Stack storage will be required
+
+  o IO descriptor: "device:path"
+    o "nor:@0x44000000#0x20000"
+    o "nand:@0#0x20000"
+    o "serial:xmodem", "serial:binary"
+    o "eeprom:"
+    o allows drivers to handle details of transfers
+      o copy "nor:@0x44000000#0x20000" to "mem:@0x20000000"
+      o copy "tftp://192.168.8.1/zImage" to "mem:@0x20000000"
+      o copy "http://192.168.8.1/zImage" to "nor:@0"
+      o erase "nor:@0#0x200000"
+
+  o devices are self descriptive to the extent that they can be in
+    terms of erase block sizes and so on
+
+Staged Execution
+
+  o Essential initialization, SDRAM, memory controller, IO multiplexing
+  o Move loader into storage for execution, if necessary.  May involve
+    transfer from secondary medium: serial, NAND flash, serial eeprom
+  o Finish hardware initialization
+  o Setup stack
+  o Clear BSS
+  o Command loop
+
+Configuration parameters
+
+  o Initial base address (may not be necessary)
+  o Execution base address
+  o Base RAM address for 4K stack, data, BSS
+  o Layout of SDRAM memory
+
+
+Parameters
+
+  o APEX_STACK - Linker calculated top of stack
+  o APEX_LMA_START - Load memory address for start loader image
+  o APEX_LMA_END - Load memory address for end of loader image
+  o APEX_VMA_START - Execution (virtual) memory address for image
+  o APEX_BSS_START - Linker calculated start of BSS region
+  o APEX_BSS_END - Linker calculated End of BSS region
+
+Symbols
+
+  o init () - driver initialization and then loader exec () 
+  o reset () - initial entry point
+  o exception_error () - function called for unused exceptions
+  o relocate_apex () - move loader into RAM from...whereever 
+  o initialize_bootstrap () - pre-relocate initialization
+  o initialize_target () - completion of target (non-driver) initialization
+  o setup_c () - prepare C exection environment
+
+Drivers
+
+  o read/write, block/byte
+  o erase
+  o status/info
+  o init/detect
+
+Basic commands
+
+  o display
+  o verify
+  o checksum
+  o copy
+  o boot (linux kernel)
+  o go (arbitrary execution)
+  o printenv/setenv
+
+Sections
+
+  o .entry - guaranteed first section.  Should contain only one symbol
+  o .bootstrap - guaranteed to follow .entry.  Smallest possible
+    section of code to handle bootstrap into RAM, if necessary
+  o .text - rest of loader code
+  o .init - initialization hooks, especially drivers
+  o .env - environment hooks
+  o .exit - hooks to call before leaving loader
+  o .cmd - command functions
+  o .bss - BSS
+  o .data - initialized data
+
+Configuration
+
+  CONFIG_ARM - ARM target
+  CONFIG_LH7952X
+  CONFIG_LH79520
+  CONFIG_LH79524
+  CONFIG_LPD79520
+  CONFIG_LPD79524
+  CONFIG_LH7A40X
+  CONFIG_LH7A400
+  CONFIG_LH7A404
+  CONFIG_LPD7A400
+  CONFIG_LPD7A404
+  CONFIG_CONSOLE_DEVICE - Defines which serial (or other) device is console

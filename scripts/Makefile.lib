@@ -1,0 +1,157 @@
+#			-*- Makefile -*-
+# Makefile.lib
+#
+# library of generic Makefile constructs
+#
+
+comma := ,
+empty :=
+space := $(empty) $(empty)
+
+ifeq ($(BUILD_VERBOSE),1)
+  quiet = 
+  Q = 
+else
+  quiet = quiet_
+  Q = @
+endif
+
+export Q quiet
+
+# Add subdirectoy prefix path
+
+obj-y		:= $(addprefix $(obj)/,$(obj-y))
+
+
+# The temporary file to save gcc -MD generated dependencies must not
+# contain a comma
+depfile = $(subst $(comma),_,$(@D)/.$(@F).d)
+
+_c_flags   = $(CFLAGS) $(EXTRA_CFLAGS) $(CFLAGS_$(*F).o)
+_a_flags   = $(AFLAGS) $(EXTRA_AFLAGS) $(AFLAGS_$(*F).o)
+_cpp_flags = $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CPPFLAGS_$(@F))
+
+# Prefix -I with $(srctree) if it is not an absolute path
+addtree = $(if $(filter-out -I/%,$(1)),$(patsubst -I%,-I$(srctree)/%,$(1))) $(1)
+# Find all -I options and call addtree
+flags = $(foreach o,$($(1)),$(if $(filter -I%,$(o)),$(call addtree,$(o)),$(o)))
+
+# -I$(obj) locates generated .h files
+# $(call addtree,-I$(obj)) locates .h files in srctree, from generated .c files
+#   and locates generated .h files
+# FIXME: Replace both with specific CFLAGS* statements in the makefiles
+__c_flags	= $(call addtree,-I$(obj)) $(call flags,_c_flags)
+__a_flags	=                          $(call flags,_a_flags)
+__cpp_flags     =                          $(call flags,_cpp_flags)
+
+c_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(CPPFLAGS) \
+		 $(__c_flags) $(modkern_cflags) \
+		 $(basename_flags) $(modname_flags)
+
+a_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(CPPFLAGS) \
+		 $(__a_flags) $(modkern_aflags)
+
+cpp_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(__cpp_flags)
+
+ld_flags       = $(LDFLAGS) $(EXTRA_LDFLAGS)
+
+
+
+# Shipped files
+# ===========================================================================
+
+quiet_cmd_shipped = SHIPPED $@
+cmd_shipped = cat $< > $@
+
+$(obj)/%:: $(src)/%_shipped
+	$(call cmd,shipped)
+
+# Commands useful for building a boot image
+# ===========================================================================
+# 
+#	Use as following:
+#
+#	target: source(s) FORCE
+#		$(if_changed,ld/objcopy/gzip)
+#
+#	and add target to EXTRA_TARGETS so that we know we have to
+#	read in the saved command line
+
+# Linking
+# ---------------------------------------------------------------------------
+
+quiet_cmd_ld = LD      $@
+cmd_ld = $(LD) $(LDFLAGS) $(EXTRA_LDFLAGS) $(LDFLAGS_$(@F)) \
+	       $(filter-out FORCE,$^) -o $@ 
+
+# Objcopy
+# ---------------------------------------------------------------------------
+
+quiet_cmd_objcopy = OBJCOPY $@
+cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS) $(OBJCOPYFLAGS_$(@F)) $< $@
+
+# Gzip
+# ---------------------------------------------------------------------------
+
+quiet_cmd_gzip = GZIP    $@
+cmd_gzip = gzip -f -9 < $< > $@
+
+# ===========================================================================
+# Generic stuff
+# ===========================================================================
+
+# function to only execute the passed command if necessary
+# >'< substitution is for echo to work, >$< substitution to preserve $
+# when reloading .cmd file 
+# note: when using inline perl scripts [perl -e '...$$t=1;...'] in
+# $(cmd_xxx) double $$ your perl vars 
+
+if_changed\
+  = $(if $(strip $? \
+          $(filter-out $(cmd_$(1)),$(cmd_$@))\
+          $(filter-out $(cmd_$@),$(cmd_$(1)))),\
+      @set -e; \
+      $(if $($(quiet)cmd_$(1)),echo '  $(subst ','\'',$($(quiet)cmd_$(1)))';) \
+      $(cmd_$(1)); \
+      echo 'cmd_$@ := $(subst $$,$$$$,$(subst ','\'',$(cmd_$(1))))' > $(@D)/.$(@F).cmd)
+
+
+# execute the command and also postprocess generated .d dependencies
+# file
+
+if_changed_dep \
+  = $(if $(strip $? $(filter-out FORCE $(wildcard $^),$^)\
+           $(filter-out $(cmd_$(1)),$(cmd_$@))\
+           $(filter-out $(cmd_$@),$(cmd_$(1)))),\
+     @set -e; \
+     $(if $($(quiet)cmd_$(1)),echo '  $(subst ','\'',$($(quiet)cmd_$(1)))';) \
+     $(cmd_$(1)); \
+#     scripts/basic/fixdep $(depfile) $@ '$(subst $$,$$$$,$(subst ','\'',$(cmd_$(1))))' > $(@D)/.$(@F).tmp; \
+#     rm -f $(depfile); \
+#     mv -f $(@D)/.$(@F).tmp $(@D)/.$(@F).cmd)
+
+# Usage: $(call if_changed_rule,foo)
+# will check if $(cmd_foo) changed, or any of the prequisites changed,
+# and if so will execute $(rule_foo)
+
+if_changed_rule \
+   = $(if $(strip $? \
+            $(filter-out $(cmd_$(1)),$(cmd_$@))\
+	    $(filter-out $(cmd_$@),$(cmd_$(1)))),\
+       @set -e; \
+       $(rule_$(1)))
+
+# If quiet is set, only print short version of command
+
+cmd = @$(if $($(quiet)cmd_$(1)),echo '  $(subst ','\'',$($(quiet)cmd_$(1)))' &&) $(cmd_$(1))
+
+#	$(call descend,<dir>,<target>)
+#	Recursively call a sub-make in <dir> with target <target> 
+# Usage is deprecated, because make do not see this as an invocation of make.
+descend =$(Q)$(MAKE) -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.build obj=$(1) $(2)
+
+# Shorthand for $(Q)$(MAKE) -f scripts/Makefile.build obj=
+# Usage:
+# $(Q)$(MAKE) $(build)=dir
+build := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.build obj
+

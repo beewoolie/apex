@@ -1,0 +1,3 @@
+ARCH=arm
+
+CONFIG_ARM=1
