@@ -1,5 +1,9 @@
 2005-03-09  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-nor-cfi.c: Moved the cfi driver into the generic
+	driver directory.  There is a machine specific header to handle
+	the target controlled constants.
+
 	* Makefile (ENV_CROSS_COMPILE): Fixed the selection of the cross
 	compiler so that the environment will override the configured
 	value.

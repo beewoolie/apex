@@ -37,16 +37,11 @@
 
 /* ----- Constants */
 
-#define NOR_WIDTH	CONFIG_NOR_BUSWIDTH
-#define NOR_0_PHYS	CONFIG_NOR_BANK0_START
-#define NOR_0_LENGTH	CONFIG_NOR_BANK0_LENGTH
+#define NOR_WIDTH	(32)
+#define NOR_0_PHYS	(0x00000000)
+#define NOR_0_LENGTH	(16*1024*1024)
 
-#if defined (CONFIG_NOR_BANK1_START)
-# define NOR_1_PHYS	CONFIG_NOR_BANK1_START
-# define NOR_1_LENGTH	CONFIG_NOR_BANK1_LENGTH
-#endif
-
-#define NOR_CHIP_MULTIPLIER	(1)	/* Number of chips at REGA */
+#define NOR_CHIP_MULTIPLIER	(2)	/* Number of chips at REGA */
 
 #if defined (CPLD_FLASH)
 # define VPEN_ENABLE		(CPLD_FLASH |=  CPLD_FLASH_FL_VPEN)

@@ -36,27 +36,23 @@
      *** buffered write code has not been fixed to handle the 32 bit
      *** array width.
 
-   o VPEN needs to be moved out of this code into a platform hook.  I
-     think that a macro might be the best solution. 
-
    o Much work has gone into making this driver generic.  It is not
      intended to be able to support multiple organizations at one
      time.  In other words, the generic elements of the driver are
      fixed at compile time.
 
    o Banking support.  We take a few liberties with the banking
-     support in that we assume somethings.  Full generality comes at a
-     cost and, at this point, I am not willing to pay the full cost.
+     support in that we assume some things.  Full generality comes at
+     a cost and, at this point, I am not willing to pay the full cost.
      The driver can handle two chips, but not two completely different
      chips.  Esentially, it can handle a pair of identical chips or
-     one chip with two banks.  It linearizes these chips for
-     convenience which is, in the case of writing large blocks of
-     data, an important convenience.  Improved flexbility would come
-     from always translating from the region structure.  What probably
-     needs to happen is the region structure needs to include the
-     physical offset of the region.  Handling disparate chips,
-     however, will probably never be done as the chips may require
-     different control constants.  Phooey.
+     one chip with two banks.  It linearizes multiple banks for the
+     convenience of writing large, contiguous blocks of data.
+     Improved flexbility would come from always translating from the
+     region structure.  What probably needs to happen is the region
+     structure needs to include the physical offset of the region.
+     Handling disparate chips, however, will probably never be done as
+     the chips may require different control constants.  Phooey.
 
 */
 
@@ -89,7 +85,6 @@
 # else
 #  define REGC	        __REG16
 # endif
-# define REGC	        __REG
 #elif NOR_WIDTH == 16
 # define REGA		__REG16		/* Array I/O macro */
 # define REGC		__REG16		/* Single chip I/O macro */
@@ -258,7 +253,6 @@ static void nor_init_chip (unsigned long phys)
   int iRegionFirst = chip_probed.regions;
   int i;
   unsigned long start;
-
 
   PRINTF ("%s: probing %lx\n", __FUNCTION__, phys);
 
