@@ -144,7 +144,7 @@ static int cmd_setenv (int argc, const char** argv)
   result = env_store (argv[1], sz);
 
   if (result)
-    puts ("Unrecognized variable\r\n");
+    puts ("Unrecognized variable or environment\r\n");
 
   return 0;
 }
