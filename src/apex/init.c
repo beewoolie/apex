@@ -12,9 +12,6 @@
 
 */
 
-unsigned long status;
-unsigned long value = 1023;
-
 #include <linux/types.h>
 
 extern int __attribute__ ((format (printf, 1, 2)))
