@@ -65,8 +65,9 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
-#include "hardware.h"
 #include <spinner.h>
+
+#include <mach/nor-cfi.h>
 
 //#define TALK
 //#define NOISY
@@ -81,34 +82,20 @@
 
 //#define NO_WRITE		/* Disable writes, for debugging */
 
-/* Here are the parameters that ought to be changed to align the
-   driver with the expected flash layout. */
-
-#define WIDTH		CONFIG_NOR_BUSWIDTH
-#define NOR_0_PHYS	CONFIG_NOR_BANK0_START
-#define NOR_0_LENGTH	CONFIG_NOR_BANK0_LENGTH
-
-#if defined (CONFIG_NOR_BANK1_START)
-# define NOR_1_PHYS	CONFIG_NOR_BANK1_START
-# define NOR_1_LENGTH	CONFIG_NOR_BANK1_LENGTH
-#endif
-
-#define CHIP_MULTIPLIER	(1)		/* Number of chips at REGA */
-
-#if WIDTH == 32
+#if NOR_WIDTH == 32
 # define REGA		__REG		/* Array I/O macro */
-# if CHIP_MULTIPLIER == 1
+# if NOR_CHIP_MULTIPLIER == 1
 #  define REGC	        __REG
 # else
 #  define REGC	        __REG16
 # endif
 # define REGC	        __REG
-#elif WIDTH == 16
+#elif NOR_WIDTH == 16
 # define REGA		__REG16		/* Array I/O macro */
 # define REGC		__REG16		/* Single chip I/O macro */
 #endif
 
-#if CHIP_MULTIPLIER == 2
+#if NOR_CHIP_MULTIPLIER == 2
 # define CMD(v)		((v) | ((v)<<16))
 # define STAT(v)	((v) | ((v)<<16))
 # define QRY(v)		((v) | ((v)<<16))
@@ -118,7 +105,7 @@
 # define QRY(v)		(v)
 #endif
 
-#if WIDTH == 16
+#if NOR_WIDTH == 16
 /* *** This has only be tested to work with a single chip and a bus
    width of 16. */
 # if ! defined (CONFIG_SMALL)
@@ -126,7 +113,7 @@
 # endif
 #endif
 
-#define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
+#define WIDTH_SHIFT	(NOR_WIDTH>>4)	/* Bit shift for device width */
 
 /* CFI compliant parameters */
 
@@ -187,15 +174,15 @@ static unsigned long phys_from_index (unsigned long index)
 
 static void vpen_enable (void)
 {
-#if defined (CPLD_FLASH)
-  CPLD_FLASH |= CPLD_FLASH_FL_VPEN;
+#if defined (VPEN_ENABLE)
+  VPEN_ENABLE;
 #endif
 }
 
 static void vpen_disable (void)
 {
-#if defined (CPLD_FLASH)
-  CPLD_FLASH &= ~CPLD_FLASH_FL_VPEN;
+#if defined (VPEN_DISABLE)
+  VPEN_DISABLE;
 #endif
 }
 
@@ -288,12 +275,12 @@ static void nor_init_chip (unsigned long phys)
 
   chip_probed.regions += REGC (phys + (0x2c << WIDTH_SHIFT));
   chip_probed.total_size
-    += (1<<REGC (phys + (0x27 << WIDTH_SHIFT)))*CHIP_MULTIPLIER;
+    += (1<<REGC (phys + (0x27 << WIDTH_SHIFT)))*NOR_CHIP_MULTIPLIER;
 
   chip_probed.writebuffer_size
     = (1<<(   REGC (phys + (0x2a << WIDTH_SHIFT))
            | (REGC (phys + (0x2b << WIDTH_SHIFT)) << 8)))
-    *CHIP_MULTIPLIER;
+    *NOR_CHIP_MULTIPLIER;
 
 	/* Discover erase regions.  Unfortunately, this has to be done
 	   so that the erase and unlock IO is reasonably efficient. */
@@ -304,7 +291,7 @@ static void nor_init_chip (unsigned long phys)
     chip_probed.region[i].size 
       = 256*(   REGC (phys + ((0x2f + offset) << WIDTH_SHIFT))
 	     | (REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) << 8))
-      *CHIP_MULTIPLIER;
+      *NOR_CHIP_MULTIPLIER;
     chip_probed.region[i].count
       = 1 + (   REGC (phys + ((0x2d + offset) << WIDTH_SHIFT))
 	     | (REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) << 8));
@@ -499,25 +486,25 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 #if defined (NO_WRITE)
     printf ("  available %d  cb %d\n", available, cb);
-    printf ("0x%lx <= 0x%x\n", index & ~(WIDTH/8 - 1), ProgramBuffered);
+    printf ("0x%lx <= 0x%x\n", index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
 #else
-    WRITE_ONE (index & ~(WIDTH/8 - 1), ProgramBuffered);
+    WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
 #endif
-    status = nor_status (index & ~(WIDTH/8 - 1));
+    status = nor_status (index & ~(NOR_WIDTH/8 - 1));
     if (!(status & Ready)) {
       PRINTF ("nor_write failed program start 0x%lx (0x%x)\n", 
-	      index & ~(WIDTH/8 - 1), status);
+	      index & ~(NOR_WIDTH/8 - 1), status);
       goto fail;
     }
     
     {
-      int av = available + (index & (WIDTH/8 - 1));
+      int av = available + (index & (NOR_WIDTH/8 - 1));
 #if defined (NO_WRITE)
-      printf ("0x%lx <= 0x%02x\n", index & ~(WIDTH/8 - 1),
+      printf ("0x%lx <= 0x%02x\n", index & ~(NOR_WIDTH/8 - 1),
 	      /* *** FIXME for 32 bit  */
 	      av - av/2 - 1);
 #else
-      WRITE_ONE (index & ~(WIDTH/8 - 1), 
+      WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), 
 	      /* *** FIXME for 32 bit  */
 		 av - av/2 - 1);
 #endif
@@ -538,20 +525,21 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       rgb[0] = 0xff;						/* First */
       rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);
-      memcpy (rgb + (index & (WIDTH/8 - 1)), pv, available);
+      memcpy (rgb + (index & (NOR_WIDTH/8 - 1)), pv, available);
       for (i = 0; i < available + (index & 1); i += 2)
 #if defined (NO_WRITE)
 	printf ("0x%lx #= 0x%04x\n", 
-		(index & ~(WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
+		(index & ~(NOR_WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
 #else
-	WRITE_ONE ((index & ~(WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
+	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i,
+		   ((unsigned short*)rgb)[i/2]);
 #endif
     }
 
 #if defined (NO_WRITE)
-    printf ("0x%lx <= 0x%x\n", index & ~(WIDTH/8 - 1), ProgramConfirm);
+    printf ("0x%lx <= 0x%x\n", index & ~(NOR_WIDTH/8 - 1), ProgramConfirm);
 #else
-    WRITE_ONE (index & ~(WIDTH/8 - 1), ProgramConfirm);
+    WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), ProgramConfirm);
 #endif
     SPINNER_STEP;
     status = nor_status (index);
@@ -601,17 +589,17 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     unsigned long page = index & ~ (nor_region (index)->size - 1);
     unsigned long data = 0;
     unsigned long status;
-    int step = WIDTH/8;
+    int step = NOR_WIDTH/8;
 
     index = phys_from_index (index);
 
-    if ((index & (WIDTH/8 - 1)) || cb < step) {
-      step = (WIDTH/8) - (index & (WIDTH/8 - 1)); /* Max at this index */
+    if ((index & (NOR_WIDTH/8 - 1)) || cb < step) {
+      step = (NOR_WIDTH/8) - (index & (NOR_WIDTH/8 - 1)); /* Max at index */
       if (step > cb)
 	step = cb;
       data = ~0;
-      memcpy ((unsigned char*) &data + (index & (WIDTH/8 - 1)), pv, step);
-      index &= ~(WIDTH/8 - 1);
+      memcpy ((unsigned char*) &data + (index & (NOR_WIDTH/8 - 1)), pv, step);
+      index &= ~(NOR_WIDTH/8 - 1);
     }
     else
       memcpy (&data, pv, step);
@@ -625,7 +613,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     }
 #if defined (NO_WRITE)
     printf ("nor_write 0x%0*lx index 0x%lx  page 0x%lx  step %d  cb 0x%x\n",
-	    WIDTH/4, data, index, page, step, cb);
+	    NOR_WIDTH/4, data, index, page, step, cb);
     status = STAT (Ready);
 #else
     WRITE_ONE (index, CMD (Program));
