@@ -40,10 +40,10 @@
 #define USE_16
 #define USE_STEREO
 #define USE_LOOPBACK_I2S
-#define USE_LOOPBACK_SSP
-//#define USE_8KHZ
+//#define USE_LOOPBACK_SSP
+#define USE_8KHZ
 //#define USE_22KHZ
-#define USE_44KHZ
+//#define USE_44KHZ
 #define USE_LOOPS	2000	/* Only works without DMA */
 
 //#define USE_E5
