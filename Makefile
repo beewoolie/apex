@@ -800,7 +800,7 @@ include/envmagic.h: FORCE
 export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 
 include/config.h: config
-	@-[ -f config ] && scripts/configtoh < config > include/config.h
+	@-[ -f config ] && scripts/configtoh config > include/config.h
 
 # Single targets
 # ---------------------------------------------------------------------------
