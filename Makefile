@@ -1,6 +1,7 @@
 ARCH=arm
-CROSS_COMPILE=/usr/arm-linux/gcc-3.3-glibc-2.3.2/bin/arm-linux-
+#CROSS_COMPILE=/usr/arm-linux/gcc-3.3-glibc-2.3.2/bin/arm-linux-
 CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+#CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1t-glibc-2.3.3/bin/arm-linux-
 
 #VERSION = 2
 #PATCHLEVEL = 6
@@ -350,7 +351,7 @@ CPPFLAGS        := -D__KERNEL__ $(LINUXINCLUDE)
 CFLAGS 		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
 	  	   -fno-strict-aliasing -fno-common \
 		   -fno-builtin-printf -g # -mthumb-interwork 
-AFLAGS		:= -D__ASSEMBLY__ #-mthumb-interwork
+AFLAGS		:= -D__ASSEMBLY__ # -mthumb-interwork
 
 export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION KERNELRELEASE \
 	ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC \

@@ -47,6 +47,11 @@ int lh79524_serial_probe (void)
   return 0;			/* Present and initialized */
 }
 
+ssize_t lh79524_serial_poll (unsigned long fh, size_t cb)
+{
+  return cb ? ((__REG (UART + UART_FR) & UART_FR_RXFE) ? 0 : 1) : 0;
+}
+
 ssize_t lh79524_serial_read (unsigned long fh, void* pv, size_t cb)
 {
   ssize_t cRead = 0;
@@ -90,5 +95,6 @@ static __driver_0 struct driver_d lh79524_serial_driver = {
   .probe = lh79524_serial_probe,
   .read = lh79524_serial_read,
   .write = lh79524_serial_write,
+  .poll = lh79524_serial_poll,
 };
 

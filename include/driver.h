@@ -50,14 +50,15 @@ struct driver_d {
   const char* description;
   unsigned long flags;
   void* priv;			/* Driver's private data */
-  int (*probe)(void);
-  unsigned long (*open)(struct open_d*);
-  void (*close) (unsigned long fd);
-  ssize_t (*read) (unsigned long fd, void* pv, size_t cb);
-  ssize_t (*write) (unsigned long fd, const void* pv, size_t cb);
-  void (*erase) (unsigned long fd, size_t cb);
-  size_t (*seek)(unsigned long fd, ssize_t cb, int whence);
-  void (*info)(void);		/* User information request */
+  int           (*probe) (void);
+  unsigned long (*open)  (struct open_d*);
+  void		(*close) (unsigned long fd);
+  ssize_t	(*read)  (unsigned long fd, void* pv, size_t cb);
+  ssize_t	(*write) (unsigned long fd, const void* pv, size_t cb);
+  ssize_t	(*poll)  (unsigned long fh, size_t cb);
+  void		(*erase) (unsigned long fd, size_t cb);
+  size_t	(*seek)  (unsigned long fd, ssize_t cb, int whence);
+  void		(*info)  (void); /* User information request */
 };
 
 #define __driver  __attribute__((used,section(".driver")))

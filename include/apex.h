@@ -18,6 +18,7 @@
 /* ----- Includes */
 
 #include <stdarg.h>
+#include <linux/types.h>
 
 /* ----- Types */
 

@@ -64,6 +64,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
       if (regions[i].cb)
 	++i;
   }
+  return i;
 }
 
 static int memory_probe (void)
