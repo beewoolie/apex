@@ -1,0 +1,147 @@
+Index: ixp_osal/Makefile
+===================================================================
+--- ixp_osal.orig/Makefile	2004-11-17 22:37:37.000000000 -0800
++++ ixp_osal/Makefile	2005-02-24 18:32:10.456580640 -0800
+@@ -172,7 +172,7 @@
+ 
+ # TODO push this to linux make
+ ifeq ($(IX_OSAL_MK_HOST_OS), linux)
+-INCLUDE_DIRS += $(LINUX_SRC)/include/asm-arm/arch-ixp425/
++INCLUDE_DIRS += $(LINUX_SRC)/include/asm-arm/arch-ixp4xx/
+ endif
+ 
+ CFLAGS += $(INCLUDE_DIRS:%=-I%)
+Index: ixp_osal/include/linux-2.6.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ ixp_osal/include/linux-2.6.h	2005-02-24 18:32:10.457580399 -0800
+@@ -0,0 +1,37 @@
++/* */
++
++#include "asm/page.h"
++
++#if !defined (IXP425_TIMER_BASE_PHYS)
++# define IXP425_TIMER_BASE_PHYS 	IXP4XX_TIMER_BASE_PHYS
++#endif
++#if !defined (IRQ_IXP425_XSCALE_PMU)
++# define IRQ_IXP425_XSCALE_PMU		IRQ_IXP4XX_XSCALE_PMU
++#endif
++#if !defined (IXP425_QMGR_BASE_PHYS)
++# define IXP425_QMGR_BASE_PHYS		IXP4XX_QMGR_BASE_PHYS
++#endif
++#if !defined (IXP425_QMGR_BASE_VIRT)
++# define IXP425_QMGR_BASE_VIRT		io_p2v(IXP4XX_QMGR_BASE_PHYS)
++#endif
++#if !defined (IXP425_PERIPHERAL_BASE_PHYS)
++# define IXP425_PERIPHERAL_BASE_PHYS	IXP4XX_PERIPHERAL_BASE_PHYS
++#endif
++#if !defined (IXP425_PERIPHERAL_BASE_VIRT)
++# define IXP425_PERIPHERAL_BASE_VIRT	IXP4XX_PERIPHERAL_BASE_VIRT
++#endif
++#if !defined (IXP425_EXP_CFG_BASE_PHYS)
++# define IXP425_EXP_CFG_BASE_PHYS	IXP4XX_EXP_CFG_BASE_PHYS
++#endif
++#if !defined (IXP425_EXP_CFG_BASE_VIRT)
++# define IXP425_EXP_CFG_BASE_VIRT	IXP4XX_EXP_CFG_BASE_VIRT
++#endif
++#if !defined (IXP425_PCI_CFG_BASE_PHYS)
++# define IXP425_PCI_CFG_BASE_PHYS	IXP4XX_PCI_CFG_BASE_PHYS
++#endif
++#if !defined (IXP425_PCI_CFG_BASE_VIRT)
++# define IXP425_PCI_CFG_BASE_VIRT	IXP4XX_PCI_CFG_BASE_VIRT
++#endif
++#if !defined (IXP425_EXP_BUS_BASE2_PHYS)
++# define IXP425_EXP_BUS_BASE2_PHYS	IXP4XX_EXP_BUS_CS2_BASE_PHYS
++#endif
+Index: ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h
+===================================================================
+--- ixp_osal.orig/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2004-11-17 22:37:35.000000000 -0800
++++ ixp_osal/os/linux/include/platforms/ixp400/IxOsalOsIxp400.h	2005-02-24 18:32:10.458580159 -0800
+@@ -53,6 +53,8 @@
+ #include "asm/hardware.h"
+ #include "asm/arch/irqs.h"
+ 
++#include <linux-2.6.h>		/* Glue */
++
+ /* physical addresses to be used when requesting memory with IX_OSAL_MEM_MAP */
+ #define IX_OSAL_IXP400_INTC_PHYS_BASE          IXP425_INTC_BASE_PHYS
+ #define IX_OSAL_IXP400_GPIO_PHYS_BASE          IXP425_GPIO_BASE_PHYS
+Index: ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c
+===================================================================
+--- ixp_osal.orig/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2004-11-17 22:37:36.000000000 -0800
++++ ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.c	2005-02-24 18:32:10.458580159 -0800
+@@ -45,6 +45,7 @@
+  * -- End Intel Copyright Notice --
+  */
+ 
++#include <asm/page.h>
+ #include <asm/io.h>
+ #include <linux/ioport.h>
+ 
+Index: ixp_osal/os/linux/src/core/IxOsalOsThread.c
+===================================================================
+--- ixp_osal.orig/os/linux/src/core/IxOsalOsThread.c	2004-11-17 22:37:35.000000000 -0800
++++ ixp_osal/os/linux/src/core/IxOsalOsThread.c	2005-02-24 18:32:10.459579919 -0800
+@@ -65,12 +65,10 @@
+     void *arg = IxOsalOsThreadData.arg;
+     static int seq = 0;
+ 
+-    daemonize ();
++    daemonize ("IxOsal %d", ++seq);
+ 
+     exit_files (current);
+ 
+-    snprintf(current->comm, sizeof(current->comm), "IxOsal %d", ++seq);
+-
+     up (&IxOsalThreadMutex);
+ 
+     entryPoint (arg);
+Index: ixp_osal/os/linux/make/macros.mk
+===================================================================
+--- ixp_osal.orig/os/linux/make/macros.mk	2004-11-17 22:37:35.000000000 -0800
++++ ixp_osal/os/linux/make/macros.mk	2005-02-24 18:35:06.069371470 -0800
+@@ -71,10 +71,12 @@
+ ################################################################
+ # Linux Compiler & linker commands
+ 
+-ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), linuxbe)
+-LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_be/bin/xscale_be-
+-else
+-LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_le/bin/xscale_le-
++ifeq "$(LINUX_CROSS_COMPILE)" "" 
++ ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), linuxbe)
++  LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_be/bin/xscale_be-
++ else
++  LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_le/bin/xscale_le-
++ endif
+ endif
+ 
+ LINUX_SRC := $($(IX_TARGET)_KERNEL_DIR)
+@@ -91,9 +93,11 @@
+ LINUX_MACH_CFLAGS := -D__LINUX_ARM_ARCH__=5 -mcpu=xscale -mtune=xscale
+ 
+ CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)/include -Wall -Wno-trigraphs -fno-common \
+-          -pipe -mapcs-32 -mshort-load-bytes -msoft-float -DMODULE \
++          -pipe -mapcs-32 -msoft-float -DMODULE \
+           -D__linux -DCPU=33 -DXSCALE=33 $(LINUX_MACH_CFLAGS) -DEXPORT_SYMTAB
+ 
++# -mshort-load-bytes
++
+ # Linux linker flags
+ LDFLAGS := -r
+ 
+Index: ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c
+===================================================================
+--- ixp_osal.orig/os/linux/src/core/IxOsalOsMsgQ.c	2004-11-17 22:37:35.000000000 -0800
++++ ixp_osal/os/linux/src/core/IxOsalOsMsgQ.c	2005-02-24 18:36:05.885995872 -0800
+@@ -45,9 +45,9 @@
+  * -- End Intel Copyright Notice --
+  */
+ #include <linux/linkage.h>
++#include <linux/spinlock.h>
+ #include <linux/ipc.h>
+ #include <linux/msg.h>
+-#include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+ 
+ #include "IxOsal.h"

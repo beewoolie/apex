@@ -1,0 +1,18 @@
+NOTES
+-----
+
+  o Most of the constants we need are available.  The QManager is one
+    that is iomapped, according to the registers header.  We'll have
+    to do something about this.
+  o Other missing constants:
+    o IX_OSAL_STATIC_MAP
+    o IX_OSAL_BE
+    o IX_OSAL_LE_DC
+    o IX_OSAL_LE_AC
+    o IX_OSAL_DYNAMIC_MAP
+  o libosal should build once this is resolved
+
+  o We're using a copy of the header for now.  There must be links
+    made for the asm and arch directories.
+
+
