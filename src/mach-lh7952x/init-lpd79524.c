@@ -267,7 +267,7 @@ void __naked initialize_target (void)
   __REG (EMC_PHYS | EMC_SWAITWR3)    = 5;
   __REG (EMC_PHYS | EMC_STURN3)      = 2;
 
-  __REG (BOOT_PHYS | BOOT_CS10V)    &= ~(1<<0);
+  __REG (BOOT_PHYS | BOOT_CS1OV)    &= ~(1<<0);
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
