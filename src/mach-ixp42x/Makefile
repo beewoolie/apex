@@ -19,6 +19,28 @@
 #   USA.
 #
 
+# npe-interface is in a world of it's own.  It has to build with
+#   headers from the Intel Access Library which are incompatible with
+#   header in the project.  So, it is isolated from the loader and
+#   wrapper calls are defined to allow the header domain of the this
+#   one source file to be separate from the header domain of the rest
+#   of the application.
+
+CFLAGS_npe-interface.o\
+  += -I-\
+     -Isrc/mach-ixp42x/_intel/ixp400_xscale_sw/src/include \
+     -Isrc/mach-ixp42x/_intel/ixp_osal/include\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/os/linux/include/core\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/os/linux/include/modules/bufferMgt\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/os/linux/include/platforms/ixp400\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/include/modules/ioMem\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/include/modules/bufferMgt\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/include/platforms/ixp400\
+     -Isrc/mach-ixp42x/_intel/ixp_osal/include/platforms/ixp400/bufferMgt\
+     -Isrc/mach-ixp42x/_intel/linux/include\
+     -Isrc/mach-ixp42x/_intel/linux/include/linux\
+     -Isrc/mach-ixp42x/_intel/linux/include/asm/arch
+
 obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o
 
@@ -27,7 +49,7 @@ obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 #obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
 obj-$(CONFIG_DRIVER_NOR)	+= drv-nor-cfi.o
 
-obj-$(CONFIG_NPE)	+= npe.o
+obj-$(CONFIG_NPE)		+= npe.o npe-interface.o
 
 obj-y				+= cmd-reset.o
 
