@@ -65,6 +65,7 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <service.h>
 
 #include "hardware.h"
 
@@ -221,14 +222,22 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 
 */
 
+#if 0
 static void target_init (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
+#endif
 
-static __service_0 struct service_d lh79524_target_service = {
+static void target_release (void)
+{
+  /* Flash is enabled for the kernel */
+  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+}
+
+static __service_0 struct service_d lh79520_target_service = {
 //  .init    = target_init,
-//  .release = target_release,
+  .release = target_release,
 };
