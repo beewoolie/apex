@@ -2,7 +2,7 @@
      $Id$
 
    written by Marc Singer
-   28 Oct 2004
+   14 Nov 2004
 
    Copyright (C) 2004 Marc Singer
 
@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   Hardware initializations for the LPD79524.  Some initializations
+   Hardware initializations for the LPD79520.  Some initializations
    may be left to drivers, such as the serial interface and timer.
 
 */
@@ -33,64 +33,56 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 
-#include "lh79524.h"
-#include "lpd79524.h"
+#include "lh79520.h"
+#include "lpd79520.h"
 
 //#define USE_SLOW
 
 #if defined (USE_SLOW)
-# define EMC_RASCAS_V	((3<<0)|(3<<8))	// RAS3, CAS3
+# define SDRC_CFG_V	0x01a40088	// RAS3, REStoCAS3
 #else
-# define EMC_RASCAS_V	((3<<0)|(2<<8))	// RAS3, CAS2
+# define SDRC_CFG_V	0x01f40088	// RAS2, RAStoCAS2
 #endif
 
 #if defined (USE_SLOW)
-# define SDRAM_CHIP_MODE	(0x32<<11)	// CAS3 BURST4
+# define SDRAM_CHIP_MODE	(0x32<<12)	// CAS3 BURST4
 #else
-# define SDRAM_CHIP_MODE	(0x22<<11)	// CAS2 BURST4
+# define SDRAM_CHIP_MODE	(0x22<<12)	// CAS2 BURST4
 #endif
 
+#define SDRAM_NORMAL_COMMAND (SDRAM_INIT_NORMAL | SDRAM_WBE | SDRAM_RBE)
+
 	// SDRAM
-#define SDRAM_RASCAS		EMC_RASCAS_V
-#define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
-#define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
+//#define SDRAM_RASCAS		SDRC_RASCAS_V
+//#define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+//#define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
 
 /* usleep
 
    this function accepts a count of microseconds and will wait at
-   least that long before returning.
-
-   When in C, this function was one instruction longer than the
-   hand-coded assembler.  For some reason, the compiler would reload
-   the TIMER1_PHYS at the top of the while loop.
+   least that long before returning.  
 
    Note that this function is neither __naked nor static.  It is
    available to the rest of the application as is.
 
-   Keep in mind that it has a limit of about 32ms.  Anything longer
-   (and less than 16 bits) will return immediately.
-
-   To be precise, the interval is HCLK/64 or 1.2597us.  In other
-   words, it is about 25% longer than desired.  The code compensates
-   by removing 25% of the requested delay.  The clever ARM instruction
-   set makes this a single operation.
+   The timer interval is (309657600/6)/256 which is about 4.96us.
 
  */
 
 void __section(bootstrap) usleep (unsigned long us)
 {
-  __asm ("str %1, [%0, #0]\n\t"
-	 "str %2, [%0, #0xc]\n\t"
-	 "str %3, [%0, #0]\n\t"
-      "0: ldr %2, [%0, #0xc]\n\t"
+  __asm ("str %1, [%0, #8]\n\t"	/* Stop timer */
+	 "str %2, [%0, #0]\n\t"
+	 "str %3, [%0, #8]\n\t"
+      "0: ldr %2, [%0, #4]\n\t"
 	 "tst %2, %4\n\t"
 	 "beq 0b\n\t"
 	 :
-	 : "r" (TIMER1_PHYS), 
+	 : "r" (TIMER0_PHYS), 
 	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
-	   "r" ((1<<1)|(5<<2)),
+	   "r" ((unsigned long) 0x8000 - (us/5)), /* timer counts up */
+	   "r" (TIMER_ENABLE | TIMER_PRESCALE_256)
 	   "i" (0x8000)
 	 );
 }
@@ -123,22 +115,26 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+
 	/* Setup HCLK, FCLK and peripheral clocks */
-  __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS | RCPC_CTRL) |= 0x200; /* Unlock */
+  __REG (RCPC_PHYS | RCPC_CPUCLKPRESCALE) = RCPC_CPUCLKPRESCALE_V;
+  __REG (RCPC_PHYS | RCPC_HCLKCLKPRESCALE) = RCPC_HCLKCLKPRESCALE_V;
+  __REG (RCPC_PHYS | RCPC_CORECLKCONFIG) = RCPC_CORECLKCONFIG_V;
+  __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) &= ~RCPC_AHBCLK_SDC;
+  __REG (RCPC_PHYS | RCPC_PERIPHCLKCTRL) &= ~(  RCPC_PERPIHCLK_UART1
+					      | RCPC_PERIPHCLK_T01);
 
-  __REG (RCPC_PHYS | RCPC_AHBCLKCTRL) = RCPC_AHBCLKCTRL_V;
-  __REG (RCPC_PHYS | RCPC_PCLKCTRL0)  = RCPC_PCLKCTRL0_V;
-  __REG (RCPC_PHYS | RCPC_PCLKCTRL1)  = RCPC_PCLKCTRL1_V;
-  __REG (RCPC_PHYS | RCPC_PCLKSEL0)   = RCPC_PCLKSEL0_V;
+  __REG (RCPC_PHYS | RCPC_CTRL) &= ~0x200; /* Lock */
 
-  __REG (RCPC_PHYS | RCPC_CORECONFIG) = RCPC_CORECONFIG_FASTBUS;
-  __REG (RCPC_PHYS | RCPC_SYSPLLCNTL) = RCPC_SYSPLLCNTL_V;
-  __REG (RCPC_PHYS | RCPC_SYSCLKPRE)  = RCPC_SYSCLKPRE_V;
-  __REG (RCPC_PHYS | RCPC_CPUCLKPRE)  = RCPC_CPUCLKPRE_V;
-  __REG (RCPC_PHYS | RCPC_CORECONFIG) = RCPC_CORECONFIG_V;
+  /* Stop watchdog? */
 
-  __REG (RCPC_PHYS | RCPC_CTRL)       = RCPC_CTRL_LOCK;
+  __REG (IOCON_PHYS | IOCON_MEMMUX) = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
 
+  /* *** FIXME: move this? */
+  __REG (IOCON_PHYS | IOCON_UARTMUX) = 0xf; /* All UARTS available */
+
+#if 0
 	/* Setup IO pin multiplexers */
   __REG (IOCON_PHYS | IOCON_MUXCTL5)  = IOCON_MUXCTL5_V; 	/* UART */
   __REG (IOCON_PHYS | IOCON_MUXCTL6)  = IOCON_MUXCTL6_V;	/* UART */
@@ -225,6 +221,8 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (EMC_PHYS | EMC_DYNCFG0)     = SDRAM_CFG;
   __REG (EMC_PHYS | EMC_DYNCFG1)     = SDRAM_CFG;
   
+#endif
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
 }
