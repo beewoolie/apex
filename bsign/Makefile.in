@@ -1,0 +1,375 @@
+#							-*- Makefile -*-
+# Makefile.in
+#   $Id: Makefile.in,v 1.33 2003/08/21 07:05:13 elf Exp $
+#
+#  written by Marc Singer (aka Oscar Levi)
+#  11 December 1998
+#
+#  This file is part of the project BSIGN.  See the file README for
+#  more information.
+#
+#  Copyright (C) 1998,2003 The Buici Company.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  in a file called COPYING along with this program; if not, write to
+#  the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA
+#  02139, USA.
+#
+#
+
+.PHONY: install clean all version revision patch
+
+VERSION=1
+PATCHLEVEL=0
+#SUBLEVEL=0
+
+space      := $(nullstring) # end of line
+
+RELEASE:=$(VERSION).$(PATCHLEVEL)
+ifneq ($(SUBLEVEL),)
+RELEASE+=.$(SUBLEVEL)
+endif
+RELEASE:=$(subst $(space),,$(RELEASE))
+
+#
+# --- Project specification
+#
+
+TARGET=bsign
+PACKAGE=bsign
+O=o/
+SRC=\
+ main.cc args.cc sha1.c bsign.cc conversion.cc ds.cc exec.cc\
+ files.cc tty.cc exitstatus.cc filewalk.cc signal.cc rfc2440.cc
+
+___OBJ=$(SRC:.cc=.o)
+__OBJ=$(___OBJ:.c=.o)
+_OBJ=$(__OBJ:.cxx=.o)
+OBJ=$(_OBJ:.s=.o)
+
+VERSION_HEADER=version.h
+RELEASE_PATH=${HOME}/release
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@ @DEFS@
+#CFLAGS_O=-O2
+#CFLAGS_O=-Os -fomit-frame-pointer
+#CFLAGS_P=$(CFLAGS) -pg
+CFLAGS_=-g $(CFLAGS_I)@CFLAGS_W@ $(CFLAGS_O) $(CFLAGS_P)
+CXXFLAGS=$(CFLAGS)
+CXXFLAGS_=$(CFLAGS_)
+LFLAGS=-g -static @LDFLAGS@ @LIBS@
+#LFLAGS=-g @LDFLAGS@ @LIBS@
+#LFLAGS=-pg ${LFLAGS}
+DEPEND=depend.m
+ECHO=@/bin/echo
+INSTALL=@INSTALL@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+
+#
+# --- Autoconf generated symbols
+#
+
+srcdir = @srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+docdir = $(prefix)/share/doc/$(PACKAGE)
+infodir = @infodir@
+mandir = $(prefix)/share/man/
+
+# This is removed because it generates a line in the Makefile.in that
+# breaks the use of 'make -f Makefile.in distclean' from
+# debian/rules.  Besides, we don't call make on subdirectories.
+# @SET_MAKE@
+
+#
+# --- Implicit rules
+#
+
+vpath %.o $O
+
+%.o: %.c
+	$(make_o)
+	$(ECHO) $(CC) -c $(CFLAGS) -o $O$@ $<
+	@$(CC) -c $(CFLAGS) $(CFLAGS_) -o $O$@ $<
+
+$O%.o: %.c
+	$(make_o)
+	$(ECHO) $(CC) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) $(CFLAGS_) -o $@ $<
+
+%.o: %.cxx
+	$(make_o)
+	$(ECHO) $(CXX) -c $(CXXFLAGS) -o $O$@ $<
+	@$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -o $O$@ $<
+
+$O%.o: %.cc
+	$(make_o)
+	$(ECHO) $(CXX) -c $(CFLAGS) -o $@ $<
+	@$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -o $@ $<
+
+%.o: %.cc
+	$(make_o)
+	$(ECHO) $(CXX) -c $(CXXFLAGS) -o $O$@ $<
+	@$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -o $O$@ $<
+
+$O%.o: %.cxx
+	$(make_o)
+	$(ECHO) $(CXX) -c $(CFLAGS) -o $@ $<
+	@$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -o $@ $<
+
+%.o: %.s
+	$(make_o)
+	$(ECHO) $(AS) $(AFLAGS) -o $O$@ $<
+	@$(AS) $(AFLAGS) $(AFLAGS_) -o $O$@ $<
+
+$O%.o: %.s
+	$(make_o)
+	$(ECHO) $(AS) $(AFLAGS) -o $@ $<
+	@$(AS) $(AFLAGS) $(AFLAGS_) -o $@ $<
+
+%.i: %.cxx
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -E -o $(notdir $@) $<
+
+%.s: %.cxx
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -S -o $@ $<
+
+%.i: %.cc
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -E -o $(notdir $@) $<
+
+%.s: %.cc
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGS_) -S -o $@ $<
+
+%.s: %.c
+	$(CC) -c $(CFLAGS) $(CFLAGS_) -S -o $@ $<
+
+#
+# --- Primary targets
+#
+
+all: check_version check_depend make_o $O$(TARGET) $(TARGET)
+
+.PHONY: make_o
+make_o:
+	@if test ! -d $O ;\
+	 then echo === Creating \'$O\' output directory ; mkdir $O ; fi
+
+$O$(TARGET): $(OBJ)
+	$(CXX) -o $@ $(addprefix $O,$(OBJ)) $(LFLAGS) 
+	cp $@ $@_debug
+	strip $@
+# This is here in case we find a way to prevent linkage against libstdc++
+#	$(CC) -o $@ $(addprefix $O,$(OBJ)) $(LFLAGS) 
+
+$(TARGET): $O$(TARGET)
+	@echo -- Linking $(TARGET) to $O$(TARGET)
+	@-ln -s $O$(TARGET) .
+
+clean:
+ifneq "$O" ""
+	-rm -rf $O
+else
+	-rm $(OBJ)
+endif
+	-rm *.i
+	-rm build
+
+.PHONY: dist_clean distclean
+dist_clean distclean: clean
+	-rm -f \#* *~ *.sed *.i *.cod
+	-rm -f config.cache config.status config.log
+	-chmod +w Makefile config.h
+	-rm Makefile config.h $(DEPEND)
+
+.PHONY: debclean
+debclean: distclean
+
+#
+# --- Version and Build Engineering
+#
+
+.PHONY: transmit
+transmit: # distribution-archive
+	@distftp.sh ${PACKAGE} \
+	  ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).ANNOUNCEMENT \
+	  ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).README \
+	  ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).lsm \
+	  ${RELEASE_PATH}/${PACKAGE}_$(RELEASE)_i386.deb \
+	  ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).tar.gz
+
+version.sed: _version.h
+	@echo Creating version-specific sed script...
+	@/bin/echo s/\<\<version\>\>/$(RELEASE)/ > version.sed
+	@/bin/echo s/\<\<date\>\>/`date +"%d%b%y" \
+	 | sed -e y/abceglnoprtuvy/ABCEGLNOPRTUVY/`/ >> version.sed
+	@/bin/echo s/\<\<tar-file\>\>/${PACKAGE}-$(RELEASE).tar.gz/ \
+	 >> version.sed
+	@/bin/echo s/\<\<lsm-file\>\>/${PACKAGE}-$(RELEASE).lsm/ >> version.sed
+
+.PHONY: ${PACKAGE}.lsm
+${PACKAGE}.lsm: version.sed LSM
+	@echo Creating LSM file...
+	@if test -f *.lsm ; then rm *.lsm ; fi
+	@sed -f version.sed LSM > ${PACKAGE}-$(RELEASE).lsm
+
+.PHONY: ${PACKAGE}.ANNOUNCEMENT
+${PACKAGE}.ANNOUNCEMENT: version.sed ANNOUNCEMENT
+	@echo Creating ANNOUNCEMENT file...
+	@if test -f *.ANNOUNCEMENT ; then rm *.ANNOUNCEMENT ; fi
+	@sed -f version.sed ANNOUNCEMENT \
+	   > ${PACKAGE}-$(RELEASE).ANNOUNCEMENT
+	@cat ${PACKAGE}-$(RELEASE).lsm \
+	  >> ${PACKAGE}-$(RELEASE).ANNOUNCEMENT
+
+.PHONY: ${PACKAGE}.README
+${PACKAGE}.README: version.sed README
+	@echo Creating README file...
+	@if test -f *.README ; then rm *.README ; fi
+	@sed -f version.sed README  > ${PACKAGE}-$(RELEASE).README
+
+.PHONY: distribution-archive da
+distribution-archive da: ${PACKAGE}.lsm ${PACKAGE}.ANNOUNCEMENT ${PACKAGE}.README dist_clean
+	@echo Creating distribution archive...
+	@/bin/sh -c "if test -x ../${PACKAGE}-$(RELEASE);\
+		then rm ../${PACKAGE}-$(RELEASE) ; fi"
+	@ln -s ${PACKAGE} ../${PACKAGE}-$(RELEASE)
+	@find . -path .svn -prune\
+		-o -path o -prune\
+		-o -regex .\*/${PACKAGE} -prune\
+		-o -regex .\*/configure -prune\
+		-o -regex .\*/mkinstalldirs -prune\
+		-o -regex .\*/rules -prune\
+		-o -regex .\*/config.status -prune\
+		-o -regex .\*\.o -prune\
+		-o -type f -exec chmod 644 \{\} \;
+	@/bin/sh -c 'cd .. ; V=$(RELEASE) ;\
+		tar zcf ${PACKAGE}-$$V.tar.gz\
+		`find ${PACKAGE}-$$V/\
+		 -regex .\*/.svn -prune\
+		 -regex .\*/debian/package -prune\
+		 -o -regex .\*~ -prune\
+		 -o -regex .\*/o -prune\
+		 -o -regex .\*\\\\.o -prune\
+		 -o -regex .\*\\\\.a -prune\
+		 -o -regex .\*\\\\.m -prune\
+		 -o -regex .\*\\\\.bmp -prune\
+		 -o -regex .\*\\\\.terminfo -prune\
+		 -o -regex .\*\\\\.gpg -prune\
+		 -o -regex .\*\\\\.asc -prune\
+		 -o -regex .\*/${PACKAGE} -prune\
+		 -o -regex .\*/Makefile -prune\
+		 -o -regex .\*/config.cache -prune\
+		 -o -regex .\*/config.h -prune\
+		 -o -regex .\*/config.log -prune\
+		 -o -regex .\*/config.status -prune\
+		 -o -regex .\*/configure.scan -prune\
+		 -o -regex .\*/log -prune\
+		 -o -regex .\*/gmon.out -prune\
+		 -o -regex .\*/\.gdbinit -prune\
+		 -o -regex .\*/NOTES -prune\
+		 -o -regex .\*/patches -prune\
+		 -o -type f -print | sort`'
+	@-rm ../${PACKAGE}-$(RELEASE)
+	@echo Moving distribution file to ${RELEASE_PATH}...
+	@mv ../${PACKAGE}-$(RELEASE).tar.gz ${RELEASE_PATH}
+	@mv ${PACKAGE}-$(RELEASE).* ${RELEASE_PATH}
+
+REPOS := "file:///svn/tools/trunk/bsign"
+PKGBASE := bsign-$(RELEASE)
+
+.PHONY: tgz 
+tgz:
+	@echo "PACKAGE  bsign-$(RELEASE).tar.gz"
+	@if [ -d $(PKGBASE) ] ; then rm -rf $(PKGBASE) ; fi
+	@svn export -q $(REPOS) $(PKGBASE)
+	@tar zcf $(PKGBASE).tar.gz $(PKGBASE)
+	@rm -rf $(PKGBASE)
+
+complete_release: tgz FORCE
+	@echo "RELEASE  bsign-$(RELEASE).tar.gz"
+	@cp bsign-$(RELEASE).tar.gz ~ftp/pub/bsign
+	@svn cp -m "$(RELEASE)" $(REPOS) file:///svn/tools/tags/apex/$(RELEASE)
+
+#.PHONY: announce
+#announce:
+#	@echo -n "CurVeS " > _announce
+#	@echo $(RELEASE) >> _announce
+#	@echo " -- console UI for CVS" >> _announce
+#	@echo "Posting to comp.os.linux.announce..."
+#	@cat ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).lsm \
+#	 | mail -s "`cat _announce`" linux-announce@news.ornl.gov
+#	@echo "Updating LSM..."
+#	@cat ${RELEASE_PATH}/${PACKAGE}-$(RELEASE).lsm \
+#	 | mail -s "add" lsm@execpc.com
+#	@rm _announce
+
+#
+# --- Installation
+#
+
+.PHONY: install installdirs
+
+install: installdirs $(TARGET)
+# hello.info
+	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(binprefix)
+	strip $(bindir)/$(binprefix)/$(TARGET)
+	$(INSTALL_DATA) bsign_sign $(docdir)/scripts
+	$(INSTALL_DATA) bsign_verify $(docdir)/scripts
+	$(INSTALL_DATA) bsign_hash $(docdir)/scripts
+	$(INSTALL_DATA) bsign_check $(docdir)/scripts
+	$(INSTALL_DATA) ${PACKAGE}.1 $(mandir)/man1
+installdirs:
+	$(srcdir)/mkinstalldirs $(bindir) $(docdir) $(docdir)/scripts $(mandir)/man1
+
+#
+# --- Version
+#
+
+check_version: _version.h
+
+_version.h: FORCE
+	@echo "#define SZ_VERSION \"$(RELEASE)\"" >> __version.h
+	@if ! ( cmp -s _version.h __version.h ) ; \
+	  then mv __version.h _version.h ; \
+	  else rm __version.h ; fi
+
+Makefile: Makefile.in
+	@if [ -e config.status ] ; then config.status ; fi
+
+#
+# --- Dependencies: depend.m
+#
+
+.PHONY: depend check_depend
+
+depend: _version.h $(DEPEND)
+$(DEPEND) depend: _version.h # $(SRC)
+	$(CXX) $(CFLAGS_I) -DHAVE_CONFIG_H -M $(SRC) > $(DEPEND)
+
+check_depend:
+	@if test ! -s ${DEPEND} ; then \
+	 echo "-- Use 'make depend' to create dependencies file." \
+              "  Continuing without it." ; fi	
+
+#
+# --- Include dependencies always.  Configure creates an empty file
+#
+ifneq "$(wildcard $(DEPEND))" ""
+include ${DEPEND}
+endif
+
+FORCE:
