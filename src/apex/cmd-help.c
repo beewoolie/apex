@@ -105,18 +105,23 @@ static __command struct command_d c_help_region = {
   .description = "help on regions",
   COMMAND_HELP(
 "region [DRIVER:][[@]START][+LENGTH]\n"
+"       [DRIVER:][[//LOCATION][/PATH]][[@START][+LENGTH]]\n"
 "  Regions define a source or destination for data.  Commands\n"
 "  that use regions are abstracted from the underlying IO mechanism.\n"
 "  This isn't as important for memory mapped devices as it is for\n"
 "  others such as SPI eeproms, NAND flash, and network devices.\n\n"
-"  The DRIVER name is matched case insensitively.  Any unambiguous\n"
+"    The DRIVER name is matched case insensitively.  Any unambiguous\n"
 "  prefix will match such that 'nor:' will map to the 'nor-cfi:'\n"
 "  driver.  When the DRIVER field is absent, the default memory: driver\n"
 "  is used.  The drvinfo command will display a list of available\n"
 "  drivers.  The START value may be in hexadecimal, decimal, or decimal\n"
 "  with a multipler, e.g. 10k for kilobytes, 1m for megabytes.  The\n"
 "  LENGTH takes the same form as START.\n\n"
-"  The driver is responsible for parsing the region string.  It\n"
+"    The second region form is used by drivers that support paths.\n"
+"  The LOCATION is a driver specific element.  For fatfs: it is the\n"
+"  partition number 1-4.  The path is a valid path for the filesystem\n"
+"  but may not contain either an '@' or a '+'.\n"
+"    The driver is responsible for parsing the region string.  It\n"
 "  will add defaults when necessary or fail if the region is\n"
 "  invalid.\n\n"
 "  e.g.  mem:0+1k              # First kilobyte of physical memory \n"
@@ -126,6 +131,8 @@ static __command struct command_d c_help_region = {
 "        nor:0                 # Start of nor flash\n"
 "        nor:128k+64k          # 64 KiB of flash at the 128KiB boundary\n"
 "        0x20200000+2m         # Two megabytes in memory\n"
+"        fat:/zImage           # File zImage in the root fat: device\n"
+"        fat:/zImage@2k        # File zImage, 2KiB bytes into the file\n"
   )
 };
 

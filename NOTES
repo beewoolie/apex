@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o Buried region strings must be revealed.  The emac driver has one
+    for the MAC address EEPROM.  The fatfs driver has one for the
+    underlying block device.  The latter may be best revealed with an
+    environment variable...or not.  Don't know about the emac one.
+    There is an intention to let the user specic the fatfs support
+    driver with the region string.  fatfs:cf: or something.
+
   o Need to rectify the vpen_enable code in the flash drivers.  It
     ought to be something defined in the hardware file s.t. it is not
     compiled unless needed.  IIRC, it was smaller to put the vpen code
