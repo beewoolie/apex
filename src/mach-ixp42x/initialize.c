@@ -113,8 +113,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	   cleanup before jumping to code.  */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
-		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
-		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
+//		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
+//		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
 		  "mcr p15, 0, r0, c1, c0, 0");
 
 	/* Disable interrupts and set supervisor mode */
@@ -236,13 +236,35 @@ static void target_init (void)
   __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
 }
 
-#if 0
 static void target_release (void)
 {
+  /* *** FIXME: I don't think this is necessary.  I'm trying to figure
+     *** out why the kernel fails to boot.  */
+
+	/* Invalidate caches (I&D) and BTB (?) */
+  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+  COPROCESSOR_WAIT;
+
+	/* Invalidate TLBs (I&D) */
+  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
+  COPROCESSOR_WAIT;
+
+	/* Drain write buffer */
+  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+  COPROCESSOR_WAIT;
+
+	/* Disable write buffer coalescing */
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t" 
+		    "orr %0, %0, #(1<<0)\n\t"
+		    "mcr p15, 0, %0, c1, c0, 1"
+		    : "=r" (v));
+    COPROCESSOR_WAIT;
+  }		
 }
-#endif
 
 static __service_0 struct service_d ixp42x_target_service = {
   .init    = target_init,
-  //  .release = target_release,
+  .release = target_release,
 };
