@@ -36,6 +36,8 @@
 
 #include "hardware.h"
 
+#include <debug_ll.h>
+
 //#define USE_SLOW
 
 #if defined (USE_SLOW)
@@ -125,22 +127,25 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 #if defined (CONFIG_DEBUG_LL)
-  /* *** Need to initialize the serial port here. */
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKCTRL0 &= ~RCPC_PCLKCTRL0_U0;
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
-  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
-  UART_DLL  = 8;	// divisor_l;
-  UART_DLH  = 0;	// divisor_h;
-  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
+  UART_CR = UART_CR_EN; /* Enable UART without drivers */
+  
+  UART_IBRD = 8;
+  UART_FBRD = 0;
+  UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
+  UART_IMSC = 0x00; /* Mask interrupts */
+  UART_ICR  = 0xff; /* Clear interrupts */
+  UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
 
-  UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
-				/* Clear interrupts? */
   PUTC_LL('A');
 #endif
 
 	/* Setup HCLK, FCLK and peripheral clocks */
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
 
-  /* *** We may want to move the UART stuff into the serial driver */
   RCPC_AHBCLKCTRL = RCPC_AHBCLKCTRL_V;
   RCPC_PCLKCTRL0  = RCPC_PCLKCTRL0_V;
   RCPC_PCLKCTRL1  = RCPC_PCLKCTRL1_V;

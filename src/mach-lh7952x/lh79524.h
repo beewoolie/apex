@@ -217,14 +217,6 @@
 #define UART1_PHYS	(UART_PHYS + 0x1000)
 #define UART2_PHYS	(UART_PHYS + 0x2000)
 #define UART		(UART0_PHYS)
-#define UART_DR		(0x00)
-#define UART_IBRD	(0x24)
-#define UART_FBRD	(0x28)
-#define UART_LCR_H	(0x2c)
-#define UART_CR		(0x30)
-#define UART_FR		(0x18)
-#define UART_IMSC	(0x38)
-#define UART_ICR	(0x44)
 
 #define TIMER_PHYS	(0xfffc4000)
 
@@ -341,6 +333,9 @@
 
 #define RCPC_CTRL_UNLOCK	(1<<9)
 #define RCPC_CORECONFIG_FASTBUS	(3)
+#define RCPC_PCLKCTRL0_U2	(1<<2)
+#define RCPC_PCLKCTRL0_U1	(1<<1)
+#define RCPC_PCLKCTRL0_U0	(1<<0)
 
 #if 1 // run the CPU at 50.8032 MHz, and the bus at 50.8032 MHz
 # define RCPC_SYSPLLCNTL_V	(0x3049) /* 101.6064 MHz <= 11.2896 MHz * 9 */
@@ -353,7 +348,7 @@
 #endif
 
 #define RCPC_AHBCLKCTRL_V ((1<<4)|(1<<3)|(1<<2)) /* !LCD,!USB,!ETH,SDRAM,DMA */
-#define RCPC_PCLKCTRL0_V  ((0<<9)|(1<<2)|(1<<1)|(0<<0)) /* RTC,!U2,!U1,U0 */
+#define RCPC_PCLKCTRL0_V  ((0<<9)|(1<<2)|(1<<1)|(1<<0)) /* RTC,!U2,!U1,!U0 */
 #define RCPC_PCLKCTRL1_V  ((1<<3)|(1<<2)|(1<<1)|(1<<0)) /*!USB,!ADC,!SSP,!LCD*/
 #define RCPC_PCLKSEL0_V	  ((3<<7))			/* RTC 32KHz */
 
@@ -378,20 +373,6 @@
 
 		/* *** FIXME: works with 1:1 clock mode only */
 #define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000)
-
-#define UART_FR_RXFE		(1<<4)
-#define UART_FR_TXFF		(1<<5)
-#define UART_FR_TXFE		(1<<7)
-#define UART_DR_PE		(1<<9)
-#define UART_DR_OE		(1<<11)
-#define UART_DR_FE		(1<<8)
-#define UART_FR_BUSY		(1<<3)
-#define UART_CR_EN		(1<<0)
-#define UART_CR_TXE		(1<<8)
-#define UART_CR_RXE		(1<<9)
-#define UART_LCR_WLEN8		(3<<5)
-#define UART_LCR_FEN		(1<<4)
-#define UART_DR_DATAMASK	(0xff)
 
 #define RTC_CR_EN	(1)
 

@@ -51,10 +51,19 @@
 
 /* ----- Prototypes */
 
+#if !defined (RCPC_PHYS)
+
+#define RCPC_PHYS		(0xfffe2000)
+#define RCPC_CTRL		__REG(RCPC_PHYS + 0x00)
+#define RCPC_CTRL_UNLOCK	(1<<9)
+#define RCPC_PCLKCTRL0		__REG(RCPC_PHYS + 0x00)
+#define RCPC_PCLKCTRL0_U0	(1<<0)
+
+#endif
+
 #if !defined (UART_PHYS)
 
 #define UART_PHYS	(0xfffc0000)
-
 #define UART0_PHYS	(UART_PHYS + 0x0000)
 #define UART1_PHYS	(UART_PHYS + 0x1000)
 #define UART2_PHYS	(UART_PHYS + 0x2000)
@@ -71,14 +80,14 @@
 
 #if !defined (UART_DR)
 
-#define UART_DR		(0x00)
-#define UART_IBRD	(0x24)
-#define UART_FBRD	(0x28)
-#define UART_LCR_H	(0x2c)
-#define UART_CR		(0x30)
-#define UART_FR		(0x18)
-#define UART_IMSC	(0x38)
-#define UART_ICR	(0x44)
+#define UART_DR		__REG(UART_PHYS + 0x00)
+#define UART_IBRD	__REG(UART_PHYS + 0x24)
+#define UART_FBRD	__REG(UART_PHYS + 0x28)
+#define UART_LCR_H	__REG(UART_PHYS + 0x2c)
+#define UART_CR		__REG(UART_PHYS + 0x30)
+#define UART_FR		__REG(UART_PHYS + 0x18)
+#define UART_IMSC	__REG(UART_PHYS + 0x38)
+#define UART_ICR	__REG(UART_PHYS + 0x44)
 
 #define UART_FR_TXFE		(1<<7)
 #define UART_FR_RXFF		(1<<6)
@@ -96,5 +105,8 @@
 #define UART_DR_DATAMASK	(0xff)
 
 #endif
+
+#define PUTC_LL(c)	({ __REG (UART + UART_DR) = c; \
+			   while ((__REG (UART + UART_FR) & UART_FR_TXFE) == 0) ; })
 
 #endif  /* __DEBUG_LL_H__ */

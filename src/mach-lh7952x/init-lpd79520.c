@@ -1,4 +1,4 @@
-/* init-lpd79524.c
+/* init-lpd79520.c
      $Id$
 
    written by Marc Singer
@@ -68,6 +68,7 @@
 #include <service.h>
 
 #include "hardware.h"
+#include <debug_ll.h>
 
 //#define USE_SLOW
 
@@ -159,6 +160,22 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+#if defined (CONFIG_DEBUG_LL)
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PERIPHCLKCTRL &= ~RCPC_PERIPHCLK_U0;
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
+
+  UART_CR = UART_CR_EN; /* Enable UART without drivers */
+  
+  UART_IBRD = 8;
+  UART_FBRD = 0;
+  UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
+  UART_IMSC = 0x00; /* Mask interrupts */
+  UART_ICR  = 0xff; /* Clear interrupts */
+  UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
+
+  PUTC_LL('A');
+#endif
 
 	/* Setup HCLK, FCLK and peripheral clocks */
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;

@@ -38,14 +38,31 @@
 #include <config.h>
 #include <driver.h>
 #include <service.h>
+#include "hardware.h"
 
-#if defined (CONFIG_MACH_LH79524)
-# include "lh79524.h"
-#endif
+#define UART_DR			__REG(UART_PHYS + 0x00)
+#define UART_IBRD		__REG(UART_PHYS + 0x24)
+#define UART_FBRD		__REG(UART_PHYS + 0x28)
+#define UART_LCR_H		__REG(UART_PHYS + 0x2c)
+#define UART_CR			__REG(UART_PHYS + 0x30)
+#define UART_FR			__REG(UART_PHYS + 0x18)
+#define UART_IMSC		__REG(UART_PHYS + 0x38)
+#define UART_ICR		__REG(UART_PHYS + 0x44)
 
-#if defined (CONFIG_MACH_LH79520)
-# include "lh79520.h"
-#endif
+#define UART_FR_TXFE		(1<<7)
+#define UART_FR_RXFF		(1<<6)
+#define UART_FR_TXFF		(1<<5)
+#define UART_FR_RXFE		(1<<4)
+#define UART_FR_BUSY		(1<<3)
+#define UART_DR_PE		(1<<9)
+#define UART_DR_OE		(1<<11)
+#define UART_DR_FE		(1<<8)
+#define UART_CR_EN		(1<<0)
+#define UART_CR_TXE		(1<<8)
+#define UART_CR_RXE		(1<<9)
+#define UART_LCR_WLEN8		(3<<5)
+#define UART_LCR_FEN		(1<<4)
+#define UART_DR_DATAMASK	(0xff)
 
 extern struct driver_d* console_driver;
 
@@ -67,6 +84,10 @@ void lh7952x_serial_init (void)
   }
 #endif
 
+  /* *** FIXME: the only reason there are two of these is because the
+     *** name of the constants changed.  Also, the UARTMUX stuff.
+     *** Clean it up. */
+
 #if defined (CONFIG_MACH_LH79520)
   
   /* Enable ALL uarts since we don't know which we're using */
@@ -76,6 +97,18 @@ void lh7952x_serial_init (void)
     ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);    
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
+#endif
+
+#if defined (CONFIG_MACH_LH79524)
+  
+  /* Enable ALL uarts since we don't know which we're using */
+  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKCTRL0 &= 
+    ~(RCPC_PCLKCTRL0_U0 | RCPC_PCLKCTRL0_U1 | RCPC_PCLKCTRL0_U2);    
+  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
+
+#endif
+
   switch (baudrate) {
   case 115200: 
     divisor_i = 8; divisor_f = 0; break;
@@ -83,22 +116,21 @@ void lh7952x_serial_init (void)
   default:
     return;
   }
-#endif
 
-//  while (__REG (UART + UART_FR) & UART_FR_BUSY)
+//  while (UART_FR & UART_FR_BUSY)
 //    ;
   
-  __REG (UART + UART_CR) = UART_CR_EN; /* Enable UART without drivers */
+  UART_CR = UART_CR_EN; /* Enable UART without drivers */
   
-  __REG (UART + UART_IBRD) = divisor_i;
-  __REG (UART + UART_FBRD) = divisor_f;
+  UART_IBRD = divisor_i;
+  UART_FBRD = divisor_f;
   
-  __REG (UART + UART_LCR_H) = UART_LCR_FEN | UART_LCR_WLEN8;
+  UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
     
-  __REG (UART + UART_IMSC) = 0x00; /* Mask interrupts */
-  __REG (UART + UART_ICR)  = 0xff; /* Clear interrupts */
+  UART_IMSC = 0x00; /* Mask interrupts */
+  UART_ICR  = 0xff; /* Clear interrupts */
 
-  __REG (UART + UART_CR) = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
+  UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
 
   if (console_driver == 0)
     console_driver = &lh7952x_serial_driver;
@@ -106,7 +138,7 @@ void lh7952x_serial_init (void)
 
 ssize_t lh7952x_serial_poll (struct descriptor_d* d, size_t cb)
 {
-  return cb ? ((__REG (UART + UART_FR) & UART_FR_RXFE) ? 0 : 1) : 0;
+  return cb ? ((UART_FR & UART_FR_RXFE) ? 0 : 1) : 0;
 }
 
 ssize_t lh7952x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
@@ -116,10 +148,10 @@ ssize_t lh7952x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   for (pb = (unsigned char*) pv; cb--; ++pb) {
     u32 v;
 
-    while (__REG (UART + UART_FR) & UART_FR_RXFE)
+    while (UART_FR & UART_FR_RXFE)
       ;				/* block until character is available */
 
-    v = __REG (UART + UART_DR);
+    v = UART_DR;
     if (v & (UART_DR_FE | UART_DR_PE))
       return -1;		/* -ESERIAL */
     *pb = v & UART_DR_DATAMASK;
@@ -136,10 +168,10 @@ ssize_t lh7952x_serial_write (struct descriptor_d* d,
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
-    while ((__REG (UART + UART_FR) & UART_FR_TXFF))
+    while (UART_FR & UART_FR_TXFF)
       ;
 
-    __REG (UART + UART_DR) = *pb;
+    UART_DR = *pb;
 
     ++cWrote;
   }

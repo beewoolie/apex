@@ -447,6 +447,7 @@ config: scripts_basic FORCE
 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
 	@ln -s src/mach-*/$@ config
 	@if [ -e include/config.h ]; then rm include/config.h; fi
+	@if [ -L include/mach ]; then rm include/mach ; fi
 
 #%config: scripts_basic FORCE
 #	$(Q)$(MAKE) $(build)=scripts/kconfig $@

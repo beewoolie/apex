@@ -28,18 +28,17 @@
    Serial driver for the ixp42x UARTs.  These appear to be variants of
    the pl010 PrimeCell.
 
-   o Need to be careful with the includes.  Don't include "hardware.h"
-     or "debug_ll.h" as it will interfere with the UART_ macros.  One
-     solution would be to put these macros before the include and then
-     conditionally include them in the debug header. Yes, I could also
-     put them in a shared header, I won't do that for the sake of a
-     debug feature.
+   o Need to be careful with the includes.  Don't include <debug_ll.h>
+     before the uart register macros as it will interfere with them.
+     Yes, I could also put them in a shared header, I won't do that
+     for the sake of a debug feature.
  
 */
 
 #include <config.h>
 #include <driver.h>
 #include <service.h>
+#include "hardware.h"
 
 #define UART_DR		__REG(UART_PHYS + 0x00)
 #define UART_DLL	__REG(UART_PHYS + 0x00)
@@ -66,8 +65,6 @@
 #define UART_LSR_PE	 (1<<2)
 #define UART_LSR_OE	 (1<<1)
 #define UART_LSR_DR	 (1<<0)
-
-#include "hardware.h"
 
 extern struct driver_d* console_driver;
 
