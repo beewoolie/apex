@@ -52,4 +52,6 @@ typedef struct { volatile unsigned char  offset[4096>>0]; } __reg08;
 #define __REG16(x)	__REG_M (__reg16, (x), 1)
 #define __REG8(x)	__REG_M (__reg08, (x), 0)
 
+#define MASK_AND_SET(v,m,s)	(v) = ((v)&~(m))|(s)
+
 #endif  /* __REG_H__ */

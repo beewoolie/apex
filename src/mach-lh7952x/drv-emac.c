@@ -114,9 +114,6 @@ static long __attribute__((section("ethernet.bss")))
 static char __attribute__((section("ethernet.bss")))
      rgbBuffer[CB_BUFFER*C_BUFFER];	/* Memory for buffers */
 
-#define SPI_SET(b)	__REG16(CPLD_SPI) = (__REG16(CPLD_SPI) |  (b)) & 0xff
-#define SPI_CLR(b)	__REG16(CPLD_SPI) = (__REG16(CPLD_SPI) & ~(b)) & 0xff
-
 #define P_START		(1<<9)
 #define P_WRITE		(1<<7)
 #define P_READ		(2<<7)
@@ -150,7 +147,6 @@ static void emac_setup (void)
   printf ("rlDescriptor %p\r\n", rlDescriptor);
   __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rlDescriptor;
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_RXEN; /* Enable RX */
-  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
 }
 
@@ -202,12 +198,13 @@ static void emac_phy_reset (int phy_address)
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
     ++v;
 #if 0
-  printf ("  reset %d\r\n", v);
+  printf ("  resetart anen %d\r\n", v);
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESTART_ANEN
 		  | emac_phy_read (phy_address, 0));
 #endif
 }
+
 
 /* emac_phy_detect
 
@@ -234,26 +231,26 @@ static void emac_phy_detect (void)
   emac_phy_reset (phy_address);
 }
 
-static void enable_cs (void)
+void enable_cs (void)
 {
-  SPI_SET (CPLD_SPI_CS_MAC);
+  __REG16 (CPLD_SPI) |=  CPLD_SPI_CS_MAC;
   usleep (T_CSS);
 }
 
 static void disable_cs (void)
 {
-  SPI_CLR (CPLD_SPI_CS_MAC);
+  __REG16 (CPLD_SPI) &= ~CPLD_SPI_CS_MAC;
   usleep (T_CS);
 }
 
-
 static void pulse_clock (void)
 {
-  SPI_SET (CPLD_SPI_SCLK);
+  __REG16 (CPLD_SPI) |=  CPLD_SPI_SCLK;
   usleep (T_SKH);
-  SPI_CLR (CPLD_SPI_SCLK);
+  __REG16 (CPLD_SPI) &= ~CPLD_SPI_SCLK;
   usleep (T_SKL);
 }
+
 
 /* execute_spi_command
 
@@ -266,7 +263,7 @@ static void pulse_clock (void)
 
 */
 
-int execute_spi_command (int v, int cwrite, int cread)
+static int execute_spi_command (int v, int cwrite, int cread)
 {
   unsigned long l = 0;
 
@@ -297,9 +294,9 @@ int execute_spi_command (int v, int cwrite, int cread)
       }
     } while (timer_delta (time, timer_read ()) < 10*1000);
   }
-  else if (cread > 0)
+  else
 	/* We pulse the clock before the data to skip the leading zero. */
-    while (cread--) {
+    while (cread-- > 0) {
       pulse_clock ();
       l = (l<<1) 
 	| (((__REG16 (CPLD_SPI) & CPLD_SPI_RX) >> CPLD_SPI_RX_SHIFT) & 0x1);
@@ -331,11 +328,10 @@ static int emac_read_mac (char rgb[6])
 }
 
 
-static void emac_init (void)
+void emac_init (void)
 {
 #if defined (TALK)
   PRINTF ("  EMAC\r\n");
-  dump (rgb, 6, 0);
 #endif
   
 	/* Hardware setup */
@@ -343,21 +339,26 @@ static void emac_init (void)
   __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
   __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
-  __REG (IOCON_PHYS + IOCON_MUXCTL1) &= ~((3<<8)|(3<<6)|(3<<4));
-  __REG (IOCON_PHYS + IOCON_MUXCTL1) |=   (1<<8)|(1<<6)|(1<<4);
-  __REG (IOCON_PHYS + IOCON_RESCTL1)  =   (0<<8)|(0<<6)|(0<<4);
-  __REG (IOCON_PHYS + IOCON_MUXCTL23)
-    &= ~((3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0));
-  __REG (IOCON_PHYS + IOCON_MUXCTL23)
-    |=   (1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0);
-  __REG (IOCON_PHYS + IOCON_RESCTL23)  
-     =   (0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0);
-  __REG (IOCON_PHYS + IOCON_MUXCTL24)
-    &= ~((3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0));
-  __REG (IOCON_PHYS + IOCON_MUXCTL24)
-    |=   (1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0);
-  __REG (IOCON_PHYS + IOCON_RESCTL24)
-     =   (0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0);
+
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
+		(3<<8)|(3<<6)|(3<<4),
+		(1<<8)|(1<<6)|(1<<4));		
+
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
+		(3<<8)|(3<<6)|(3<<4),
+		(0<<8)|(0<<6)|(0<<4));
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL23),
+		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+		(1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL23),
+		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL24),
+		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+		(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
+  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL24),
+		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
 
   {
     unsigned char rgb[6];
@@ -377,7 +378,6 @@ static void emac_init (void)
     unsigned long l = emac_phy_read (phy_address, 4);
     emac_phy_write (phy_address, 4, l & ~((1<<8)|(1<<6)|(1<<5)));
   }
-
 }
 
 static __service_6 struct service_d lh7952x_emac_service = {
@@ -394,7 +394,7 @@ int cmd_emac (int argc, const char** argv)
     int i;
 
     for (i = 0; i < cbMax; ++i)
-      rgb[i] = execute_spi_command (P_START|P_READ|i, 10, 8) & 0xff;
+      rgb[i] = (unsigned char) execute_spi_command (P_START|P_READ|i, 10, 8);
 
     dump (rgb, cbMax, 0);
 
@@ -445,12 +445,13 @@ int cmd_emac (int argc, const char** argv)
     if (argc != 2)
       return ERROR_PARAM;
 
+    rgb[0] = 0x94;		/* Signature */
+    rgb[1] = 0x01;		/* OP: MAC address */
+    rgb[8] = 0xff;		/* OP: end */
+
     {
       int i;
       char* pb = (char*) argv[1];
-      rgb[0] = 0x94;		/* Signature */
-      rgb[1] = 0x01;		/* OP: MAC address */
-      rgb[8] = 0xff;		/* OP: end */
       for (i = 2; i < 8; ++i) {
 	if (!*pb)
 	  return ERROR_PARAM;
@@ -462,7 +463,7 @@ int cmd_emac (int argc, const char** argv)
 	return ERROR_PARAM;
     }
 
-    dump (rgb, 9, 0);
+    //    dump (rgb, 9, 0);
 
     {
       int i;
@@ -470,8 +471,8 @@ int cmd_emac (int argc, const char** argv)
       execute_spi_command (P_START|P_EWEN|P_A_EWEN, 10, 0);
 
 		/* Erase everything */
-      if (execute_spi_command (P_START|P_ERAL|P_A_ERAL, 10, -1))
-	return ERROR_FAILURE;
+//      if (execute_spi_command (P_START|P_ERAL|P_A_ERAL, 10, -1))
+//	return ERROR_FAILURE;
 
       for (i = 0; i < 9; ++i) {
 	if (execute_spi_command (P_START|P_ERASE|i, 10, -1))
@@ -489,7 +490,7 @@ int cmd_emac (int argc, const char** argv)
 
 static __command struct command_d c_emac = {
   .command = "emac",
-  .description = "manage ethernet mac address",
+  .description = "manage ethernet MAC address",
   .func = cmd_emac,
 };
 
