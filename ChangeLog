@@ -1,3 +1,7 @@
+2005-02-12  Marc Singer  <elf@buici.com>
+
+	* Makefile 1.0.24 for debug_ll changes
+
 2005-02-12  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile: Moved the compiler declarations to the config files.
