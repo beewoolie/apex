@@ -67,7 +67,7 @@ unsigned long timer_delta (unsigned long start, unsigned long end)
   return end - start;
 }
 
-static __service_1 struct service_d lh7a40x_timer_service = { 
-  .init = lh7a40x_timer_init,
+static __service_2 struct service_d lh7a40x_timer_service = { 
+  .init    = lh7a40x_timer_init,
   .release = lh7a40x_timer_release,
 };

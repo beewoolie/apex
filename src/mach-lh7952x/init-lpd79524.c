@@ -32,6 +32,7 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <service.h>
 
 #include "hardware.h"
 
@@ -100,7 +101,7 @@ void __section(bootstrap) usleep (unsigned long us)
 
    performs vital SDRAM initialization as well as some other memory
    controller initializations.  It will perform no work if we are
-   already running from SDRAM.  It will 
+   already running from SDRAM.
 
    The assembly output of this implementation of the initialization is
    more dense than the assembler version using a table of
@@ -179,8 +180,8 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 #if defined (CONFIG_NAND_LPD)
   __REG (IOCON_PHYS | IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;	/* A */
   __REG (IOCON_PHYS | IOCON_RESCTL7)  = IOCON_RESCTL7_V;	/* no pull */
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;     /* nCS0 normal */
-  __REG16 (CPLD_FLASH)		     &= ~(CPLD_FLASH_NANDSPD); /* Fast NAND */
+  __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;	/* nCS0 norm */
+  __REG16 (CPLD_FLASH)		     &= ~(CPLD_FLASH_NANDSPD);	/* Fast NAND */
 #endif
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
@@ -231,18 +232,15 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 }
 
 
-/* initialize
+/* target_init
 
    performs the rest of the hardware initialization that didn't have
    to be performed during the bootstrap phase.
 
 */
 
-void __naked initialize_target (void)
+static void target_init (void)
 {
-  unsigned long lr;
-  __asm volatile ("mov %0, lr" : "=r" (lr));
-
 #if !defined (CONFIG_NAND_LPD)
 	/* IOCON to clear special NAND modes.  These modes must be
 	   controlled explicitly within driver code. */
@@ -268,6 +266,15 @@ void __naked initialize_target (void)
   __REG (EMC_PHYS | EMC_STURN3)      = 2;
 
   __REG (BOOT_PHYS | BOOT_CS1OV)    &= ~(1<<0);
-
-  __asm volatile ("mov pc, %0" : : "r" (lr));
 }
+
+static void target_release (void)
+{
+  /* Flash is enabled for the kernel */
+  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+}
+
+static __service_0 struct service_d lh79524_target_service = {
+  .init    = target_init,
+  .release = target_release,
+};

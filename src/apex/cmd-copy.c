@@ -70,11 +70,18 @@ int cmd_copy (int argc, const char** argv)
   {
     char rgb[512];
     ssize_t cb;
+    int report_last = -1;
 
     for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
 	 cbCopy += cb) {
+      int report;
       SPINNER_STEP;
       dout.driver->write (&dout, rgb, cb);
+      report = cbCopy/(1024*4);
+      if (report != report_last && dout.driver->erase) {
+	printf ("\r   %d KiB\r", cbCopy/1024);
+	report_last = report;
+      }
     }
   }
 

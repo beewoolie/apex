@@ -56,7 +56,7 @@
 #include "hardware.h"
 #include <spinner.h>
 
-#define TALK
+//#define TALK
 //#define EXTENDED
 
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
@@ -87,8 +87,8 @@
 #define DeviceProtected	(1<<1)
 
 struct nor_chip {
-  unsigned char manufacturer;
-  unsigned char device;
+  //  unsigned char manufacturer;
+  //  unsigned char device;
   unsigned long total_size;	/* Size (bytes) of flash device */
   int erase_size;		/* Size (bytes) of each erase block */
   int erase_count;		/* Number of erase blocks */
@@ -308,7 +308,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 
 static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
-  int cbWrote = 0;
+  size_t cbWrote = 0;
   int pageLast = -1;
 
   if (d->index + cb > d->length)
@@ -316,7 +316,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   while (cb) {
     unsigned long index = d->start + d->index;
-    int page = index/chip->erase_size;
+    int page = d->index/chip->erase_size;
     unsigned short data;
     unsigned short status;
     int step = 2;
@@ -337,6 +337,9 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     else
       memcpy (&data, pv, 2);
 
+//    printf ("nor_write index 0x%lx  page 0x%x  step %d  cb 0x%x\r\n",
+//	    index, page, step, cb);
+
     vpen_enable ();
     if (page != pageLast) {
       status = nor_unlock_page (index);
@@ -344,9 +347,13 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 	goto fail;
       pageLast = page;
     }
+#if 1
     WRITE_ONE (index, Program);
     WRITE_ONE (index, data);
     status = nor_status (index);
+#else
+    status = Ready;
+#endif
     vpen_disable ();
 
     SPINNER_STEP;
@@ -362,6 +369,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     pv += step;
     cb -= step;
     cbWrote += step;
+//    printf ("  cb %x  cbWrote 0x%x\r\n", cb, cbWrote);
   }
 
   return cbWrote;
@@ -378,7 +386,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
   while (cb > 0) {
     unsigned long index = d->start + d->index;
-    //    int page = index/chip->erase_size;
+    //    int page = d->index/chip->erase_size;
     unsigned long available
       = chip->erase_size - (index & (chip->erase_size - 1));
     unsigned short status; 
@@ -435,6 +443,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_3 struct service_d lh7952x_nor_service = {
+static __service_6 struct service_d lh7952x_nor_service = {
   .init = nor_init,
 };

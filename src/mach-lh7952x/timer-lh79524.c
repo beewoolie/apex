@@ -77,6 +77,7 @@ unsigned long timer_read (void)
   return __REG (RTC_PHYS + RTC_DR);
 }
 
+
 /* timer_delta
 
    returns the difference in time in milliseconds.
@@ -88,7 +89,7 @@ unsigned long timer_delta (unsigned long start, unsigned long end)
   return (end - start)*1000/32768;
 }
 
-static __service_1 struct service_d lh79524_timer_service = { 
-  .init = lh79524_timer_init,
+static __service_2 struct service_d lh79524_timer_service = { 
+  .init    = lh79524_timer_init,
   .release = lh79524_timer_release,
 };

@@ -214,16 +214,21 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 }
 
 
-/* initialize
+/* target_init
 
    performs the rest of the hardware initialization that didn't have
    to be performed during the bootstrap phase.
 
 */
 
-void __naked initialize_target (void)
+static void target_init (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
+
+static __service_0 struct service_d lh79524_target_service = {
+//  .init    = target_init,
+//  .release = target_release,
+};

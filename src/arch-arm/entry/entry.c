@@ -65,7 +65,6 @@ void __naked __section (bootstrap) reset (void)
 
   initialize_bootstrap ();	/* Initialization critical to relocate */
   relocate_apex ();
-  initialize_target ();		/* Rest of platform initialization */
   setup_c ();			/* Setups before executing C code */
 
 	/* Start loader proper which doesn't return */

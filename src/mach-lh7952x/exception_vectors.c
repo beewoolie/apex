@@ -90,7 +90,7 @@ void lh7952x_exception_release (void)
   local_irq_disable ();
 }
 
-static __service_0 struct service_d lh7952x_exception_service = {
+static __service_1 struct service_d lh7952x_exception_service = {
   .init    = lh7952x_exception_init,
   .release = lh7952x_exception_release,
 };

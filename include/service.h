@@ -39,14 +39,14 @@ struct service_d {
   void (*release) (void);
 };
 
-#define __service_0 __attribute__((used,section("service.0")))
-#define __service_1 __attribute__((used,section("service.1")))
-#define __service_2 __attribute__((used,section("service.2")))
-#define __service_3 __attribute__((used,section("service.3")))
-#define __service_4 __attribute__((used,section("service.4")))
+#define __service_0 __attribute__((used,section("service.0"))) /* target */
+#define __service_1 __attribute__((used,section("service.1"))) /* exceptions */
+#define __service_2 __attribute__((used,section("service.2"))) /* timer */
+#define __service_3 __attribute__((used,section("service.3"))) /* serial */
+#define __service_4 __attribute__((used,section("service.4"))) /* drv-mem */
 #define __service_5 __attribute__((used,section("service.5")))
-#define __service_6 __attribute__((used,section("service.6")))
-#define __service_7 __attribute__((used,section("service.7")))
+#define __service_6 __attribute__((used,section("service.6"))) /* drv-* */
+#define __service_7 __attribute__((used,section("service.7"))) /* env */
 
 /* ----- Globals */
 
