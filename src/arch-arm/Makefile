@@ -25,7 +25,7 @@ GZFLAGS      := -9
 
 # *** This lets the clean target work, but I'm not sure it's a good
 # idea to include it.
-include config
+-include config
 
 CFLAGS += -Os
 
