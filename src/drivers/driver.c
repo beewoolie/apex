@@ -33,7 +33,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   size_t cb;
   size_t ib;
 
-  memset (d, 0, sizeof (*d));
+  memzero (d, sizeof (*d));
 
   ib = cb = strcspn (sz, ":");
   if (sz[ib] == ':') {

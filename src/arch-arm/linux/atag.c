@@ -34,7 +34,7 @@ struct tag* atag_header (struct tag* p)
 {
 	p->hdr.tag = ATAG_CORE;
 	p->hdr.size = tag_size (tag_core);
-	memset (&p->u.core, 0, sizeof (p->u.core));
+	memzero (&p->u.core, sizeof (p->u.core));
 
 	return tag_next (p);
 } 
