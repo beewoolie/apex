@@ -72,6 +72,12 @@ SECTIONS
 	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
+	. = ALIGN (4);
+	ethernet.bss . : {
+		APEX_ETHERNET_START = .;
+		*(ethernet.bss)
+		APEX_ETHERNET_END = .;
+	}
 	. = ALIGN (8);
 	.bss . : {
 		APEX_VMA_BSS_START = .;
