@@ -45,7 +45,7 @@ int cmd_verify (int argc, const char** argv)
 
 static __command struct command_d c_verify = {
   .command = "verify",
-  .description = "compare sequences of bytes",
+  .description = "compare sequences of bytes *** unimplemented",
   .func = cmd_verify,
 
 };

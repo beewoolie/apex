@@ -84,4 +84,12 @@ static __command struct command_d c_wait = {
   .command = "wait",
   .description = "wait before continuing",
   .func = cmd_wait,
+  COMMAND_HELP(
+"wait TIMEOUT MESSAGE\n"
+"  Pauses to let the user interrupt an automated process.\n"
+"  The TIMEOUT value is in 10ths of a second.  Pressing a\n"
+"  key on the console will interrupt wait and cancel commands\n"
+"  being executed.\n"
+"  e.g.  wait 50 Press a key to cancel the automatic boot process.\n"
+  )
 };

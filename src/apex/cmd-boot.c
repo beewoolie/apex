@@ -104,14 +104,15 @@ static __command struct command_d c_boot = {
   .description = "boot Linux",
   .func = cmd_boot,
   COMMAND_HELP(
-"boot [-g address] [COMMAND_LINE]\n"
-"  Boots a Linux kernel.  It uses the environment variables bootaddr and\n"
-"  cmdline for default start address and command line.  The -g switch\n"
-"  overrides the start address.  Appending a command line to the command\n"
-"  overrides the kernel command line.\n"
+"boot [-g ADDRESS] [COMMAND_LINE]\n"
+"  Boot a Linux kernel.\n"
+"  It reads environment variables bootaddr and cmdline as defaults\n"
+"  for the start address and command line.  The -g switch overrides\n"
+"  the start address.  The rest of the parameters, if present, override\n"
+"  the default kernel command line.\n"
 "  e.g.  boot\n"
-"  e.g.  boot -g 0x0008000\n"
-"  e.g.  boot console=ttyAM1 root=/dev/nfs ip=rarp\n"
+"        boot -g 0x0008000\n"
+"        boot console=ttyAM1 root=/dev/nfs ip=rarp\n"
   )
 };
 

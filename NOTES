@@ -5,6 +5,25 @@ APEX Boot Loader
 
 TODO:
 
+  o Let's add a driver alias function.
+    o once we get into the thick of driver-land, we may have some
+      cumbersome driver specs
+      o ls fat.mmc.spi:/
+      o copy tftp.emac-1:vmlinuz mem:0x2000
+    o The cascade of drivers will be necessary for the sake of
+      interoperation, but it might make things difficult for the user.
+    o So, alias fat.mmc.spi mc
+    o Then  ls mc:/  will do the right thing.
+    o Cake   
+    o Also, we may need to pass parameters to a driver.
+    o ls fat(1).mmc.spi:/ might be a reference to the first partition
+    o ls mc(1):/ would be equivalent
+    o I can imagine that some aliases might be generated at runtime as
+      defaults.  I don't have specifics right now.
+    o This also suggests that region spec's will have a qualifier
+      about the compatible formats.  Filespecs and memory region specs
+      may not be compatible.  Or not. :-)
+
   o The MASK_AND_SET macro I'm using used to be commented out.  Well,
     it was similar.  I changed it a little and put it back because the
     two step version make the ADC_PC register setup break.  Don't know

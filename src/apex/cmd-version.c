@@ -39,8 +39,6 @@ extern char APEX_VMA_COPY_END;
 #define _s(v) #v 
 #define _t(v) _s(v)
 
-command_func_t hook_cmd_version;
-
 int cmd_version (int argc, const char** argv)
 {
   printf (
@@ -61,24 +59,24 @@ int cmd_version (int argc, const char** argv)
   printf ("  env  => %s\n", _t(CONFIG_ENV_REGION));
 #endif
 
-  if (hook_cmd_version)
-    hook_cmd_version (argc, argv);
-
 #if !defined (CONFIG_SMALL)
- {
-   extern char APEX_SERVICE_START;
-   extern char APEX_SERVICE_END;
-   struct service_d* service;
+  {
+    extern char APEX_SERVICE_START;
+    extern char APEX_SERVICE_END;
+    struct service_d* service;
 
-   for (service = (struct service_d*) &APEX_SERVICE_START;
-	service < (struct service_d*) &APEX_SERVICE_END;
-	++service)
-     if (service->report)
-       service->report ();
- }
+    for (service = (struct service_d*) &APEX_SERVICE_START;
+	 service < (struct service_d*) &APEX_SERVICE_END;
+	 ++service)
+      if (service->report)
+	service->report ();
+  }
 #endif
-
   putchar ('\n');
+
+#if defined (CONFIG_ALLHELP)
+  printf ("Use the 'help .' command to get a list of help topics.\n\n");
+#endif
 
   return 0;
 }

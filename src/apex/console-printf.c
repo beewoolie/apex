@@ -41,7 +41,7 @@ extern struct driver_d* console_driver;
 
 int printf (const char* fmt, ...)
 {
-  static char rgb[1024];
+  static char rgb[2*1024];
   ssize_t cb;
   va_list ap;
 

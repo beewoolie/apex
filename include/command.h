@@ -32,6 +32,8 @@
 
 /* ----- Includes */
 
+#include "config.h"
+
 /* ----- Types */
 
 typedef int (*command_func_t) (int argc, const char** argv);
@@ -40,12 +42,12 @@ struct command_d {
   const char* command;
   command_func_t func;
   const char* description;
-#if !defined (CONFIG_SMALL)
+#if defined (CONFIG_ALLHELP)
   const char* help;
 #endif
 };
 
-#if !defined (CONFIG_SMALL)
+#if defined (CONFIG_ALLHELP)
 # define COMMAND_HELP(s) .help = s,
 #else
 # define COMMAND_HELP(s) 

@@ -96,4 +96,10 @@ static __command struct command_d c_fill = {
   .command = "fill",
   .description = "fill a region with a byte",
   .func = cmd_fill,
+  COMMAND_HELP(
+"fill VALUE DST\n"
+"  Fills the DST region with the byte value VALUE.  This command\n"
+"  cannot be used to erase flash.\n" 
+"  e.g.  fill 0xe5 0x100+256\n"
+  )
 };

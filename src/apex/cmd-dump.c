@@ -80,4 +80,11 @@ static __command struct command_d c_dump = {
   .command = "dump",
   .description = "dump data to the console",
   .func = cmd_dump,
+  COMMAND_HELP(
+"dump SRC\n"
+"  Display SRC region data on the console.\n"
+"  The default SRC region length is 64 bytes.\n"
+"  e.g.  dump nor:0\n"
+"        dump 0x20200000\n"
+  )
 };

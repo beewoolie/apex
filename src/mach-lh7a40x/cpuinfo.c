@@ -1,8 +1,8 @@
-/* cmd-version-hook.c
+/* cpuinfo.c
      $Id$
 
    written by Marc Singer
-   15 Jan 2005
+   4 Feb 2005
 
    Copyright (C) 2005 Marc Singer
 
@@ -28,30 +28,39 @@
 */
 
 #include <config.h>
-#include <linux/types.h>
 #include <apex.h>
-#include <command.h>
 #include <service.h>
-
 #include "hardware.h"
 
-extern command_func_t hook_cmd_version;
+#if !defined (CONFIG_SMALL)
 
-int lh7952x_cmd_version (int argc, const char** argv)
+static void cpuinfo_report (void)
 {
-  int chip = (((CSC_PWRSR >> CSC_PWRSR_CHIPID_SHIFT)
-	       & CSC_PWRSR_CHIPID_MASK) & 0xf0);
-  printf ("  CPU  id %lx, %s\n", (CSC_PWRSR >> 16), 
-	  chip ? "lh7a404" : "lh7a400");
-  printf ("  CPLD revision 0x%x\n", CPLD_REVISION);
-  return 0; 
+  unsigned long id;
+  unsigned long ctrl;
+  unsigned long cpsr;
+  unsigned short csc = CSC_PWRSR;
+  char* sz = NULL;
+
+  switch (((csc>>CSC_PWRSR_CHIPID_SHIFT) & CSC_PWRSR_CHIPID_MASK) & 0xf0) {
+  default   : sz = "lh?"; break;
+  case 0: sz = "lh7a400"; break;
+  case 2: sz = "lh7a404"; break;
+  }
+
+  __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));
+  __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
+  __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
+  printf ("  cpu:    id 0x%lx  ctrl 0x%lx  cpsr 0x%lx  chipid 0x%x %s\n",
+	  id, ctrl, cpsr, csc>>16, sz);
+
+#if defined (CPLD_REVISION)
+  printf ("  cpld:   revision 0x%x\n", CPLD_REVISION);
+#endif
 }
 
-static void hook_init (void)
-{
-  hook_cmd_version = lh7952x_cmd_version;
-}
+static __service_7 struct service_d cpuinfo_service = {
+  .report = cpuinfo_report,
 
-static __service_7 struct service_d hook_cmd_version_service = {
-  .init = hook_init,
 };
+#endif

@@ -106,6 +106,13 @@ static __command struct command_d c_printenv = {
   .command = "printenv",
   .description = "show the environment",
   .func = cmd_printenv,
+  COMMAND_HELP(
+"printenv\n"
+"  Displays the environment.\n"
+"  The output is KEY [*]= VALUE where KEY is an environment\n"
+"  variable name and VALUE is the current seting.  The '*'\n"
+"  denotes a variable set to the default value.\n"
+  )
 };
 
 static int cmd_setenv (int argc, const char** argv)
@@ -152,6 +159,13 @@ static __command struct command_d c_setenv = {
   .command = "setenv",
   .description = "Set environment variable",
   .func = cmd_setenv,
+  COMMAND_HELP(
+"setenv KEY VALUE\n"
+"  Set environment variable KEY to value VALUE.\n"
+"  The set of KEYs is fixed when APEX is built.  It will\n"
+"  only allow preexisting variables to be set.\n"
+"  e.g.  setenv cmdline console=ttyAM1 root=/dev/hda1\n"
+  )
 };
 
 static int cmd_unsetenv (int argc, const char** argv)
@@ -175,8 +189,13 @@ static int cmd_unsetenv (int argc, const char** argv)
 
 static __command struct command_d c_unsetenv = {
   .command = "unsetenv",
-  .description = "Remove environment variable",
+  .description = "restore environment variable to default",
   .func = cmd_unsetenv,
+  COMMAND_HELP(
+"unsetenv KEY\n"
+"  Restore environment variable KEY to the default value.\n"
+"  e.g.  unsetenv cmdline\n"
+  )
 };
 #endif
 
@@ -198,5 +217,14 @@ static __command struct command_d c_eraseenv = {
   .command = "eraseenv",
   .description = "Erase environment",
   .func = cmd_eraseenv,
+  COMMAND_HELP(
+"eraseenv\n"
+"  Erase the region that stores the environment.\n"
+"  All environment variables will be reset to the default values.\n"
+"  The location of the environment is available from the version\n"
+"  command.  Beware.  If the erase granularity of the region holding\n"
+"  the environment is large then non-environment data may be erased\n"
+"  as well\n"
+  )
 };
 #endif

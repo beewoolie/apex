@@ -49,4 +49,9 @@ static __command struct command_d c_reset = {
   .command = "reset",
   .description = "reset target",
   .func = (command_func_t) cmd_reset,
+  COMMAND_HELP(
+"reset\n"
+"  Reset the system.\n"
+"  This will perform an immediate, hard reset of the CPU.\n"
+  )
 };

@@ -25,6 +25,10 @@
    DESCRIPTION
    -----------
 
+   This function should never be included in production builds.  It's
+   available for testing timers.  A general purpose pause command
+   would be welcome, one that accepts a timeout parameter.
+
 */
 
 #include <linux/types.h>
