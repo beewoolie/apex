@@ -160,6 +160,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 	  /* Exit now if executing in SDRAM */ 
   if (EXP_CNFG0 & (1<<31)) {
+    _L(LED1);
     /* Boot mode */
     __asm volatile ("cmp %0, %2\n\t"
 		    "bls 1f\n\t"
@@ -169,12 +170,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "1:": : "r" (lr), "i" (0x40000000), "i" (256*1024*1024));
   }
   else {
+    _L(LED2);
     /* Non-boot mode */
     __asm volatile ("cmp %0, %1\n\t"
 		    "movls r0, #0\n\t"
 		    "movls pc, %0\n\t"
 		    : : "r" (lr), "i" (0x40000000));
   }
+
+  _L(LED3);
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 

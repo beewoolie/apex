@@ -68,7 +68,7 @@
 # define PRINTF(v...)	do {} while (0)
 #endif
 
-#define NO_WRITE		/* Disable writes, for debugging */
+//#define NO_WRITE		/* Disable writes, for debugging */
 
 /* Here are the parameters that ought to be changed to align the
    driver with the expected flash layout. */
@@ -403,6 +403,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     if (index < NOR_0_LENGTH && index + available > NOR_0_LENGTH)
       available = NOR_0_LENGTH - index;
     index = phys_from_index (index);
+
+    WRITE_ONE (index, CMD (ReadArray));
 
 #if defined (USE_FULL_ALIGNMENT)
     /* *** FIXME this is a mess. This implementation only works on big

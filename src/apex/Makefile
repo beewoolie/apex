@@ -33,6 +33,7 @@ obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 obj-$(CONFIG_CMD_ENV)		+= cmd-env.o
 obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
 obj-$(CONFIG_CMD_GO)		+= cmd-go.o
+obj-$(CONFIG_CMD_FILL)		+= cmd-fill.o
 
 #CFLAGS += -mthumb
 #CFLAGS_xmodem.o += -mthumb
