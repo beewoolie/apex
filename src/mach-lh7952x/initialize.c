@@ -15,10 +15,7 @@
 
 */
 
-#if defined (HAVE_CONFIG_H)
-# include <blob/config.h>
-#endif
-
+#include <blob/config.h>
 #include <asm/bootstrap.h>
 
 #include "lh79524.h"
@@ -139,7 +136,9 @@ void __naked __section(.bootstrap) initialize_bootstrap (void)
   __REG (IOCON_PHYS | IOCON_MUXCTL10) = IOCON_MUXCTL10_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL11) = IOCON_MUXCTL11_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL12) = IOCON_MUXCTL12_V;
+#if defined (CONFIG_NAND_LPD)
   __REG (IOCON_PHYS | IOCON_MUXCTL14) = IOCON_MUXCTL14_V;
+#endif
   __REG (IOCON_PHYS | IOCON_MUXCTL19) = IOCON_MUXCTL19_V;
   __REG (IOCON_PHYS | IOCON_MUXCTL20) = IOCON_MUXCTL20_V;
 
