@@ -261,12 +261,35 @@ static void seek (unsigned sector)
 #endif
 }
 
-static void cf_init (void)
+static int cf_identify (void)
 {
   cf_d.type = REG (CF_PHYS);
 
+  {
+    int index = 0;
+    while (index < 1024) {
+      unsigned short s = REG (CF_PHYS + index);
+      if (s == 0xff)
+	break;
+      printf ("%03x: 0x%x", index, s);
+      index += 2*CF_ADDR_MULT;
+      s = REG (CF_PHYS + index);
+      printf (" 0x%x (%d)\n", s, s);
+      index += 2*CF_ADDR_MULT;
+      {
+	int i;
+	unsigned char rgb[128];
+	for (i = 0; i < s; ++i)
+	  rgb[i] = REG (CF_PHYS + index + i*2*CF_ADDR_MULT);
+	dump (rgb, s, 0);
+      }
+      index += s*2*CF_ADDR_MULT;
+    }
+  }
+
+
   if (cf_d.type != typeMemory)
-    return;
+    return 1;
 
   select (0, 0);
   ready_wait ();
@@ -280,7 +303,12 @@ static void cf_init (void)
     for (i = 0; i < 128; ++i)
       rgs[i] = read16 (IDE_DATA);
 
-//    dump ((void*) rgs, 256, 0);
+    //    dump ((void*) rgs, 256, 0);
+
+    if (rgs[0] != 0x848a) {
+      cf_d.type = -1;
+      return 1;
+    }
 
     cf_d.cylinders         = rgs[1];
     cf_d.heads		   = rgs[3];
@@ -322,6 +350,7 @@ static void cf_init (void)
 //      dump ((void*) &cf_d.parameter, 25, 0);
     }
   }
+  return 0;
 }
 
 static int cf_open (struct descriptor_d* d)
@@ -381,6 +410,9 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
 
 static void cf_report (void)
 {
+  if (cf_identify ())
+    return;
+
   printf ("  cf:     %d.%02dMiB, %s %s\n", 
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
@@ -462,7 +494,6 @@ static __driver_3 struct driver_d cf_driver = {
 };
 
 static __service_6 struct service_d lpd79524_cf_service = {
-  .init = cf_init,
 #if !defined (CONFIG_SMALL)
   .report = cf_report,
 #endif

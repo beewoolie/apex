@@ -5,6 +5,8 @@ APEX Boot Loader
 
 TODO:
 
+  o APEX prints an error when the startup command doesn't have a trailing ';'
+
   o Need to test the NAND booting.  Also, there seems to be some
     trouble with the startup of the bootloader from nor flash and nand
     when using a full sized loader.

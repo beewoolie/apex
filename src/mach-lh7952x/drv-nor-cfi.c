@@ -68,6 +68,8 @@
 # define PRINTF(v...)	do {} while (0)
 #endif
 
+#define ENTRY(l) printf ("%s\n", __FUNCTION__)
+
 //#define NO_WRITE		/* Disable writes, for debugging */
 
 /* Here are the parameters that ought to be changed to align the
@@ -246,6 +248,8 @@ static unsigned long nor_unlock_page (unsigned long index)
 
 static void nor_init (void)
 {
+  ENTRY(0);
+
   vpen_disable ();
 
   REGA (NOR_0_PHYS) = CMD (ReadArray);
@@ -628,9 +632,14 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
     vpen_enable ();
     status = nor_unlock_page (index);
+#if defined (NO_WRITE)
+    printf ("  unlock status %lx\n", status);
+#endif
     if (status & STAT (ProgramError | VPEN_Low | DeviceProtected))
       goto fail;
 #if defined (NO_WRITE)
+    WRITE_ONE (index, CMD (ReadArray));
+    printf ("fake erasing 0x%04x\n", REGA(index));
     printf ("nor_erase index 0x%lx  available 0x%lx\n",
 	    index, available);
     status = STAT (Ready);
