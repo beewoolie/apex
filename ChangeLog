@@ -1,5 +1,11 @@
 2005-03-03  Marc Singer  <elf@buici.com>
 
+	* src/lib/zlib.c: Fixed the zlib declarations s.t. there is no
+	initialized, mutable data.
+
+	* src/lib/png.c: Added png interpreter for the sake of splash
+	screen images.
+
 	* src/lib/zlib.c: Added zlib decompressor.  Modified code to
 	comply with data section standards of APEX.
 

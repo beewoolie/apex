@@ -249,7 +249,7 @@ typedef struct z_stream_s {
 
 #define Z_NULL  0  /* for initializing zalloc, zfree, opaque */
 
-extern char *zlib_version;
+extern const char* const zlib_version;
 /* The application can compare zlib_version and ZLIB_VERSION for consistency.
    If the first character differs, the library code actually used is
    not compatible with the zlib.h header file used by the application.

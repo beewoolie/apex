@@ -26,14 +26,26 @@
 
 */
 
+#define USE_PNG
+
 #include <config.h>
 #include <driver.h>
 #include <service.h>
 #include <linux/string.h>
 #include <apex.h>
 #include "hardware.h"
+
+
+#if defined (USE_PNG)
+#include <png.h>
+const unsigned char rgbPNG[] = {
+//# include <splash/apex-png.h>
+# include <splash/cc-png.h>
+};
+#else
 //#include <splash/apex-240x320.h>
 #include <splash/apex-240x320m.h>
+#endif
 
 static unsigned short __attribute__((section(".clcdc.bss"))) 
      buffer[320*240];
@@ -56,10 +68,57 @@ static void msleep (int ms)
 //#define I(c,i) ((c)*(i)/255)
 #define I(c,i) (c)
 
-static void clcdc_init (void)
+static void draw_splash (void)
 {
+#if defined (USE_PNG)
+  void* pv = open_png (rgbPNG, sizeof (rgbPNG));
+  struct png_header hdr;
+  unsigned short* ps = buffer;
+  int i;
+  int j;
 
-#if 1
+  if (pv == 0)
+    return;
+
+  if (read_png_ihdr (pv, &hdr))
+    goto fail;
+
+  if (hdr.bit_depth != 8)
+    goto fail;
+
+  {
+    for (i = hdr.height; i--; ) {
+      const unsigned char* pb = read_png_row (pv);
+      if (pb == NULL) {
+	printf ("%s: read failed at %d\n", __FUNCTION__, i);
+	goto fail;
+      }
+      switch (hdr.color_type) {
+      case 2:			/* RGB */
+	for (j = 0; j < hdr.width; ++j, ++ps)
+	  *ps = 0
+	    +   ((pb[j*3    ] & 0xf8) >> 3)
+	    +   ((pb[j*3 + 1] & 0xf8) << 2)
+	    +   ((pb[j*3 + 2] & 0xf8) << 7)
+	    ;
+	break;
+      case 6:			/* RGBA */
+	for (j = 0; j < hdr.width; ++j, ++ps)
+	  *ps = ((pb[j*4    ] & 0xf8) >> 3)
+	    +   ((pb[j*4 + 1] & 0xf8) << 2)
+	    +   ((pb[j*4 + 2] & 0xf8) << 7);
+	
+	break;
+      }
+    }
+  }
+
+fail:
+  close_png (pv);
+
+#endif
+
+#if !defined (USE_PNG)
   {
     char* pb = header_data;
     int i;
@@ -73,6 +132,28 @@ static void clcdc_init (void)
     }
   }
 #endif
+}
+
+static void clcdc_init (void)
+{
+#if 0
+  /* Color bars */
+  {
+    int i;
+    for (i = 0; i < 320*240; ++i) {
+      if (i > 3*(320*240)/4)
+	buffer[i] = 0xffff;
+      else if (i > 2*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<10;
+      else if (i > 1*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<5;
+      else if (i > 0*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<0;
+    }
+  }
+#endif
+
+  draw_splash ();
 
 #if 0
   /* Color bars */
