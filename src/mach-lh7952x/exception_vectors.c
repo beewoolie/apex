@@ -33,7 +33,7 @@ void __naked __section (bootstrap) exception_error (void)
 void __irq_handler __section (bootstrap) irq_handler (void)
 {
   int i;
-  unsigned long v = __REG (VIC_PHYS | VIC_IRQSTATUS);
+  unsigned long v = __REG (VIC_PHYS + VIC_IRQSTATUS);
   if (v == 0)
     return;
 
@@ -41,7 +41,7 @@ void __irq_handler __section (bootstrap) irq_handler (void)
     if (v & (1<<i)) {
       if (interrupt_handlers[i])
 	interrupt_handlers[i]();
-      __REG (VIC_PHYS | VIC_VECTADDR) = 0;
+      __REG (VIC_PHYS + VIC_VECTADDR) = 0;
       break;
     }    
   }
@@ -62,10 +62,10 @@ void __naked __section(entry) exception_vectors (void)
 
 void lh7952x_exception_init (void)
 {
-  __REG (VIC_PHYS | VIC_INTSELECT) = 0;
-  __REG (VIC_PHYS | VIC_INTENABLE) = 0;
-  __REG (VIC_PHYS | VIC_INTENCLEAR) = ~0;
-  __REG (VIC_PHYS | VIC_SOFTINT_CLEAR) = ~0;
+  __REG (VIC_PHYS + VIC_INTSELECT) = 0;
+  __REG (VIC_PHYS + VIC_INTENABLE) = 0;
+  __REG (VIC_PHYS + VIC_INTENCLEAR) = ~0;
+  __REG (VIC_PHYS + VIC_SOFTINT_CLEAR) = ~0;
 
 		/* Initialize interrupt stack */
   __asm volatile ("mrs r2, cpsr\n\t"
@@ -85,7 +85,7 @@ void lh7952x_exception_init (void)
 
 void lh7952x_exception_release (void)
 {
-  __REG (VIC_PHYS | VIC_INTENABLE) = 0;
+  __REG (VIC_PHYS + VIC_INTENABLE) = 0;
 
   local_irq_disable ();
 }

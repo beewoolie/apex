@@ -122,16 +122,22 @@
 
 #define PHY_CONTROL_RESET		(1<<15)
 #define PHY_CONTROL_POWERDOWN		(1<<11)
-#define PHY_CONTROL_RESTART_ANEN	(1<<12)
+#define PHY_CONTROL_ANEN_ENABLE		(1<<12)
+#define PHY_CONTROL_RESTART_ANEN	(1<<9)
 #define PHY_STATUS_ANEN_COMPLETE	(1<<5)
 #define PHY_STATUS_LINK			(1<<2)
 
 static int phy_address;
 
-#define C_BUFFER	2
+/* There are two sets of buffers, one for receive and one for transmit.
+   The first half are rx and the second half are tx. */
+
+#define C_BUFFER	2	/* Number of buffers for each rx/tx */
 #define CB_BUFFER	1536
 static long __attribute__((section("ethernet.bss"))) 
-     rlDescriptor[C_BUFFER*2];
+     rgl_rx_descriptor[C_BUFFER*2];
+static long __attribute__((section("ethernet.bss"))) 
+     rgl_tx_descriptor[C_BUFFER*2];
 static char __attribute__((section("ethernet.bss")))
      rgbBuffer[CB_BUFFER*C_BUFFER];	/* Memory for buffers */
 
@@ -147,15 +153,31 @@ static void emac_setup (void)
 {
   int i;
   for (i = 0; i < C_BUFFER; ++i) {
-    rlDescriptor[i*2] = ((unsigned long)(rgbBuffer + i*CB_BUFFER) & ~3)
+    /* RX */
+    rgl_rx_descriptor[i*2] = ((unsigned long)(rgbBuffer + i*CB_BUFFER) & ~3)
       | ((i == C_BUFFER - 1) ? (1<<1) : 0);
-    rlDescriptor[i*2 + 1] = 0;
+    rgl_rx_descriptor[i*2 + 1] = 0;
+    /* TX */
+    rgl_tx_descriptor[i*2]     = 0;
+    rgl_tx_descriptor[i*2 + 1] = (1<<31)|(1<<15)
+      | ((i == C_BUFFER - 1) ? (1<<30) : 0);
   }
-  PRINTF ("emac: setup rlDescriptor %p\r\n", rlDescriptor);
-  __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rlDescriptor;
-//  __REG (emac_PHYS + EMAC_NETCONFIG) |= EMAC_NETCONFIG_RECBYTE;
-  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_RXEN; /* Enable RX */
-  __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
+  PRINTF ("emac: setup rgl_rx_descriptor %p\r\n", rgl_rx_descriptor);
+  __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rgl_rx_descriptor;
+  __REG (EMAC_PHYS + EMAC_RXSTATUS) &= 
+    ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC 
+      | EMAC_RXSTATUS_BUFNOTAVAIL);
+  PRINTF ("emac: setup rgl_tx_descriptor %p\r\n", rgl_tx_descriptor);
+  __REG (EMAC_PHYS + EMAC_TXBQP) = (unsigned long) rgl_tx_descriptor;
+  __REG (EMAC_PHYS + EMAC_TXSTATUS) &=
+    ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
+	 
+  __REG (EMAC_PHYS + EMAC_NETCONFIG)
+    = EMAC_NETCONFIG_DIV32 | EMAC_NETCONFIG_FULLDUPLEX
+    | EMAC_NETCONFIG_100MB | EMAC_NETCONFIG_CPYFRM;
+//  __REG (EMAC_PHYS + EMAC_NETCONFIG) |= EMAC_NETCONFIG_RECBYTE;
+  __REG (EMAC_PHYS + EMAC_NETCTL) 
+    = EMAC_NETCTL_RXEN | EMAC_NETCTL_TXEN | EMAC_NETCTL_CLRSTAT;
 }
 
 static int emac_phy_read (int phy_address, int phy_register)
@@ -202,19 +224,14 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
 
 static void emac_phy_reset (int phy_address)
 {
-  int v = 0;
-  PRINTF ("emac: phy_reset\r\n");
-
-  //  PRINTF ("emac: forcing power-up\r\n");
-  //  emac_phy_write (phy_address, 22, 0); /* Force power-up */
-
 #if 1
+  PRINTF ("emac: phy_reset\r\n");
 #if 1
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESET
 		  | emac_phy_read (phy_address, 0));
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
-    ++v;
+    ;
 #else
   printf ("emac: ctrl 0x%x\r\n", emac_phy_read (phy_address, 0));
   __REG8 (CPLD_CONTROL) &= ~CPLD_CONTROL_WRLAN_ENABLE;
@@ -231,10 +248,15 @@ static void emac_phy_reset (int phy_address)
 #endif
 #endif
 
-#if 0
-  printf ("  resetart anen %d\r\n", v);
+#if 1
+  PRINTF ("emac: forcing power-up\r\n");
+  emac_phy_write (phy_address, 22, 0); /* Force power-up */
+#endif
+
+#if 1
+  printf ("emac: resetart anen\r\n");
   emac_phy_write (phy_address, 0,
-		  PHY_CONTROL_RESTART_ANEN
+		  PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
 		  | emac_phy_read (phy_address, 0));
 #endif
 }
@@ -307,28 +329,27 @@ void emac_init (void)
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));		
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
-		(3<<8)|(3<<6)|(3<<4),
-		(0<<8)|(0<<6)|(0<<4));
+//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL1),
+//		(3<<8)|(3<<6)|(3<<4),
+//		(0<<8)|(0<<6)|(0<<4));
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL23),
 		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL23),
-		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
-		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
+//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL23),
+//		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+//		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL24),
 		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL24),
-		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
-		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
+//  MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL24),
+//		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
+//		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
 
   PRINTF ("CPLD_CONTROL %x => %x\r\n", __REG8 (CPLD_CONTROL),
 	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
-  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
-  __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
-  __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 
   {
     unsigned char rgb[6];
@@ -343,6 +364,7 @@ void emac_init (void)
   }
 
   emac_setup ();
+  __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
   emac_phy_detect ();
 
   /* Disable advertisement except for 100Base-TX  */

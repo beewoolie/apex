@@ -14,10 +14,7 @@ TODO:
   o command history
 
   o lh7a40x
-    * Nor driver init's, but it won't erase or write
-      * fixed, but there appears to be a problem with it writing the
-	kernel to flash...also fixed.  There were several problems.
-    o buffered nor write...oh boy is this needed
+    o buffered NOR write...oh boy is this needed
     o Should be little else since there is only one memory device
     o Not much incentive to be small with 80k of SRAM
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole
@@ -315,3 +312,11 @@ Interrupt Handling
   o The key piece missing is that the interrupt vectors must either be
     written to flash, or the MMU must be enabled so that the page with
     the vectors is available at address zero.
+
+Console
+
+  o Document how to setup console on the LCD device as well as the
+    serial:
+
+      console=tty0 console=ttyAM0,115200
+

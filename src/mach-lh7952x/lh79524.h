@@ -336,6 +336,7 @@
 
 #define EMAC_NETCTL_TXHALT	(1<<10)
 #define EMAC_NETCTL_STARTTX	(1<<9)
+#define EMAC_NETCTL_CLRSTAT	(1<<5)
 #define EMAC_NETCTL_MANGEEN	(1<<4)
 #define EMAC_NETCTL_TXEN	(1<<3)
 #define EMAC_NETCTL_RXEN	(1<<2)
@@ -344,6 +345,7 @@
 #define EMAC_NETCONFIG_CPYFRM	(1<<4) /* Promiscuous mode */
 #define EMAC_NETCONFIG_FULLDUPLEX (1<<1) /* Force full-duplex */
 #define EMAC_NETCONFIG_100MB	(1<<0) /* Force 100Mb */
+#define EMAC_NETCONFIG_DIV32	(2<<10)
 
 #define EMAC_TXSTATUS_TXUNDER	(1<<6)
 #define EMAC_TXSTATUS_TXCOMPLETE (1<<5)

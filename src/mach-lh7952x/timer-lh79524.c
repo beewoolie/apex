@@ -40,7 +40,7 @@ static void timer_isr (void)
 {
   static int v;
 
-  __REG (TIMER1_PHYS | TIMER_STATUS1) = 0xf; /* Clear interrupt */
+  __REG (TIMER1_PHYS + TIMER_STATUS1) = 0xf; /* Clear interrupt */
 
   if (v++ %8 == 0) {
     __REG (UART + UART_DR) = '.';
@@ -50,26 +50,26 @@ static void timer_isr (void)
 
 void lh79524_timer_init (void)
 {
-  __REG (RCPC_PHYS | RCPC_PCLKSEL0) |= 3<<7; /* 32KHz oscillator for RTC */
-  __REG (RTC_PHYS | RTC_CR) = RTC_CR_EN;  
+  __REG (RCPC_PHYS + RCPC_PCLKSEL0) |= 3<<7; /* 32KHz oscillator for RTC */
+  __REG (RTC_PHYS + RTC_CR) = RTC_CR_EN;  
 
 #if defined (CONFIG_INTERRUPTS)
  {
    interrupt_handlers[5] = timer_isr;
    barrier ();
 
-   __REG (TIMER1_PHYS | TIMER_CTRL) = (7<<2)|(1<<1)|(1<<0);
-   __REG (TIMER1_PHYS | TIMER_INTEN1) = (1<<0);
+   __REG (TIMER1_PHYS + TIMER_CTRL) = (7<<2)|(1<<1)|(1<<0);
+   __REG (TIMER1_PHYS + TIMER_INTEN1) = (1<<0);
 
-   __REG (VIC_PHYS | VIC_INTENABLE) |= (1<<5);
+   __REG (VIC_PHYS + VIC_INTENABLE) |= (1<<5);
  }
 #endif
 }
 
 static void lh79524_timer_release (void)
 {
-  __REG (RTC_PHYS | RTC_CR) &= ~RTC_CR_EN;  
-  __REG (RCPC_PHYS | RCPC_PCLKSEL0) &= ~(3<<7); /* 1Hz RTC */
+  __REG (RTC_PHYS + RTC_CR) &= ~RTC_CR_EN;  
+  __REG (RCPC_PHYS + RCPC_PCLKSEL0) &= ~(3<<7); /* 1Hz RTC */
 }
 
 unsigned long timer_read (void)

@@ -82,24 +82,24 @@ static void wait_on_busy (void)
 static void nand_enable (void)
 {
 #if !defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) |=  (1<<8); 
+  __REG (IOCON_PHYS + IOCON_MUXCTL14) |=  (1<<8); 
   __REG (GPIO_MN_PHYS) &= ~(1<<0);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0xa<<12);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0xa<<12);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0xa<<12);
 #endif
 }
 
 static void nand_disable (void)
 {
 #if !defined (CONFIG_NAND_LPD)
-  __REG (IOCON_PHYS | IOCON_MUXCTL14) &= ~(3<<8);
+  __REG (IOCON_PHYS + IOCON_MUXCTL14) &= ~(3<<8);
   __REG (GPIO_MN_PHYS) |=   1<<0;
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS | IOCON_MUXCTL7)  |=  (0x5<<12);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS | IOCON_RESCTL7)  |=  (0x5<<12);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0x5<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0x5<<12);
 #endif
 }
 
