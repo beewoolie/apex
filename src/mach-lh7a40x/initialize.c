@@ -207,8 +207,8 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   __REG (CSC_PHYS | CSC_CLKSET) = CSC_CLKSET_V;
 
   __asm volatile ("cmp %0, %1\n\t"
-		  "movge r0, #0\n\t"
-		  "movge pc, %0\n\t"
+		  "movhi r0, #0\n\t"
+		  "movhi pc, %0\n\t"
 		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS));
 
 
