@@ -5,6 +5,12 @@ APEX Boot Loader
 
 TODO:
 
+  o The MASK_AND_SET macro I'm using used to be commented out.  Well,
+    it was similar.  I changed it a little and put it back because the
+    two step version make the ADC_PC register setup break.  Don't know
+    why.  Need to make sure that all of the other code is still
+    working.
+
   o driver info functions, especially memory
     o I think this should be done with a service hook instead of a
       driver hook so that the environment can report describe it's

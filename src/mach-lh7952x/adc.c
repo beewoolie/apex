@@ -133,6 +133,8 @@
 #define SETTIME(us)		(((A2DCLK*(us) + 1000000/2)/1000000)\
 				 <<ADC_HW_SETTIME_SHIFT)
 
+#define SAMPLES			 (12)
+
 static void adc_setup (void)
 {
   int i;
@@ -149,8 +151,9 @@ static void adc_setup (void)
 
   MASK_AND_SET (ADC_PC, 
 		ADC_PC_NOC_MASK | ADC_PC_PWM_MASK,
-		(11<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_OFF)
-		|ADC_PC_REFEN);
+		((SAMPLES - 1)<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_OFF)
+		| ADC_PC_REFEN
+		);
 
   MASK_AND_SET (ADC_GC,
 		ADC_GC_SSM_MASK | ADC_GC_FIFOWMK_MASK,
@@ -164,8 +167,8 @@ static void adc_setup (void)
 #define _LO(f)	(f)
 
 	/* Idle */
-  ADC_IHWCTRL = _HI (0);
-  ADC_ILWCTRL = _LO (0);
+  ADC_IHWCTRL = _HI (ADC_HW_INP_AN1);
+  ADC_ILWCTRL = _LO (0x1080);
     
 	/* Sampling */
   for (i = 0; i < 16; ++i) {
@@ -202,6 +205,7 @@ static void adc_setup (void)
       __REG(ADC_LWC_BASE_PHYS + i*4) = _LO (ADC_LW_FET_AN0_VDD);
       break;
     case 11:
+    case 12:
       __REG(ADC_HWC_BASE_PHYS + i*4) = _HI (ADC_HW_INP_AN0);
       __REG(ADC_LWC_BASE_PHYS + i*4)
 	= _LO (ADC_LW_FET_AN0_VDD100K | ADC_LW_FET_AN3_GND);
@@ -235,10 +239,10 @@ static void adc_init (void)
   ADC_IM = 0; /* Disable all interrupts */
 
   ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF | (1<<ADC_PC_NOC_SHIFT);
-  ADC_GC = ADC_GC_SSM_SSB | (1<<ADC_GC_FIFOWMK_SHIFT);
+  ADC_GC = ADC_GC_SSM_SSB | (0xf<<ADC_GC_FIFOWMK_SHIFT);
 
 
-  for (i = 0; i < 15; ++i) {
+  for (i = 0; i < SAMPLES; ++i) {
     __REG(ADC_HWC_BASE_PHYS + i*4) = (0x1ff << ADC_HW_SETTIME_SHIFT)
       | (i << ADC_HW_INP_SHIFT) | ADC_HW_INN_GND | ADC_HW_REFP_VREFP;
     __REG(ADC_LWC_BASE_PHYS + i*4) = ADC_LW_REFN_VREFN;
@@ -278,11 +282,13 @@ static int cmd_adc (int argc, const char** argv)
   printf ("done\n");
   printf ("fifo %lx\n", ADC_FS);
 
-  for (i = 0; i < 12; ++i) {
+  for (i = 0; i < SAMPLES; ++i) {
     unsigned long v = ADC_RR;
-    printf (" rr %5ld (%lx) - (%lx)\n", (v >> 6), (v & 0xf), ADC_FS);
+    printf ("%2d rr %5ld (%lx) - (%lx)\n", i, (v >> 6), (v & 0xf), ADC_FS);
   }
 
+  printf ("fifo %lx\n", ADC_FS);
+  printf ("hw 0x%lx  lw 0x%lx\n", ADC_HW, ADC_LW);
   return 0;
 }
 
