@@ -1,0 +1,155 @@
+================
+APEX Boot Loader
+ README_config
+================
+
+
+Configuration Macros
+--------------------
+
+CONFIG_ARCH (string)
+
+  Name of the architecture.  Presently, only 'arm' is supported.
+  There is a directory src/arch-$(CONFIG_ARCH) that controls the
+  architecture. 
+
+CONFIG_ARCH_$(CONFIG_ARM) (y/n)
+
+  Defined as 'y' in order to allow the Makefiles to conditionally
+  compile source files.
+
+CONFIG_MACH_* (y/n)
+
+  Machine or board-level configuration.  This allows for
+  board-specific initialization and drivers.
+
+CONFIG_APEX_VMA (hex)
+
+  Virtual memory address of APEX when it runs.  This is really a
+  physical address, but it is still separate from the load address.
+
+CONFIG_KERNEL_LMA (hex)
+
+  Linux kernel execution address.  This is the location where a
+  kernel is copied and where the loader passes execution control when
+  booting.
+
+CONFIG_MEM_BANK[0-3]_START (hex)
+CONFIG_MEM_BANK[0-3]_LENGTH (hex)
+
+  Declaration of the SDRAM banks.  This is used used search for memory
+  to pass to the kernel.
+
+CONFIG_SPINNER (y/n)
+ 
+  Declare as y to enable a progress feedback spinner while the loader
+  performs time consuming tasks.
+
+CONFIG_CMD_* (y/n)
+
+  Include code to implement specific commands. 
+
+CONFIG_CMD_CHECKSUM (y/n)
+
+  Command computes a CRC32 over a region.
+
+CONFIG_CMD_COPY (y/n)
+
+  Command copies from one region to another.
+
+CONFIG_CMD_DUMP (y/n)
+
+  Command shows the contents of a region on the console.
+
+CONFIG_CMD_DRVINFO (y/n)
+
+  Command shows a list of active region IO drivers.
+
+CONFIG_CMD_ENV (y/n)
+
+  Command enables a non-volatile, user editable environment.
+
+CONFIG_CMD_ERASE (y/n)
+
+  Command erases a region.
+
+CONFIG_CMD_ERASEENV (y/n)
+
+  Command erases the whole environment. 
+
+CONFIG_CMD_SETENV (y/n)
+
+  Commands setenv and unsetenv change the contents of the environment.  
+
+CONFIG_CMD_PAUSE (y/n)
+
+  Command pauses for two seconds.
+
+CONFIG_CMD_VERIFY (y/n)
+
+  Command compares regions.
+
+CONFIG_CMD_WAIT (y/n)
+
+  Command pauses a number of tenths of a second before continuing to
+  execute commands.  The user may cancel the wait and cancel further
+  commands.
+
+CONFIG_CMD_XRECEIVE (y/n)
+
+  Command receives data over the console and saves it to a region.
+
+CONFIG_ATAG (y/n)
+
+  Command includes code to build an ATAG list before booting the
+  kernel.
+
+CONFIG_ATAG_PHYS (hex)
+
+  Physical address of the ATAG list.  This feature may change as the
+  kernel is already being given a pointer to the ATAG list at boot
+  time.
+
+CONFIG_ARCH_NUMBER (number)
+
+  The ARM architecture number passed to the Linux kernel at boot time.
+
+CONFIG_DRIVER_NAND (y/n)
+
+  Include a region IO driver for NAND flash.
+
+CONFIG_DRIVER_NOR (y/n)
+
+  Include a region IO driver for NOR flash.
+
+CONFIG_RELOCATE_NAND (y/n)
+
+  Use an APEX relocator that will copy the loader from NAND flash
+  instead of relocating it where it starts.  Normally, the loader
+  copies itself from NOR flash with a simple memory to memory copy.
+  NAND flash requires greater support to move the loader from flash to
+  SDRAM.
+
+CONFIG_NAND_LPD (y/n)
+
+  Directly support the LogicPD NAND flash control features.  The
+  LogicPD CPLD has slightly control over NAND flash than a bare chip.
+  Use this options when building for one of the LPD CardEngines. 
+
+CONFIG_ENV_AUTOBOOT (number)
+
+  Time, in tenths of a second, to let the user intervene before
+  automatically autobooting.  A value of zero will perform a boot
+  command without letting the user an opportunite to intervene.
+  Without this option, the loader will only boot interactively.
+
+CONFIG_ENV_REGION_KERNEL (string)
+
+  String describing the IO region where the kernel is stored.  If this
+  parameter is present and if there is a CONFIG_KERNEL_VMA, then the
+  startup string will include a command to copy the kernel from this
+  region to the VMA address.  Usually, it is something like
+  
+  CONFIG_ENV_REGION_KERNEL=nor:256k#1536k
+
+
