@@ -41,10 +41,9 @@
 
 static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 {
-  release_services ();
-
   printf ("Performing watchdog reset\n");
-  /* *** FIXME: need to flush console, or something here. */
+
+  release_services ();		/* Primarily ensures NOR flash is readable */
 
   OST_WDOG_KEY = KEY;		/* Unlock watchdog registers */
   OST_WDOG = 1;			/* Short count */
