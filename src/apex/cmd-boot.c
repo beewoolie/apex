@@ -51,7 +51,7 @@ int cmd_boot (int argc, const char** argv)
   build_atags ();
 #endif
 
-//  printf ("Executing...\r\n");
+  printf ("Booting kernel at 0x%p...\r\n", (void*) address);
 
   //serial_flush_output();
   //exit_subsystems();
@@ -78,7 +78,7 @@ struct tag* atag_commandline (struct tag* p)
 
   if (szEnv) {
     strlcpy (p->u.cmdline.cmdline, szEnv, COMMAND_LINE_SIZE);
-    cb = strlen (szEnv);
+    cb = strlen (szEnv) + 1;
   }
   else {
     p->u.cmdline.cmdline[0] = '\0';
@@ -101,6 +101,7 @@ struct tag* atag_commandline (struct tag* p)
   }
 
   if (cb) {
+//    printf ("cmdline '%s'\r\n", p->u.cmdline.cmdline);
     p->hdr.tag = ATAG_CMDLINE;
     p->hdr.size
       = (sizeof (struct tag_header) + cb + 4) >> 2;

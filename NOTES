@@ -158,7 +158,10 @@ Code Size
    printf function and save some code.  It's about 4K right now.
    There is a smaller version online.  I'd like to review uClib before
    depending on code found on the net.
-
+ o We can probably shrink all of the driver code by removing the fh
+   parameter and folding the descriptor functionality into a single
+   structure.  This also means that the open call can be global as can
+   seek.
 
 Toolchain
 
