@@ -1,6 +1,9 @@
 NOTES
 -----
 
+  o It turns out that we don't care about physical to logical mappings
+    since we're going to run with an identity mapping.
+
   o Most of the constants we need are available.  The QManager is one
     that is iomapped, according to the registers header.  We'll have
     to do something about this.
