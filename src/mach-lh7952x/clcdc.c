@@ -39,12 +39,9 @@
 #if defined (USE_PNG)
 #include <png.h>
 const unsigned char rgbPNG[] = {
-//# include <splash/apex-png.h>
-# include <splash/cc-png.h>
+# include <splash/apex-png.h>
+//# include <splash/cc-png.h>
 };
-#else
-//#include <splash/apex-240x320.h>
-#include <splash/apex-240x320m.h>
 #endif
 
 static unsigned short __attribute__((section(".clcdc.bss"))) 
@@ -117,26 +114,11 @@ fail:
   close_png (pv);
 
 #endif
-
-#if !defined (USE_PNG)
-  {
-    char* pb = header_data;
-    int i;
-    for (i = 0; i < width*height; ++i, ++pb) {
-      buffer[i] = 0
-	| ((*pb & 0xf8) << 7)
-	| ((*pb & 0xe0) << 0)	/* Reduced green */
-	//| ((*pb & 0xf8) << 2)
-	//| ((*pb & 0xf8) >> 3)
-;
-    }
-  }
-#endif
 }
 
 static void clcdc_init (void)
 {
-#if 0
+#if !defined (USE_PNG)
   /* Color bars */
   {
     int i;
@@ -154,23 +136,6 @@ static void clcdc_init (void)
 #endif
 
   draw_splash ();
-
-#if 0
-  /* Color bars */
-  {
-    int i;
-    for (i = 0; i < 320*240; ++i) {
-      if (i > 3*(320*240)/4)
-	buffer[i] = 0xffff;
-      else if (i > 2*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<10;
-      else if (i > 1*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<5;
-      else if (i > 0*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<0;
-    }
-  }
-#endif
 
   RCPC_CTRL |= (1<<9); /* Unlock */
   RCPC_PCLKCTRL1 &= ~(1<<0);

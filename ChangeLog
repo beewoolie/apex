@@ -1,5 +1,8 @@
 2005-03-03  Marc Singer  <elf@buici.com>
 
+	* src/lib/png.c (read_png_row): Decoder working properly with the
+	logo and with cc. 
+
 	* src/lib/zlib.c: Fixed the zlib declarations s.t. there is no
 	initialized, mutable data.
 

@@ -29,20 +29,43 @@
    screens.
 
    The code is very simple.  It only allows decompression of one image
-   at a time.  The caller doesn't know this and must pass the context
-   pointer.
+   at a time.  The caller cannot know this and so must pass a
+   context pointer.
 
-   The easy way to insert a PNG into the binary is to declare it as an
-   array of bytes.  The raw data may be converted to a convenient list
-   of hexadecimal values using hexdump.
+   o Creating Images
 
-     hexdump -v -e '1/1 "0x%02x, " "\n" ' < image.png  > image.h
+     The easy way to insert a PNG into the binary is to declare it as an
+     array of bytes.  The raw data may be converted to a convenient stream
+     of hexadecimal values using hexdump.
 
-   The resulting file may be included like so:
+       hexdump -v -e '1/1 "0x%02x, " "\n" ' < image.png  > image.h
 
-     unsigned char rgbImage[] = {
-     #include "image.h"
-     };
+     The resulting file may be included like so:
+
+       unsigned char rgbImage[] = {
+       #include "image.h"
+      };
+
+   o Heap
+
+     A very crude heap is made available to the zlib routines.  It
+     allocates, but doesn't deallocate.  As we don't care much about
+     using memory, this is OK.  However, it is quite dumb and should
+     be replaced with the inflate code from the kernel which uses
+     static buffers.
+
+   o CRC
+
+     We don't bother checking the CRCs.  As this is supposed to run
+     from RAM, it is probably better to perform a CRC check on the
+     whole firmware image instead of adding overhead of calculating it
+     on the image chunks.
+
+   o Robustness
+
+     Many variations on PNG files are not handled.  It should be OK
+     for eight and 16 bit components.  Others can be added if images
+     for them are found.
 
 */
 
@@ -152,6 +175,8 @@ static int next_chunk (struct png* png)
 void* open_png (const void* pv, size_t cb)
 {
   heap_allocated = 0;		/* Completely clobber heap */
+  png->pbThis = NULL;		/* In lieu of free */
+  png->pbPrev = NULL;		/* In lieu of free */
 
 //  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
 
@@ -227,13 +252,6 @@ int read_png_ihdr (void* pv, struct png_header* hdr)
   return 0;
 }
 
-/* read_png_idat
-
-   is a bastard of a function.  It should allow reading of an
-   arbitrary amount of data from the image.  Instead, because we use
-   the heap functions
-*/
-
 static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 {
   struct png* png = pv;
@@ -292,13 +310,7 @@ const unsigned char* read_png_row (void* pv)
   if (png->pbThis == NULL) {
     png->pbThis = heap_alloc (0, 1, png->cbRow + bpp - 1);
     png->pbPrev = heap_alloc (0, 1, png->cbRow + bpp - 1);
-    memset (png->pbThis, 0, png->cbRow + bpp - 1); /* Note: immediate swap */
-  }
-
-  {
-    char* pbSwap = png->pbThis;
-    png->pbThis = png->pbPrev;
-    png->pbPrev = pbSwap;
+    memset (png->pbPrev, 0, png->cbRow + bpp - 1);
   }
 
   pb     = png->pbThis + bpp - 1;
@@ -339,7 +351,7 @@ const unsigned char* read_png_row (void* pv)
     break;
   case 3:			/* Averaging filter */
     for (i = 1; i < cbRow; ++i)
-      pb[i] = ((int) pb[i - bpp] + (int)pbPrev[i])/2 & 0xff;
+      pb[i] = (pb[i] + ((int) pb[i - bpp] + (int)pbPrev[i])/2) & 0xff;
     break;
   case 4:			/* Paeth filter */
     for (i = 1; i < cbRow; ++i)
@@ -347,6 +359,13 @@ const unsigned char* read_png_row (void* pv)
 					pbPrev[i      ], 
 					pbPrev[i - bpp])) & 0xff;
     break;
+  }
+
+	/* Swap for next invocation */
+  {
+    char* pbSwap = png->pbThis;
+    png->pbThis = png->pbPrev;
+    png->pbPrev = pbSwap;
   }
 
   return pb + 1;
@@ -358,7 +377,6 @@ void close_png (void* pv)
 
   inflateEnd (&png->z);
 
-  png->pbThis = NULL;		/* In lieu of free */
   png->pb = 0;
   png->cb = 0;
 }
