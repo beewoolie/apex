@@ -5,8 +5,6 @@ NOTES
 
 TODO:
 
-  o APEX write command from SDRAM 
-    o Falling back to just telling the user where it is 
   o driver info functions, especially memory
     o I think this should be done with a service hook instead of a
       driver hook so that the environment can report describe it's
@@ -14,9 +12,7 @@ TODO:
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
   o relocate_apex for NAND flash 
-  o It would be cool if the spinners were used for copying as well as
-    writing and erasing.  Since the spinner is relatively innocuous to
-    call, we can call it from everywhere.
+  o command history
 
 Goals
 
