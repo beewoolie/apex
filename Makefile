@@ -974,6 +974,15 @@ MRPROPER_FILES += .config .config.old include/asm .version \
                   include/linux/autoconf.h include/linux/version.h \
                   Module.symvers tags TAGS cscope*
 
+# tidy - Remove debris
+
+.PHONY: tidy
+tidy: 
+	@echo "  TIDY"
+	@find . $(RCS_FIND_IGNORE) \
+	 	\( -name '*~' -o -name '*.i' \) \
+		-type f -print | xargs rm -f
+
 # clean - Delete most, but leave enough to build external modules
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
