@@ -19,9 +19,9 @@
 #   USA.
 #
 
-obj-y := serial.o timer.o env.o
-obj-$(CONFIG_MACH_LPD79520)     += init-lpd79520.o
-obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o
+obj-y := serial.o env.o
+obj-$(CONFIG_MACH_LPD79520)     += init-lpd79520.o timer-lh79520.o
+obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79520.o
 obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
 obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
