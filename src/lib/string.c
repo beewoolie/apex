@@ -300,22 +300,6 @@ char *strnchr(const char *s, size_t count, int c)
 EXPORT_SYMBOL(strnchr);
 #endif
 
-#ifndef __HAVE_ARCH_STRLEN
-/**
- * strlen - Find the length of a string
- * @s: The string to be sized
- */
-size_t strlen(const char * s)
-{
-	const char *sc;
-
-	for (sc = s; *sc != '\0'; ++sc)
-		/* nothing */;
-	return sc - s;
-}
-EXPORT_SYMBOL(strlen);
-#endif
-
 #ifndef __HAVE_ARCH_STRNLEN
 /**
  * strnlen - Find the length of a length-limited string

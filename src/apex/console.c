@@ -18,8 +18,6 @@
 
 struct driver_d* console_driver;
 
-extern int puts (const char * fmt);
-
 int puts (const char* fmt)
 {
   return console_driver->write (0, fmt, strlen (fmt));

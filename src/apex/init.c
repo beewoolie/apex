@@ -13,12 +13,7 @@
 */
 
 #include <linux/types.h>
-
-extern int __attribute__ ((format (printf, 1, 2)))
-     printf (const char * fmt, ...);
-extern int puts (const char * fmt);
-
-extern void init_drivers (void);
+#include <apex.h>
 
 void signon (void)
 {
