@@ -85,6 +85,12 @@
      open call starts the ball rolling, but the read code doesn't know
      what to do.
 
+   o vfat.  We presently don't parse vfat directory entries.  This
+     means that only short filenames are recognized.  By implementing
+     a general purpose directory enumeration function, we should be
+     able to cope with vfat names.  Writing a function is going to be
+     necessary in order to search for files along a path.
+
 */
 
 #include <config.h>
@@ -342,6 +348,7 @@ static int fat_find (struct descriptor_d* d)
 		      SEEK_SET);
   for (i = 0; i < fat.parameter.root_entries; ++i) {
     char sz[12];
+    int cb;
     int cbRead = fat.d.driver->read (&fat.d, &fat.file, sizeof (fat.file));
     if (cbRead != sizeof (fat.file))
       break;
@@ -362,6 +369,7 @@ static int fat_find (struct descriptor_d* d)
 	}
       }
       sz[k] = 0;
+      cb = k + 1;
     }
 #if defined (TALK)
     {
@@ -371,7 +379,7 @@ static int fat_find (struct descriptor_d* d)
 	      cluster_next, cluster_next);
     }
 #endif
-    if (strcmp (d->pb[d->iRoot], sz) == 0)
+    if (strnicmp (d->pb[d->iRoot], sz, cb) == 0)
       return 0;
   }
 

@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o Separate the string functions so that the linker can include only
+    those that are needed.
+
   o I think that the partition logic needs to move to the CF driver
     (and other block-level drivers) so that the filesystem code can be
     cleaner.  It allows us to read from unpartitioned devices as well

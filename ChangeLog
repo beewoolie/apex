@@ -1,3 +1,9 @@
+2005-03-07  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-fat.c (fat_find): Fat filename comparisions are
+	not case insensitive without requiring the descriptor parser to
+	lower-case the path elements.
+
 2005-03-06  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-ext2.c: A rudimentary ext2 driver is
