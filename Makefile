@@ -582,6 +582,7 @@ apex-lds  := src/arch-$(ARCH)/entry/apex.lds
 # May be overridden by arch/$(ARCH)/Makefile
 quiet_cmd_apex__ ?= LD      $@
       cmd_apex__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_apex) -o $@ \
+      -Map $@.map --cref \
       -T $(apex-lds) $(apex-init)                          \
       --start-group $(apex-main) --end-group                  \
       $(filter-out $(apex-lds) $(apex-init) $(apex-main) FORCE ,$^)
