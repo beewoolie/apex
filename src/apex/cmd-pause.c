@@ -19,12 +19,24 @@
 
 int cmd_pause (int argc, const char** argv)
 {
-  unsigned long time = timer_read ();
-
   printf ("pausing for 2 seconds\r\n");
 
-  while (timer_delta (time, timer_read ()) < 2*1000)
-    ;
+#if 0
+  {
+    unsigned long time = timer_read ();
+    while (timer_delta (time, timer_read ()) < 2*1000)
+      ;
+  }
+#endif
+
+#if 1
+  {
+    int i = 2*1000*1000;
+    i /= 32*1000;
+    while (i--)
+      usleep (32*1000);
+  }
+#endif
 
   printf ("done\r\n");
 

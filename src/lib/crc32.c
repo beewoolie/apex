@@ -77,6 +77,17 @@ unsigned long compute_crc32_x (unsigned long crc, const void* pv, int cb)
 
 #endif
 
+
+/* compute_crc32
+
+   calculates a standard 32 bit CRC checksum over a sequence of bytes.
+   This implementation is optimized for the ARM architecture.  Other
+   architectures, e.g. i386 will probably not be well served by this
+   version as it depends on excellent optimization by the compiler as
+   well as a adequate number of registers.
+
+*/
+
 unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
 {
   const unsigned char* pb = (const unsigned char *) pv;

@@ -66,6 +66,11 @@
    Keep in mind that it has a limit of about 32ms.  Anything longer
    (and less than 16 bits) will return immediately.
 
+   To be precise, the interval is HCLK/64 or 1.2597us.  In other
+   words, it is about 25% longer than the given.  The routine
+   compensates by removing 25% of the requested delay.  The clever ARM
+   instruction set makes this a single instruction.
+
  */
 
 void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
@@ -80,7 +85,7 @@ void __attribute__((section(".bootstrap"))) usleep (unsigned long us)
 	 :
 	 : "r" (TIMER1_PHYS), 
 	   "r" (0),
-	   "r" (us),
+	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
 	   "r" ((1<<1)|(5<<2)),
 	   "i" (0x8000)
 	 );
