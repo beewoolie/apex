@@ -15,6 +15,7 @@
 #if !defined (__ERROR_H__)
 #    define   __ERROR_H__
 
+#define ERROR_NOCOMMAND (-8)
 #define ERROR_PARAM	(-9)
 #define ERROR_OPEN	(-10)
 #define ERROR_AMBIGUOUS (-11)

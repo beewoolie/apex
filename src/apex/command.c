@@ -59,7 +59,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
 }
 
 
-void call_command (int argc, const char** argv) 
+int call_command (int argc, const char** argv) 
 {
   extern char APEX_COMMAND_START;
   extern char APEX_COMMAND_END;
@@ -68,7 +68,7 @@ void call_command (int argc, const char** argv)
   struct command_d* command;
 
   if (!argc)
-    return;
+    return 0;
 
   cb = strlen (argv[0]);
 
@@ -78,7 +78,7 @@ void call_command (int argc, const char** argv)
     if (strnicmp (argv[0], command->command, cb) == 0) {
       if (command_match) {
 	printf ("Ambiguous command.  Try 'help'.\r\n");
-	return;
+	return ERROR_NOCOMMAND;
       }
       command_match = command;
       if (command->command[cb] == 0) /* Exact match */
@@ -89,7 +89,9 @@ void call_command (int argc, const char** argv)
     int result = command_match->func (argc, argv);
     if (result < 0)
       printf ("Error %d\r\n", result);
+    return result;
   }
+  return ERROR_NOCOMMAND;
 }
 
 
@@ -102,13 +104,15 @@ void exec_monitor (void)
     int argc;
     const char** argv;
     strcpy (sz, szStartup);
-    printf ("startup '%s'\r\n", sz);
+    //    printf ("startup '%s'\r\n", sz);
     
     while (*pch) {
-      char* pchEnd = strchr (sz, ';');
+      char* pchEnd = strchr (pch, ';');
       *pchEnd = 0;
-      parse_command (sz, &argc, &argv);
-      call_command (argc, argv);
+      printf ("\r# %s\r\n", pch);
+      parse_command (pch, &argc, &argv);
+      if (call_command (argc, argv))
+	break;
       pch = pchEnd + 1;
     }
   }
@@ -125,6 +129,9 @@ void exec_monitor (void)
 
 static __env struct env_d e_startup = {
   .key = "startup",
-  .default_value = "wait 50 Autoboot in 5 seconds. ; wait 50 Autoboot in 5 seconds. ",
+  .default_value =
+    "copy nor:256k#1536k mem:0x20008000;"
+    "wait 30 Autoboot in 3 seconds.;"
+    "boot",
   .description = "Startup command string",
 };
