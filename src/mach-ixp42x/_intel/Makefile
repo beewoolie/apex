@@ -19,18 +19,20 @@
 #   USA.
 #
 
-HERE=`pwd`/src/mach-ixp42x/_intel
+-include $(wildcard config)
+
+H=`pwd`/src/mach-ixp42x/_intel
 
 #export CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
 
 #CROSS_COMPILE ?= /usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-
 
 all:
-	make -C $HERE/ixp400_xscale_sw \
+	make -C $H/ixp400_xscale_sw \
 	  LINUX_CROSS_COMPILE=$(CROSS_COMPILE)\
 	  IX_TARGET=linuxbe\
-	  IX_XSCALE_SW=$HERE/ixp400_xscale_sw\
-	  linuxbe_KERNEL_DIR=$HERE/linux\
+	  IX_XSCALE_SW=$H/ixp400_xscale_sw\
+	  linuxbe_KERNEL_DIR=$H/linux\
 	  lib-all
 
 #	  linuxbe_KERNEL_DIR=$(HOME)/z/embedded/linux
@@ -38,10 +40,16 @@ all:
 #lib-$(CONFIG_NPE) += IxNpeMicrocode.o
 
 unpack:
-	-rm -rf $HERE/ixp400_xscale_sw $HERE/ixp_osal
-	(cd $HERE; unzip ixp400AccessLibrary-1_5.zip)
-	(cd $HERE; unzip ixp400NpeLibrary-1_5.zip)
-	(cd $HERE; patch -p1 ../ixp400_xscale_1.5_linux26.patch)
+	-rm -rf $H/ixp400_xscale_sw $H/ixp_osal $H/patches $H/.pc
+	(cd $H; unzip ixp400AccessLibrary-1_5.zip)
+	(cd $H; unzip ixp400NpeLibrary-1_5.zip)
+
+patch:
+	(cd $H; patch -p1 < ixp400_xscale_1.5_linux26.patch)
+
+quilt:
+	(cd $H; quilt import ixp400_xscale_1.5_linux26.patch)
+	(cd $H; quilt push   ixp400_xscale_1.5_linux26.patch)
 
 prep:
-	[ -L $HERE/lib ] || ln -s $HERE/ixp400_xscale_sw/lib/linuxbe $HERE/lib
+	[ -L $H/lib ] || ln -s $H/ixp400_xscale_sw/lib/linuxbe $H/lib

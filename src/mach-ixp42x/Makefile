@@ -55,4 +55,4 @@ obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)
 
-libs-$(CONFIG_NPE) := intel/
+#libs-$(CONFIG_NPE) := _intel/

@@ -24,30 +24,35 @@
 
 //#include <_intel/include/npe_info.h>
 
+#undef printf
+extern int __attribute__((format (printf, 1, 2)))
+     printf (const char * fmt, ...);
+
 #define NPE_VERSIONS_COUNT 12
 
 extern const unsigned IX_NPEDL_MicrocodeImageLibrary[];
 
-static int npeDownload (int npeId)
+static int npeDownload (int npeId, int functionalityId)
 {
-  UINT32 i, n;
+  UINT32 i;
+  UINT32 c;
   IxNpeDlVersionId list[NPE_VERSIONS_COUNT];
   IxNpeDlVersionId dlVersion;
   int major, minor;
 
-  if (ixNpeDlAvailableVersionsCountGet(&n) != IX_SUCCESS)
-    return 0;
+  if (ixNpeDlAvailableVersionsCountGet (&c) != IX_SUCCESS)
+    return 1;
 
-  if (n > NPE_VERSIONS_COUNT)
-    return 0;
+  if (c > NPE_VERSIONS_COUNT)
+    return 1;
 
-  if (ixNpeDlAvailableVersionsListGet(list, &n) != IX_SUCCESS)
-    return 0;
+  if (ixNpeDlAvailableVersionsListGet (list, &c) != IX_SUCCESS)
+    return 1;
     
   major = minor = 0;
-  for (i = 0; i < n; i++) {
+  for (i = 0; i < c; i++) {
     if (list[i].npeId == npeId) {
-      if (list[i].buildId == buildId) {
+      if (list[i].functionalityId == functionalityId) {
 	if (list[i].major > major) {
 	  major = list[i].major;
 	  minor = list[i].minor;
@@ -63,7 +68,7 @@ static int npeDownload (int npeId)
 
     if (ixNpeDlNpeStopAndReset(npeId) != IX_SUCCESS) {
       printf("npeDownload: Failed to stop/reset NPE%c\n", npeId  + 'A');
-      return 0;
+      return 1;
     }
     dlVersion.npeId = npeId;
     dlVersion.buildId = buildId;
@@ -72,7 +77,7 @@ static int npeDownload (int npeId)
 
     if (ixNpeDlVersionDownload(&dlVersion, 1) != IX_SUCCESS) {
       printf("Failed to download to NPE%c\n", npeId  + 'A');
-      return 0;
+      return 1;
     }
 
 
@@ -80,18 +85,18 @@ static int npeDownload (int npeId)
     // verify download
     if (ixNpeDlLoadedVersionGet(npeId, &dlVersion) != IX_SUCCESS) {
       printf ("Failed to upload version from NPE%c\n", npeId  + 'A');
-      return 0;
+      return 1;
     }
 
     if (   dlVersion.buildId != buildId
 	|| dlVersion.major != major
 	|| dlVersion.major != major) {
       printf ("Failed to verify download NPE%c\n", npeId  + 'A');
-      return 0;
+      return 1;
     }
 #endif
 
-    return 1;
+    return 0;
 
 }
 
@@ -108,14 +113,15 @@ int _npe_init (void)
 #endif
 
   if (ixQMgrInit() != IX_SUCCESS) {
-    printf("Error initialising queue manager!\n");
-    return 0;
+    printf ("Error initialising queue manager!\n");
+    return 1;
   }
 
-  if (!npeDownload(0))
-    return 0;
+  if (!npeDownload(0, 0))
+    return 1;
 
-  if (!npeDownload(1))
-    return 0;
+  if (!npeDownload(1, 0))
+    return 1;
 
+  return 0;
 }

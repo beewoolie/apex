@@ -32,7 +32,7 @@
 
 /* ----- Includes */
 
-#include <apex/types.h>
+#include <linux/types.h>
 #include <asm-arm/setup.h>
 #include <attributes.h>
 
