@@ -1,3 +1,13 @@
+/* zlib.c
+
+   The file was taken from the uboot project.  It is modified to
+   eliminate staticly initialized variables which are not permitted in
+   APEX.  Variables must either be initialized to zero, or initialized
+   during initialization.  There may be static data, but those data
+   must not be const and not at runtime.
+
+*/
+
 /*
  * This file is derived from various .h and .c files from the zlib-0.95
  * distribution by Jean-loup Gailly and Mark Adler, with some additions
@@ -652,10 +662,10 @@ struct inflate_blocks_state {
  * protects it. -- Cort
  */
 #if 0
-local uInt protect_mask[] = {0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0 ,0};
+const local uInt protect_mask[] = {0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0 ,0};
 #endif
 /* And'ing with mask[n] masks the lower n bits */
-local uInt inflate_mask[] = {
+const local uInt inflate_mask[] = {
     0x0000,
     0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
     0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
@@ -694,7 +704,7 @@ local int inflate_fast OF((
  */
 
 /* Table for deflate from PKZIP's appnote.txt. */
-local uInt border[] = { /* Order of the bit length code lengths */
+const local uInt border[] = { /* Order of the bit length code lengths */
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
 /*
@@ -1157,8 +1167,8 @@ local int huft_build OF((
     uIntf *,            /* code lengths in bits */
     uInt,               /* number of codes */
     uInt,               /* number of "simple" codes */
-    uIntf *,            /* list of base values for non-simple codes */
-    uIntf *,            /* list of extra bits for non-simple codes */
+    const uIntf *,      /* list of base values for non-simple codes */
+    const uIntf *,      /* list of extra bits for non-simple codes */
     inflate_huft * FAR*,/* result: starting table */
     uIntf *,            /* maximum lookup bits (returns actual) */
     z_stream *));       /* for zalloc function */
@@ -1174,18 +1184,18 @@ local void ffree OF((
     uInt n));		/* number of bytes (not used) */
 
 /* Tables for deflate from PKZIP's appnote.txt. */
-local uInt cplens[] = { /* Copy lengths for literal codes 257..285 */
+const local uInt cplens[] = { /* Copy lengths for literal codes 257..285 */
         3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
         35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
         /* actually lengths - 2; also see note #13 above about 258 */
-local uInt cplext[] = { /* Extra bits for literal codes 257..285 */
+const local uInt cplext[] = { /* Extra bits for literal codes 257..285 */
         0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
         3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 192, 192}; /* 192==invalid */
-local uInt cpdist[] = { /* Copy offsets for distance codes 0..29 */
+const local uInt cpdist[] = { /* Copy offsets for distance codes 0..29 */
         1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
         257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
         8193, 12289, 16385, 24577};
-local uInt cpdext[] = { /* Extra bits for distance codes */
+const local uInt cpdext[] = { /* Extra bits for distance codes */
         0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
         7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
         12, 12, 13, 13};
@@ -1235,8 +1245,8 @@ local int huft_build(b, n, s, d, e, t, m, zs)
 uIntf *b;               /* code lengths in bits (all assumed <= BMAX) */
 uInt n;                 /* number of codes (assumed <= N_MAX) */
 uInt s;                 /* number of simple-valued codes (0..s-1) */
-uIntf *d;               /* list of base values for non-simple codes */
-uIntf *e;               /* list of extra bits for non-simple codes */
+const uIntf *d;         /* list of base values for non-simple codes */
+const uIntf *e;         /* list of extra bits for non-simple codes */
 inflate_huft * FAR *t;  /* result: starting table */
 uIntf *m;               /* maximum lookup bits, returns actual */
 z_stream *zs;           /* for zalloc function */
@@ -1506,10 +1516,10 @@ z_stream *z;            /* for zfree function */
 
 
 /* build fixed tables only once--keep them here */
-local int fixed_lock = 0;
-local int fixed_built = 0;
+local int fixed_lock; // = 0;
+local int fixed_built; // = 0;
 #define FIXEDH 530      /* number of hufts used by fixed tables */
-local uInt fixed_left = FIXEDH;
+local uInt fixed_left; // = FIXEDH;
 local inflate_huft fixed_mem[FIXEDH];
 local uInt fixed_bl;
 local uInt fixed_bd;
@@ -1522,6 +1532,8 @@ voidpf q;        /* opaque pointer (not used) */
 uInt n;         /* number of items */
 uInt s;         /* size of item */
 {
+  if (fixed_left == 0)
+     fixed_left = FIXEDH;
   Assert(s == sizeof(inflate_huft) && n <= fixed_left,
          "inflate_trees falloc overflow");
   if (q) s++; /* to make some compilers happy */
