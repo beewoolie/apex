@@ -144,4 +144,22 @@
 
 #define UART_PHYS		UART2_PHYS
 
+#define CLCDC_TIMING0		(0x00)
+#define CLCDC_TIMING1		(0x04)
+#define CLCDC_TIMING2		(0x08)
+#define CLCDC_UPBASE		(0x10)
+#define CLCDC_LPBASE		(0x14)
+#define CLCDC_INTREN		(0x18)
+#define CLCDC_CTRL		(0x1c)
+#define CLCDC_STATUS		(0x20)
+#define CLCDC_INTERRUPT		(0x24)
+#define CLCDC_UPCURR		(0x28)
+#define CLCDC_LPCURR		(0x2c)
+#define CLCDC_PALETTE		(0x200)
+
+#define HRTFTC_SETUP		(0x00)
+#define HRTFTC_CON		(0x04)
+#define HRTFTC_TIMING1		(0x08)
+#define HRTFTC_TIMING2		(0x0c)
+
 #endif  /* __LH7A40X_H__ */

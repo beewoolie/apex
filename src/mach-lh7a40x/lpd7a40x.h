@@ -38,6 +38,7 @@
 
 /* ----- Prototypes */
 
+#define CPLD_CONTROL		(0x70200000)
 #define CPLD_FLASH		(0x71000000)
 #define CPLD_FLASH_FL_VPEN	(1<<0)
 #define CPLD_FLASH_FST1		(1<<1)
