@@ -477,7 +477,7 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 
   while (cb) {
     size_t available = cb;
-    size_t index = d->index + d->start;
+    size_t index = d->start + d->index;
     if (index < fat.index_cluster_file) {
       /* Rewinding not supported   */
       return -1;
@@ -525,6 +525,7 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
       d->index += cbThis;
       cb -= cbThis;
       cbRead += cbThis;
+      pv += cbThis;
     }
   }
   return cbRead;
