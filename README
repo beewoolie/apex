@@ -26,8 +26,14 @@ platform.  For example,
 
   CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
 
-Development continues with the 3.x compilers.  GCC 2.95.3 does build
-APEX at a slight penalty in code size.  
+The cross compiler may also be set in the environment or on the make
+command line.  Doing so will override the value set in the
+configuration file.
+
+  make CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+
+Development proceeds with the 3.x compilers.  GCC 2.95.3 does build
+APEX at a slight penalty in code size.
 
 Beware of GCC 2.95.3.   It does not properly honor the naked function 
 --------------------	attribute which means that it may improperly
@@ -36,8 +42,8 @@ vulnerable to the problem and may cause APEX to fail.  If you must use
 GCC 2.95.3, make sure that there are no DEBUG_LL calls in
 relocate_apex(). 
 
-Building also requires a configuration file in the root called
-'config'.  To build using the default configuration for the LPD79524:
+Building requires a configuration file in the root called 'config'.
+To build using the default configuration for the LPD79524:
 
   # make lpd79524_config
 

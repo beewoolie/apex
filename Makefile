@@ -1,8 +1,11 @@
 ARCH ?= arm
 
+# Preserve environment for the cross-compiler
+ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
+
 VERSION = 1
 PATCHLEVEL = 1
-SUBLEVEL = 4
+SUBLEVEL = 5
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -325,15 +328,15 @@ MAKEFLAGS += --include-dir=$(srctree)
 
 # Make variables (CC, etc...)
 
-AS		= $(CROSS_COMPILE)as
-LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
+AS		= $(CROSS_COMPILE_)as
+LD		= $(CROSS_COMPILE_)ld
+CC		= $(CROSS_COMPILE_)gcc
 CPP		= $(CC) -E
-AR		= $(CROSS_COMPILE)ar
-NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+AR		= $(CROSS_COMPILE_)ar
+NM		= $(CROSS_COMPILE_)nm
+STRIP		= $(CROSS_COMPILE_)strip
+OBJCOPY		= $(CROSS_COMPILE_)objcopy
+OBJDUMP		= $(CROSS_COMPILE_)objdump
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 DEPMOD		= /sbin/depmod
@@ -504,12 +507,20 @@ endif
 ifeq ($(dot-config),1)
 # In this section, we need .config
 
+# Preserve environment for the cross-compiler
+#ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
+
 # Read in dependencies to all Kconfig* files, make sure to run
 # oldconfig if changes are detected.
--include .config.cmd
+#-include .config.cmd
 
 include $(wildcard config)
-#include .config
+
+ifeq '$(ENV_CROSS_COMPILE)' ''
+ CROSS_COMPILE_=$(CROSS_COMPILE)
+else
+ CROSS_COMPILE_=$(ENV_CROSS_COMPILE)
+endif
 
 # If .config needs to be updated, it will be done via the dependency
 # that autoconf has on .config.
