@@ -83,17 +83,17 @@ void __naked __section (bootstrap) reset (void)
 void __naked setup_c (void)
 {
 	/* Setup stack, quite trivial */
-  __asm ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
+  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
 
 	/* Clear BSS */
   if (&APEX_VMA_BSS_START != &APEX_VMA_BSS_END)
-    __asm (
+    __asm volatile (
 	   "0: stmia %0!, {%2}\n\t"
 	   "   cmp %0, %1\n\t"
 	   "   ble 0b\n\t"
 	   : : "r" (&APEX_VMA_BSS_START), "r" (&APEX_VMA_BSS_END), "r" (0));
 
-  __asm ("mov pc, lr");
+  __asm volatile ("mov pc, lr");
 }
 
 void __div0 (void)

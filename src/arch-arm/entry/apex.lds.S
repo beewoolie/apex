@@ -81,5 +81,8 @@ SECTIONS
 	. += 8192;
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
+	. += 8192;
+	APEX_VMA_IRQSTACK_START = .;
+	. = ALIGN (4);
 	APEX_VMA_END = .;
 }

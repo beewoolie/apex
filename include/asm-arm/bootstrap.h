@@ -40,6 +40,7 @@ extern char APEX_VMA_ENTRY;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 extern char APEX_VMA_STACK_START;
+extern char APEX_VMA_IRQSTACK_START;
 extern char APEX_VMA_BSS_START;
 extern char APEX_VMA_BSS_END;
 
@@ -48,6 +49,10 @@ extern char APEX_VMA_BSS_END;
 #define __weak __attribute__((weak))
 #define __naked __attribute__((naked))
 #define __section(s) __attribute__((section(#s)))
-
+#define __irq_handler __attribute__((interrupt ("IRQ")))
+#define __fiq_handler __attribute__((interrupt ("FIQ")))
+#define __swi_handler __attribute__((interrupt ("SWI")))
+#define __abort_handler __attribute__((interrupt ("ABORT")))
+#define __undef_handler __attribute__((interrupt ("UNDEF")))
 
 #endif  /* __BOOTSTRAP_H__ */

@@ -177,6 +177,21 @@
 #define GPIO_KL_PHYS	(0xfffda000)
 #define GPIO_MN_PHYS	(0xfffd9000)
 
+#define VIC_PHYS	0xfffff000
+#define VIC_IRQSTATUS	0x00
+#define VIC_FIQSTATUS	0x04
+#define VIC_RAWINTSR	0x08
+#define VIC_INTSELECT	0x0c
+#define VIC_INTENABLE	0x10
+#define VIC_INTENCLEAR	0x14
+#define VIC_SOFTINT	0x18
+#define VIC_SOFTINT_CLEAR 0x1c
+#define VIC_VECTADDR	0x30
+#define VIC_DEFVECTADDR	0x34
+#define VIC_VECTADDR0	0x100
+#define VIC_VECTCTRL0	0x200
+
+
  /* -- */
 
     /* Register values and bits */

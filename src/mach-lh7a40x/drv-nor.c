@@ -362,6 +362,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_2 struct service_d lh7a40x_nor_service = {
+static __service_3 struct service_d lh7a40x_nor_service = {
   .init = nor_init,
 };

@@ -155,6 +155,6 @@ static __driver_0 struct driver_d lh7952x_serial_driver = {
   .poll = lh7952x_serial_poll,
 };
 
-static __service_1 struct service_d lh7952x_serial_service = {
+static __service_2 struct service_d lh7952x_serial_service = {
   .init = lh7952x_serial_init,
 };

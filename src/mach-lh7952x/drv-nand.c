@@ -329,6 +329,6 @@ static __driver_3 struct driver_d nand_driver = {
   .seek = seek_helper,
 };
 
-static __service_2 struct service_d lh79524_nand_service = {
+static __service_3 struct service_d lh79524_nand_service = {
   .init = nand_init,
 };
