@@ -43,11 +43,11 @@ int printf (const char* fmt, ...)
 {
   static char rgb[1024];
   ssize_t cb;
+  va_list ap;
 
   if (console_driver == NULL)
     return 0;
 
-  va_list ap;
   va_start (ap, fmt);
 
   cb = vsnprintf (rgb, sizeof (rgb) - 1, fmt, ap);

@@ -23,12 +23,12 @@
 
 /* ----- Prototypes */
 
-#define CPLD_FLASH		0x55000000
+#define CPLD_FLASH		__REG16 (0x55000000)
 #define CPLD_FLASH_VPEN		(1<<0)
 #define CPLD_FLASH_FL_VPEN	CPLD_FLASH_VPEN
 
-#define NOR_0_PHYS	(0x00000000)
-#define NOR_0_LENGTH	(8*1024*1024)
-#define WIDTH		(16)	/* Device width in bits */
+//#define NOR_0_PHYS	(0x00000000)
+//#define NOR_0_LENGTH	(8*1024*1024)
+//#define WIDTH		(16)	/* Device width in bits */
 
 #endif  /* __LPD79520_H__ */
