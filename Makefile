@@ -504,7 +504,8 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults vmlinux but it is usually overriden in the arch makefile
-all: include/config.h apex
+# *** FIXME: can we make the apex.bin and even apex targets be in asm-arm?
+all: include/config.h apex apex.bin
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 CFLAGS		+= -Os

@@ -1,6 +1,11 @@
 /* track01.wav 44.1kHz, stereo, 16 bit */
 
-unsigned short __attribute__((section("pcm.data"))) rgbPCM[] = {
+typedef unsigned short sample_t;
+#define C_SAMPLES	(sizeof (rgbPCM)/2)
+#define SOURCE_STEREO
+#define SOURCE_16BIT
+#define SOURCE_SIGNED
+sample_t __attribute__((section("pcm.data"))) rgbPCM[] = {
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000, 0x0001,
 	0x0001, 0x0002, 0x0002, 0x0003, 0x0002, 0x0004, 0x0003, 0x0004,
 	0x0003, 0x0004, 0x0004, 0x0004, 0x0004, 0x0005, 0x0006, 0x0005,

@@ -186,12 +186,18 @@ static void emac_setup (void)
   EMAC_TXSTATUS &=
     ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
 	 
-  EMAC_NETCONFIG
-    = EMAC_NETCONFIG_DIV32 | EMAC_NETCONFIG_FULLDUPLEX
-    | EMAC_NETCONFIG_100MB | EMAC_NETCONFIG_CPYFRM;
+  MASK_AND_SET (EMAC_NETCONFIG, 3<<10, EMAC_NETCONFIG_DIV32);
+  EMAC_NETCONFIG |= 0
+    //    | EMAC_NETCONFIG_FULLDUPLEX
+    //    | EMAC_NETCONFIG_100MB
+    | EMAC_NETCONFIG_CPYFRM
+    ;
 //  EMAC_NETCONFIG |= EMAC_NETCONFIG_RECBYTE;
-  EMAC_NETCTL 
-    = EMAC_NETCTL_RXEN | EMAC_NETCTL_TXEN | EMAC_NETCTL_CLRSTAT;
+  EMAC_NETCTL |= 0
+    | EMAC_NETCTL_RXEN
+    | EMAC_NETCTL_TXEN
+    | EMAC_NETCTL_CLRSTAT
+    ;
 }
 
 static int emac_phy_read (int phy_address, int phy_register)
@@ -208,7 +214,7 @@ static int emac_phy_read (int phy_address, int phy_register)
     |(2<<16);
 
   //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  usleep (10000);
+  //  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
 
@@ -234,7 +240,7 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
     |(phy_data & 0xffff);
 
   //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  usleep (10000);
+  //  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
   EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
@@ -279,10 +285,10 @@ static void emac_phy_configure (int phy_address)
    emac_phy_write (phy_address, 23, (l & ~((1<<7)|(1<<6)))|(1<<7));
  }
  /* Disable SPD100 */
- {
-   unsigned long l = emac_phy_read (phy_address, 0);
-   emac_phy_write (phy_address, 0, l & ~(1<<13));
- }
+ // {
+ //   unsigned long l = emac_phy_read (phy_address, 0);
+//   emac_phy_write (phy_address, 0, l & ~(1<<13));
+// }
 }
 
 
@@ -648,11 +654,10 @@ int cmd_emac (int argc, const char** argv)
 		      | PHY_CONTROL_LOOPBACK
 		      | emac_phy_read (phy_address, 0));
       EMAC_NETCONFIG |= 0
-	|EMAC_NETCONFIG_IGNORE
-	|EMAC_NETCONFIG_ENFRM
-	|EMAC_NETCONFIG_CPYFRM
-	|EMAC_NETCONFIG_CPYFRM
-	|EMAC_NETCONFIG_FULLDUPLEX
+	| EMAC_NETCONFIG_IGNORE
+	| EMAC_NETCONFIG_ENFRM
+	| EMAC_NETCONFIG_CPYFRM
+	//	| EMAC_NETCONFIG_FULLDUPLEX
 	;
     }
     else if (strcmp (argv[1], "anen") == 0) {
