@@ -389,6 +389,7 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  PRINTF ("%s: @ 0x%x\n", __FUNCTION__, d->start + d->index);
   
   while (cb) {
     unsigned long index = d->start + d->index;

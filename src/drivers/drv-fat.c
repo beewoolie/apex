@@ -174,13 +174,13 @@ struct directory {
 } __attribute__ ((packed));
 
 struct fat_info {
+  struct descriptor_d d;	/* Descriptor for underlying driver */
+
   int fOK;			/* True when the block device recognizabled */
   struct partition partition[4];
   struct parameter parameter;	/* Parameter info for the partition */
   size_t index_cluster_2;	/* Partition index of first cluster */
   size_t bytes_per_cluster;	/* Precomputed cluster size */
-
-  struct descriptor_d d;	/* Descriptor for underlying driver */
 
   /* *** FIXME: directory clusters not yet implemented */
 //unsigned cluster_dir;		/* Current directory cluster being read  */
@@ -197,7 +197,7 @@ struct fat_info {
 static struct fat_info fat;
 
 //struct driver_d* fs_driver;	/* *** FIXME: underlying driver link hack */
-const char szBlockDriver[] = "cf"; /* Underlying block driver */
+static const char szBlockDriver[] = "cf"; /* Underlying block driver */
 
 static inline unsigned short read_short (void* pv)
 {
@@ -417,7 +417,7 @@ static int fat_open (struct descriptor_d* d)
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
 	      szBlockDriver, 
-	      fat.partition[0].start, fat.partition[0].length);
+	      fat.partition[partition].start, fat.partition[partition].length);
   }
 
   PRINTF ("  opening %s\n", sz);
@@ -545,36 +545,37 @@ static void fat_report (void)
 //  if (   fat.bootsector[SECTOR_SIZE - 2] == 0x55 
 //      && fat.bootsector[SECTOR_SIZE - 1] == 0xaa) {
   printf ("  fat:\n"); 
-    for (i = 0; i < 4; ++i)
-      if (fat.partition[i].type)
-	printf ("          partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
-		fat.partition[i].boot ? '*' : ' ',
-		fat.partition[i].type,
-		fat.partition[i].start,
-		fat.partition[i].length);
 
-    printf ("          bps %d spc %d res %d fats %d re %d sec %d\n", 
-	    read_short (&fat.parameter.bytes_per_sector),
-	    fat.parameter.sectors_per_cluster,
-	    read_short (&fat.parameter.reserved_sectors),
-	    fat.parameter.fats,
-	    read_short (&fat.parameter.root_entries), 
-	    read_short  (&fat.parameter.small_sectors));
-    printf ("          med 0x%x spf %d spt %d heads %d hidden %ld sec %ld\n",
-	    fat.parameter.media,
-	    read_short (&fat.parameter.sectors_per_fat),
-	    read_short (&fat.parameter.sectors_per_track),
-	    read_short (&fat.parameter.heads),
-	    read_long (&fat.parameter.hidden_sectors), 
-	    read_long  (&fat.parameter.large_sectors));
-    printf ("          log 0x%02x sig 0x%x serial %08lx\n"
-	    "          vol '%11.11s' type '%8.8s' fat_type %d\n",
-	    read_short (&fat.parameter.logical_drive),
-	    fat.parameter.signature,
-	    read_long (&fat.parameter.serial),	    
-	    fat.parameter.volume,
-	    fat.parameter.type,
-	    fat.fat_type);
+  for (i = 0; i < 4; ++i)
+    if (fat.partition[i].type)
+      printf ("          partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+	      fat.partition[i].boot ? '*' : ' ',
+	      fat.partition[i].type,
+	      fat.partition[i].start,
+	      fat.partition[i].length);
+
+  printf ("          bps %d spc %d res %d fats %d re %d sec %d\n", 
+	  read_short (&fat.parameter.bytes_per_sector),
+	  fat.parameter.sectors_per_cluster,
+	  read_short (&fat.parameter.reserved_sectors),
+	  fat.parameter.fats,
+	  read_short (&fat.parameter.root_entries), 
+	  read_short  (&fat.parameter.small_sectors));
+  printf ("          med 0x%x spf %d spt %d heads %d hidden %ld sec %ld\n",
+	  fat.parameter.media,
+	  read_short (&fat.parameter.sectors_per_fat),
+	  read_short (&fat.parameter.sectors_per_track),
+	  read_short (&fat.parameter.heads),
+	  read_long (&fat.parameter.hidden_sectors), 
+	  read_long  (&fat.parameter.large_sectors));
+  printf ("          log 0x%02x sig 0x%x serial %08lx\n"
+	  "          vol '%11.11s' type '%8.8s' fat_type %d\n",
+	  read_short (&fat.parameter.logical_drive),
+	  fat.parameter.signature,
+	  read_long (&fat.parameter.serial),	    
+	  fat.parameter.volume,
+	  fat.parameter.type,
+	  fat.fat_type);
 
 #if 0
     for (i = 0; i < SECTOR_SIZE/sizeof (struct directory); ++i) {
