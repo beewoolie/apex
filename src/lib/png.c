@@ -138,7 +138,7 @@ void* open_png (const void* pv, size_t cb)
 {
   heap_allocated = 0;		/* Completely clobber heap */
 
-  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
+//  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
 
   if (cb < 8)
     return NULL;
@@ -157,19 +157,19 @@ void* open_png (const void* pv, size_t cb)
       return NULL; 
   }
 
-  printf ("%s: magic OK\n", __FUNCTION__); 
+//  printf ("%s: magic OK\n", __FUNCTION__); 
 
   png.pb = pv;
   png.cb = cb;
   png.ib = 0;
 
 
-  printf ("%s: reading first chunk\n", __FUNCTION__); 
+//  printf ("%s: reading first chunk\n", __FUNCTION__); 
 
   if (next_chunk (&png) || memcmp (&png.c.id, "IHDR", 4))
     return NULL;
 
-  printf ("%s: pulling header\n", __FUNCTION__); 
+//  printf ("%s: pulling header\n", __FUNCTION__); 
 
   png.hdr.width       = read_long (png.pb + png.ib + 8);
   png.hdr.height      = read_long (png.pb + png.ib + 8 + 4);
@@ -201,7 +201,7 @@ void* open_png (const void* pv, size_t cb)
     return NULL;
 
   png.cbRow = 1 + png.hdr.width*png.bpp;
-  printf ("%s: cbRow %d  bpp %d\n", __FUNCTION__, png.cbRow, png.bpp);
+//  printf ("%s: cbRow %d  bpp %d\n", __FUNCTION__, png.cbRow, png.bpp);
 
   return &png;
 }
@@ -226,9 +226,9 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
 	/* Initialization */
   if (memcmp (&png->c.id, "IDAT", 4)) {
-    printf ("%s: init\n", __FUNCTION__); 
+//    printf ("%s: init\n", __FUNCTION__); 
 
-    printf ("%s: inflateInit\n", __FUNCTION__); 
+//    printf ("%s: inflateInit\n", __FUNCTION__); 
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = heap_alloc;
     png->z.zfree = heap_free;
@@ -273,8 +273,6 @@ const unsigned char* read_png_row (void* pv)
   char* pb;
   char* pbPrev;
   char filter;
-  static int code;
-  static int row;
 
   if (png->pbThis == NULL) {
     png->pbThis = heap_alloc (0, 1, png->cbRow + bpp - 1);
@@ -301,10 +299,17 @@ const unsigned char* read_png_row (void* pv)
   filter = pb[0];
   pb[0] = 0;			/* So adjacent pel is 0; simplifies loops */
 
-  if (code != filter) {
-    printf ("%s: code %d  row %d\n", __FUNCTION__, filter, row);
-    code = filter;
+#if 0
+  {
+    static int code;
+    static int row;
+    if (code != filter) {
+      printf ("%s: code %d  row %d\n", __FUNCTION__, filter, row);
+      code = filter;
+    }
+    ++row;
   }
+#endif
 
   switch (filter) {
   case 0:			/* No filtering */
@@ -329,7 +334,6 @@ const unsigned char* read_png_row (void* pv)
     break;
   }
 
-  ++row;
   return pb + 1;
 }
 
