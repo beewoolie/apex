@@ -5,6 +5,16 @@ APEX Boot Loader
 
 TODO:
 
+  o Looks like the ADC test driver may interfere with the kernel
+    booting properly.  First I've seen of it.  It's OK, though, since
+    we don't need it.
+
+  o Might be good to have a paranoid setting that lets us require
+    confirmation before clobbering flash or eeproms or whatever.  This
+    could be a list of important regions.  The region list could be
+    bothersome since there is aliasing unless it is specific to the
+    driver that can clobber it.
+
   o Buried region strings must be revealed.  The emac driver has one
     for the MAC address EEPROM.  The fatfs driver has one for the
     underlying block device.  The latter may be best revealed with an
