@@ -54,6 +54,7 @@
 #include <linux/string.h>
 #include <spinner.h>
 #include <asm/reg.h>
+#include <error.h>
 
 #include <mach/drv-cf.h>
 
@@ -292,9 +293,9 @@ static int cf_open (struct descriptor_d* d)
   ENTRY (0);
 
   if (cf_identify ())
-    return -1;
+    return ERROR_OPEN;
   if (cf_d.type != typeMemory)
-    return -1;
+    return ERROR_OPEN;
 
   /* perform bounds check */
 
