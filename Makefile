@@ -763,7 +763,7 @@ export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %.i: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
-%.o: %.c scripts FORCE
+%.o: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %/:      scripts prepare FORCE
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) $(build)=$(@D)
@@ -771,7 +771,7 @@ export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %.s: %.S scripts FORCE
 	$(Q)$(MAKE) $(build)=$(@D) $@
-%.o: %.S scripts FORCE
+%.o: %.S FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
 
 # 	FIXME: The asm symlink changes when $(ARCH) changes. That's
