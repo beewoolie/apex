@@ -1,10 +1,13 @@
 /* k3b_success.wav 8kHz, mono, 8 bit */
 
-typedef unsigned char sample_t;
+typedef signed char sample_t;
 #define C_SAMPLES (sizeof (rgbPCM))
 #define SOURCE_MONO
 #define SOURCE_8BIT
-#define SOURCE_SIGNED
+/* The documentation for wav files says that the data is signed, but
+   there is no way this data is signed.  The values of 0x7f and 0x80
+   must be close to each other in value. */
+//#define SOURCE_SIGNED
 sample_t __attribute__((section("pcm.data"))) rgbPCM[] = {
 	0x7f, 0x7f, 0x80, 0x7d, 0x7f, 0x80, 0x7f, 0x7f,
 	0x80, 0x7f, 0x80, 0x7f, 0x7d, 0x7f, 0x80, 0x7f,
