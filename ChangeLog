@@ -1,3 +1,7 @@
+2005-03-04  Marc Singer  <elf@buici.com>
+
+	* scripts/envmagic: Removed undesirable paths from the find.
+	
 2005-03-03  Marc Singer  <elf@buici.com>
 
 	* src/lib/png.c (read_png_row): Decoder working properly with the
