@@ -785,7 +785,7 @@ include/config.h: config
 # Single targets
 # ---------------------------------------------------------------------------
 
-%.s: %.c scripts FORCE
+%.s: %.c FORCE # scripts 
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %.i: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@

@@ -21,3 +21,4 @@
 
 lib-y := div64.o memcpy.o memchr.o memzero.o
 lib-y += relocate.o
+lib-y += exception_vectors.o

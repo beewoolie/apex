@@ -56,7 +56,8 @@
 #include "hardware.h"
 #include <spinner.h>
 
-//#define TALK
+#define TALK
+#define EXTENDED
 
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
 
@@ -220,6 +221,25 @@ static void nor_init (void)
 	  | (__REG16 (NOR_0_PHYS + (0x2f << WIDTH_SHIFT)) << 16)
 	  | (__REG16 (NOR_0_PHYS + (0x30 << WIDTH_SHIFT)) << 24));
 #endif
+
+#if defined (EXTENDED)
+
+ {
+   int ext = __REG16 (NOR_0_PHYS + (0x15 << WIDTH_SHIFT));
+   printf ("extended 0x%x\r\n", ext);
+
+   if (   __REG16 (NOR_0_PHYS + (ext << WIDTH_SHIFT)) == 'P'
+       && __REG16 (NOR_0_PHYS + ((ext + 1) << WIDTH_SHIFT)) == 'R'
+       && __REG16 (NOR_0_PHYS + ((ext + 2) << WIDTH_SHIFT)) == 'I') {
+    
+     printf ("features 0x%x\r\n",
+	     __REG16 (NOR_0_PHYS + ((ext + 5) << WIDTH_SHIFT))
+	     | (__REG16 (NOR_0_PHYS + ((ext + 6) << WIDTH_SHIFT)) << 8));
+   }
+ }
+
+#endif
+
 
   __REG16 (NOR_0_PHYS) = ClearStatus;
 #if defined (NOR_1_PHYS)

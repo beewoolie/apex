@@ -2,7 +2,8 @@
 
 
 OUTPUT_ARCH(arm)
-ENTRY(reset)
+EXTERN(exception_vectors)
+ENTRY(exception_vectors)
 SECTIONS
 {
 	. = APEX_VMA;

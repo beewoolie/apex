@@ -34,7 +34,6 @@
 #include <asm/bootstrap.h>
 
 extern void reset (void);
-extern void exception_error (void);
 extern int  initialize_bootstrap (void);
 extern void initialize_target (void);
 extern void initialize (void);
@@ -43,23 +42,6 @@ extern void setup_c (void);
 extern void init (void);
 
 
-/* exception_vectors
-
-   These are the vectored 
-
-*/
-
-void __naked __section(entry) exception_vectors (void)
-{
-  __asm ("b reset\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t"
-	 "b exception_error\n\t");
-}
 /* reset
 
    implements the reset exception vector.  All symbols but the init ()
@@ -88,19 +70,6 @@ void __naked __section (bootstrap) reset (void)
 
 	/* Start loader proper which doesn't return */
   __asm volatile ("mov pc, %0" :: "r" (&init)); 
-}
-
-
-/* exception_error
-
-   where bad exceptions go to fail.
-
-*/
-
-void __naked __section (bootstrap) exception_error (void)
-{
-  while (1)
-    ;
 }
 
 
