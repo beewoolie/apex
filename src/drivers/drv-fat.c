@@ -87,7 +87,7 @@
 #include <linux/kernel.h>
 #include <error.h>
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -322,10 +322,10 @@ static int fat_find (struct descriptor_d* d)
       }
       sz[k] = 0;
     }
-#if 1
+#if 0
     {
       unsigned cluster_next = fat_next_cluster (fat.file.cluster);
-      printf ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n", 
+      PRINTF ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n", 
 	      sz, fat.file.cluster, fat.file.length, 
 	      cluster_next, cluster_next);
     }
@@ -352,11 +352,11 @@ static int fat_open (struct descriptor_d* d)
   fat.fOK = 1;
 
 #if 0
-  printf ("descript %d %d\n", d->c, d->iRoot);
+  PRINTF ("descript %d %d\n", d->c, d->iRoot);
   {
     int i;
     for (i = 0; i < d->c; ++i)
-      printf ("  %d: (%s)\n", i, d->pb[i]);
+      PRINTF ("  %d: (%s)\n", i, d->pb[i]);
   }
 #endif
 
@@ -443,7 +443,12 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
     if (index + available > fat.index_cluster_file + fat.bytes_per_cluster)
       available = fat.index_cluster_file + fat.bytes_per_cluster - index;
 
-    printf (" fat.idx_clus_2 %d (%x) "
+    /* Bound within exact extent of file */
+    if (index + available > fat.file.length)
+      available = fat.file.length - index;
+
+#if 0
+    PRINTF (" fat.idx_clus_2 %d (%x) "
 	    " fat.clus_file %d "
 	    " fat.by_p_clus %d\n"
 	    " idx %d (%x) "
@@ -453,6 +458,7 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 	    fat.bytes_per_cluster,
 	    index, index,
 	    fat.index_cluster_file, fat.index_cluster_file);
+#endif
 
     fat.d.driver->seek (&fat.d, 
 			fat.index_cluster_2 
@@ -460,11 +466,14 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 			+ index - fat.index_cluster_file,
 			SEEK_SET);
 
-    cbRead = fat.d.driver->read (&fat.d, pv, available);
-    if (cbRead <= 0)
-      return cbRead;		/* Unrecoverable error */
-    d->index += cbRead;
-    cb -= cbRead;
+    {
+      ssize_t cbThis = fat.d.driver->read (&fat.d, pv, available);
+      if (cbThis <= 0)
+	break;
+      d->index += cbThis;
+      cb -= cbThis;
+      cbRead += cbThis;
+    }
   }
   return cbRead;
 }
@@ -544,7 +553,6 @@ static void fat_report (void)
     }
 #endif
 
-    //  }
 }
 
 #endif

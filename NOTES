@@ -5,6 +5,14 @@ APEX Boot Loader
 
 TODO:
 
+  o Need to add an info function.  I can be used to get info from a
+    driver or to look at a directory listing from FAT.  This idea
+    isn't quite complete.  It would be good to combine the driver info
+    stuff with this function in a way that the command 'describes' a
+    descriptor.  Thus, a descriptor for an exact file shows the file
+    info.  A descriptor for a directory lists the directory.  A
+    descriptor for a driver describes that driver.
+
   o The default length for descriptors needs to be thought out.  If we
     set the default length to the greatest length available, then we
     run into trouble with dump.  We could communicate something about
