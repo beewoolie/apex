@@ -5,3 +5,4 @@
 obj-y :=
 #obj-$(CONFIG_LPD7952X) += initialize.o
 obj-y += init.o init-drivers.o console.o console-printf.o
+obj-y += command.o cmd_version.o cmd_verify.o

@@ -34,6 +34,11 @@ SECTIONS
 		*(.driver_init)
 		APEX_DRIVER_INIT_END = .;
 	}
+	.command . : {
+		APEX_COMMAND_START = .;
+		*(.command)
+		APEX_COMMAND_END = .;
+	}
 	APEX_DATA_END = .;
 	APEX_VMA_END = .;
 	. = ALIGN (8);

@@ -151,3 +151,24 @@ Weak Symbols
    compiler and linker are not going to know where the code is and may
    not be confident that it will be nearby.  I wonder if I can hint
    that the routine must be close?
+
+Code Size
+
+ o The printf code is really big.  We could probably use a smaller
+   printf function and save some code.  It's about 4K right now.
+   There is a smaller version online.  I'd like to review uClib before
+   depending on code found on the net.
+
+
+Toolchain
+
+ o The 3.3 compiler that has worked so well for so long, seems to have
+   a problem with the printf() function.  The call
+
+     printf ("read done\r\n");
+
+   is automatically translated as puts which should be OK, except that
+   it doesn't copy the string correctly.  The final \n is truncated
+   from the constant pool.  Adding -fno-builtin-printf fixes the
+   problem.
+

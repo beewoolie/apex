@@ -73,10 +73,11 @@ ssize_t lh79524_serial_write (unsigned long fh, const void* pv, size_t cb)
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
-    while ((__REG (UART + UART_FR) & UART_FR_TXFE) == 0)
+    while ((__REG (UART + UART_FR) & UART_FR_TXFF))
       ;
 
     __REG (UART + UART_DR) = *pb;
+
     ++cWrote;
   }
   return cWrote;

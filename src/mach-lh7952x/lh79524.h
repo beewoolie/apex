@@ -192,6 +192,7 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000) /* works with 1:1 clock mode */
 
 #define UART_FR_RXFE (1<<4)
+#define UART_FR_TXFF (1<<5)
 #define UART_FR_TXFE (1<<7)
 #define UART_DR_PE (1<<9)
 #define UART_DR_OE (1<<11)

@@ -29,7 +29,7 @@
 
 #define WARN_ON(v) 
 
-#define SMALL
+//#define SMALL
 
 /**
  * simple_strtoul - convert a string to an unsigned long
@@ -264,6 +264,7 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 #if defined (SMALL)
   return 0;
 #else
+
 	int len;
 	unsigned long long num;
 	int i, base;
