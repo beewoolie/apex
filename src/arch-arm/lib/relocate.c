@@ -90,12 +90,18 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
 #if defined (CONFIG_MACH_IXP42X)
 	/* Drain write buffer */
-  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+  {
+    unsigned long v;
+    __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : "=r" (v) );
+  }
 //  COPROCESSOR_WAIT;
 
 	/* Invalidate caches (I&D) and branch buffer (BTB) */
-  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
-  COPROCESSOR_WAIT;
+ {
+   unsigned long v;
+   __asm volatile ("mcr p15, 0, %0, c7, c7, 0" : "=r" (v));
+   COPROCESSOR_WAIT;
+ }
 #endif
 
 				/* Return to SDRAM */
