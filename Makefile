@@ -168,9 +168,13 @@ APEXRELEASE:=$(VERSION).$(PATCHLEVEL)
 ifneq ($(SUBLEVEL),)
 APEXRELEASE+=.$(SUBLEVEL)
 endif
-APEXRELEASE+=$(EXTRAVERSION)$(LOCALVERSION)
-
-
+ifneq ($(EXTRAVERSION),)
+APEXRELEASE+=$(EXTRAVERSION)
+endif
+ifneq ($(LOCALVERSION),)
+APEXRELEASE+=$(LOCALVERSION)
+endif
+APEXRELEASE:=$(subst $(space),,$(APEXRELEASE))
 
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
