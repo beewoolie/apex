@@ -29,6 +29,12 @@
    normal serial includes.  Thus these macros are protected from being
    included when the uart macros have previously been included.
 
+   Do not include this header in source files.  Use 
+
+      #include <debug_ll.h>
+
+   which will get the global header that has additional macros.
+
 */
 
 #if !defined (__DEBUG_LL_H__)
@@ -44,8 +50,6 @@
 /* ----- Globals */
 
 /* ----- Prototypes */
-
-#if defined (CONFIG_DEBUG_LL)
 
 #if !defined (UART0_PHYS)
 
@@ -87,7 +91,5 @@
 
 #define PUTC_LL(c)	({ UART_DR = c; \
 			   while ((UART_LSR & UART_LSR_TEMT) == 0) ; })
-
-#endif
 
 #endif  /* __DEBUG_LL_H__ */

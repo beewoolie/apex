@@ -29,6 +29,7 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <debug_ll.h>
 
 
 /* relocate_apex
@@ -47,27 +48,42 @@
 void __naked __section (.bootstrap) relocate_apex (void)
 {
   extern unsigned long reloc;
+  unsigned long offset;
+  unsigned long lr;
+
+  PUTC_LL ('R');
   __asm volatile ("mov r0, lr\n\t"
 		  "bl reloc\n\t"
-	   "reloc: subs ip, %0, lr\n\t"
+	   "reloc: subs %0, %2, lr\n\t"
 	   ".globl reloc\n\t"
 		  "moveq pc, r0\n\t"	/* Return when already reloc'd  */
-		  "mov lr, r0\n\t"
-		  :
+		  "mov %2, r0\n\t"
+		  "mov %1, lr\n\t"
+		  : "=r" (offset), "=r" (lr)
 		  : "r" (&reloc)
-		  : "r0", "ip");
+		  : "r0", "lr");
+
+  PUTC_LL ('c');
 
   __asm volatile (
-		  "sub r0, r1, ip\n\t"
+		  "sub r0, %0, %2\n\t"
 	       "0: ldmia r0!, {r3-r10}\n\t"
 		  "stmia %0!, {r3-r10}\n\t"
 		  "cmp %0, %1\n\t"
 		  "bls 0b\n\t"
-		  "add pc, ip, lr\n\t" /* Return to SDRAM copy */
 		  :
-		  : "r" (&APEX_VMA_COPY_START), "r" (&APEX_VMA_COPY_END)
-		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "ip"
+		  : "r" (&APEX_VMA_COPY_START), "r" (&APEX_VMA_COPY_END),
+		    "r" (offset)
+		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"
 		  );		  
+
+  PUTHEX_LL (offset);
+  PUTC_LL ('+');
+  PUTHEX_LL (lr);
+
+  PUTC_LL ('j');
+				/* Return to SDRAM */
+  __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
 }
 
 

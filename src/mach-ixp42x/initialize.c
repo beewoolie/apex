@@ -37,8 +37,12 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <service.h>
+#include <debug_ll.h>
 
 #include "hardware.h"
+
+
+
 
 /* *** FIXME: sdram config constants should go here.  The Integrated
    Circuit Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
@@ -104,6 +108,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
   PUTC_LL('A');
+  PUTHEX_LL (0x12345678);
+  PUTC_LL(' ');
 #endif
 
   GPIO_ER &= ~0xf;
@@ -137,17 +143,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
-	/* Invalidate caches (I&D) and BTB (?) */
-  //  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
+	/* Drain write buffer */
+  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+  COPROCESSOR_WAIT;
+
+	/* Invalidate caches (I&D) and branch buffer (BTB) */
+  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   //  COPROCESSOR_WAIT;
 
 	/* Invalidate TLBs (I&D) */
   //  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
   //  COPROCESSOR_WAIT;
-
-	/* Drain write buffer */
-//  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-//  COPROCESSOR_WAIT;
 
 	/* Disable write buffer coalescing */
 #if 0
@@ -180,6 +186,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 	  /* Exit now if executing in SDRAM */ 
   if (EXP_CNFG0 & (1<<31)) {
+    PUTC_LL ('b');
     _L(LED1);
 
     /* Boot mode */
@@ -189,6 +196,26 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "movls r0, #0\n\t"
 		    "movls pc, %0\n\t"
 		    "1:": : "r" (lr), "i" (0x40000000), "i" (256*1024*1024));
+
+    PUTC_LL ('f');
+    /* Jump to the proper flash address before disabling boot mode */
+
+    {
+      __asm volatile ("add %0, %0, %1\n\t"
+		      "add pc, pc, %1"
+		      : "=r" (lr) : "r" (0x50000000 - 4));
+    }
+
+	/* Disable interrupts and set supervisor mode */
+    __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
+ 
+	/* Drain write buffer */
+    __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
+    COPROCESSOR_WAIT;
+
+    PUTC_LL ('+');
+    EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
+    PUTC_LL ('#');
   }
   else {
     _L(LED2);
@@ -247,7 +274,7 @@ static void target_init (void)
 {
   _L(LED6);
 
-  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
+  //  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
   __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
 
   _L(LED7);
