@@ -9,6 +9,7 @@ SECTIONS
 {
 	. = APEX_VMA;
 	APEX_VMA_ENTRY = .;
+	APEX_VMA_START = .;
 	APEX_VMA_COPY_START = .;
 	.entry : {
 		*(.entry)

@@ -1,3 +1,12 @@
+2005-03-15  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Added new START identifier for
+	the sake of the memory scan function.
+
+	* src/drivers/drv-mem.c (memory_scan): The memory scan function
+	needed to make sure not to write to BSS.  It now avoids the entire
+	memory image of APEX. 
+
 2005-03-10  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/initialize.c: SDRAM initialization was

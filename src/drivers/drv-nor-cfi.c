@@ -726,6 +726,10 @@ static void nor_release (void)
 static void nor_report (void)
 {
   int i;
+
+  if (!chip)
+    return;
+
   printf ("  nor:    %ldMiB total  %dB write buffer\n",
 	  chip->total_size/(1024*1024), chip->writebuffer_size);
   for (i = 0; i < chip->regions; ++i)
