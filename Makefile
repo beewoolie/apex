@@ -465,7 +465,8 @@ ifeq ($(KBUILD_EXTMOD),)
 scripts: scripts_basic include/config/MARKER
 	$(Q)$(MAKE) $(build)=$(@)
 
-scripts_basic: include/linux/autoconf.h
+# *** FIXME: we may want this dependency
+#scripts_basic: include/linux/autoconf.h
 
 # Objects we will link into vmlinux / subdirs we need to visit
 init-y		:= # init/
@@ -511,7 +512,7 @@ endif
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults vmlinux but it is usually overriden in the arch makefile
 # *** FIXME: can we make the apex.bin and even apex targets be in asm-arm?
-all: include/config.h apex apex.bin
+all: scripts_basic include/config.h apex apex.bin
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 CFLAGS		+= -Os
