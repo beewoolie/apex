@@ -56,7 +56,7 @@
 #include "hardware.h"
 #include <spinner.h>
 
-//#define TALK
+#define TALK
 //#define EXTENDED
 
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
@@ -163,7 +163,11 @@ static void nor_init (void)
     return;
 
   chip_probed.total_size 
-    = 1<<__REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT));
+    = (1<<__REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)))
+#if defined (NOR_1_PHYS)
+    *2
+#endif
+    ;
   chip_probed.writebuffer_size
     = 1<<(   __REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
 	  | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8));
@@ -365,7 +369,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 static void nor_erase (struct descriptor_d* d, size_t cb)
 {
-  int pageLast = -1;
+  //  int pageLast = -1;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -374,11 +378,12 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
   while (cb > 0) {
     unsigned long index = d->start + d->index;
-    int page = index/chip->erase_size;
+    //    int page = index/chip->erase_size;
     unsigned long available
       = chip->erase_size - (index & (chip->erase_size - 1));
     unsigned short status; 
 
+    //    printf ("nor_erase preindex 0x%lx\r\n", index);
     index = phys_from_index (index);
 
     if (available > cb)
@@ -386,16 +391,23 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
     index &= ~(chip->erase_size - 1);
 
+//    printf ("nor_erase index 0x%lx  page 0x%x  available 0x%lx\r\n",
+//	    index, page, available);
+
     vpen_enable ();
-    if (page != pageLast) {
+    //    if (page != pageLast) {
       status = nor_unlock_page (index);
       if (status & (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
-      pageLast = page;
-    }
+      //      pageLast = page;
+      //    }
+#if 1
     WRITE_ONE (index, Erase);
     WRITE_ONE (index, EraseConfirm);
     status = nor_status (index);
+#else
+    status = Ready;
+#endif
     vpen_disable ();
 
     SPINNER_STEP;
@@ -408,7 +420,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     }
 
     cb -= available;
-    d->index += cb;
+    d->index += available;
   }
 }
 
