@@ -58,17 +58,23 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <environment.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 
 
-extern char APEX_ENV_START;	/* Environment variable definitions */
+extern char APEX_ENV_START;
 extern char APEX_ENV_END;
+extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
-#define APEX_ENV APEX_VMA_END	/* Start of environment in flash */
+/* APEX_ENV points to the location in flash memory where the
+   environment resides.  It is mean to follow the APEX executable
+   directly.  When we start to use a bonafide driver to access the
+   environment, this will have to be revised. */
+#define APEX_ENV (CONFIG_APEX_LMA + &APEX_VMA_END - &APEX_VMA_START)
 
 #define ENV_MASK_DELETED (0x80)
 #define ENV_VAL_DELETED	 (0x00)
@@ -80,7 +86,7 @@ extern char APEX_VMA_END;
 			- (unsigned int) &APEX_ENV_START)\
 			/sizeof (struct env_d))
 #define ENVLIST(i)	(((struct env_d*) &APEX_ENV_START)[i])
-#define ENV_HEAD	((const char*) &APEX_ENV)
+#define ENV_HEAD	((const char*) APEX_ENV)
 
 static const char* _env_find (int i);
 static int _env_index (const char* sz);
