@@ -53,6 +53,9 @@ static __env struct env_d e_startup = {
 #if defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA)
     "copy " _t(CONFIG_ENV_REGION_KERNEL) " " _t(CONFIG_KERNEL_LMA) ";"
 #endif
+#if defined (CONFIG_ENV_REGION_RAMDISK) && defined (CONFIG_RAMDISK_LMA)
+    "copy " _t(CONFIG_ENV_REGION_RAMDISK) " " _t(CONFIG_RAMDISK_LMA) ";"
+#endif
 #if defined (CONFIG_ENV_AUTOBOOT)
 # if CONFIG_ENV_AUTOBOOT != 0
     "wait " _t(CONFIG_ENV_AUTOBOOT) " Press a key to cancel autoboot.;"
