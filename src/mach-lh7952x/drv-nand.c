@@ -147,10 +147,10 @@ static void nand_init (void)
   printf ("NAND flash ");
 
   if (chip)
-    printf (" %ldMiB total, %dKiB erase\r\n", 
+    printf (" %ldMiB total, %dKiB erase\n", 
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
   else
-    printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
+    printf (" unknown 0x%x/0x%x\n", manufacturer, device);
 #endif
 
  exit:
@@ -261,7 +261,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
-      printf ("Write failed at page %ld\r\n", page);
+      printf ("Write failed at page %ld\n", page);
       goto exit;
     }
   }    
@@ -300,7 +300,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
-      printf ("Erase failed at page %ld\r\n", page);
+      printf ("Erase failed at page %ld\n", page);
       goto exit;
     }
 

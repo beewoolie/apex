@@ -25,6 +25,11 @@
    DESCRIPTION
    -----------
 
+   The \r insertion code is, on the whole, relatively expensive
+   code-size wise.  It could be more elegant, but that would be an
+   even larger piece of code.  Still, we do it so that the program
+   code is more sensible.
+
 */
 
 #include <stdarg.h>
@@ -42,11 +47,18 @@ int printf (const char* fmt, ...)
   va_list ap;
   va_start (ap, fmt);
 
-  cb = vsnprintf (rgb, sizeof (rgb), fmt, ap);
+  cb = vsnprintf (rgb, sizeof (rgb) - 1, fmt, ap);
   va_end (ap);
+  rgb[cb] = 0;
   
-  if (cb > 0)
-    console_driver->write (0, rgb, cb);
+  {
+    char* pb = rgb;
+    for (; *pb; ++pb) {
+      if (*pb == '\n')
+	console_driver->write (0, "\r", 1);
+      console_driver->write (0, pb, 1);
+    }
+  }
 
   return cb;
 }

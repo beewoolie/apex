@@ -34,7 +34,7 @@
 
 int cmd_pause (int argc, const char** argv)
 {
-  printf ("pausing for 2 seconds\r\n");
+  printf ("pausing for 2 seconds\n");
 
 #if 0
   {
@@ -53,7 +53,7 @@ int cmd_pause (int argc, const char** argv)
   }
 #endif
 
-  printf ("done\r\n");
+  printf ("done\n");
 
   return 0;
 }

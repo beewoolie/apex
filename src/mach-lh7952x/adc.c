@@ -135,7 +135,7 @@ static void adc_setup (void)
 {
   int i;
 
-  printf ("adc: A2DCLK %d  SETTIME(US) %d\r\n", A2DCLK, SETTIME(US_SETTLING));
+  printf ("adc: A2DCLK %d  SETTIME(US) %d\n", A2DCLK, SETTIME(US_SETTLING));
 
   ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
 

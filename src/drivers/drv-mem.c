@@ -109,11 +109,11 @@ static void memory_report (void)
 {
   int i;
 
-  printf ("  memory:\r\n");
+  printf ("  memory:\n");
 
   for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i)
     if (regions[i].length)
-      printf ("    0x%lx 0x%08x (%d MiB)\r\n", 
+      printf ("    0x%lx 0x%08x (%d MiB)\n", 
 	      regions[i].start, regions[i].length, 
 	      regions[i].length/(1024*1024));
 }
@@ -182,7 +182,7 @@ static struct tag* atag_memory (struct tag* p)
     p->u.mem.start = regions[i].start;
     p->u.mem.size  = regions[i].length;
 			
-//    printf (" mem 0x%08x # 0x%08x\r\n", p->u.mem.start, p->u.mem.size);
+//    printf (" mem 0x%08x # 0x%08x\n", p->u.mem.start, p->u.mem.size);
     p = tag_next (p);
   }
 

@@ -58,7 +58,7 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
     switch (rgb[cb]) {
     case '\r':
       rgb[cb] = 0;		/* Mark end of input */
-      console_driver->write (0, "\r\n", 2);
+      console_driver->write (0, "\n", 2);
       break;
     case '\b':
       if (cb) {

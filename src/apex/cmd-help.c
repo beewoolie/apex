@@ -42,7 +42,7 @@ int cmd_help (int argc, const char** argv)
        ++command) {
     if (!command->command)
       continue;
-    printf (" %-*.*s - %s\r\n", 16, 16, command->command, 
+    printf (" %-*.*s - %s\n", 16, 16, command->command, 
 	    command->description ? command->description : "?");
   }
 

@@ -43,7 +43,7 @@ static int cmd_drvinfo (int argc, const char** argv)
        ++d) {
     if (!d->name)
       continue;
-    printf (" %-*.*s - %s\r\n", 16, 16, d->name, 
+    printf (" %-*.*s - %s\n", 16, 16, d->name, 
 	    d->description ? d->description : "?");
   }
 

@@ -94,7 +94,7 @@ int call_command (int argc, const char** argv)
        ++command) {
     if (strnicmp (argv[0], command->command, cb) == 0) {
       if (command_match) {
-	printf ("Ambiguous command.  Try 'help'.\r\n");
+	printf ("Ambiguous command.  Try 'help'.\n");
 	return ERROR_NOCOMMAND;
       }
       command_match = command;
@@ -109,7 +109,7 @@ int call_command (int argc, const char** argv)
     if (result < 0) {
       printf ("Error %d", result);
       printf (" (%s)", error_description);
-      printf ("\r\n");
+      printf ("\n");
     }
     return result;
   }
@@ -126,12 +126,12 @@ void exec_monitor (void)
     int argc;
     const char** argv;
     strcpy (sz, szStartup);
-    //    printf ("startup '%s'\r\n", sz);
+    //    printf ("startup '%s'\n", sz);
     
     while (*pch) {
       char* pchEnd = strchr (pch, ';');
       *pchEnd = 0;
-      printf ("\r# %s\r\n", pch);
+      printf ("\r# %s\n", pch);
       parse_command (pch, &argc, &argv);
       if (call_command (argc, argv))
 	break;

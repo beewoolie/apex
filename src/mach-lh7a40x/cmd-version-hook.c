@@ -41,9 +41,9 @@ int lh7952x_cmd_version (int argc, const char** argv)
 {
   int chip = (((CSC_PWRSR >> CSC_PWRSR_CHIPID_SHIFT)
 	       & CSC_PWRSR_CHIPID_MASK) & 0xf0);
-  printf ("  CPU  id %lx, %s\r\n", (CSC_PWRSR >> 16), 
+  printf ("  CPU  id %lx, %s\n", (CSC_PWRSR >> 16), 
 	  chip ? "lh7a404" : "lh7a400");
-  printf ("  CPLD revision 0x%x\r\n", CPLD_REVISION);
+  printf ("  CPLD revision 0x%x\n", CPLD_REVISION);
   return 0; 
 }
 

@@ -47,10 +47,10 @@ int lh7952x_cmd_version (int argc, const char** argv)
   case 0x525: sz = "lh79525"; break;
   }
 
-  printf ("  CPU  id 0x%x, %s\r\n", v, sz);
+  printf ("  CPU  id 0x%x, %s\n", v, sz);
 
 #if defined (CONFIG_MACH_LPD79524)
-  printf ("  CPLD revision 0x%x\r\n", __REG8 (0x4ca00000));
+  printf ("  CPLD revision 0x%x\n", __REG8 (0x4ca00000));
 #endif
 
   return 0;

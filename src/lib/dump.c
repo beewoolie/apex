@@ -53,7 +53,7 @@ void dump (const unsigned char* rgb, int cb, unsigned long index)
 	putchar (' ');
       putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
     }
-    printf ("\r\n");
+    printf ("\n");
 
     cb -= 16;
     index += 16;

@@ -45,7 +45,7 @@ int cmd_xreceive (int argc, const char** argv)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target %s (%d)\r\n", argv[1], result);
+    printf ("Unable to open target %s (%d)\n", argv[1], result);
     return ERROR_OPEN;
   }
 
@@ -59,7 +59,7 @@ int cmd_xreceive (int argc, const char** argv)
   
   {
     int cbRead = xmodem_receive (&d);
-    printf ("%d bytes received\r\n", cbRead);
+    printf ("%d bytes received\n", cbRead);
   }
   
   d.driver->close (&d);

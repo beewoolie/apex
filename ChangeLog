@@ -1,3 +1,8 @@
+2005-01-26  Marc Singer  <elf@buici.com>
+
+	* src/apex/console-printf.c (printf): Automatic insertion of
+	carriage-returns before newlines.
+ 
 2005-01-21  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-nor-cfi.c (nor_report): Added report

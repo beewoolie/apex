@@ -47,7 +47,7 @@ int cmd_checksum (int argc, const char** argv)
 
   if (   (result = parse_descriptor (argv[1], &d))
       || (result = open_descriptor (&d))) {
-    printf ("Unable to open target (%s)\r\n", argv[1]);
+    printf ("Unable to open target (%s)\n", argv[1]);
     goto fail;
   }
 
@@ -62,7 +62,7 @@ int cmd_checksum (int argc, const char** argv)
       index += cb;
     }
 
-    printf ("\rcrc32 %d bytes 0x%lx (%lu)\r\n", index, crc, crc);
+    printf ("\rcrc32 %d bytes 0x%lx (%lu)\n", index, crc, crc);
   }
 
  fail:

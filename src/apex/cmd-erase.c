@@ -44,7 +44,7 @@ int cmd_erase (int argc, const char** argv)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target %s (%d)\r\n", argv[1], result);
+    printf ("Unable to open target %s (%d)\n", argv[1], result);
     return ERROR_OPEN;
   }
 

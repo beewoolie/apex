@@ -92,7 +92,7 @@ static void clcdc_release (void)
 
   __REG(HRTFTC_PHYS + HRTFTC_SETUP) &= ~(1<<13); /* Disable HRTFT controller */
 
-//  printf ("clcdc %x %x\r\n", 
+//  printf ("clcdc %x %x\n", 
 //	  __REG(CLCDC_PHYS + CLCDC_CTRL), __REG(HRTFTC_PHYS + HRTFTC_SETUP));
 }
 

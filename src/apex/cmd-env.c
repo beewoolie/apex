@@ -96,7 +96,7 @@ int cmd_printenv (int argc, const char** argv)
       puts (" *= ");
     else
       puts (" = ");
-    printf ("%s\r\n", szValue);
+    printf ("%s\n", szValue);
   }
   return 0;
 }
@@ -143,7 +143,7 @@ static int cmd_setenv (int argc, const char** argv)
   result = env_store (argv[1], sz);
 
   if (result)
-    puts ("Unrecognized variable or environment\r\n");
+    puts ("Unrecognized variable or environment\n");
 
   return 0;
 }

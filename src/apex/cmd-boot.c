@@ -63,7 +63,7 @@ int cmd_boot (int argc, const char** argv)
   }
 
   if (address == 0xffffffff) {
-    printf ("Kernel address required.\r\n");
+    printf ("Kernel address required.\n");
     return 0;
   }
 
@@ -85,7 +85,7 @@ int cmd_boot (int argc, const char** argv)
   build_atags ();
 #endif
 
-  printf ("Booting kernel at 0x%p...\r\n", (void*) address);
+  printf ("Booting kernel at 0x%p...\n", (void*) address);
 
   //serial_flush_output();
 
@@ -94,7 +94,7 @@ int cmd_boot (int argc, const char** argv)
   ((void (*)(int, int, int)) address) 
     (0, arch_number, CONFIG_ATAG_PHYS);
 
-  printf ("Uh, oh.  Linux returned.\r\n");
+  printf ("Uh, oh.  Linux returned.\n");
 
   return 0;
 }
@@ -134,7 +134,7 @@ struct tag* atag_commandline (struct tag* p)
   }
 
   if (cb) {
-//    printf ("cmdline '%s'\r\n", p->u.cmdline.cmdline);
+//    printf ("cmdline '%s'\n", p->u.cmdline.cmdline);
     p->hdr.tag = ATAG_CMDLINE;
     p->hdr.size
       = (sizeof (struct tag_header) + cb + 4) >> 2;

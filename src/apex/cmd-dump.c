@@ -45,7 +45,7 @@ int cmd_dump (int argc, const char** argv)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target (%s)\r\n", argv[1]);
+    printf ("Unable to open target (%s)\n", argv[1]);
     goto fail;
   }
 

@@ -49,13 +49,13 @@ int cmd_copy (int argc, const char** argv)
 
   if (   (result = parse_descriptor (argv[1], &din))
       || (result = open_descriptor (&din))) {
-    printf ("Unable to open target %s\r\n", argv[1]);
+    printf ("Unable to open target %s\n", argv[1]);
     goto fail_early;
   }
 
   if (   (result = parse_descriptor (argv[2], &dout))
       || (result = open_descriptor (&din))) {
-    printf ("Unable to open target %s\r\n", argv[2]);
+    printf ("Unable to open target %s\n", argv[2]);
     goto fail;
   }
 
@@ -94,7 +94,7 @@ int cmd_copy (int argc, const char** argv)
     }
   }
 
-  printf ("\r%d bytes transferred\r\n", cbCopy);
+  printf ("\r%d bytes transferred\n", cbCopy);
 
  fail:
   close_descriptor (&din);

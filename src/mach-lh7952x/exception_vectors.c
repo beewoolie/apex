@@ -125,7 +125,7 @@ void lh7952x_exception_init (void)
 		  : "r3"
 		  );		  
 
-  printf ("exceptions %p %p\r\n", 
+  printf ("exceptions %p %p\n", 
 	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END);
 
   __REG (VIC_PHYS + VIC_INTSELECT) = 0;

@@ -44,21 +44,21 @@ command_func_t hook_cmd_version;
 int cmd_version (int argc, const char** argv)
 {
   printf (
-"\r\n\nAPEX Boot Loader " APEXRELEASE
-" -- Copyright (c) 2004 Marc Singer\r\n\n"
+"\n\nAPEX Boot Loader " APEXRELEASE
+" -- Copyright (c) 2004 Marc Singer\n\n"
 "APEX comes with ABSOLUTELY NO WARRANTY."
 #if !defined (CONFIG_SMALL)
-"  It is free software and you\r\n"
-"are welcome to redistribute it under certain circumstances.\r\n"
+"  It is free software and you\n"
+"are welcome to redistribute it under certain circumstances.\n"
 "For details, refer to the file COPYING in the program source."
 #endif
-"\r\n\n"
-"  apex => mem:0x%p#0x%lx\r\n"
+"\n\n"
+"  apex => mem:0x%p#0x%lx\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
 #if defined (CONFIG_ENV_REGION)
-  printf ("  env  => %s\r\n", _t(CONFIG_ENV_REGION));
+  printf ("  env  => %s\n", _t(CONFIG_ENV_REGION));
 #endif
 
   if (hook_cmd_version)

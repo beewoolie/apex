@@ -204,7 +204,7 @@ static void execute_spi_command (int v, int cwrite)
 {
   unsigned char reg;
 
-  PRINTF ("spi 0x%04x -> 0x%x\r\n", v & 0x1ff, (v >> CODEC_ADDR_SHIFT) & 0x7f);
+  PRINTF ("spi 0x%04x -> 0x%x\n", v & 0x1ff, (v >> CODEC_ADDR_SHIFT) & 0x7f);
   enable_cs ();
 
   reg = __REG8 (CPLD_SPI) & ~CPLD_SPI_TX;
@@ -288,7 +288,7 @@ static void codec_configure (int frequency, int sample_size)
     break;
   }
 
-  PRINTF ("configuring codec for %d Hz with 0x%x\r\n", frequency, v);
+  PRINTF ("configuring codec for %d Hz with 0x%x\n", frequency, v);
   execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16);
 
   MASK_AND_SET (SSP_CTRL0, 0xf, (sample_size - 1) & 0xf);
@@ -336,7 +336,7 @@ void ssp_set_speed (int speed)
 
   rcpc_prescale /= 32;		/* Compensate for the frame size */
 
-  PRINTF ("ssp_set_speed  rcpc_ssppre %d  dvsr %d  cpd %d\r\n", 
+  PRINTF ("ssp_set_speed  rcpc_ssppre %d  dvsr %d  cpd %d\n", 
 	  rcpc_prescale, ssp_dvsr, ssp_cpd);
 
   __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
@@ -454,7 +454,7 @@ static void codec_init (void)
 
   codec_enable ();
 
-//  printf ("ssp: status 0x%lx\r\n", __REG (SSP_PHYS | SSP_SR));
+//  printf ("ssp: status 0x%lx\n", __REG (SSP_PHYS | SSP_SR));
 }
 
 static void codec_release (void)
@@ -526,7 +526,7 @@ static int convert_source (void)
 #else
   PRINTF (" mono");
 #endif
-  PRINTF (" %d samples\r\n", buffer_samples);
+  PRINTF (" %d samples\n", buffer_samples);
 
   is = 0;
   ib = 0;
