@@ -116,3 +116,17 @@ Configuration
   CONFIG_LPD7A400
   CONFIG_LPD7A404
   CONFIG_CONSOLE_DEVICE - Defines which serial (or other) device is console
+
+Kernel Build Scripts
+
+ o The directory Makefiles may be invoked in two different situations.
+   Actually, only the primary one, for the architecture, is like that.
+   It may be included in the top-level Makefile in which case it is
+   used to configure how the kernel will be built.  It may then be
+   invoked as a Makefile used to build targets in that directory.  This
+   can be confusing when it needs to define targets that must not
+   override the default for the top-level Makefile.  The kernel doesn't
+   need to worry about this, I believe, because it does not depend on
+   the arch/$(ARCH) directory to build a target necessary for the
+   vmlinux file.  Instead, it only calls arch/$(ARCH)/Makefile to build
+   boot targets.

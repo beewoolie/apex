@@ -7,6 +7,9 @@ src := $(obj)
 # Read .config if it exist, otherwise ignore
 -include .config
 
+# Read config if it exist, otherwise ignore
+-include config
+
 include $(obj)/Makefile
 
 include scripts/Makefile.lib

@@ -8,7 +8,8 @@ OUTPUT_ARCH(arm)
 ENTRY(reset)
 SECTIONS
 {
-	APEX_LMA_START = .;
+	. = APEX_VMA;
+	APEX_LMA_START = APEX_LMA;
 	APEX_VMA_START = .;
 	.entry : {
 		*(.entry)
@@ -24,13 +25,15 @@ SECTIONS
 		*(.glue_7)
 		*(.glue_7t)
 	}
-	.data : {
+	. = ALIGN (8);
+	.data . : {
 		APEX_DATA_START = .;
 		*(.data)
 		APEX_DATA_END = .;
 	}
-	APEX_LMA_END = .;
-	.bss : {
+	APEX_VMA_END = .;
+	. = ALIGN (8);
+	.bss . : {
 		APEX_BSS_START = .;
 		*(.bss)
 		APEX_BSS_END = .;

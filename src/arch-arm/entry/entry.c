@@ -13,12 +13,12 @@
 # include <config.h>
 #endif
 
-extern unsigned long APEX_LMA_START;
-extern unsigned long APEX_LMA_END;
-extern unsigned long APEX_VMA_START;
-extern unsigned long APEX_STACK_START;
-extern unsigned long APEX_BSS_START;
-extern unsigned long APEX_BSS_END;
+extern char APEX_LMA_START;
+extern char APEX_VMA_START;
+extern char APEX_VMA_END;
+extern char APEX_STACK_START;
+extern char APEX_BSS_START;
+extern char APEX_BSS_END;
 
 #define __weak __attribute__((weak))
 #define __naked __attribute__((naked))
@@ -27,6 +27,7 @@ extern unsigned long APEX_BSS_END;
 extern void __weak reset (void);
 extern void __weak exception_error (void);
 extern void initialize_bootstrap (void);
+extern void initialize_target (void);
 extern void initialize (void);
 extern void __weak relocate_apex (void);
 extern void __weak setup_c (void);
@@ -50,8 +51,6 @@ void __naked __section(.entry) exception_vectors (void)
 	 "b exception_error\n\t"
 	 "b exception_error\n\t");
 }
-
-
 /* reset
 
    implements the reset exception vector.  All symbols but the init ()
@@ -65,7 +64,9 @@ void __naked __section (.bootstrap) reset (void)
   relocate_apex ();
   initialize_target ();
   setup_c ();
-  init ();			/* Start the loader, doesn't return */
+
+	/* Start loader proper which doesn't return */
+  __asm volatile ("mov pc, %0" :: "r" (&init)); 
 }
 
 
@@ -88,6 +89,11 @@ void __naked __section (.bootstrap) exception_error (void)
    from NOR flash into SDRAM.  The controlling symbols come from the
    loader link map.
 
+   *** FIXME: it might be prudent to check for the VMA being greater
+   *** than or less than the LMA.  As it stands, we depend on
+   *** twos-complement arithmetic to make sure that offset works out
+   *** when we jump to the relocated code.
+
 */
 
 void __naked __section (.bootstrap) relocate_apex (void)
@@ -95,11 +101,11 @@ void __naked __section (.bootstrap) relocate_apex (void)
   __asm (
       "0: ldmia %0!, {r3-r10}\n\t"
 	 "stmia %1!, {r3-r10}\n\t"
-	 "cmp %0, %2\n\t"
+	 "cmp %1, %2\n\t"
 	 "ble 0b\n\t"
 	 "add pc, lr, %3\n\t"
 	 : 
-      : "r" (&APEX_LMA_START), "r" (&APEX_VMA_START), "r" (&APEX_LMA_END),
+      : "r" (&APEX_LMA_START), "r" (&APEX_VMA_START), "r" (&APEX_VMA_END),
 	"r" (&APEX_VMA_START - &APEX_LMA_START)
       : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10" 
 	 );
@@ -119,7 +125,7 @@ void __naked __section (.text) setup_c (void)
   __asm ("mov sp, %0" :: "r" (&APEX_STACK_START));
 
 	/* Clear BSS */
-  if (&APEX_BSS_START != APEX_BSS_END)
+  if (&APEX_BSS_START != &APEX_BSS_END)
     __asm (
 	   "0: stmia %0!, {%2}\n\t"
 	   "   cmp %0, %1\n\t"

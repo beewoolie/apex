@@ -104,7 +104,7 @@ static void __attribute__((naked, section(".bootstrap")))
 
 */
 
-void  __attribute__((naked, section(".text"))) initialize_bootstrap (void)
+void  __attribute__((naked, section(".bootstrap"))) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr\n\t"
@@ -215,7 +215,7 @@ void  __attribute__((naked, section(".text"))) initialize_bootstrap (void)
 
 */
 
-void  __attribute__((naked, section(".bootstrap"))) initialize_target (void)
+void  __attribute__((naked, section(".text"))) initialize_target (void)
 {
 	/* CompactFlash, 16 bit */
   __REG (EMC_PHYS | EMC_SCONFIG2)    = 0x81;
@@ -225,4 +225,7 @@ void  __attribute__((naked, section(".bootstrap"))) initialize_target (void)
   __REG (EMC_PHYS | EMC_SWAITPAGE2)  = 2;
   __REG (EMC_PHYS | EMC_SWAITWR2)    = 6;
   __REG (EMC_PHYS | EMC_STURN2)      = 1;
+
+  __asm volatile ("mov pc, lr");
+
 }
