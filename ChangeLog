@@ -1,3 +1,15 @@
+2005-02-11  Marc Singer  <elf@buici.com>
+
+	* Makefile: 1.0.22 for NSLU2 updates.
+
+	* src/mach-ixp42x/nslu2.h: Adding header specific to this target.
+
+	* src/mach-ixp42x/initialize.c (initialize_bootstrap):
+	Initializing the GPIO lines. Adding more LED changes.
+
+	* src/mach-ixp42x/nslu2_config (CONFIG_SPINNER): Adding
+	configuration options for more.
+
 2005-02-10  Marc Singer  <elf@buici.com>
 
 	* include/attributes.h (__attribute__): Builds with 2.95.3.  Not

@@ -199,6 +199,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   SDR_IR = SDR_IR_NOP;
   usleep (200);			/* datasheet: maintain 200us of NOP */
 
+  _L(LED4);
+
   /* 133MHz timer cycle count, 0x81->969ns == ~1us */
   /* datasheet: not clear what the refresh requirement is.  */
   SDR_REFRESH = 0x81;		/* *** FIXME: calc this */
@@ -221,6 +223,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   usleep (1);			/* Must wait for 3 CPU cycles before
 				   SDRAM access */
 
+  _L(LED5);
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
 }
@@ -235,8 +239,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 static void target_init (void)
 {
+  _L(LED6);
+
   EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
   __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
+
+  _L(LED7);
 }
 
 static void target_release (void)
