@@ -39,13 +39,13 @@ SECTIONS
 		APEX_SERVICE_END = .;
 	}
 	.driver . : {
-		APEX_DRIVER_INIT_START = .;
+		APEX_DRIVER_START = .;
 		*(.driver_0)
 		*(.driver_1)
 		*(.driver_2)
 		*(.driver_3)
 		*(.driver)
-		APEX_DRIVER_INIT_END = .;
+		APEX_DRIVER_END = .;
 	}
 	.command . : {
 		APEX_COMMAND_START = .;

@@ -104,7 +104,7 @@ static size_t memory_seek (unsigned long fh, ssize_t ib, int whence)
 
 static __driver_0 struct driver_d memory_driver = {
   .name = "memory",
-  .description = "memory driver",
+  .description = "memory driver (SDRAM/DRAM/SRAM)",
   //  .flags = DRIVER_ | DRIVER_CONSOLE,
   .probe = memory_probe,
   .open = memory_open,

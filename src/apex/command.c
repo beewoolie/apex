@@ -39,9 +39,9 @@ void call_command (int argc, const char** argv)
 	return;
       }
       command_match = command;
+      if (command->command[cb] == 0) /* Exact match */
+	break;
     }
-    if (command->command[cb] == 0) /* Exact match */
-      break;
   }
   if (command_match)
     command_match->func (argc, argv);
