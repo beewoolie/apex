@@ -180,8 +180,10 @@ static ssize_t nand_read (unsigned long fh, void* pv, size_t cb)
 
 static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
 {
+  int cbWrote = 0;
+
   if (!chip)
-    return 0;
+    return cbWrote;
 
   if (descriptors[fh].ib + cb > descriptors[fh].cb)
     cb = descriptors[fh].cb - descriptors[fh].ib;
@@ -206,6 +208,7 @@ static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
 
     descriptors[fh].ib += available;
     cb -= available;
+    cbWrote += available;
 
     while (available--)
       __REG8 (NAND_DATA) = *((char*) pv++);
@@ -220,11 +223,11 @@ static ssize_t nand_write (unsigned long fh, const void* pv, size_t cb)
     __REG8 (NAND_CLE) = Status;
     if (__REG8 (NAND_DATA) & Fail) {
       printf ("Write failed at page %ld\r\n", page);
-      return 0;
+      return cbWrote;
     }
   }    
 
-  return 0;			/* *** FIXME: we aleays return zero? */
+  return cbWrote;
 }
 
 static void nand_erase (unsigned long fh, size_t cb)
