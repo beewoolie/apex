@@ -25,7 +25,9 @@
    DESCRIPTION
    -----------
 
-   FAT Filesystem Driver 
+   FAT Filesystem Driver.  This driver should be platform independent.
+   The only hook to the rest of the system is the name of the driver
+   that handles the underlying I/O.
 
    o bootsector
 
@@ -68,9 +70,6 @@
 #include <spinner.h>
 #include <linux/kernel.h>
 #include <error.h>
-
-#include "hardware.h"
-#include "compactflash.h"
 
 #define TALK
 

@@ -21,3 +21,5 @@
 
 obj-y := driver.o
 obj-y += drv-mem.o
+
+obj-$(CONFIG_DRIVER_FAT)	+= drv-fat.o
