@@ -43,5 +43,4 @@ unpack:
 	(cd $HERE; patch -p1 ../ixp400_xscale_1.5_linux26.patch)
 
 prep:
-	ln -s src/mach-ixp42x/_intel/ixp400_xscale_sw/lib/linuxbe \
-	      src/mach-ixp42x/_intel/lib
+	[ -L $HERE/lib ] || ln -s $HERE/ixp400_xscale_sw/lib/linuxbe $HERE/lib
