@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Mar 20 18:15:59 2005
+# Sun Mar 20 21:22:53 2005
 #
 CONFIG_ARM=y
 CONFIG_ARCH_LH7952X=y
@@ -19,6 +19,7 @@ CONFIG_SPINNER=y
 CONFIG_ATAG=y
 CONFIG_MACH_LPD79520=y
 # CONFIG_MACH_LPD79524 is not set
+# CONFIG_MACH_KEV79524 is not set
 
 #
 # Platform Setup
@@ -35,6 +36,7 @@ CONFIG_NOR_BANK0_START=0x44000000
 CONFIG_NOR_BANK0_LENGTH=0x00800000
 # CONFIG_NOR_BANK1 is not set
 # CONFIG_NAND_LPD is not set
+CONFIG_ENV_STARTUP=""
 
 #
 # Platform Drivers
