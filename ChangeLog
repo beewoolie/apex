@@ -1,5 +1,8 @@
 2005-03-20  Marc Singer  <elf@buici.com>
 
+	* Fixed menuconfig.  Still, I've never been able to edit strings,
+	hex's, or int's in menuconfig. It's there for the folks who want it.
+
 	* Makefile (SUBLEVEL): Rolling revision for integration of new
 	configuration support.  This is a big deal because it means that
 	configurations are easier to build and more robust.
