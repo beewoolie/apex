@@ -129,12 +129,16 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #if defined (CONFIG_DEBUG_LL)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
   RCPC_PCLKCTRL0 &= ~RCPC_PCLKCTRL0_U0;
+  RCPC_PCLKSEL0  &= ~(1<<0);
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
+
+  MASK_AND_SET (IOCON_MUXCTL5, (3<<10)|(3<<8), (2<<10)|(2<<8));
+  MASK_AND_SET (IOCON_MUXCTL6, (3<<2)|(3<<0), (2<<2)|(2<<0));
 
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
   
-  UART_IBRD = 8;
-  UART_FBRD = 0;
+  UART_IBRD = 6;
+  UART_FBRD = 8;
   UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
   UART_IMSC = 0x00; /* Mask interrupts */
   UART_ICR  = 0xff; /* Clear interrupts */
@@ -147,7 +151,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
 
   RCPC_AHBCLKCTRL = RCPC_AHBCLKCTRL_V;
-  RCPC_PCLKCTRL0  = RCPC_PCLKCTRL0_V;
+  RCPC_PCLKCTRL0  &= ~(1<<9);	/* RTC enable */
   RCPC_PCLKCTRL1  = RCPC_PCLKCTRL1_V;
   RCPC_PCLKSEL0   = RCPC_PCLKSEL0_V;
 
@@ -202,12 +206,16 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   CPLD_FLASH	&= ~(CPLD_FLASH_NANDSPD);	/* Fast NAND */
 #endif
 
+  PUTC_LL('x');
+
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
 		  "cmp %0, %1\n\t"
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
 		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+
+  PUTC_LL('r');
 
 	/* SDRAM */
   EMC_READCONFIG  = EMC_READCONFIG_CMDDELAY;
@@ -245,6 +253,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNCFG0     = SDRAM_CFG;
   EMC_DYNCFG1     = SDRAM_CFG;
   
+  PUTC_LL('j');
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
 }

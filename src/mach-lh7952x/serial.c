@@ -74,15 +74,6 @@ void lh7952x_serial_init (void)
   u32 divisor_i = 0;
   u32 divisor_f = 0;
 
-#if defined (CONFIG_MACH_LH79524)
-  switch (baudrate) {
-  case 115200: 
-    divisor_i = 6; divisor_f = 8; break;
-
-  default:
-    return;
-  }
-#endif
 
   /* *** FIXME: the only reason there are two of these is because the
      *** name of the constants changed.  Also, the UARTMUX stuff.
@@ -97,6 +88,14 @@ void lh7952x_serial_init (void)
     ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);    
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
+  switch (baudrate) {
+  case 115200: 
+    divisor_i = 8; divisor_f = 0; break;
+
+  default:
+    return;
+  }
+
 #endif
 
 #if defined (CONFIG_MACH_LH79524)
@@ -107,15 +106,15 @@ void lh7952x_serial_init (void)
     ~(RCPC_PCLKCTRL0_U0 | RCPC_PCLKCTRL0_U1 | RCPC_PCLKCTRL0_U2);    
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
-#endif
-
   switch (baudrate) {
   case 115200: 
-    divisor_i = 8; divisor_f = 0; break;
+    divisor_i = 6; divisor_f = 8; break;
 
   default:
     return;
   }
+#endif
+
 
 //  while (UART_FR & UART_FR_BUSY)
 //    ;
