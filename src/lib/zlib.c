@@ -1,10 +1,10 @@
 /* zlib.c
 
    The file was taken from the uboot project.  It is modified to
-   eliminate staticly initialized variables which are not permitted in
-   APEX.  Variables must either be initialized to zero, or initialized
-   during initialization.  There may be static data, but those data
-   must not be const and not at runtime.
+   eliminate staticly initialized variables.  Variables must either be
+   initialized to zero, or initialized at runtime.  There may be
+   static data, but those data must be const and not modified at
+   runtime.
 
 */
 
