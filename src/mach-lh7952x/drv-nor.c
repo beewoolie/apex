@@ -10,7 +10,14 @@
    DESCRIPTION
    -----------
 
-   NOR flash block IO driver for LPD 79524.
+   NOR flash block IO driver for LPD 79524.  The is, in the sum, a CFI
+   compliant driver.  Nothing has been done to make it a general
+   solution since it is more important that the driver be small than
+   there be much code sharing.  After all, the code isn't very large
+   and it is unlikely to require revision.
+
+   It's important that the driver leave the memory array in ReadArray
+   mode so that the memory driver can be used to read from the device.
 
 */
 
@@ -19,6 +26,8 @@
 #include <apex.h>
 #include <config.h>
 #include "lh79524.h"
+
+#define TALK
 
 #define NOR_0_PHYS	(0x44000000)
 #define NOR_0_LENGTH	(8*1024*1024)
@@ -45,7 +54,7 @@
 
 #define CPLD_REG_FLASH	(0x4c800000)
 #define RDYnBSY		(1<<2)
-#define VPEN		(1<<0)
+#define FL_VPEN		(1<<0)
 
 #define Ready		(1<<7)
 #define EraseSuspended	(1<<6)
@@ -76,10 +85,17 @@ const static struct nor_chip* chip;
 
 static struct nor_descriptor descriptors[2];
 
+static unsigned long phys_from_ib (unsigned long ib)
+{
+  return ib + ((ib < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
+}
+
 static int nor_probe (void)
 {
   unsigned char manufacturer;
   unsigned char device;
+
+  __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
 
   __REG16 (NOR_0_PHYS) = ReadArray;
   __REG16 (NOR_0_PHYS) = ReadID;
@@ -100,6 +116,8 @@ static int nor_probe (void)
   if (chip >= chips + sizeof(chips)/sizeof (chips[0]))
       chip = NULL;
 
+#if defined (TALK)
+
   printf ("\r\nNOR flash ");
 
   if (chip)
@@ -107,6 +125,8 @@ static int nor_probe (void)
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
   else
     printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
+
+#endif
 
   return chip == NULL;		/* Present and initialized */
 }
@@ -155,14 +175,13 @@ static ssize_t nor_read (unsigned long fh, void* pv, size_t cb)
     int available = cb;
     if (index < NOR_0_LENGTH && index + available > NOR_0_LENGTH)
       available = NOR_0_LENGTH - index;
-    index += (index < NOR_0_LENGTH) ? NOR_0_PHYS : NOR_1_PHYS - NOR_0_LENGTH;
+    index = phys_from_ib (index);
 
     descriptors[fh].ib += available;
     cb -= available;
     cbRead += available;
 
-    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
-
+    //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     __REG16(index) = 0xff;
     memcpy (pv, (void*) index, available);
 
@@ -226,6 +245,8 @@ static ssize_t nor_write (unsigned long fh, const void* pv, size_t cb)
   return cbWrote;
 }
 
+#endif
+
 static void nor_erase (unsigned long fh, size_t cb)
 {
   if (!chip)
@@ -234,35 +255,39 @@ static void nor_erase (unsigned long fh, size_t cb)
   if (cb > descriptors[fh].ib + descriptors[fh].cb)
     cb = descriptors[fh].cb + descriptors[fh].ib;
 
-  do {
-    unsigned long block = descriptors[fh].ib/chip->erase_size;
+  while (cb > 0) {
+    unsigned long index
+      = phys_from_ib (descriptors[fh].ibStart + descriptors[fh].ib);
+    unsigned long available
+      = ((index + chip->erase_size)&~(chip->erase_size - 1)) - index;
+    unsigned short status; 
+    if (available > cb)
+      available = cb;
 
-    __REG8 (NOR_CLE) = Erase;
-    __REG8 (NOR_ALE) = (block & 0xff);
-    __REG8 (NOR_ALE) = ((block >> 8) & 0xff);
-    __REG8 (NOR_CLE) = EraseConfirm;
+    index &= ~(chip->erase_size - 1);
 
-    wait_on_busy ();
+    __REG16 (CPLD_REG_FLASH) |= FL_VPEN;
+    __REG16 (index) = Erase;
+    __REG16 (index) = EraseConfirm;
 
-    __REG8 (NOR_CLE) = Status;
-    if (__REG8 (NOR_DATA) & Fail) {
-      printf ("Erase failed at block %ld\r\n", block);
+    do {
+      status = __REG16 (index);
+    } while ((status & Ready) == 0);
+    
+    __REG16 (CPLD_REG_FLASH) &= ~FL_VPEN;
+
+    if (status & EraseError) {
+      printf ("Erase failed at 0x%p (%x)\r\n", (void*) index, status);
+      __REG16 (index) = ClearStatus;
       return;
     }
 
-    if (cb > chip->erase_size) {
-      cb -= chip->erase_size;	/* *** FIXME round properly!  */
-      descriptors[fh].ib += chip->erase_size;
-    }
-    else {
-      cb = 0;
-      descriptors[fh].ib = descriptors[fh].cb;
-    }
-  } while (cb > 0);
+    cb -= available;
+    descriptors[fh].ib += cb;
+
+    __REG16 (index) = ReadArray;
+  }
 }
-
-
-#endif
 
 static size_t nor_seek (unsigned long fh, ssize_t ib, int whence)
 {
@@ -295,7 +320,7 @@ static __driver_3 struct driver_d nor_driver = {
   .close = nor_close,
   .read = nor_read,
   //  .write = nor_write,
-  //  .erase = nor_erase,
+  .erase = nor_erase,
   .seek = nor_seek,
 };
 
