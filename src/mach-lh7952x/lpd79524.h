@@ -55,9 +55,10 @@
 #define CPLD_SPI_CS_MAC		(1<<4)
 #define CPLD_SPI_CS_EEPROM	(1<<3)
 #define CPLD_SPI_SCLK		(1<<2)
-#define CPLD_SPI_TX		(1<<1)
-#define CPLD_SPI_RX		(1<<0)
+#define CPLD_SPI_TX_SHIFT	(1)
+#define CPLD_SPI_TX		(1<<CPLD_SPI_TX_SHIFT)
 #define CPLD_SPI_RX_SHIFT	(0)
+#define CPLD_SPI_RX		(1<<CPLD_SPI_RX_SHIFT)
 
 #define NOR_0_PHYS	(0x44000000)
 #define NOR_0_LENGTH	(8*1024*1024)

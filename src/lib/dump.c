@@ -57,5 +57,6 @@ void dump (const unsigned char* rgb, int cb, unsigned long index)
 
     cb -= 16;
     index += 16;
+    rgb += 16;
   }
 }

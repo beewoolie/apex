@@ -1,3 +1,10 @@
+2004-11-17  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c (emac_read_mac): Fixed the EEPROM
+	code.
+
+	* src/lib/dump.c (dump): Correct bug offset to rgb.
+
 2004-11-16  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-emac.c (cmd_emac): Ethernet MAC maintenance
