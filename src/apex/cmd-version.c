@@ -1,4 +1,4 @@
-/* cmd_version.c
+/* cmd-version.c
      $Id$
 
    written by Marc Singer
@@ -40,7 +40,7 @@ int cmd_version (int argc, const char** argv)
 	  "Copyright (c) 2004, Marc Singer\r\n"
 	  "APEX comes with ABSOLUTELY NO WARRANTY. It is free software and\r\n"
 	  "you are welcome to redistribute it under certain circumstances.\r\n"
-	  "Refer to the file COPYING in the source for details.\r\n\n"
+	  "Refer to the file COPYING in the source for details.\r\n\n",
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
   return 0;
