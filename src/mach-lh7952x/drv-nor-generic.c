@@ -289,7 +289,7 @@ static void nor_init (void)
 
   chip = &chip_probed;
 
-#if 1
+#if 0
   printf ("\r\nNOR flash ");
 
   if (chip) {
