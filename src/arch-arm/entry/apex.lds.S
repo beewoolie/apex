@@ -65,6 +65,11 @@ SECTIONS
 		*(.command)
 		APEX_COMMAND_END = .;
 	}
+	.env . : {
+		APEX_ENV_START = .;
+		*(.env)
+		APEX_ENV_END = .;
+	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (8);

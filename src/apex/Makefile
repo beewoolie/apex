@@ -15,7 +15,8 @@ obj-$(CONFIG_CMD_ERASE) += cmd-erase.o
 obj-$(CONFIG_CMD_PAUSE) += cmd-pause.o
 obj-$(CONFIG_CMD_VERIFY) += cmd-verify.o
 obj-$(CONFIG_CMD_XRECEIVE) += cmd-xreceive.o
-# xmodem.o
+obj-$(CONFIG_CMD_ENV) += cmd-env.o
+
 
 #CFLAGS += -mthumb
 #CFLAGS_xmodem.o += -mthumb
