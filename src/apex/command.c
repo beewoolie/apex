@@ -16,6 +16,7 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <command.h>
+#include <error.h>
 
 void call_command (int argc, const char** argv) 
 {
@@ -45,7 +46,7 @@ void call_command (int argc, const char** argv)
   }
   if (command_match) {
     int result = command_match->func (argc, argv);
-    if (result)
+    if (result < 0)
       printf ("Error %d\r\n", result);
   }
 }

@@ -63,14 +63,14 @@ static char rgbXmodem[1024];
 
 static inline void _send (char ch)
 { 
-  console_driver->write (0, &ch, 1);
+  console_driver->write (NULL, &ch, 1);
 }
 
 static inline void _read_flush (void)
 {
-  while (console_driver->poll (0, 1)) {
+  while (console_driver->poll (NULL, 1)) {
     char ch;
-    console_driver->read (0, &ch, 1);
+    console_driver->read (NULL, &ch, 1);
   }
 }
   
