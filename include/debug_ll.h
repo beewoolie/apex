@@ -21,6 +21,8 @@
 
 #if defined (CONFIG_DEBUG_LL)
 # include <mach/debug_ll.h>
+#else
+# define PUTC_LL(c) do {} while (0)
 #endif
 
 /* ----- Types */
