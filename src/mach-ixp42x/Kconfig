@@ -12,3 +12,7 @@ config MACH_NSLU2
 endchoice
 
 endif
+
+config ARCH_IXP420
+	bool
+

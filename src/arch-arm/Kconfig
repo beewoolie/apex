@@ -18,7 +18,7 @@ config ARM
 
 choice
 	prompt "ARM Platform"
-	default ARCH_LH79524
+	default ARCH_LH7952X
 
 config ARCH_LH7952X
 	bool "Sharp LH7952X"
@@ -31,6 +31,60 @@ config ARCH_IXP42X
 
 endchoice
 
+config EXPERIMENTAL
+	bool "Enable experimental features"
+	default n
+	help
+	  This option grants configuration access to experimental
+	  features.  It is best to leave this disabled.
+
+menu "General Setup"
+
+config SMALL
+	bool "Make APEX small"
+	default n
+	help
+	  This option helps make APEX as small as possible.  It
+	  removes unnecessary strings and selects smallest command and
+	  driver implementations when available.  Selecting this
+	  option may make APEX difficult for novice users to operate.
+
+config DEBUG_LL
+	bool "Low-level debug support"
+	default n
+	help
+	  Setting this option enables extra debug code in the bool
+	  loader startup.
+
+config SPINNER
+	bool "Spinner"
+	default y
+	depends on SMALL=n
+	help
+	  Implements a user feedback device for showing progress when
+	  APEX is executing long tasks.  Usually, the feedback is
+	  limited to a spinning bar on the console.  Target
+	  implementations may include custom code, e.g. flashing LEDs
+
+config ATAG
+	bool "Build ATAG list for Linux kernel"
+	default y
+	help
+	  It is strongly recommended that ATAG support be included
+	  with the boot loader.  Linux kernel version 2.6 requires
+	  it.  Including ATAG support will not preclude booting to
+	  older kernels.
+
+config INTERRUPTS
+	bool "Enable interrupt handlers"
+	depends on EXPERIMENTAL 
+	default n
+	help
+	  This feature is experimental and non-operational.  Leave it
+	  disabled.
+
+endmenu
+
 source src/mach-lh7952x/Kconfig
 source src/mach-lh7a40x/Kconfig
 source src/mach-ixp42x/Kconfig
@@ -38,3 +92,90 @@ source src/mach-ixp42x/Kconfig
 source src/apex/Kconfig
 
 source src/drivers/Kconfig
+
+menu "Environment"
+
+choice
+	prompt "Bootflash"
+	default NOR_BOOT
+
+config NOR_BOOT
+	depends on USES_NOR_BOOTFLASH
+	bool "NOR Flash Boot"
+
+config NAND_BOOT
+	depends on USES_NAND_BOOTFLASH
+	bool "NAND Flash Boot"
+	select RELOCATE_NAND
+	help
+	  Selecting NAND as the bootflash select an APEX relocation
+	  routine to one that copies from the NAND.
+
+endchoice
+
+config AUTOBOOT
+	bool "Automatically boot operating system."
+	default n
+
+config AUTOBOOT_DELAY
+	int "Autoboot delay"
+	depends on AUTOBOOT
+	default "50"
+	help
+	  Tenths of a second that APEX will pause before automatically
+	  booting the operating system kernel.
+
+config ENV_MUTABLE
+	bool "Allow runtime changes to the environment"
+	default y
+	help
+	  This option enables a runtime, user changeable environment.
+	  The target configuration must define a region to hold the
+	  environment data.  Without a changeable environment, only
+	  the default values will be available.
+
+config ENV_REGION
+	string "Environment region"
+	depends on ENV_MUTABLE
+	default "nor:128k+64k" if MACH_LPD7A40X
+	default "nor:128k+64k" if MACH_LPD79520
+	default "nor:128k+64k" if (MACH_LPD79524 && NOR_BOOT)
+	default "nand:64k+32k" if (MACH_LPD79524 && NAND_BOOT)
+	default "nor:128k+64k" if MACH_NSLU2
+	help
+	  This region stores the user configurable environment.   
+
+config ENV_STARTUP_KERNEL_COPY
+	bool "Copy Linux kernel to RAM at startup" 
+	default y
+	
+config ENV_REGION_KERNEL
+	string "Default region for kernel"
+	depends on ENV_STARTUP_KERNEL_COPY
+	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
+	default "nor:0x60010+0xffff0" if MACH_NSLU2
+	help
+	  At startup, APEX copies this region to the kernel start address.
+
+config ENV_STARTUP_RAMDISK_COPY
+	bool "Copy ramdisk to RAM at startup" 
+	default y if MACH_NSLU2
+	
+config ENV_REGION_RAMDISK
+	string "Default region for ramdisk image"
+	depends on ENV_STARTUP_RAMDISK_COPY
+	default "nor:0x160010+0x69fff0" if MACH_NSLU2
+	help
+	  At startup, APEX copies this region to memory for use as a
+	  ramdisk.
+
+endmenu
+
+config USES_NOR_BOOTFLASH
+	bool
+
+config USES_NAND_BOOTFLASH
+	bool
+
+config RELOCATE_NAND
+	bool

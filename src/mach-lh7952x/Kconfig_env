@@ -1,0 +1,34 @@
+if ARCH_LH7952X
+
+config ENV_REGION
+	string "Environment region"
+	depends on ENV_MUTABLE
+	default "nor:128k+64k" if MACH_LPD79520
+	default "nor:128k+32k" if MACH_LPD79524 && NOR_BOOTFLASH
+	default "nand:64k+32k" if MACH_LPD79524 && NAND_BOOTFLASH
+	help
+	  This region stores the user configurable environment.   
+
+config ENV_STARTUP_RAMDISK_COPY
+	bool "Copy Linux kernel to RAM at startup" 
+	default y
+	
+config ENV_REGION_KERNEL
+	string "Default region for kernel"
+	depends on ENV_STARTUP_KERNEL_COPY
+	default "nor:256k+1536k"
+	help
+	  At startup, APEX copies this region to the kernel start address.
+
+config ENV_STARTUP_RAMDISK_COPY
+	bool "Copy ramdisk to RAM at startup" 
+	default y
+	
+config ENV_REGION_RAMDISK
+	string "Default region for ramdisk image"
+	depends on ENV_STARTUP_RAMDISK_COPY
+	help
+	  At startup, APEX copies this region to memory for use as a
+	  ramdisk.
+
+endif

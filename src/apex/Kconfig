@@ -1,5 +1,12 @@
 menu "Commands"
 
+config ALLHELP
+	bool "Include all online help"
+	default y
+	depends on SMALL=n
+	help
+	  Setting this option will include all help text for APEX commands.
+
 config CMD_CHECKSUM
 	bool "Checksum Region"
 	default y
@@ -32,12 +39,15 @@ config CMD_ENV
 
 config CMD_ERASEENV
 	bool "Erase Environment"
-	depends on CMD_ENV=y
+	depends on CMD_ENV=y && ENV_MUTABLE=y
 	default n
+	help
+	  Experimental feature that allows safe, complete erasure of
+	  the environment.
 
 config CMD_SETENV
 	bool "Set/unset Environment Variable"
-	depends on CMD_ENV=y
+	depends on CMD_ENV=y && ENV_MUTABLE=y
 	default y
 
 config CMD_ERASE

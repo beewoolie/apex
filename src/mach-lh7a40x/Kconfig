@@ -7,21 +7,85 @@ choice
 config MACH_LPD7A400
 	bool "Logic Product Development LPD7A400"
 	select ARCH_LH79520
+	select MACH_LPD7A40X
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
+	select USES_NOR_BOOTFLASH
 
 config MACH_LPD7A404
 	bool "Logic Product Development LPD7A404"
 	select ARCH_LH7A404
+	select MACH_LPD7A40X
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
+	select USES_NOR_BOOTFLASH
 
 endchoice
 
-endif
+menu "Platform Setup"
+
+config ATAG_PHYS
+	hex "Physical address for ATAGs list"
+	default "0xc0000100"
+	depends on ATAG
+	help
+	  This is the address where APEX will construct the ATAG list
+	  before starting the Linux kernel.  This address should be
+	  within the first 16KiB of physical RAM.  Don't change this
+	  value unless you know what you are doing. 
+
+config ARCH_NUMBER_FUNCTION
+	string
+	default "determine_arch_number"
+
+config APEX_VMA
+	hex "APEX Runtime Address"
+	default "0xc0200000"
+
+config KERNEL_LMA
+	hex "Kernel Load Address"
+	default "0xc0008000"
+
+config SDRAM_BANK0
+	bool "Enable SDRAM Bank 0"
+	default y
+
+config SDRAM_BANK1
+	bool "Enable SDRAM Bank 1"
+	depends on SDRAM_BANK0
+	default n 
+
+config SDRAM_CONTIGUOUS
+	bool "Initialize SDRAM to be contiguous"
+	depends on SDRAM_BANK0
+	default n
+	help
+	  This option initializes the SDRAM controller to map each
+	  SDRAM into a contiguous bank, SROMLL.  Normally, SDRAM is
+	  sparse in the address space.  Linux does not need this
+	  option, but Windows/CE does.  Do not set this option unless
+	  you know what you are doing.
+
+endmenu
+
+menu "Platform Drivers"
+
+config CLCDC
+	bool "Color LCD"
+	default n
+	help
+	  This driver initializes and tests the CLCD controller.
+
+endmenu
 
 config ARCH_LH7A400
 	bool
 
 config ARCH_LH7A404
 	bool
+
+config MACH_LPD7A40X
+	bool
+
+endif
+

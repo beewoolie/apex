@@ -7,42 +7,145 @@ choice
 config MACH_LPD79520
 	bool "Logic Product Development LPD79520"
 	select ARCH_LH79520
+	select MACH_LPD7952X
 	select USES_NOR_CFI
-	select USES_CF
+	select USES_COMPACTFLASH
+	select USES_NOR_BOOTFLASH
 
 config MACH_LPD79524
 	bool "Logic Product Development LPD79524"
 	select ARCH_LH79524
+	select MACH_LPD7952X
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
+	select USES_NOR_BOOTFLASH
+	select USES_NAND_BOOTFLASH
 
 endchoice
 
-config ENV_REGION
-	string "Default region for environment"
-	default "nor:128k+64k" if MACH_LPD79520
-	default "nor:128k+32k" if MACH_LPD79524
+menu "Platform Setup"
 
-config ENV_REGION_KERNEL
-	string "Default region for kernel"
-	default "nor:256k+1536k"
+config ATAG_PHYS
+	hex "Physical address for ATAGs list"
+	default "0x20000100"
+	depends on ATAG
+	help
+	  This is the address where APEX will construct the ATAG list
+	  before starting the Linux kernel.  This address should be
+	  within the first 16KiB of physical RAM.  Don't change this
+	  value unless you know what you are doing. 
+
+config ARCH_NUMBER
+	int
+	default 537 if MACH_LPD79520
+	default 609 if MACH_LPD79524
+
+config APEX_VMA
+	hex "APEX runtime address"
+	default "0x20200000"
+
+config KERNEL_LMA
+	hex "Kernel load address"
+	default "0x20008000"
+
+config SDRAM_BANK0
+	bool "Enable SDRAM bank 0"
+	default y
+
+config SDRAM_BANK1
+	bool "Enable SDRAM bank 1"
+	depends on SDRAM_BANK0
+	default n 
+
+config NOR_BUSWIDTH
+	int "Width of NOR flash bus"
+	default "16"
+	
+config NOR_BANK0
+	bool "Enable NOR flash bank 0"
+	default y
+
+config NOR_BANK0_START
+	hex "Physical address of NOR flash bank 0"
+	default "0x44000000"
+	depends on NOR_BANK0
+
+config NOR_BANK0_LENGTH
+	hex "Physical address of NOR flash bank 0"
+	default "0x00800000"
+	depends on NOR_BANK0
+
+config NOR_BANK1
+	bool "Enable NOR flash bank 1"
+	depends on NOR_BANK0
+	default y
+
+config NOR_BANK1_START
+	hex "Physical address of NOR flash bank 1"
+	default "0x45000000"
+	depends on NOR_BANK1
+
+config NOR_BANK1_LENGTH
+	hex "Physical address of NOR flash bank 1"
+	default "0x00800000"
+	depends on NOR_BANK1
+
+config NAND_LPD
+	bool "Enable LPD enhanced NAND flash access"
+	default y
+	help
+	  This options enables a mode for accessing NAND flash that
+	  makes it possible to read NAND flash, NOR flash, and
+	  CompactFlash simultaneously.
+
+endmenu
 
 menu "Platform Drivers"
 
 config DRIVER_EMAC_LH79524
 	bool "LH79524 EMAC"
 	depends on ARCH_LH79524
+	select DRIVER_CPLD_SPI
 	default y
 	help
 	  This driver initialize the built-in Ethernet MAC of the
 	  Sharp lh79524. 
 
-endmenu
+config CLCDC
+	bool "Color LCD"
+	depends on MACH_LPD79524
+	default n
+	help
+	  This driver initializes and tests the CLCD controller.
 
-endif
+config ADC
+	bool "ADC"
+	depends on ARCH_LH79524
+	default n
+	help
+	  This driver includes commands to initialize and test the
+	  ADC/touchscreen controller.
+
+config CODEC
+	bool "Audio Codec"
+	depends on MACH_LPD79524
+	default n
+	help
+	  This driver includes commands to initialize and test the
+	  TI audio codec as well as the CPUs SSP module.
+
+endmenu
 
 config ARCH_LH79520
 	bool
 
 config ARCH_LH79524
 	bool
+
+config MACH_LPD7952X
+	bool
+
+config DRIVER_CPLD_SPI
+	bool
+
+endif
