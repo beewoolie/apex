@@ -32,6 +32,8 @@
 
 extern const char* error_description;
 
+#define ERROR_FALSE	(-1)
+#define ERROR_IMPORTANT (-1)	/* Errors less than this will be reported */
 #define ERROR_FAILURE	(-7)
 #define ERROR_NOCOMMAND (-8)
 #define ERROR_PARAM	(-9)

@@ -2,9 +2,9 @@
      $Id$
 
    written by Marc Singer
-   3 Nov 2004
+   5 Feb 2005
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2005 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,21 +31,95 @@
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
-#include <spinner.h>
+#include <driver.h>
+#include <error.h>
+
+
+/* cmd_verify
+
+   compares two regions.  If the regions are not identical, it will
+   display the offset of the first different byte.
+
+*/
 
 int cmd_verify (int argc, const char** argv)
 {
-  unsigned long time = timer_read ();
+  struct descriptor_d din;
+  struct descriptor_d dout;
+  int result = 0;
+  ssize_t cbCompare = 0;
+  size_t cbTotal = 0;
 
-  do {
-    SPINNER_STEP;
-  } while (timer_delta (time, timer_read ()) < 5*1000);
-  return 0;
+  if (argc != 3)
+    return ERROR_PARAM;
+
+  if (   (result = parse_descriptor (argv[1], &din))
+      || (result = open_descriptor (&din))) {
+    printf ("Unable to open target %s\n", argv[1]);
+    goto fail_early;
+  }
+
+  if (   (result = parse_descriptor (argv[2], &dout))
+      || (result = open_descriptor (&din))) {
+    printf ("Unable to open target %s\n", argv[2]);
+    goto fail;
+  }
+
+  if (!din.driver->read || !dout.driver->read) {
+    result = ERROR_UNSUPPORTED;
+    goto fail;
+  }
+
+  /* Make lengths the same */
+  cbTotal = din.length;
+  if (dout.length && dout.length < din.length)
+    cbTotal = dout.length;
+  din.length = cbTotal;
+  dout.length = cbTotal;
+
+  while (cbCompare < cbTotal) {
+    char rgbIn [1024];
+    char rgbOut[1024];
+    ssize_t cbIn;
+    ssize_t cbOut;
+    ssize_t cb;
+
+    cbIn  = din.driver ->read (&din,  rgbIn,  sizeof (rgbIn));
+    cbOut = dout.driver->read (&dout, rgbOut, sizeof (rgbOut));
+
+    if (cbIn != cbOut) {
+      printf ("\rregions not the same length\n");
+      result = ERROR_FALSE;
+      goto fail;
+    }
+
+    for (cb = 0; cb < cbIn; ++cb) {
+      if (rgbIn[cb] != rgbOut[cb]) {
+	printf ("\rregions differ 0x%02x != 0x%02x at %d (0x%x)\n",
+		rgbIn[cb], rgbOut[cb], cb + cbCompare, cb + cbCompare);
+	result = ERROR_FALSE;
+	goto fail;
+      }
+    }
+    cbCompare += cbIn;
+  }
+
+  printf ("\r%d bytes the same\n", cbCompare);
+
+ fail:
+  close_descriptor (&din);
+  close_descriptor (&dout);
+ fail_early:
+
+  return result;
 }
 
 static __command struct command_d c_verify = {
-  .command = "verify",
-  .description = "compare sequences of bytes *** unimplemented",
+  .command = "compare",
+  .description = "compare regions",
   .func = cmd_verify,
-
+COMMAND_HELP(
+"compare REGION1 REGION2\n"
+"  Compare regions and report the offset of the first difference.\n"
+)
 };

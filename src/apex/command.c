@@ -106,7 +106,7 @@ int call_command (int argc, const char** argv)
     int result;
     error_description = NULL;
     result = command_match->func (argc, argv);
-    if (result < 0) {
+    if (result < ERROR_IMPORTANT) {
       printf ("Error %d", result);
       printf (" (%s)", error_description);
       printf ("\n");
