@@ -65,6 +65,27 @@
       | 0x94 | 0x01 | 0x01 | 0x23 | 0x45 | 0x67 | 0x89 | 0xab | 0xff |
       +------+------+------+------+------+------+------+------+------+
 
+
+   Setup Sequence
+   --------------
+
+   0) CPLD clear PHY power-down
+   1) IOCON muxctl1, muxctl23, muxctl24 (to 1's)
+   2) RCPC ahbclkctrl
+   3) EMAC specaddr1_bottom, specaddr1_top
+   4) EMAC rxqptr, rxstatus
+   5) EMAC txqptr, txstatus
+   6) EMAC netconfig
+   7) EMAC netctrl
+   8) Read EMAC irqstatus for LINK_INTR
+
+
+  PHY Mamagement
+  --------------
+
+  It is possible to poll for the PHY management operation to complete.
+  There is an interrupt bit as well as a status bit.
+
 */
 
 
@@ -125,18 +146,21 @@ static void emac_setup (void)
   }
   printf ("rlDescriptor %p\r\n", rlDescriptor);
   __REG (EMAC_PHYS + EMAC_RXBQP) = (unsigned long) rlDescriptor;
+//  __REG (emac_PHYS + EMAC_NETCONFIG) |= EMAC_NETCONFIG_RECBYTE;
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_RXEN; /* Enable RX */
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_TXEN; /* Enable TX */
 }
 
 static int emac_phy_read (int phy_address, int phy_register)
 {
+  unsigned short result;
+
   PRINTF ("emac_phy_read %d %d\r\n", phy_address, phy_register);
 
   __REG (EMAC_PHYS + EMAC_NETCTL) |= EMAC_NETCTL_MANGEEN;
   __REG (EMAC_PHYS + EMAC_PHYMAINT)
     = (1<<30)|(2<<28)
-    |((phy_address & 0x1f)<<23)
+    |((phy_address  & 0x1f)<<23)
     |((phy_register & 0x1f)<<18)
     |(2<<16);
 
@@ -144,11 +168,13 @@ static int emac_phy_read (int phy_address, int phy_register)
   while ((__REG (EMAC_PHYS + EMAC_NETSTATUS) & (1<<2)) == 0)
     ;
 
+  result = __REG (EMAC_PHYS + EMAC_PHYMAINT) & 0xffff;
+
   __REG (EMAC_PHYS + EMAC_NETCTL) &= ~EMAC_NETCTL_MANGEEN;
 
-  PRINTF ("emac_phy_read => 0x%lx\r\n", __REG (EMAC_PHYS + EMAC_PHYMAINT));
+  PRINTF ("emac_phy_read => 0x%lx\r\n", result);
 
-  return __REG (EMAC_PHYS + EMAC_PHYMAINT) & 0xffff;
+  return result;
 }
 
 static void emac_phy_write (int phy_address, int phy_register, int phy_data)
@@ -248,11 +274,6 @@ void emac_init (void)
 #endif
   
 	/* Hardware setup */
-  __REG16 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
-  __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
-  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
-  __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
-
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));		
@@ -271,6 +292,11 @@ void emac_init (void)
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_RESCTL24),
 		(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),
 		(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0));
+
+  __REG16 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
+  __REG (RCPC_PHYS | RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
+  __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
+  __REG (RCPC_PHYS | RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
 
   {
     unsigned char rgb[6];
@@ -291,6 +317,11 @@ void emac_init (void)
     unsigned long l = emac_phy_read (phy_address, 4);
     emac_phy_write (phy_address, 4, l & ~((1<<8)|(1<<6)|(1<<5)));
   }
+
+  if ((__REG (EMAC_PHYS + EMAC_INTSTATUS) & EMAC_INT_LINKCHG) == 0)
+    PRINTF ("emac: no link detected\r\n");
+  else
+    PRINTF ("emac: link change detected\r\n");
 }
 
 static __service_6 struct service_d lh7952x_emac_service = {

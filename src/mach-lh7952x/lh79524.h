@@ -318,7 +318,8 @@
 
 #define EMAC_NETCONFIG_RECBYTE	(1<<8) /* Large frames */
 #define EMAC_NETCONFIG_CPYFRM	(1<<4) /* Promiscuous mode */
-#define EMAC_NETCONFIG_FULLDUPLEX (1<<1)
+#define EMAC_NETCONFIG_FULLDUPLEX (1<<1) /* Force full-duplex */
+#define EMAC_NETCONFIG_100MB	(1<<0) /* Force 100Mb */
 
 #define EMAC_TXSTATUS_TXUNDER	(1<<6)
 #define EMAC_TXSTATUS_TXCOMPLETE (1<<5)
@@ -336,6 +337,7 @@
 #define EMAC_INT_PAUSERRX	(1<<12)
 #define EMAC_INT_NOTOK		(1<<11)
 #define EMAC_INT_RECOVERRUN	(1<<10)
+#define EMAC_INT_LINKCHG	(1<<9)
 #define EMAC_INT_TXCOMPLETE	(1<<7)
 #define EMAC_INT_TXBUFEXH	(1<<6)
 #define EMAC_INT_RETRYLIM	(1<<5)
