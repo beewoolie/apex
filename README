@@ -1,0 +1,50 @@
+================
+APEX Boot Loader
+ Release Notes
+================
+
+The APEX boot loader has been designed to be small, efficient, and
+easy to extend.  It uses some code and the build system form the Linux
+kernel.  There are pieces of code taken from BLOB and UBoot as well.
+
+
+  Building APEX
+  -------------
+
+Near the top of the root Makefile is the declaration of the
+cross-compiler path.  This must be set to point to the prefix for the
+cross compiling toolchain, unless you are building from an ARM
+platform.  For example,
+
+  CROSS_COMPILE=/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+
+In this first release, the only target that may be build is the
+LPD79524.
+
+  # make lpd79524_config
+
+After executing this command, there will be a link in the root
+directory called 'config' that points to the configuration file for
+the target.  This file may be modified to change which features to
+include or exclude.  
+
+APEX uses the Linux kernel build scripts so that rebuilding is
+(nearly) optimal.  Changes to the configuration are automatically
+propagated such that only affected source files are rebuilt.
+
+  # make
+
+The ELF format binary, apex, will be put into the root directory.  To
+generate a dumped binary, build the apex.bin target.
+
+  # make apex.bin
+
+This dumped file is src/arc-arm/rom/apex.bin.
+
+
+  Running APEX
+  ------------
+
+APEX is designed to start from any address and to relocate itself when
+necessary.  If the binary is small enough (less than 16KiB), it may be
+copied to the internal SRAM of the LH79524 and executed from there.

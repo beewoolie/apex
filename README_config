@@ -165,5 +165,6 @@ CONFIG_ENV_REGION_KERNEL (string)
 
 CONFIG_INTERRUPTS (y/n)
 
-  Enables support for handling interrupts in the bootloader.  This
-  code is incomplete.
+  Enables support for handling interrupts within the bootloader.  This
+  code may never be completed as it requires that the MMU be
+  programmed.

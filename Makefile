@@ -728,7 +728,7 @@ $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 # Error messages still appears in the original language
 
 .PHONY: $(apex-dirs)
-$(apex-dirs): # prepare-all scripts
+$(apex-dirs): prepare-apex # prepare-all scripts
 	$(Q)$(MAKE) $(build)=$@
 
 # Things we need to do before we recursively start building the kernel
@@ -736,7 +736,7 @@ $(apex-dirs): # prepare-all scripts
 # A multi level approach is used. prepare1 is updated first, then prepare0.
 # prepare-all is the collection point for the prepare targets.
 
-.PHONY: prepare-all prepare prepare0 prepare1 prepare2
+.PHONY: prepare-apex prepare-all prepare prepare0 prepare1 prepare2
 
 # prepare 2 generate Makefile to be placed in output directory, if
 # using a seperate output directory. This allows convinient use
@@ -773,6 +773,11 @@ endif
 
 # All the preparing..
 prepare-all: prepare0 prepare
+
+prepare-apex: include/asm include/linux/config.h
+
+include/linux/config.h:
+	@touch include/linux/config.h
 
 #	Leave this as default for preprocessing apex.lds.S, which is now
 #	done in arch/$(ARCH)/kernel/Makefile
@@ -996,7 +1001,7 @@ distclean: mrproper
 	 	-o -name '.*.rej' -o -size 0 \
 		-o -name '*%' -o -name '.*.cmd' -o -name 'core' \) \
 		-type f -print | xargs rm -f
-
+	@if [ -L config ] ; then rm config; fi
 
 # Packaging of the kernel to various formats
 # ---------------------------------------------------------------------------
