@@ -349,8 +349,8 @@ CPPFLAGS        := -D__KERNEL__ $(LINUXINCLUDE)
 
 CFLAGS 		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
 	  	   -fno-strict-aliasing -fno-common \
-		   -fno-builtin-printf -g
-AFLAGS		:= -D__ASSEMBLY__
+		   -fno-builtin-printf -g # -mthumb-interwork 
+AFLAGS		:= -D__ASSEMBLY__ #-mthumb-interwork
 
 export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION KERNELRELEASE \
 	ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC \

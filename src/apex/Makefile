@@ -6,4 +6,6 @@ obj-y :=
 #obj-$(CONFIG_LPD7952X) += initialize.o
 obj-y += init.o init-drivers.o console.o console-printf.o
 obj-y += command.o cmd-version.o cmd-verify.o cmd-help.o cmd-pause.o 
-obj-y += cmd-drvinfo.o cmd-dump.o
+obj-y += cmd-drvinfo.o cmd-dump.o cmd-copy.o cmd-erase.o
+
+#CFLAGS += -mthumb

@@ -81,7 +81,7 @@ static int nand_probe (void)
   __REG8 (NAND_CLE) = Status;
   wait_on_busy ();
   if ((__REG8 (NAND_DATA) & Ready) == 0) {
-    printf ("NAND flash not found\r\n");
+//    printf ("NAND flash not found\r\n");
     return 1;
   }
 
@@ -100,6 +100,7 @@ static int nand_probe (void)
   if (chip >= chips + sizeof(chips)/sizeof (chips[0]))
       chip = NULL;
 
+#if 0
   printf ("NAND flash ");
 
   if (chip)
@@ -107,8 +108,9 @@ static int nand_probe (void)
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
   else
     printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
+#endif
 
-  return chip != NULL;		/* Present and initialized */
+  return chip == NULL;		/* Present and initialized */
 }
 
 static unsigned long nand_open (struct open_d* d)
@@ -148,8 +150,8 @@ static ssize_t nand_read (unsigned long fh, void* pv, size_t cb)
     cb = descriptors[fh].cb - descriptors[fh].ib;
 
   while (cb) {
-    unsigned long page  = descriptors[fh].ib/512;
-    int index = descriptors[fh].ib%512;
+    unsigned long page  = (descriptors[fh].ibStart + descriptors[fh].ib)/512;
+    int index = (descriptors[fh].ibStart + descriptors[fh].ib)%512;
     int available = 512 - index;
 
     if (available > cb)

@@ -30,6 +30,8 @@ struct open_d {
   unsigned long length;
 };
 
+#define DRIVER_LENGTH_MAX	(0x7fffffff)
+
 #define SEEK_SET	0
 #define SEEK_CUR	1
 #define SEEK_END	2

@@ -19,5 +19,6 @@
 #define ERROR_OPEN	(-10)
 #define ERROR_AMBIGUOUS (-11)
 #define ERROR_NODRIVER	(-12)
+#define ERROR_UNSUPPORTED (-13)
 
 #endif  /* __ERROR_H__ */
