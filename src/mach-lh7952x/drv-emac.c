@@ -26,7 +26,7 @@
    -----------
 
    Support for initialization of the embedded lh79524 Ethernet MAC and
-   Altima AC101L PHY.
+   Altima AC101L PHY, if present.
 
 
    MAC EEPROM
@@ -86,6 +86,24 @@
   It is possible to poll for the PHY management operation to complete.
   There is an interrupt bit as well as a status bit.
 
+  Auto MDI/MDI-X
+  --------------
+
+  The altima PHY supports automatic detection of the MDI/MDI-X mode of
+  the twisted-pair.  According to Broadcom, this feature requires
+  appropriate magnetics.  As of the Rev J SDK board, LPD doesn't
+  provide the proper circuit to automatically detect the TP mode.
+  This, the feature is disabled.
+
+  CONFIG_CMD_EMAC
+  ---------------
+
+  It is possible to disable the EMAC commands altogether.  If this is
+  done, the MAC address cannot be set from the APEX command line nor
+  can the MAC address be written to EEPROM.  However, the device will
+  still be initialized and the MAC address read from EEPROM if it is
+  already there.
+
 */
 
 
@@ -99,9 +117,17 @@
 #include "hardware.h"
 #include <linux/kernel.h>
 
-#define USE_DIAG		/* Enables diagnostic code */
+#define USE_DISABLE_AUTOMDI_MDIX /* Disable auto-mdi/mdix detection */
+#define USE_PHY_RESET		/* Reset the PHY after detection  */
+//#define USE_DISABLE_100MB
 
-#define TALK 0
+//#define USE_DIAG		/* Enables diagnostic code */
+
+//#define TALK 0
+
+#if !defined (CONFIG_CMD_EMAC)
+# undef USE_DIAG
+#endif
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -114,8 +140,6 @@
 #else
 #define PRINTF3(f...)		do {} while (0)
 #endif
-
-//#define DO_RESET_PHY
 
 #define PHY_CONTROL	0
 #define PHY_STATUS	1
@@ -134,9 +158,10 @@
 #define PHY_STATUS_10FULL		(1<<12)
 #define PHY_STATUS_10HALF		(1<<11)
 
-#if defined (USE_DIAG)
-
 static int phy_address;
+static unsigned long phy_id;	/* ID read from PHY */
+
+#if defined (USE_DIAG)
 
 /* There are two sets of buffers, one for receive and one for transmit.
    The first half are rx and the second half are tx. */
@@ -167,6 +192,9 @@ static void msleep (int ms)
   } while (timer_delta (time, timer_read ()) < ms);
 }
 
+#endif
+
+#if defined (USE_DIAG)
 static void emac_setup (void)
 {
   int i;
@@ -204,6 +232,9 @@ static void emac_setup (void)
     | EMAC_NETCTL_CLRSTAT
     ;
 }
+#else
+#define emac_setup() do {} while (0)
+#endif
 
 static int emac_phy_read (int phy_address, int phy_register)
 {
@@ -214,12 +245,10 @@ static int emac_phy_read (int phy_address, int phy_register)
   EMAC_NETCTL |= EMAC_NETCTL_MANGEEN;
   EMAC_PHYMAINT
     = (1<<30)|(2<<28)
-    |((phy_address  & 0x1f)<<23)
-    |((phy_register & 0x1f)<<18)
-    |(2<<16);
+    | ((phy_address  & 0x1f)<<23)
+    | ((phy_register & 0x1f)<<18)
+    | (2<<16);
 
-  //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  //  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
 
@@ -227,7 +256,6 @@ static int emac_phy_read (int phy_address, int phy_register)
 
   EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
 
-  //  printf ("epr: %d -> %x\n", phy_register, result);
   PRINTF3 ("emac_phy_read => 0x%x\n", result);
 
   return result;
@@ -235,7 +263,6 @@ static int emac_phy_read (int phy_address, int phy_register)
 
 static void emac_phy_write (int phy_address, int phy_register, int phy_data)
 {
-  //  printf ("epw: %d %x\n", phy_register, phy_data);
   EMAC_NETCTL |= EMAC_NETCTL_MANGEEN;
   EMAC_PHYMAINT
     = (1<<30)|(1<<28)
@@ -244,62 +271,51 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
     |(2<<16)
     |(phy_data & 0xffff);
 
-  //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
-  //  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
+
   EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
 }
 
+#if defined (USE_PHY_RESET)
 static void emac_phy_reset (int phy_address)
 {
-#if 1
+
   PRINTF ("emac: phy_reset\n");
-#if 1
   emac_phy_write (phy_address, 0,
 		  PHY_CONTROL_RESET
 		  | emac_phy_read (phy_address, 0));
   while (emac_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
     ;
-
-#else
-  printf ("emac: ctrl 0x%x\n", emac_phy_read (phy_address, 0));
-  CPLD_CONTROL &= ~CPLD_CONTROL_WRLAN_ENABLE;
-  emac_phy_write (phy_address, 0,
-		  PHY_CONTROL_POWERDOWN
-		  | emac_phy_read (phy_address, 0));
-  msleep (1000);
-  printf ("emac: ctrl 0x%x\n", emac_phy_read (phy_address, 0));
-  CPLD_CONTROL |= CPLD_CONTROL_WRLAN_ENABLE;
-  emac_phy_write (phy_address, 0,
-		  emac_phy_read (phy_address, 0)
-		  & ~PHY_CONTROL_POWERDOWN); 
-  printf ("emac: ctrl 0x%x\n", emac_phy_read (phy_address, 0));
-#endif
-#endif
 }
-
+#else
+# define emac_phy_reset(v) do { } while (0)
+#endif
 
 static void emac_phy_configure (int phy_address)
 {
   PRINTF ("emac: phy_configure\n");
 
-  /* Disable auto MDI/MDIX.  Force MDI. */
- {
-   unsigned long l = emac_phy_read (phy_address, 23);
-   emac_phy_write (phy_address, 23, (l & ~((1<<7)|(1<<6)))|(1<<7));
- }
- /* Disable SPD100 */
- // {
- //   unsigned long l = emac_phy_read (phy_address, 0);
-//   emac_phy_write (phy_address, 0, l & ~(1<<13));
-// }
+#if defined USE_DISABLE_AUTOMDI_MDIX
+  if (phy_id == 0x00225521){
+    unsigned long l = emac_phy_read (phy_address, 23);
+    emac_phy_write (phy_address, 23,
+		    (l & ~((1<<7)|(1<<6)))|(1<<7)); /* Force MDI. */
+  }
+#endif
+
+#if defined USE_DISABLE_100MB
+  {
+    unsigned long l = emac_phy_read (phy_address, 0);
+    emac_phy_write (phy_address, 0, l & ~(1<<13));
+  }
+#endif
 }
 
 
 /* emac_phy_detect
 
-   scans for a valid phy attached to the controller.
+   scans for a valid PHY attached to the EMAC.
 
 */
 
@@ -314,20 +330,17 @@ static void emac_phy_detect (void)
 
     if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
-      PRINTF ("emac: phy_detect 0x%x  0x%x\n", 
-	      phy_address & 0x1f, (id1 << 16) | id2);
+      phy_id = (id1 << 16) | id2;
+      phy_address &= 0x1f;
+      PRINTF ("emac: phy_detect 0x%x  0x%lx\n", phy_address, phy_id);
       break;
     }
   }
 
-#if defined (DO_RESET_PHY)
   emac_phy_reset (phy_address);
-#endif
-  
   emac_phy_configure (phy_address);
 }
 
-#endif
 
 /* emac_read_mac
 
@@ -400,43 +413,46 @@ void emac_init (void)
 	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
       EMAC_SPECAD1TOP 
 	= (rgb[5]<<8)|(rgb[4]<<0);
-      printf ("emac: mac address\n"); 
+#if defined (TALK)
+      PRINTF ("emac: mac address\n"); 
       dump (rgb, 6, 0);
+#endif
     }
   }
 
-#if defined (USE_DIAG)
-
-//  msleep (1000);
 #if defined (CPLD_CONTROL_WRLAN_ENABLE)
   CPLD_CONTROL |= CPLD_CONTROL_WRLAN_ENABLE;
 #endif
-//  msleep (1000);
-  //  msleep (500);
-  //  phy_address = 1;
-  emac_phy_detect ();
 
-//  msleep (1000);
+  emac_phy_detect ();		/* Detect and perform special setups */
 
-  emac_setup ();
-
-  /* Disable advertisement except for 100Base-TX  */
-#if 0
-  {
-    unsigned long l = emac_phy_read (phy_address, 4);
-    emac_phy_write (phy_address, 4, l & ~((1<<8)|(1<<6)|(1<<5)));
-  }
-#endif
-
-  if ((EMAC_INTSTATUS & EMAC_INT_LINKCHG) == 0)
-    PRINTF ("emac: no link detected\n");
-  else
-    PRINTF ("emac: link change detected\n");
-#endif
+  emac_setup ();		/* Prepare EMAC for IO */
 }
+
+#if !defined (CONFIG_SMALL)
+static void emac_report (void)
+{
+  unsigned long bot = EMAC_SPECAD1BOT;
+  unsigned long top = EMAC_SPECAD1TOP;
+  
+  printf ("  emac:   phy_addr %d  phy_id 0x%lx"
+	  "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	  phy_address, phy_id,
+	  (unsigned char) (bot >>  0),
+	  (unsigned char) (bot >>  8),
+	  (unsigned char) (bot >> 16),
+	  (unsigned char) (bot >> 24),
+	  (unsigned char) (top >>  0),
+	  (unsigned char) (top >>  8)
+	  );
+}
+#endif
 
 static __service_6 struct service_d lh7952x_emac_service = {
   .init = emac_init,
+#if !defined (CONFIG_SMALL)
+  .report = emac_report,
+#endif
 };
 
 #if defined (USE_DIAG)
@@ -472,7 +488,7 @@ void emac_send_packet (void)
 }
 #endif
 
-#if defined (CONFIG_CMD_EMAC)
+#if defined (USE_DIAG)
 
 static void show_tx_flags (unsigned long l)
 {
@@ -487,6 +503,9 @@ static void show_tx_flags (unsigned long l)
   if (l & (1<<27))
     printf (" exhaust");
 } 
+#endif
+
+#if defined (CONFIG_CMD_EMAC)
 
 static int cmd_emac (int argc, const char** argv)
 {
@@ -768,17 +787,19 @@ static int cmd_emac (int argc, const char** argv)
     	/* Save mac address */
     if (strcmp (argv[1], "save") == 0) {
       unsigned char rgb[9];
+      unsigned long bot = EMAC_SPECAD1BOT;
+      unsigned long top = EMAC_SPECAD1TOP;
 
       rgb[0] = 0x94;		/* Signature */
       rgb[1] = 0x01;		/* OP: MAC address */
       rgb[8] = 0xff;		/* OP: end */
 
-      rgb[2] = EMAC_SPECAD1BOT >>  0;
-      rgb[3] = EMAC_SPECAD1BOT >>  8;
-      rgb[4] = EMAC_SPECAD1BOT >> 16;
-      rgb[5] = EMAC_SPECAD1BOT >> 24;
-      rgb[6] = EMAC_SPECAD1TOP >>  0;
-      rgb[7] = EMAC_SPECAD1TOP >>  8;
+      rgb[2] = bot >>  0;
+      rgb[3] = bot >>  8;
+      rgb[4] = bot >> 16;
+      rgb[5] = bot >> 24;
+      rgb[6] = top >>  0;
+      rgb[7] = top >>  8;
       
       {
 	struct descriptor_d d;
@@ -806,6 +827,29 @@ static __command struct command_d c_emac = {
   .command = "emac",
   .description = "manage ethernet MAC address",
   .func = cmd_emac,
+  COMMAND_HELP(
+"emac [SUBCOMMAND [PARAMETER]]\n"
+"  Commands for the Ethernet MAC and PHY devices.\n"
+#if defined (USE_DIAG)
+"  Without a SUBCOMMAND, it displays diagnostics about the EMAC\n"
+"    and PHY devices.  This information is for debugging the hardware.\n"
+"  clear - reset the EMAC.\n"
+"  anen  - restart auto negotiation.\n"
+"  send  - send a test packet.\n"
+"  loop  - enable loopback mode.\n"
+"  force - force power-up and restart auto-negotiation.\n"
+#endif
+"  mac   - set the MAC address to PARAMETER.\n"
+"    PARAMETER has the form XX:XX:XX:XX:XX:XX where each X is a\n"
+"    hexadecimal digit.  Be aware that MAC addresses must be unique for\n"
+"    proper operation of the network.  This command may be added to the\n"
+"    startup commands to set the MAC address at boot-time.\n"
+"  save  - saves the MAC address to the mac: EEPROM device.\n"
+"    A saved MAC address will be used to automatically configure the MAC\n"
+"    at startup.  For this feature to work, there must be a mac: driver.\n"
+"  e.g.  emac mac 01:23:45:67:89:ab         # Never use this MAC address\n"
+"        emac save\n"
+  )
 };
 
-#endif
+#endif 				/* CONFIG_CMD_EMAC */
