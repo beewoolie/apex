@@ -34,7 +34,6 @@ int putchar (int ch)
 int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 {
   static char rgb[1024];	/* Command line buffer */
-  static const char* argv[64];	/* Command words */
   int cb;
 
   puts (szPrompt);
@@ -70,36 +69,6 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 
   rgb[cb] = 0;			/* Redundant except for overflow */
 
-	/* Construct argv.  We allow simple quoting within double
-	   quotation marks.  */
-  {
-    char* pb = rgb;
-
-    while (isspace (*pb))
-      ++pb;
-
-    *pargc = 0;
-    for (; *pargc < sizeof (argv)/sizeof (char*) && pb - rgb < cb; ++pb) {
-      while (*pb && isspace (*pb))
-	*pb++ = 0;
-      if (*pb == '\"') {
-	argv[(*pargc)++] = ++pb;
-	while (*pb && *pb != '\"')
-	  ++pb;
-	*pb = 0;
-	continue;
-      } 
-      if (!*pb)
-	continue;
-      argv[(*pargc)++] = pb++;
-      while (*pb && !isspace (*pb))
-	++pb;
-      --pb;
-    }      
-  }
-
-  *pargv = argv;
-
-  return 1;
+  return parse_command (rgb, pargc, pargv);
 }
 

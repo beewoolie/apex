@@ -34,6 +34,7 @@ extern int puts (const char * fmt);
 extern int snprintf(char * buf, size_t size, const char * fmt, ...);
 extern int read_command (const char* szPrompt, 
 			 int* pargc, const char*** pargv);
+extern int parse_command (char* rgb, int* pargc, const char*** pargv);
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 
 extern void __attribute__((noreturn)) exec_monitor (void);

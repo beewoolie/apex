@@ -17,6 +17,46 @@
 #include <apex.h>
 #include <command.h>
 #include <error.h>
+#include <linux/ctype.h>
+
+int parse_command (char* rgb, int* pargc, const char*** pargv)
+{
+  static const char* argv[64];	/* Command words */
+  int cb = strlen (rgb);
+
+	/* Construct argv.  We allow simple quoting within double
+	   quotation marks.  */
+  {
+    char* pb = rgb;
+
+    while (isspace (*pb))
+      ++pb;
+
+    *pargc = 0;
+    for (; *pargc < sizeof (argv)/sizeof (char*) && pb - rgb < cb; ++pb) {
+      while (*pb && isspace (*pb))
+	*pb++ = 0;
+      if (*pb == '\"') {
+	argv[(*pargc)++] = ++pb;
+	while (*pb && *pb != '\"')
+	  ++pb;
+	*pb = 0;
+	continue;
+      } 
+      if (!*pb)
+	continue;
+      argv[(*pargc)++] = pb++;
+      while (*pb && !isspace (*pb))
+	++pb;
+      --pb;
+    }      
+  }
+
+  *pargv = argv;
+
+  return 1;
+}
+
 
 void call_command (int argc, const char** argv) 
 {
