@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := serial.o env.o
+obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 #obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o

@@ -51,7 +51,7 @@ extern void init (void);
 
 void __naked __section (.reset) reset (void)
 {
-#if 0
+#if 1
   /* This would disable the MMU, but there is little reason to include
      it.  The only way this would be called would be if the CPU jumped
      to the loader while running something that needed the MMU.  In

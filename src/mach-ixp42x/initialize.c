@@ -108,6 +108,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* *** FIXME: this CPSR and CP15 manipulation should not be
      *** necessary as we don't allow warm resets. */
 
+     	/* Fixup the CP15 control word.  This is done for the cases
+	   where we are bootstrapping from redboot which does not
+	   cleanup before jumping to code.  */
+  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
+		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
+		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
+		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
+		  "mcr p15, 0, r0, c1, c0, 0");
+
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
