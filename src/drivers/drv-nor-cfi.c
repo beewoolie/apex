@@ -62,6 +62,7 @@
 #include <apex.h>
 #include <config.h>
 #include <spinner.h>
+#include <asm/reg.h>
 
 #include <mach/nor-cfi.h>
 
