@@ -73,9 +73,10 @@ static void cpuinfo_report (void)
   __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));
   __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
+
   printf ("  cpu:    id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n",
 	  id, ctrl, cpsr);
-  printf ("          chipid, 0x%x %s  bootmode, 0x%x %s\n", 
+  printf ("          chipid 0x%x, %s  bootmode 0x%x, %s\n", 
 	  chipid, sz, bootmode, szBootmode);
 
 #if defined (CPLD_REVISION)

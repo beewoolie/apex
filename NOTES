@@ -38,6 +38,9 @@ TODO:
     o This also suggests that region spec's will have a qualifier
       about the compatible formats.  Filespecs and memory region specs
       may not be compatible.  Or not. :-)
+    o This aliasing could be used to refer to regions.  
+      o alias apex: is the region of memory where apex is executing
+      o alias env: is the region where the environment is stored.
 
   o The MASK_AND_SET macro I'm using used to be commented out.  Well,
     it was similar.  I changed it a little and put it back because the

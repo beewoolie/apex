@@ -245,6 +245,7 @@ static void target_init (void)
 	/* IOCON to clear special NAND modes.  These modes must be
 	   controlled explicitly within driver code. */
   __REG (IOCON_PHYS + IOCON_MUXCTL7)  = IOCON_MUXCTL7_V;   /* A23,A22 */
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  = IOCON_RESCTL7_V;   /* pull-down */
   __REG (IOCON_PHYS + IOCON_MUXCTL14) = IOCON_MUXCTL14_V;  /* nCS0 normalize */
 #endif
 

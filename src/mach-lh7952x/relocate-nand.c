@@ -37,6 +37,8 @@
 #include "nand.h"
 #include "hardware.h"
 
+//#define EMERGENCY
+
 
 /* wait_on_busy
 
@@ -74,6 +76,20 @@ void __naked __section (.bootstrap) relocate_apex (void)
 {
   unsigned long lr;
   extern char reloc;
+
+#if defined (EMERGENCY)
+  __REG (IOCON_PHYS + IOCON_MUXCTL14) |=  (1<<8); 
+  __REG (GPIO_MN_PHYS) &= ~(1<<0);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
+
+  /* Boot ROM uses 0xf. If I set this to 0xf, I can read nothing from
+     NAND. */
+
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
+  __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0xa<<12);
+#endif
+
   __asm volatile ("mov r0, lr\n\t"
 		  "bl reloc\n\t"
 	   "reloc: subs r1, %1, lr\n\t"
@@ -87,8 +103,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
   {
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
     void* pv = &APEX_VMA_ENTRY;
-
-    int cAddr = NAM_DECODE (__REG (BOOT_PHYS + BOOT_PBC));
+    int cAddr = NAM_DECODE (BOOT_PBC);
 
     __REG8 (NAND_CLE) = Reset;
     wait_on_busy ();

@@ -85,7 +85,8 @@ static void nand_enable (void)
   __REG (IOCON_PHYS + IOCON_MUXCTL14) |=  (1<<8); 
   __REG (GPIO_MN_PHYS) &= ~(1<<0);
   __REG (IOCON_PHYS + IOCON_MUXCTL7)  &= ~(0xf<<12);
-  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12);
+  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xa<<12); /* Boot ROM uses 0xf */
+//  __REG (IOCON_PHYS + IOCON_MUXCTL7)  |=  (0xf<<12);
   __REG (IOCON_PHYS + IOCON_RESCTL7)  &= ~(0xf<<12);
   __REG (IOCON_PHYS + IOCON_RESCTL7)  |=  (0xa<<12);
 #endif

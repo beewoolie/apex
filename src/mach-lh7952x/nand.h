@@ -25,6 +25,28 @@
    DESCRIPTION
    -----------
 
+   Testing the NAND flash should be a matter sending a couple of
+   commands.
+
+   First, without CPLD support, the IOCON has to be setup
+   0xfffe5068 <- 0x100 // 
+   0xfffe5030 <- 0xf555 // 
+   0xfffe5034 <- 0xa555 // 
+
+   0x40800010 <- 0xff  // Reset
+   0x40800010 <- 0x70  // Status
+   0x40800010 <- 0x90  // ReadID
+   0x40800000 -> 0x98  // 
+   0x40800000 -> 0x75  // 
+   0x40800000 -> 0xa5  // 
+   0x40800000 -> 0xba  // 
+   0x40800000 -> 0x22  // 
+   0x40800010 <- 0x00  // Read1
+   0x40800008 <- 0x00  // Address0
+   0x40800008 <- 0x00  // Address1
+   0x40800008 <- 0x00  // Address2
+   0x40800000 -> ...
+
 */
 
 #if !defined (__NAND_H__)
@@ -38,7 +60,7 @@
 
 /* ----- Prototypes */
 
-#define NAND_PHYS	(0x40800000)
+#define NAND_PHYS	(0x40000000 | (1<<23))
 #define NAND_DATA	(NAND_PHYS + 0x00)
 #define NAND_CLE	(NAND_PHYS + 0x10)
 #define NAND_ALE	(NAND_PHYS + 0x08)
@@ -83,6 +105,6 @@
 #define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)\
 		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
 
-#define NAM_DECODE(bootcode) ((NAND_ADDR_MAP >> ((bootcode)*2)) + 2)
+#define NAM_DECODE(bootcode) (((NAND_ADDR_MAP >> ((bootcode)*2)) & 0x3) + 2)
 
 #endif  /* __NAND_H__ */
