@@ -128,12 +128,12 @@ static unsigned long phys_from_index (unsigned long index)
 
 static void vpen_enable (void)
 {
-  __REG16 (CPLD_FLASH) |= CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |= CPLD_FLASH_FL_VPEN;
 }
 
 static void vpen_disable (void)
 {
-  __REG16 (CPLD_FLASH) &= ~CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH &= ~CPLD_FLASH_FL_VPEN;
 }
 
 static unsigned long nor_read_one (unsigned long index)

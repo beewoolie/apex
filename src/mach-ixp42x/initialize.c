@@ -41,6 +41,25 @@
 #include "hardware.h"
 
 
+#define LED0	((0<<0)|(0<<1)|(1<<2)|(1<<3))
+#define LED1	((1<<0)|(0<<1)|(1<<2)|(1<<3))
+#define LED2	((0<<0)|(1<<1)|(1<<2)|(1<<3))
+#define LED3	((1<<0)|(1<<1)|(1<<2)|(1<<3))
+#define LED4	((0<<0)|(0<<1)|(0<<2)|(1<<3))
+#define LED5	((1<<0)|(0<<1)|(0<<2)|(1<<3))
+#define LED6	((0<<0)|(1<<1)|(1<<2)|(1<<3))
+#define LED7	((1<<0)|(1<<1)|(1<<2)|(1<<3))
+
+#define LED8	((0<<0)|(0<<1)|(1<<2)|(0<<3))
+#define LED9	((1<<0)|(0<<1)|(1<<2)|(0<<3))
+#define LEDa	((0<<0)|(1<<1)|(1<<2)|(0<<3))
+#define LEDb	((1<<0)|(1<<1)|(1<<2)|(0<<3))
+#define LEDc	((0<<0)|(0<<1)|(0<<2)|(0<<3))
+#define LEDd	((1<<0)|(0<<1)|(0<<2)|(0<<3))
+#define LEDe	((0<<0)|(1<<1)|(1<<2)|(0<<3))
+#define LEDf	((1<<0)|(1<<1)|(1<<2)|(0<<3))
+
+
 #define COPROCESSOR_WAIT\
  ({ unsigned long v; \
     __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
@@ -100,23 +119,35 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+  GPIO_ER &= 0xf;
+  GPIO_OUTR = LED0;
+  GPIO_OUTR = LED1;
+
   /* *** FIXME: this CPSR and CP15 manipulation should not be
      *** necessary as we don't allow warm resets. */
 
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
  
+  GPIO_OUTR = LED1;
+
 	/* Invalidate caches (I&D) and BTB (?) */
   __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
+
+  GPIO_OUTR = LED2;
 
 	/* Invalidate TLBs (I&D) */
   __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
 
+  GPIO_OUTR = LED3;
+
 	/* Drain write buffer */
   __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
   COPROCESSOR_WAIT;
+
+  GPIO_OUTR = LED4;
 
 	/* Disable write buffer coalescing */
   {
@@ -127,6 +158,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 		    : "=r" (v));
     COPROCESSOR_WAIT;
   }		
+
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
@@ -153,17 +185,24 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
     COPROCESSOR_WAIT;
   }
 
-#if 0
-	  /* Check for running from SDRAM */ 
 
-  /* This implementation is flawed because we could be running from
-     the start of SDRAM.  The only way to do this reliably is to also
-     check the value of the EXP mapping register.  */
-  __asm volatile ("cmp %0, %1\n\t"
-		  "movhi r0, #0\n\t"
-		  "movhi pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (CONFIG_APEX_VMA));
-#endif
+	  /* Exit now if executing in SDRAM */ 
+  if (EXP_CNFG0 & (1<<31)) {
+    /* Boot mode */
+    __asm volatile ("cmp %0, %2\n\t"
+		    "bls 1f\n\t"
+		    "cmp %0, %1\n\t"
+		    "movls r0, #0\n\t"
+		    "movls pc, %0\n\t"
+		    "1:": : "r" (lr), "i" (0x40000000), "i" (256*1024*1024));
+  }
+  else {
+    /* Non-boot mode */
+    __asm volatile ("cmp %0, %1\n\t"
+		    "movls r0, #0\n\t"
+		    "movls pc, %0\n\t"
+		    : : "r" (lr), "i" (0x40000000));
+  }
 
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */

@@ -248,7 +248,7 @@ void __naked target_init (void)
 static void target_release (void)
 {
   /* Flash is enabled for the kernel */
-  __REG16 (CPLD_FLASH) |=  CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |=  CPLD_FLASH_FL_VPEN;
 }
 
 static __service_0 struct service_d lh7a40x_target_service = {

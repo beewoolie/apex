@@ -111,4 +111,12 @@
 #define UART1_PHYS	(0xc8001000)
 #define UART_PHYS	(UART1_PHYS) /* Console */
 
+#define GPIO_PHYS	(0xc8004000)
+#define GPIO_OUTR	__REG(GPIO_PHYS + 0x00)
+#define GPIO_ER		__REG(GPIO_PHYS + 0x04)
+#define GPIO_ISR	__REG(GPIO_PHYS + 0x08)
+#define GPIO_IT1R	__REG(GPIO_PHYS + 0x10)
+#define GPIO_IT2R	__REG(GPIO_PHYS + 0x14)
+#define GPIO_CLKR	__REG(GPIO_PHYS + 0x18)
+
 #endif  /* __IXP42X_H__ */

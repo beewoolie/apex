@@ -67,6 +67,7 @@ static void clcdc_init (void)
   __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef300e;
   __REG(CLCDC_PHYS + CLCDC_UPBASE)    = (unsigned long) buffer;
   __REG(CLCDC_PHYS + CLCDC_CTRL)      = 0x00010028;
+
   __REG(HRTFTC_PHYS + HRTFTC_SETUP)   = 0x00002efd;
   __REG(HRTFTC_PHYS + HRTFTC_CON)     = 0x00000003;
   __REG(HRTFTC_PHYS + HRTFTC_TIMING1) = 0x0000087d;
@@ -76,12 +77,14 @@ static void clcdc_init (void)
   msleep (20);			/* Wait 20ms for digital signals  */
   __REG(CLCDC_PHYS + CLCDC_CTRL)      |= (1<<11); /* Apply power */
 
-  __REG(CPLD_CONTROL) |= (1<<1);	/* Enable LCD Vee */
+  if (determine_arch_number () == 389)
+    CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN;
 }
 
 static void clcdc_release (void)
 {
-  __REG(CPLD_CONTROL) &= ~(1<<1);	/* Disable LCD Vee */
+  if (determine_arch_number () == 389)
+    CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN;
 
   __REG(CLCDC_PHYS + CLCDC_CTRL) &= ~(1<<11); /* Remove power */
   msleep (20);			/* Wait 20ms */

@@ -189,7 +189,7 @@ void __naked __section(bootstrap) initialize_bootstrap (void)
 		  "cmp %0, %1\n\t"
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
 
 	/* SDRAM */
   __REG (EMC_PHYS + EMC_READCONFIG)  = EMC_READCONFIG_CMDDELAY;
