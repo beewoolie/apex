@@ -118,6 +118,7 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define IOCON_MUXCTL10	(0x48)
 #define IOCON_MUXCTL11	(0x50)
 #define IOCON_MUXCTL12	(0x58)
+#define IOCON_MUXCTL14	(0x68)
 #define IOCON_MUXCTL19	(0x90)
 #define IOCON_MUXCTL20	(0x98)
 
@@ -186,6 +187,7 @@ typedef struct { volatile unsigned char  offset[4096]; } __regbase8;
 #define IOCON_MUXCTL10_V	(0x5555)	/* Enable D25-D21, D15-D13 */
 #define IOCON_MUXCTL11_V	(0x5555) 	/* Enable D20-D17, D12-D9 */
 #define IOCON_MUXCTL12_V	(0x5000)	/* Enable D16, D8 */
+#define IOCON_MUXCTL14_V	(0x0000)	/* Normalize nCS0 */
 #define IOCON_MUXCTL19_V	(0x0441)	/* Enable D31-D29 */
 #define IOCON_MUXCTL20_V	(0x1110)	/* Enable D28-D26 */
 

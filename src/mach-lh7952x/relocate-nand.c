@@ -72,6 +72,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
       *((char*) pv++) = __REG8 (NAND_DATA); /* *** Optimize with assembler */
   }
 
+  /* *** Starting at the top is OK as long as we don't call
+     *** relocate_apex again. */
   __asm ("mov pc, %0" : : "r" (&APEX_VMA_ENTRY));
 
 #if 0
