@@ -1,3 +1,11 @@
+2005-03-16  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/lpd79520_config (CONFIG_NOR_BANK0_START): Fixed
+	the starting address of the NOR flash so that the REMAP register
+	doesn't make a difference.
+
+	* src/apex/cmd-boot.c: Making sure that the ATAG pointer is valid.
+
 2005-03-15  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/apex.lds.S: Added new START identifier for

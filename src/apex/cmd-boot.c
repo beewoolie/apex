@@ -45,6 +45,11 @@
 static int commandline_argc;
 static const char** commandline_argv;
 
+#if !defined (CONFIG_ATAG_PHYS) || !defined (CONFIG_ATAG)
+# undef  CONFIG_ATAG_PHYS
+# define CONFIG_ATAG_PHYS 0
+#endif
+
 extern void build_atags (void);
 #endif
 
@@ -86,8 +91,6 @@ int cmd_boot (int argc, const char** argv)
 #endif
 
   printf ("Booting kernel at 0x%p...\n", (void*) address);
-
-  //serial_flush_output();
 
   release_services ();
 
