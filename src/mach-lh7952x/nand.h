@@ -39,9 +39,9 @@
 /* ----- Prototypes */
 
 #define NAND_PHYS	(0x40800000)
-#define NAND_DATA	(NAND_PHYS | 0x00)
-#define NAND_CLE	(NAND_PHYS | 0x10)
-#define NAND_ALE	(NAND_PHYS | 0x08)
+#define NAND_DATA	(NAND_PHYS + 0x00)
+#define NAND_CLE	(NAND_PHYS + 0x10)
+#define NAND_ALE	(NAND_PHYS + 0x08)
 
 #define Reset		(0xff)
 #define ReadID		(0x90)

@@ -40,14 +40,14 @@
 static void lh7a40x_timer_init (void)
 {
 	/* 2kHz free running timer*/
-  __REG (TIMER1_PHYS | TIMER_CONTROL) = (1<<7) | (0<<6) | (0<<3);
-  __REG (TIMER2_PHYS | TIMER_CONTROL) = 0;
-  __REG (TIMER3_PHYS | TIMER_CONTROL) = 0;
+  __REG (TIMER1_PHYS + TIMER_CONTROL) = (1<<7) | (0<<6) | (0<<3);
+  __REG (TIMER2_PHYS + TIMER_CONTROL) = 0;
+  __REG (TIMER3_PHYS + TIMER_CONTROL) = 0;
 }
 
 static void lh7a40x_timer_release (void)
 {
-  __REG (TIMER1_PHYS | TIMER_CONTROL) = 0;
+  __REG (TIMER1_PHYS + TIMER_CONTROL) = 0;
 }
 
 unsigned long timer_read (void)
@@ -55,7 +55,7 @@ unsigned long timer_read (void)
   static unsigned long valueLast;
   static unsigned long wrap;
 
-  unsigned long value = __REG (TIMER1_PHYS | TIMER_VALUE);
+  unsigned long value = __REG (TIMER1_PHYS + TIMER_VALUE);
 
   if (value > valueLast)
     ++wrap;

@@ -88,7 +88,7 @@ void __naked __section (bootstrap) relocate_apex (void)
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
     void* pv = &APEX_VMA_ENTRY;
 
-    int cAddr = NAM_DECODE (__REG (BOOT_PHYS | BOOT_PBC));
+    int cAddr = NAM_DECODE (__REG (BOOT_PHYS + BOOT_PBC));
 
     __REG8 (NAND_CLE) = Reset;
     wait_on_busy ();
