@@ -108,7 +108,8 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
     case '0'...'9':
       pl = &d->start;
       break;
-    case '#':
+    case '#':			/* Deprecated */
+    case '+':
       pl = &d->length;
       /* Fallthrough to get ++ib */
     default:

@@ -51,6 +51,8 @@ TODO:
     the platform.  Perhaps the config should specify info on the SDRAM
     chip(s).
 
+  o Replace # with + in regions.
+
 Goals
 
   o Simple structure

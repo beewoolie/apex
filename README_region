@@ -8,7 +8,7 @@ sources, and data sinks.  While similar to the way that the kernel
 refers to regions of memory, the APEX notation is not compatible with
 the kernel form.
 
-  [DRIVER:][@]START[#LENGTH]
+  [DRIVER:][@]START[+LENGTH]
 
 The DRIVER is the name of an IO driver that handles the requests.
 Without an explicit driver, the 'memory:' driver is the default.
@@ -27,14 +27,16 @@ mapped at 0x40000000, nor:0 to the first byte at physical address
 
 The LENGTH is a count of bytes.  It may be omitted when the length is
 either self-evident or when there is a reasonable default.  For
-example, when displaying a region, the default length is about 64.
-When erasing a flash block, the default length is 1.
+example, when dumping a region, the default length is 64.  When
+erasing flash, the default length is 1.  The marker '+' replaces the
+original '#' which is deprecated though still supported.  The #
+character is more useful as a comment character.
 
 START and LENGTH may be specifed as a decimal number, a hexadecimal
 number, and may followed by a suffix 'm' for for megabytes (1024*1024)
 or 'k' for kilobytes (1024).
 
-  nor:16k#4k	 - 4096 bytes, 16384 bytes from the start of NOR flash
+  nor:16k+4k	 - 4096 bytes, 16384 bytes from the start of NOR flash
   nand:0	 - Starting with the first byte using the only NAND driver
   nand-eb501:0   - Starting with the first byte using a specific NAND driver
 

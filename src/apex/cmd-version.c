@@ -53,7 +53,7 @@ int cmd_version (int argc, const char** argv)
 "For details, refer to the file COPYING in the program source."
 #endif
 "\n\n"
-"  apex => mem:0x%p#0x%lx\n"
+"  apex => mem:0x%p+0x%lx\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
