@@ -466,11 +466,15 @@ static int ext2_block_read (int block, void* pv, size_t cb)
 
 /* ext2_update_block_cache
 
-   makes sure that the block cache contains the block number for the
-   given block_index.  This function is fast if the cache already
-   contains the data.  It return 0 on success.  A non-zero result
-   means that there was a read error.  Requesting a block beyond the
-   end of the inode is not detected.
+   makes sure that the block number cache contains the given block
+   number.  This function is fast if the cache already contains the
+   data.  It return 0 on success.  A non-zero result means that there
+   was a read error.  Requesting a block beyond the extent of the
+   inode is *not* detected.
+
+   This is a core function of the driver.  It traverses the inode
+   block list and retrieves up to a block's worth of block numbers for
+   the file.
 
 */
 
@@ -478,11 +482,14 @@ static int ext2_update_block_cache (int block_index)
 {
   int block_base = 0;
 
+  ENTRY (0);
+
   if (block_index >= ext2.blockCache 
       && block_index < ext2.blockCache + ext2.cCache)
     return 0;			/* Already cached */
 
   if (block_index < ext2.rg_blocking[0]) {		/* Direct */
+    PRINTF ("  direct\n");
     ext2.blockCache = 0;
     ext2.cCache = ext2.rg_blocking[0];
     memcpy (ext2.rgbCache, &ext2.inode.i_block[0],
@@ -494,10 +501,12 @@ static int ext2_update_block_cache (int block_index)
   ext2.cCache = ext2.rg_blocking[1]; /* One block of block numbers */
 
   if (block_index < block_base + ext2.rg_blocking[1]) {	/* Indirect */
+    PRINTF ("  indirect\n");
     if (ext2_block_read (ext2.inode.i_block[12], ext2.rgbCache, 
 			 sizeof (ext2.block_size)))
       return -1;
     ext2.blockCache = block_base;
+    PRINTF ("  indirect %d\n", ext2.blockCache);
     return 0;
   }
 
@@ -505,6 +514,7 @@ static int ext2_update_block_cache (int block_index)
 
   if (block_index < block_base + ext2.rg_blocking[2]) {	/* Double indirect */
     int offset = (block_index - block_base)/ext2.rg_blocking[1];
+    PRINTF ("  offset %d\n", offset);
 
     if (ext2_block_read (ext2.inode.i_block[13], ext2.rgbCache, 
 			 sizeof (ext2.block_size)))
@@ -514,14 +524,17 @@ static int ext2_update_block_cache (int block_index)
       return -1;
 
     ext2.blockCache = block_base + offset*ext2.rg_blocking[1];
+
+    PRINTF ("  double indirect %d\n", ext2.blockCache);
+
     return 0;
   }
 
   block_base += ext2.rg_blocking[2];
-
 							/* Triple indirect */
   {
     int offset = (block_index - block_base)/ext2.rg_blocking[2];
+    PRINTF ("  offset %d\n", offset);
 
     if (ext2_block_read (ext2.inode.i_block[14], ext2.rgbCache, 
 			 sizeof (ext2.block_size)))
@@ -530,14 +543,18 @@ static int ext2_update_block_cache (int block_index)
 			 ext2.rgbCache, sizeof (ext2.block_size)))
       return -1;
 
-    block_base += offset*ext2.rg_blocking[1];
+    block_base += offset*ext2.rg_blocking[2];
     offset = (block_index - block_base)/ext2.rg_blocking[1];
+    PRINTF ("  block_base %d  offset %d\n", block_base, offset);
 
     if (ext2_block_read (read_block_number (offset),
 			 ext2.rgbCache, sizeof (ext2.block_size)))
       return -1;
 
     ext2.blockCache = block_base + offset*ext2.rg_blocking[1];
+
+    PRINTF ("  triple indirect %d\n", ext2.blockCache);
+
     return 0;
   }
 }
@@ -551,7 +568,8 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   while (cb) {
     size_t available = cb;
     size_t index = d->start + d->index;
-    size_t remain = ext2.block_size - (index & (ext2.block_size - 1));
+    size_t offset = (index & (ext2.block_size - 1));
+    size_t remain = ext2.block_size - offset;
     int block_index;
     int block;
 
@@ -563,11 +581,13 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
       available = remain;
 
     block_index = index/ext2.block_size;
+    PRINTF ("%s: index %d  block_index %d  offset %d  available %d\n",
+	    __FUNCTION__, index, block_index, offset, available);
     if (ext2_update_block_cache (block_index))
       break;
 
     block = read_block_number (block_index - ext2.blockCache);
-    ext2.d.driver->seek (&ext2.d, ext2.block_size*block, SEEK_SET);  
+    ext2.d.driver->seek (&ext2.d, ext2.block_size*block + offset, SEEK_SET);  
 
     {
       ssize_t cbThis = ext2.d.driver->read (&ext2.d, pv, available);
