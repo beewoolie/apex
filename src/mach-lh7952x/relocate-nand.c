@@ -35,8 +35,7 @@
 #include <apex.h>
 #include <asm/bootstrap.h>
 #include "nand.h"
-#include "lh79524.h"
-#include "lpd79524.h"
+#include "hardware.h"
 
 
 /* wait_on_busy

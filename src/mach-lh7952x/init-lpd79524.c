@@ -33,8 +33,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 
-#include "lh79524.h"
-#include "lpd79524.h"
+#include "hardware.h"
 
 //#define USE_SLOW
 

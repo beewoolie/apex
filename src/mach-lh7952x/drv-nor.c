@@ -53,7 +53,7 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
-#include "lh79524.h"
+#include "hardware.h"
 #include <spinner.h>
 
 //#define TALK

@@ -66,8 +66,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 
-#include "lh79520.h"
-#include "lpd79520.h"
+#include "hardware.h"
 
 //#define USE_SLOW
 

@@ -50,8 +50,7 @@
 #include <linux/string.h>
 #include <spinner.h>
 
-#include "lh79524.h"
-#include "lpd79524.h"
+#include "hardware.h"
 #include "nand.h"
 
 struct nand_chip {
