@@ -6,7 +6,7 @@ CROSS_COMPILE=/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softf
 
 VERSION = 1
 PATCHLEVEL = 0
-SUBLEVEL = 10
+SUBLEVEL = 11
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
