@@ -167,9 +167,9 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
     }
   }
   else 
+  region_parse:
 #endif
   {			/* Region descriptor parse */
-  region_parse:
     while (sz[ib]) {
       char* pchEnd;
       unsigned long* pl = 0;
