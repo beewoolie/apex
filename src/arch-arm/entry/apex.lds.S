@@ -25,7 +25,7 @@ SECTIONS
 		*(.glue_7)
 		*(.glue_7t)
 	}
-	. = ALIGN (8);
+	. = ALIGN (4);
 	APEX_DATA_START = .;
 	.data . : {
 		*(.data)

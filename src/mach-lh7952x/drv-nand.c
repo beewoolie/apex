@@ -215,7 +215,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
   do {
     unsigned long block = (d->start + d->index)/chip->erase_size;
     unsigned long available
-      = chip->erase_size - ((d->start + d->index) & ~(chip->erase_size - 1));
+      = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
     __REG8 (NAND_CLE) = Erase;
     __REG8 (NAND_ALE) = (block & 0xff);

@@ -57,7 +57,7 @@ void exec_monitor (void)
     const char** argv;
     int argc;
 
-    read_command ("apex> ", &argc, &argv);
+    read_command ("\rapex> ", &argc, &argv);
     call_command (argc, argv);
 
   } while (1);

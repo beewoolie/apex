@@ -127,7 +127,7 @@ static unsigned short nor_status (unsigned long index)
   do {
     status = READ_ONE (index);
   } while (   (status & Ready) == 0
-	   || timer_delta (time, timer_read ()) < 6*1000);
+           && timer_delta (time, timer_read ()) < 6*1000);
   return status;
 }
 
@@ -175,6 +175,9 @@ static int nor_probe (void)
     printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
 
 #endif
+
+  __REG16 (NOR_0_PHYS) = ClearStatus;
+  __REG16 (NOR_1_PHYS) = ClearStatus;
 
   return chip == NULL;		/* Present and initialized */
 }
@@ -255,15 +258,13 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       step = 1;
       index &= ~1;
       WRITE_ONE (d->index, ReadArray);
-      //      __REG16 (d->index & ~1) = ReadArray;
-      data = READ_ONE (index); //__REG16 (index);
+      data = READ_ONE (index);
       ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
     }
     else if (cb == 1) {
       step = 1;
       WRITE_ONE (d->index, ReadArray);
-      //      __REG16 (d->index) = ReadArray;
-      data = READ_ONE (index);// __REG16 (index);
+      data = READ_ONE (index);
       ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
     }
     else
@@ -308,7 +309,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     unsigned long index = d->start + d->index;
     int page = index/chip->erase_size;
     unsigned long available
-      = chip->erase_size - (index & ~(chip->erase_size - 1));
+      = chip->erase_size - (index & (chip->erase_size - 1));
     unsigned short status; 
 
     index = phys_from_index (index);
@@ -318,13 +319,11 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
     index &= ~(chip->erase_size - 1);
 
-    CLEAR_STATUS (index);
     vpen_enable ();
     if (page != pageLast) {
       status = nor_unlock_page (index);
       if (status & (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
-      CLEAR_STATUS (index);
       pageLast = page;
     }
     WRITE_ONE (index, Erase);
