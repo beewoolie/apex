@@ -54,6 +54,10 @@ SECTIONS
 		*(.atag_1)
 		*(.atag_2)
 		*(.atag_3)
+		*(.atag_4)
+		*(.atag_5)
+		*(.atag_6)
+		*(.atag_7)
 		APEX_ATAG_END = .;
 	}
 	.command . : {

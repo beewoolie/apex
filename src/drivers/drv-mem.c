@@ -203,6 +203,7 @@ static struct tag* atag_memory (struct tag* p)
     p->u.mem.start = regions[i].start;
     p->u.mem.size  = regions[i].length;
 			
+//    printf (" mem 0x%08x # 0x%08x\r\n", p->u.mem.start, p->u.mem.size);
     p = tag_next (p);
   }
 

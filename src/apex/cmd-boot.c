@@ -44,18 +44,24 @@ int cmd_boot (int argc, const char** argv)
   build_atags ();
 #endif
 
-  printf ("\r\nExecuting kernel ...\r\n\r\n");
-  //serial_flush_output();
+//  printf ("Executing...\r\n");
 
+  //serial_flush_output();
   //exit_subsystems();
 
   ((void (*)(int, int, int)) address) 
     (0, CONFIG_ARCH_NUMBER, CONFIG_ATAG_PHYS);
 
-  printf ("Hey, the kernel returned! This should not happen.\r\n");
+  printf ("Uh, oh.  Linux returned.\r\n");
 
   return 0;
 }
+
+static __command struct command_d c_boot = {
+  .command = "boot",
+  .description = "boot the Linux",
+  .func = cmd_boot,
+};
 
 #if defined (CONFIG_ATAG)
 struct tag* atag_commandline (struct tag* p)

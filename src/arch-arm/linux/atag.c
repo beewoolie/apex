@@ -49,4 +49,4 @@ struct tag* atag_end (struct tag* p)
 
 
 static __atag_0 struct atag_d _atag_header = { atag_header };
-static __atag_3 struct atag_d _atag_end = { atag_end };
+static __atag_7 struct atag_d _atag_end    = { atag_end };

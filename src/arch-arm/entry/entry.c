@@ -60,6 +60,13 @@ void __naked __section(.entry) exception_vectors (void)
 
 void __naked __section (.bootstrap) reset (void)
 {
+#if 0
+				/* Disable MMU */
+  __asm ("mrc p15, 0, r0, c1, c0, 0");
+  __asm ("bic r0, r0, #1");
+  __asm ("mcr p15, 0, r0, c1, c0, 0");
+#endif
+
   initialize_bootstrap ();
   relocate_apex ();
   initialize_target ();
