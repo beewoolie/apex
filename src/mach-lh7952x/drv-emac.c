@@ -207,7 +207,8 @@ static int emac_phy_read (int phy_address, int phy_register)
     |((phy_register & 0x1f)<<18)
     |(2<<16);
 
-  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
 
@@ -232,7 +233,8 @@ static void emac_phy_write (int phy_address, int phy_register, int phy_data)
     |(2<<16)
     |(phy_data & 0xffff);
 
-  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  //  usleep (2000*1000*1000/HCLK); /* wait 2000 HCLK cycles  */
+  usleep (10000);
   while ((EMAC_NETSTATUS & (1<<2)) == 0)
     ;
   EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
