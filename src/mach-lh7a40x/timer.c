@@ -25,6 +25,13 @@
    DESCRIPTION
    -----------
 
+   There isn't a good timing source available on the LH7A40X CPUs.  We
+   satisfy ourselves with a 16 bit, 2KHz timer that does some
+   primitive checking for the timer wrapping.  This works as long as
+   the interval between reads is less than half of the period of the
+   timer, or 15 seconds.  This turns out to be an OK assumption since
+   the timer tends to be used for checking very short timeout values.
+
 */
 
 #include <service.h>
@@ -52,6 +59,7 @@ unsigned long timer_read (void)
 
   if (value > valueLast)
     ++wrap;
+  valueLast = value;
 
   return (wrap*0x10000) + 0x10000 - value;
 }

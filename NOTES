@@ -14,7 +14,10 @@ TODO:
   o command history
 
   o lh7a40x
-    o Nor driver init's, but it won't erase or write
+    * Nor driver init's, but it won't erase or write
+      * fixed, but there appears to be a problem with it writing the
+	kernel to flash...also fixed.  There were several problems.
+    o buffered nor write...oh boy is this needed
     o Should be little else since there is only one memory device
     o Not much incentive to be small with 80k of SRAM
 

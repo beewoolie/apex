@@ -152,7 +152,7 @@ static unsigned long nor_status (unsigned long index)
   unsigned long time = timer_read ();
   do {
     status = READ_ONE (index);
-  } while (   (status & STAT(Ready)) != STAT(Ready)
+  } while (   (status & STAT (Ready)) != STAT (Ready)
            && timer_delta (time, timer_read ()) < 6*1000);
   return status;
 }
@@ -434,7 +434,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     }
 
     cb -= available;
-    d->index += cb;
+    d->index += available;
   }
 }
 

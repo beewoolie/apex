@@ -27,11 +27,13 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
 #include <driver.h>
 #include <error.h>
+#include <spinner.h>
 
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
 
@@ -55,6 +57,7 @@ int cmd_checksum (int argc, const char** argv)
     while (index < d.length) {
       char rgb[512];
       int cb = d.driver->read (&d, rgb, sizeof (rgb));
+      SPINNER_STEP;
       crc = compute_crc32 (crc, rgb, cb);
       index += cb;
     }
