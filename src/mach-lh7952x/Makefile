@@ -28,4 +28,5 @@ obj-$(CONFIG_DRIVER_NOR)	+= drv-nor.o
 obj-$(CONFIG_DRIVER_CPLD_SPI)	+= drv-cpld-spi.o
 obj-$(CONFIG_DRIVER_EMAC)	+= drv-emac.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
+obj-$(CONFIG_CLCDC)		+= clcdc.o
 obj-y				+= cmd-reset.o

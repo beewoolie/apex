@@ -61,6 +61,7 @@
 #define RCPC_AHBCLKCTRL	(0x2c)
 #define RCPC_PCLKSEL0	(0x30)
 #define RCPC_PCLKSEL1	(0x34)
+#define RCPC_LCDPRE	(0x40)
 #define RCPC_INTCONFIG	(0x80)
 #define RCPC_INTCLR	(0x84)
 #define RCPC_CORECONFIG	(0x88)
@@ -140,7 +141,13 @@
 #define IOCON_MUXCTL12	(0x58)
 #define IOCON_MUXCTL14	(0x68)
 #define IOCON_MUXCTL19	(0x90)
+#define IOCON_RESCTL19	(0x94)
 #define IOCON_MUXCTL20	(0x98)
+#define IOCON_RESCTL20	(0x9c)
+#define IOCON_MUXCTL21	(0xa0)
+#define IOCON_RESCTL21	(0xa4)
+#define IOCON_MUXCTL22	(0xa8)
+#define IOCON_RESCTL22	(0xac)
 #define IOCON_MUXCTL23	(0xb0)
 #define IOCON_RESCTL23	(0xb4)
 #define IOCON_MUXCTL24	(0xb8)
@@ -199,8 +206,25 @@
 #define VIC_VECTADDR0	0x100
 #define VIC_VECTCTRL0	0x200
 
+#define ALI_PHYS	(0xfffe4000) /* Advanced LCD Interface */
+#define ALI_SETUP	(0x00)
+#define ALI_CTRL	(0x04)
+#define ALI_TIMING1	(0x08)
+#define ALI_TIMING2	(0x0c)
 
-	/* -- Registers */
+#define CLCDC_PHYS	(0xffff4000)
+#define CLCDC_TIMING0	(0x00)
+#define CLCDC_TIMING1	(0x04)
+#define CLCDC_TIMING2	(0x08)
+#define CLCDC_UPBASE	(0x10)
+#define CLCDC_LPBASE	(0x14)
+#define CLCDC_INTREN	(0x18)
+#define CLCDC_CTRL	(0x1c)
+#define CLCDC_STATUS	(0x20)
+#define CLCDC_INTERRUPT	(0x24)
+#define CLCDC_UPCURR	(0x28)
+#define CLCDC_LPCURR	(0x2c)
+#define CLCDC_PALETTE	(0x200)
 
 #define EMAC_PHYS		0xfffc7000
 #define EMAC_NETCTL		0x00
