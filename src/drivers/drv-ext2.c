@@ -232,6 +232,7 @@ struct inode {
 };
 
 enum {
+  EXT2_NULL_INO		= 0,	/* Invalid inode number */
   EXT2_BAD_INO		= 1,	/* Bad blocks inode */
   EXT2_ROOT_INO		= 2,	/* Root inode */
   EXT2_ACL_IDX_INO 	= 3,	/* ACL inode */
@@ -566,31 +567,79 @@ static void* ext2_enum_directory (int inode, void* h,
    augmented to support symbolic links as these are likely to be
    useful in configuring the boot kernel and rootfs.
 
+   The inode parameter is the starting directory for the search.
+
+   *** I think I need to keep track of the CDW as well as the current
+   *** inode.  Not sure.  Need to write out some scenarios.
+
 */
 
-static int ext2_path_to_inode (struct descriptor_d* d)
+static int ext2_path_to_inode (int inode, struct descriptor_d* d)
 {
   int i = d->iRoot;
-  int inode = EXT2_ROOT_INO;
   void* h;
   struct directory* dir = NULL;
+
+#if 0
+	/* First, we have to find out what our starting point is. */
+  if (ext2_find_inode (inode))
+    return EXT2_NULL_INO;
+
+  if (S_ISLNK (ext2.inode.i_mode)) {
+    int cb = ext2.inode.i_size;
+    char sz[cb + 32];
+    struct descriptor d;
+    strcpy (sz, "ext2:"); /* *** FIXME: bad hack */
+    memcpy (sz + 5, (void*) &ext2.inode.i_block[0], cb);
+    sz[5 + cb] = 0;
+    if (parse_descriptor (sz, &d))
+      return EXT2_NULL_INO;
+    inode = ext2_path_to_inode (dir->inode, &d); /* Chase */
+  }
+
+#endif
+
+  if (!inode)
+    inode = EXT2_ROOT_INO;
 
   for (; i < d->c; ++i) {
     int length = strlen (d->pb[i]);
     h = NULL;
     while ((h = ext2_enum_directory (inode, h, &dir))) {
+      printf ("  '%s' '%*.*s'\n", d->pb[i], 
+	      dir->name_len, dir->name_len, dir->name);
       if (length != dir->name_len)
 	continue;
       if (memcmp (d->pb[i], dir->name, length))
 	continue;
+
+#if 0
+		/* Chase the link */
+      if (dir->file_type == EXT2_FT_SYMLINK) {
+	if (ext2_find_inode (dir->inode))
+	  return EXT2_NULL_INO;
+	{
+	  int cb = ext2.inode.i_size;
+	  char sz[cb + 32];
+	  struct descriptor_d d2;
+	  strcpy (sz, "ext2:"); /* *** FIXME: bad hack */
+	  memcpy (sz + 5, (void*) &ext2.inode.i_block[0], cb);
+	  sz[5 + cb] = 0;
+	  if (parse_descriptor (sz, &d2))
+	    return EXT2_NULL_INO;
+	  inode = ext2_path_to_inode (dir->inode, &d2);
+	}
+      }
+#endif
+
 		/* Name matches */
       if (i + 1 < d->c && dir->file_type != EXT2_FT_DIR)
-	return 0;		/* Can only follow paths via directories */
+	return EXT2_NULL_INO;	/* Can only follow paths via directories */
       inode = dir->inode;
       break;
     }
     if (h == NULL)
-      return 0;
+      return EXT2_NULL_INO;
   }
   return inode;
 }
@@ -679,7 +728,7 @@ static int ext2_open (struct descriptor_d* d)
     inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
   }
   else
-    inode_target = ext2_path_to_inode (d);
+    inode_target = ext2_path_to_inode (0, d);
 
   if (inode_target == 0)
     return ERROR_FILENOTFOUND;

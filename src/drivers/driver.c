@@ -27,7 +27,8 @@
 
    o Lower-case pathnames.
 
-     Until there is a strcasecmp, we need to locase pathnames.
+     Until there is a strcasecmp, we need to locase pathnames.  This
+     breaks the ext2 driver, so we have to do something immediately.
 
 */
 
@@ -38,6 +39,8 @@
 #include <error.h>
 #include <apex.h>
 #include <config.h>
+
+#define TOLOWER(c) (c)
 
 void close_helper (struct descriptor_d* d)
 {
@@ -121,7 +124,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  goto region_parse;
 	}
 	else {
-	  d->rgb[ib] = tolower (d->rgb[ib]);
+	  d->rgb[ib] = TOLOWER (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
 	  state = 9;
 	}
@@ -136,7 +139,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  goto region_parse;
 	}
 	else {
-	  d->rgb[ib] = tolower (d->rgb[ib]);
+	  d->rgb[ib] = TOLOWER (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
 	  state = 9;
 	}
@@ -148,7 +151,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
-	d->rgb[ib] = tolower (d->rgb[ib]);
+	d->rgb[ib] = TOLOWER (d->rgb[ib]);
 	d->pb[d->c++] = &d->rgb[ib];
 	state = 9;
 	break;
@@ -158,7 +161,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  goto region_parse;
 	}
 	if (d->rgb[ib] != '/') {
-	  d->rgb[ib] = tolower (d->rgb[ib]);
+	  d->rgb[ib] = TOLOWER (d->rgb[ib]);
 	  continue;
 	}
 	d->rgb[ib] = 0;
