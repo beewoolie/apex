@@ -32,6 +32,12 @@
    *** searching, but it would be helpful to use the device's internal
    *** data structures to discover how the device is layed out.
 
+   - This driver has been hacked to only support a 32 bit NOR
+     meta-device consisting of a pair of 16 bit flash chips.  It would
+     be good to have a single driver that uses compile-time macros to
+     control how it accesses the flash array.  We want to stay away
+     from truly dynamic code in order to conserve memory.
+
 */
 
 #include <driver.h>
@@ -41,14 +47,39 @@
 #include <config.h>
 #include "lh7a40x.h"
 #include <spinner.h>
+
 #define TALK
+//#define NOISY
+
+#if defined TALK
+# define PRINTF(v...)	printf (v)
+#else
+# define PRINTF(v...)	do {} while (0)
+#endif
+
+//#define USE_BUFFERED_WRITE	/* Use write buffer for faster operation */
+//#define NO_WRITE		/* Disable writes, for debugging */
+
+/* Here are the parameters that ought to be changed to align the
+   driver with the expected flash layout. */
 
 #define NOR_0_PHYS	(0x00000000)
 #define NOR_0_LENGTH	(16*1024*1024)
 #define WIDTH		(32)		/* Device width in bits */
 #define WIDTH_SHIFT	(WIDTH>>4)	/* Bit shift for device width */
+#define CHIP_MULTIPLIER	(2)		/* Number of chips at REGA */
+#define REGC		__REG16		/* Single chip I/O macro */
+#define REGA		__REG		/* Array I/O macro */
 
-#define CMD(v) ((v) | ((v)<<16))
+#define CMD(v)		((v) | ((v)<<16))
+#define STAT(v)		((v) | ((v)<<16))
+#define QRY(v)		((v) | ((v)<<16))
+
+/* *** How do we hook the VPEN manipulation code? */
+
+/* Here are the parameters that ought to remain constant for CFI
+   compliant flash. */
+
 #define ReadArray	0xff
 #define ReadID		0x90
 #define ReadQuery	0x98
@@ -71,7 +102,6 @@
 #define FST1		(1<<1)
 #define FST2		(1<<2)
 
-#define STAT(v) ((v) | ((v)<<16))
 #define Ready		(1<<7)
 #define EraseSuspended	(1<<6)
 #define EraseError	(1<<5)
@@ -81,17 +111,16 @@
 #define DeviceProtected	(1<<1)
 
 struct nor_chip {
-  unsigned char manufacturer;
-  unsigned char device;
+  //  unsigned char manufacturer;
+  //  unsigned char device;
   unsigned long total_size;
   int erase_size;
-};
-
-const static struct nor_chip chips[] = {
-  { 0x89, 0x17, 16*1024*1024, 256*1024 }, /* i28F640J3A */
+  int erase_count;		/* Number of erase blocks */
+  int writebuffer_size;		/* Size (bytes) of buffered write buffer */
 };
 
 const static struct nor_chip* chip;
+static struct nor_chip chip_probed;
 
 static unsigned long phys_from_index (unsigned long index)
 {
@@ -110,17 +139,17 @@ static void vpen_disable (void)
 
 static unsigned long nor_read_one (unsigned long index)
 {
-  return __REG (index);
+  return REGA (index);
 }
 #define READ_ONE(i) nor_read_one (i)
 
 static void nor_write_one (unsigned long index, unsigned long v)
 {
-  __REG (index) = v;
+  REGA (index) = v;
 }
 #define WRITE_ONE(i,v) nor_write_one ((i), (v))
 
-#define CLEAR_STATUS(i) nor_write_one(i, CMD(ClearStatus))
+#define CLEAR_STATUS(i) nor_write_one(i, CMD (ClearStatus))
 
 static unsigned long nor_status (unsigned long index)
 {
@@ -128,57 +157,126 @@ static unsigned long nor_status (unsigned long index)
   unsigned long time = timer_read ();
   do {
     status = READ_ONE (index);
-  } while (   (status & STAT(Ready)) != 0
+  } while (   (status & STAT(Ready)) != STAT(Ready)
            && timer_delta (time, timer_read ()) < 6*1000);
   return status;
 }
 
+/* nor_unlock_page
+
+   will conditionally unlock the page if it is locked.  Conditionally
+   performing this operation results in minimal wear.
+
+   We check if either block is locked and unlock both if one is
+   locked.
+
+*/
+
 static unsigned long nor_unlock_page (unsigned long index)
 {
-  WRITE_ONE (index, CMD(Configure));
-  WRITE_ONE (index, CMD(LockClear));
+  index &= ~chip->erase_size;	/* Base of page */
+
+  WRITE_ONE (index, CMD (ReadID));
+  if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
+    return STAT (Ready);
+
+  WRITE_ONE (index, CMD (Configure));
+  WRITE_ONE (index, CMD (LockClear));
   return nor_status (index);
 }
 
 static void nor_init (void)
 {
-  unsigned char manufacturer;
-  unsigned char device;
-
   vpen_disable ();
 
-  __REG (NOR_0_PHYS) = CMD(ReadArray);
-  __REG (NOR_0_PHYS) = CMD(ReadID);
+  REGA (NOR_0_PHYS) = CMD (ReadArray);
+  REGA (NOR_0_PHYS) = CMD (ReadID);
 
-  if (   __REG (NOR_0_PHYS + (0x10 << WIDTH_SHIFT)) != ('Q'|('Q'<<16))
-      || __REG (NOR_0_PHYS + (0x11 << WIDTH_SHIFT)) != ('R'|('R'<<16))
-      || __REG (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != ('Y'|('Y'<<16)))
+  if (   REGA (NOR_0_PHYS + (0x10 << WIDTH_SHIFT)) != QRY('Q')
+      || REGA (NOR_0_PHYS + (0x11 << WIDTH_SHIFT)) != QRY('R')
+      || REGA (NOR_0_PHYS + (0x12 << WIDTH_SHIFT)) != QRY('Y'))
     return;
 
-  manufacturer = __REG (NOR_0_PHYS + (0x00 << WIDTH_SHIFT)) & 0xff;
-  device       = __REG (NOR_0_PHYS + (0x01 << WIDTH_SHIFT)) & 0xff;
+  chip_probed.total_size 
+    = (1<<REGC (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)))
+    *CHIP_MULTIPLIER;
 
-  for (chip = &chips[0]; 
-       chip < chips + sizeof (chips)/sizeof (struct nor_chip);
-       ++chip)
-    if (chip->manufacturer == manufacturer && chip->device == device)
-      break;
-  if (chip >= chips + sizeof (chips)/sizeof (chips[0]))
-      chip = NULL;
+  chip_probed.writebuffer_size
+    = (1<<(   REGC (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
+           | (REGC (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8)))
+    *CHIP_MULTIPLIER;
+  chip_probed.erase_size
+    = 256*(   REGC (NOR_0_PHYS + (0x2f << WIDTH_SHIFT))
+	   | (REGC (NOR_0_PHYS + (0x30 << WIDTH_SHIFT)) << 8))
+    *CHIP_MULTIPLIER;
+  chip_probed.erase_count
+    = 1 + (REGC (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
+	   | (REGC (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8));
+  chip = &chip_probed;
 
-#if defined (TALK)
+#if defined (NOISY)
 
-  printf ("\r\nNOR flash ");
+  PRINTF ("\r\nNOR flash ");
 
-  if (chip)
-    printf (" %ldMiB total, %dKiB erase\r\n", 
+  if (chip) {
+    PRINTF (" %ldMiB total, %dKiB erase", 
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
-  else
-    printf (" unknown 0x%x/0x%x\r\n", manufacturer, device);
+    PRINTF (", %dB write buffer, %d erase blocks", 
+	    chip->writebuffer_size, chip->erase_count);
+    PRINTF ("\r\n");
+  }
 
+  PRINTF ("command set 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x13 << WIDTH_SHIFT)));
+  PRINTF ("extended table 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x15 << WIDTH_SHIFT)));
+  PRINTF ("alternate command set 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x17 << WIDTH_SHIFT)));
+  PRINTF ("alternate address 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x19 << WIDTH_SHIFT)));
+
+  {
+    int typical;
+    int max;
+
+    typical = REGC (NOR_0_PHYS + (0x1f << WIDTH_SHIFT));
+    max	    = REGC (NOR_0_PHYS + (0x23 << WIDTH_SHIFT));
+    PRINTF ("single word write %d us (%d us)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    typical = REGC (NOR_0_PHYS + (0x20 << WIDTH_SHIFT));
+    max	    = REGC (NOR_0_PHYS + (0x24 << WIDTH_SHIFT));
+    PRINTF ("write-buffer write %d us (%d us)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    typical = REGC (NOR_0_PHYS + (0x21 << WIDTH_SHIFT));
+    max	    = REGC (NOR_0_PHYS + (0x25 << WIDTH_SHIFT));
+    PRINTF ("block erase %d ms (%d ms)\r\n", 
+	    1<<typical, (1<<typical)*max);
+    
+    typical = REGC (NOR_0_PHYS + (0x22 << WIDTH_SHIFT));
+    max     = REGC (NOR_0_PHYS + (0x26 << WIDTH_SHIFT));
+    if (typical) 
+      PRINTF ("chip erase %d us (%d us)\r\n", 
+	      1<<typical, (1<<typical)*max);
+  }
+
+  PRINTF ("device size 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)));
+  PRINTF ("flash interface 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x28 << WIDTH_SHIFT))
+	  | (REGC (NOR_0_PHYS + (0x28 << WIDTH_SHIFT)) << 8));
+  PRINTF ("write buffer size %d bytes\r\n",
+	  1<<(REGC (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
+	      | (REGC (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8)));
+  PRINTF ("erase block region count %d\r\n",
+	  REGC (NOR_0_PHYS + (0x2c << WIDTH_SHIFT)));
+  PRINTF ("erase block info 0x%x\r\n",
+	  REGC (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
+	  | (REGC (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8)
+	  | (REGC (NOR_0_PHYS + (0x2f << WIDTH_SHIFT)) << 16)
+	  | (REGC (NOR_0_PHYS + (0x30 << WIDTH_SHIFT)) << 24));
 #endif
 
-  __REG (NOR_0_PHYS) = CMD(ClearStatus);
+  REGA (NOR_0_PHYS) = CMD (ClearStatus);
 }
 
 static int nor_open (struct descriptor_d* d)
@@ -210,7 +308,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     cbRead += available;
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
-    WRITE_ONE (index, CMD(ReadArray));
+    WRITE_ONE (index, CMD (ReadArray));
     memcpy (pv, (void*) index, available);
 
     pv += available;
@@ -227,12 +325,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
    device.  It is probably OK for 32 bit devices, too, since most of
    those are really pairs of 16 bit devices.
 
-   The LH28F128 can perform buffered writes.  This routine only writes
-   individual bytes because the logic is simpler and adequate.
-
-   We ought to clear status as the top of the routine.  Unfortunately,
-   with multiple banks, we would have to either detect bank switches,
-   or always clear status on both banks.
+   Most chips can perform buffered writes.  This routine only writes
+   one cell at a time because the logic is simpler and adequate.
 
 */
 
@@ -240,8 +334,6 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int cbWrote = 0;
   int pageLast = -1;
-
-  return;			/* *** this code won't work */
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -255,37 +347,40 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     index = phys_from_index (index);
 
-    if (index & 1) {
-      step = 1;
-      index &= ~1;
+    if ((index & (WIDTH/8 - 1)) || cb < step) {
+      step = (WIDTH/8) - (index & (WIDTH/8 - 1)); /* Max at this index */
+      if (step > cb)
+	step = cb;
       data = ~0;
-      ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
-    }
-    else if (cb == 1) {
-      step = 1;
-      data = ~0;
-      ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
+      memcpy ((unsigned char*) &data + (index & (WIDTH/8 - 1)), pv, step);
+      index &= ~(WIDTH/8 - 1);
     }
     else
-      memcpy (&data, pv, 2);
+      memcpy (&data, pv, step);
 
     vpen_enable ();
     if (page != pageLast) {
       status = nor_unlock_page (index);
-      if (status & (ProgramError | VPEN_Low | DeviceProtected))
+      if (status & STAT (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
       pageLast = page;
     }
-    WRITE_ONE (index, CMD(Program));
+#if defined (NO_WRITE)
+    PRINTF ("nor_write 0x%08lx index 0x%lx  page 0x%x  step %d  cb 0x%x\r\n",
+	    data, index, page, step, cb);
+    status = STAT (Ready);
+#else
+    WRITE_ONE (index, CMD (Program));
     WRITE_ONE (index, data);
     status = nor_status (index);
+#endif
     vpen_disable ();
 
     SPINNER_STEP;
 
-    if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
+    if (status & STAT (ProgramError | VPEN_Low | DeviceProtected)) {
     fail:
-      printf ("Program failed at 0x%p (%x)\r\n", (void*) index, status);
+      printf ("Program failed at 0x%p (%lx)\r\n", (void*) index, status);
       CLEAR_STATUS (index);
       return cbWrote;
     }
@@ -301,11 +396,6 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 static void nor_erase (struct descriptor_d* d, size_t cb)
 {
-  int pageLast = -1;
-
-  /* *** This code didn't erase correctly. */
-  return;
-
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
@@ -313,7 +403,6 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
   while (cb > 0) {
     unsigned long index = d->start + d->index;
-    int page = index/chip->erase_size;
     unsigned long available
       = chip->erase_size - (index & (chip->erase_size - 1));
     unsigned long status; 
@@ -326,22 +415,25 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     index &= ~(chip->erase_size - 1);
 
     vpen_enable ();
-    if (page != pageLast) {
-      status = nor_unlock_page (index);
-      if (status & (ProgramError | VPEN_Low | DeviceProtected))
-	goto fail;
-      pageLast = page;
-    }
-    WRITE_ONE (index, CMD(Erase));
-    WRITE_ONE (index, CMD(EraseConfirm));
+    status = nor_unlock_page (index);
+    if (status & STAT (ProgramError | VPEN_Low | DeviceProtected))
+      goto fail;
+#if defined (NO_WRITE)
+    PRINTF ("nor_erase index 0x%lx  available 0x%lx\r\n",
+	    index, available);
+    status = STAT (Ready);
+#else
+    WRITE_ONE (index, CMD (Erase));
+    WRITE_ONE (index, CMD (EraseConfirm));
     status = nor_status (index);
+#endif
     vpen_disable ();
 
     SPINNER_STEP;
 
-    if (status & (STAT(EraseError) | STAT(VPEN_Low) | STAT(DeviceProtected))) {
+    if (status & STAT (EraseError | VPEN_Low | DeviceProtected)) {
     fail:
-      printf ("Erase failed at 0x%p (%x)\r\n", (void*) index, status);
+      printf ("Erase failed at 0x%p (%lx)\r\n", (void*) index, status);
       CLEAR_STATUS (index);
       return;
     }
@@ -352,8 +444,13 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_3 struct driver_d nor_driver = {
-  .name = "nor-7a40x",
+  .name = "nor-lpd7a40x",
   .description = "NOR flash driver",
+#if defined (USE_BUFFERED_WRITE)
+  .flags = DRIVER_WRITEPROGRESS(5),
+#else
+  .flags = DRIVER_WRITEPROGRESS(2),
+#endif
   .open = nor_open,
   .close = close_helper,
   .read = nor_read,
@@ -362,6 +459,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_6 struct service_d lh7a40x_nor_service = {
+static __service_6 struct service_d lpd7a40x_nor_service = {
   .init = nor_init,
 };

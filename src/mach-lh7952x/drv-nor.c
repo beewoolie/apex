@@ -153,7 +153,7 @@ static unsigned short nor_status (unsigned long index)
   unsigned long time = timer_read ();
   do {
     status = READ_ONE (index);
-  } while (   (status & Ready) == 0
+  } while (   (status & Ready) != Ready
            && timer_delta (time, timer_read ()) < 6*1000);
   return status;
 }
@@ -199,18 +199,6 @@ static void nor_init (void)
 	   | (__REG16 (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8));
   chip = &chip_probed;
 
-#if 0
-  manufacturer = __REG16 (NOR_0_PHYS + (0x00 << WIDTH_SHIFT));
-  device       = __REG16 (NOR_0_PHYS + (0x01 << WIDTH_SHIFT));
-
-  for (chip = &chips[0]; 
-       chip < chips + sizeof (chips)/sizeof (struct nor_chip);
-       ++chip)
-    if (chip->manufacturer == manufacturer && chip->device == device)
-      break;
-  if (chip >= chips + sizeof (chips)/sizeof (chips[0]))
-      chip = NULL;
-#endif
 
 #if defined (NOISY)
 
@@ -492,12 +480,12 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     if (index & 1) {
       step = 1;
       index &= ~1;
-      data = 0xffff;
+      data = ~0;
       ((unsigned char*)&data)[1] = *(const unsigned char*)pv;
     }
     else if (cb == 1) {
       step = 1;
-      data = 0xffff;
+      data = ~0;
       ((unsigned char*)&data)[0] = *(const unsigned char*)pv;
     }
     else
@@ -603,7 +591,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_3 struct driver_d nor_driver = {
-  .name = "nor-7952x",
+  .name = "nor-lpd7952x",
   .description = "NOR flash driver",
 #if defined (USE_BUFFERED_WRITE)
   .flags = DRIVER_WRITEPROGRESS(5),
@@ -618,6 +606,6 @@ static __driver_3 struct driver_d nor_driver = {
   .seek = seek_helper,
 };
 
-static __service_6 struct service_d lh7952x_nor_service = {
+static __service_6 struct service_d lpd7952x_nor_service = {
   .init = nor_init,
 };

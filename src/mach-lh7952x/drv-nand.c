@@ -319,7 +319,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_3 struct driver_d nand_driver = {
-  .name = "nand-79524",
+  .name = "nand-lpd79524",
   .description = "NAND flash driver",
   .flags = DRIVER_WRITEPROGRESS(6),
   .open = nand_open,
@@ -330,6 +330,6 @@ static __driver_3 struct driver_d nand_driver = {
   .seek = seek_helper,
 };
 
-static __service_6 struct service_d lh79524_nand_service = {
+static __service_6 struct service_d lpd79524_nand_service = {
   .init = nand_init,
 };
