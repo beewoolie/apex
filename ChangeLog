@@ -1,6 +1,12 @@
+2005-02-18  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/init-lpd79520.c: Fixed SDRAM init to comply
+	with Sharp recommendations in their SDRAM application note.
+	Thanks to prplague :-).
+
 2005-02-17  Marc Singer  <elf@buici.com>
 
-	* src/arch-arm/lib/relocate.c (__section): Implemented a simpler
+	* src/arch-arm/lib/relocate.c: Implemented a simpler
 	copy loop to help some platforms along.
 
 2005-02-16  Marc Singer  <elf@buici.com>

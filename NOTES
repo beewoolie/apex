@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o Wonder if I need, before performing reset, do a shutdown s.t. I
+    can put the nor flash in the right state.  This might be why reset
+    sometimes fails.
+
   o Add a -v option to copy to make sure the copy is successful.
 
   o Implement DEBUG_LL for lpd79524 so we can see what's happening to

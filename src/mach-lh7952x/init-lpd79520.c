@@ -92,8 +92,8 @@
 #define SDRC_COMMAND_PRECHARGE	(1<<0)
 #define SDRC_COMMAND_MODE	(2<<0)
 #define	SDRC_COMMAND_NOP	(3<<0)
-#define	SDRC_BUSY		(1<<5)
 
+#define SDRC_CONFIG1_BUSY	(1<<5)
 
 /* usleep
 
@@ -214,8 +214,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
      initialization sequence.  Below is the result.  It appears that
      the LH79520 handles all of the AUTO_REFRESH cycles.  I never
      tried breaking it by clearing the AP bit in the CFG0 register.
-     Note that there are no delays, one and only one NOP is required,
-     and there is no precharge after setting the mode.
+     Note that there are fewer delays, one and only one NOP, and there
+     is no precharge after setting the mode.
   */
 
   SDRC_CONFIG1 = SDRC_COMMAND_NOP;
@@ -226,6 +226,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
   __REG (SDRAM_BANK1_PHYS + SDRAM_CHIP_MODE);
+
+		/* Wait for controller to idle 
+		   -- See AppNote LH79520 SoC SDRAM connection and Usage */
+  while (SDRC_CONFIG1 & SDRC_CONFIG1_BUSY)
+    ;
 
   SDRC_CONFIG0 = SDRC_CONFIG_V;
   SDRC_CONFIG1 = SDRC_COMMAND_NORMAL;
