@@ -99,7 +99,9 @@
 #include "hardware.h"
 #include <linux/kernel.h>
 
-#define TALK 1
+#define USE_DIAG		/* Enables diagnostic code */
+
+#define TALK 0
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -131,6 +133,8 @@
 #define PHY_STATUS_100HALF		(1<<13)
 #define PHY_STATUS_10FULL		(1<<12)
 #define PHY_STATUS_10HALF		(1<<11)
+
+#if defined (USE_DIAG)
 
 static int phy_address;
 
@@ -322,6 +326,7 @@ static void emac_phy_detect (void)
   emac_phy_configure (phy_address);
 }
 
+#endif
 
 /* emac_read_mac
 
@@ -336,7 +341,7 @@ static int emac_read_mac (char rgbResult[6])
   char rgb[8];
   int result = 0;
 
-  if (parse_descriptor ("mac:0#8", &d)
+  if (   parse_descriptor ("mac:0#8", &d)
       || open_descriptor (&d))
     return -1;			/* No driver */
 
@@ -357,6 +362,7 @@ void emac_init (void)
 {
   PRINTF ("emac: init\r\n");
   
+#if defined (USE_DIAG)
 	/* Hardware setup */
   MASK_AND_SET (__REG (IOCON_PHYS + IOCON_MUXCTL1),
 		(3<<8)|(3<<6)|(3<<4),
@@ -379,6 +385,8 @@ void emac_init (void)
 
 //  PRINTF ("CPLD_CONTROL %x => %x\r\n", __REG8 (CPLD_CONTROL),
 //	  __REG8 (CPLD_CONTROL) | CPLD_CONTROL_WRLAN_ENABLE);
+#endif
+
   __REG (RCPC_PHYS + RCPC_CTRL) |= RCPC_CTRL_UNLOCK;
   __REG (RCPC_PHYS + RCPC_AHBCLKCTRL) &= ~(1<<2);
   __REG (RCPC_PHYS + RCPC_CTRL) &= ~RCPC_CTRL_UNLOCK;
@@ -395,14 +403,16 @@ void emac_init (void)
     }
   }
 
-  msleep (1000);
+#if defined (USE_DIAG)
+
+//  msleep (1000);
   __REG8 (CPLD_CONTROL) |= CPLD_CONTROL_WRLAN_ENABLE;
-  msleep (1000);
+//  msleep (1000);
   //  msleep (500);
   //  phy_address = 1;
   emac_phy_detect ();
 
-  msleep (1000);
+//  msleep (1000);
 
   emac_setup ();
 
@@ -418,11 +428,14 @@ void emac_init (void)
     PRINTF ("emac: no link detected\r\n");
   else
     PRINTF ("emac: link change detected\r\n");
+#endif
 }
 
 static __service_6 struct service_d lh7952x_emac_service = {
   .init = emac_init,
 };
+
+#if defined (USE_DIAG)
 
 void emac_send_packet (void)
 {
@@ -449,6 +462,7 @@ void emac_send_packet (void)
   EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
   EMAC_NETCTL |= EMAC_NETCTL_STARTTX;
 }
+#endif
 
 #if defined (CONFIG_CMD_EMAC)
 
@@ -457,6 +471,7 @@ int cmd_emac (int argc, const char** argv)
   int result = 0;
 
   if (argc == 1) {
+#if defined (USE_DIAG)
 #if defined (TALK)
     {
       unsigned i;
@@ -634,8 +649,10 @@ int cmd_emac (int argc, const char** argv)
 	      rgl_rx_descriptor[3]);
     }
 #endif
+#endif
   }
   else {
+#if defined (USE_DIAG)
     if (strcmp (argv[1], "clear") == 0) {
       EMAC_TXSTATUS = 0x7f;
       rgl_tx_descriptor[0] = 0;
@@ -677,7 +694,8 @@ int cmd_emac (int argc, const char** argv)
 		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
 		      | emac_phy_read (phy_address, 0));
     }
-    else if (strcmp (argv[1], "mac") == 0) {
+#endif
+    if (strcmp (argv[1], "mac") == 0) {
       unsigned char rgb[9];
       if (argc != 3)
 	return ERROR_PARAM;

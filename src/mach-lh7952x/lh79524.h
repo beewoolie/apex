@@ -42,6 +42,23 @@
 
 	/* Registers */
 
+#define ADC_PHYS	(0xfffc3000)
+#define ADC_HW		(0x00)	/* High Word (RO) */
+#define ADC_LW		(0x04)	/* Low Word (RO) */
+#define ADC_RR		(0x08)	/* Results (RO) */
+#define ADC_IM		(0x0c)	/* Interrupt Masking */
+#define ADC_PC		(0x10)	/* Power Configuration */
+#define ADC_GC		(0x14)	/* General Configuration */
+#define ADC_GS		(0x18)	/* General Status */
+#define ADC_IS		(0x1c)	/* Interrupt Status */
+#define ADC_FS		(0x20)	/* FIFO Status */
+#define ADC_HWC_BASE	(0x24)	/* High Word Control (0-15) */
+#define ADC_LWC_BASE	(0x64)	/* Low Word Control (0-15) */
+#define ADC_IHWCTRL	(0xa4)	/* Idle High Word Control */
+#define ADC_ILWCTRL	(0xa8)	/* Idle Low word Control */
+#define ADC_MIS		(0xac)	/* Masked Interrupt Status  */
+#define ADC_IC		(0xb0)	/* Interrupt clear */
+
 #define BOOT_PHYS	(0xfffe6000)
 
 #define BOOT_PBC	(0x00)
@@ -63,6 +80,7 @@
 #define RCPC_PCLKSEL1	(0x34)
 #define RCPC_LCDPRE	(0x40)
 #define RCPC_SSPPRE	(0x44)
+#define RCPC_ADCPRE	(0x48)
 #define RCPC_INTCONFIG	(0x80)
 #define RCPC_INTCLR	(0x84)
 #define RCPC_CORECONFIG	(0x88)
@@ -154,6 +172,7 @@
 #define IOCON_RESCTL23	(0xb4)
 #define IOCON_MUXCTL24	(0xb8)
 #define IOCON_RESCTL24	(0xbc)
+#define IOCON_MUXCTL25	(0xc0)
 
 #define DMA_PHYS	(0xfffe1000)
 #define DMA0_PHYS	(0xfffe1000)

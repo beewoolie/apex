@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := serial.o env.o
+obj-y := serial.o env.o adc.o
 obj-$(CONFIG_MACH_LPD79520)     += init-lpd79520.o timer-lh79520.o
 obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o

@@ -60,13 +60,13 @@
 //#define USE_DMA_CAP
 #define USE_16
 #define USE_STEREO
-#define USE_LOOPBACK_I2S
+//#define USE_LOOPBACK_I2S
 #define USE_SIGNED_CONVERSION
 //#define USE_LOOPBACK_SSP
-#define USE_8KHZ
+//#define USE_8KHZ
 //#define USE_22KHZ
-//#define USE_44KHZ
-//#define USE_LOOPS	2000
+#define USE_44KHZ
+#define USE_LOOPS	2000
 //#define USE_LOOPS	5
 
 //#define USE_E5
@@ -123,11 +123,12 @@
 #define I2S_MIS		__REG(I2S_PHYS + 0x10)
 #define I2S_ICR		__REG(I2S_PHYS + 0x14)
 
+#define I2S_CTRL_LOOP	(1<<5)
 #define I2S_CTRL_MCLKINV (1<<4)
 #define I2S_CTRL_WSDEL	(1<<3)
 #define I2S_CTRL_WSINV	(1<<2)
 #define I2S_CTRL_I2SEN	(1<<1)
-#define I2S_CTRL_I2SLBM	(1<<0)
+#define I2S_CTRL_I2SEL	(1<<0)
 
 #define I2S_STAT_MS	(1<<8)
 #define I2S_STAT_RFF	(1<<7)
@@ -152,7 +153,6 @@
 #define CODEC_RESET		(0xf)
 
 #define CODEC_ADDR_SHIFT	(9)
-
 
 #define CMD(a,c)	((((a) & 0x7f)<<CODEC_ADDR_SHIFT)|((c) & 0x1ff))
 
@@ -586,7 +586,7 @@ static int convert_source (void)
 # endif
 #endif
 
-#if defined (SOURCE_MONO)     && !defined (USE_STEREO)
+#if   defined (SOURCE_MONO)   && !defined (USE_STEREO)
     buffer[ib++] = v;
 #elif defined (SOURCE_STEREO) &&  defined (USE_STEREO)
     buffer[ib++] = v;
@@ -629,17 +629,6 @@ static int cmd_codec_test (int argc, const char** argv)
   DMA0_MAX	= 0xffff;
 #endif
 
-  SSP_CTRL1 |= SSP_CTRL1_SSE;		/* Enable SSP  */
-
-#if defined (USE_I2S)
-  I2S_CTRL |= 0
-    | I2S_CTRL_I2SEN
-#if defined (USE_LOOPBACK_I2S)
-    | I2S_CTRL_I2SLBM
-#endif
-    ;
-#endif
-
  restart:
   index = 0;
 
@@ -664,6 +653,16 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
   DMA1_CTRL |= (1<<0);		/* Enable TX DMA */
 
+#if defined (USE_I2S)
+  I2S_CTRL |= 0
+    | I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
+#if defined (USE_LOOPBACK_I2S)
+    | I2S_CTRL_LOOP
+#endif
+    ;
+#endif
+  SSP_CTRL1 |= SSP_CTRL1_SSE;		/* Enable SSP  */
+
 				/* Wait for completion */
   while ((DMA_STATUS & (1<<1)) == 0)
     ;
@@ -683,9 +682,9 @@ static int cmd_codec_test (int argc, const char** argv)
   SSP_CTRL1 |= (1<<1);		/* Enable SSP */
 #if defined (USE_I2S)
   I2S_CTRL
-    = I2S_CTRL_I2SEN
+    = I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
 #if defined (USE_LOOPBACK_I2S)
-    | I2S_CTRL_I2SLBM
+    | I2S_CTRL_LOOP
 #endif
     ;
 #endif
