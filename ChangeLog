@@ -1,5 +1,9 @@
 2004-11-17  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7952x/drv-nor.c (nor_write): Fixed a buglet in
+	buffered writes where the size of the write was incorrect in some
+	edge cases.
+
 	* src/mach-lh7952x/drv-cpld-spi.c: Added cpld-spi drivers for
 	configuration EEPROM and for the MAC EEPROM.
 

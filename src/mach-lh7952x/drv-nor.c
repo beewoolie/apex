@@ -59,8 +59,15 @@
 #include "hardware.h"
 #include <spinner.h>
 
+//#define NOISY
 //#define TALK
 //#define EXTENDED
+
+#if defined TALK
+# define PRINTF(v...)	printf (v)
+#else
+# define PRINTF(v...)	do {} while (0)
+#endif
 
 #define USE_BUFFERED_WRITE	/* Use write buffer for faster operation */
 //#define NO_WRITE		/* Disable writes, for debugging */
@@ -205,21 +212,21 @@ static void nor_init (void)
       chip = NULL;
 #endif
 
-#if defined (TALK)
+#if defined (NOISY)
 
-  printf ("\r\nNOR flash ");
+  PRINTF ("\r\nNOR flash ");
 
   if (chip)
-    printf (" %ldMiB total, %dKiB erase\r\n", 
+    PRINTF (" %ldMiB total, %dKiB erase\r\n", 
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
 
-  printf ("command set 0x%x\r\n",
+  PRINTF ("command set 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x13 << WIDTH_SHIFT)));
-  printf ("extended table 0x%x\r\n",
+  PRINTF ("extended table 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x15 << WIDTH_SHIFT)));
-  printf ("alternate command set 0x%x\r\n",
+  PRINTF ("alternate command set 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x17 << WIDTH_SHIFT)));
-  printf ("alternate address 0x%x\r\n",
+  PRINTF ("alternate address 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x19 << WIDTH_SHIFT)));
 
   {
@@ -228,35 +235,35 @@ static void nor_init (void)
 
     typical = __REG16 (NOR_0_PHYS + (0x1f << WIDTH_SHIFT));
     max	    = __REG16 (NOR_0_PHYS + (0x23 << WIDTH_SHIFT));
-    printf ("single word write %d us (%d us)\r\n", 
+    PRINTF ("single word write %d us (%d us)\r\n", 
 	    1<<typical, (1<<typical)*max);
     typical = __REG16 (NOR_0_PHYS + (0x20 << WIDTH_SHIFT));
     max	    = __REG16 (NOR_0_PHYS + (0x24 << WIDTH_SHIFT));
-    printf ("write-buffer write %d us (%d us)\r\n", 
+    PRINTF ("write-buffer write %d us (%d us)\r\n", 
 	    1<<typical, (1<<typical)*max);
     typical = __REG16 (NOR_0_PHYS + (0x21 << WIDTH_SHIFT));
     max	    = __REG16 (NOR_0_PHYS + (0x25 << WIDTH_SHIFT));
-    printf ("block erase %d ms (%d ms)\r\n", 
+    PRINTF ("block erase %d ms (%d ms)\r\n", 
 	    1<<typical, (1<<typical)*max);
     
     typical = __REG16 (NOR_0_PHYS + (0x22 << WIDTH_SHIFT));
     max     = __REG16 (NOR_0_PHYS + (0x26 << WIDTH_SHIFT));
     if (typical) 
-      printf ("chip erase %d us (%d us)\r\n", 
+      PRINTF ("chip erase %d us (%d us)\r\n", 
 	      1<<typical, (1<<typical)*max);
   }
 
-  printf ("device size 0x%x\r\n",
+  PRINTF ("device size 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x27 << WIDTH_SHIFT)));
-  printf ("flash interface 0x%x\r\n",
+  PRINTF ("flash interface 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT))
 	  | (__REG16 (NOR_0_PHYS + (0x28 << WIDTH_SHIFT)) << 8));
-  printf ("write buffer size %d bytes\r\n",
+  PRINTF ("write buffer size %d bytes\r\n",
 	  1<<(__REG16 (NOR_0_PHYS + (0x2a << WIDTH_SHIFT))
 	      | (__REG16 (NOR_0_PHYS + (0x2b << WIDTH_SHIFT)) << 8)));
-  printf ("erase block region count %d\r\n",
+  PRINTF ("erase block region count %d\r\n",
 	  __REG16 (NOR_0_PHYS + (0x2c << WIDTH_SHIFT)));
-  printf ("erase block info 0x%x\r\n",
+  PRINTF ("erase block info 0x%x\r\n",
 	  __REG16 (NOR_0_PHYS + (0x2d << WIDTH_SHIFT))
 	  | (__REG16 (NOR_0_PHYS + (0x2e << WIDTH_SHIFT)) << 8)
 	  | (__REG16 (NOR_0_PHYS + (0x2f << WIDTH_SHIFT)) << 16)
@@ -316,7 +323,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     cb -= available;
     cbRead += available;
 
-    //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
+    PRINTF ("nor read: 0x%p 0x%08lx %d\r\n", pv, index, available);
     WRITE_ONE (index, ReadArray);
     memcpy (pv, (void*) index, available);
 
@@ -360,6 +367,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     index = phys_from_index (index);
 
+    PRINTF ("nor write: 0x%p 0x%08lx %d\n", pv, index, available);
+
     vpen_enable ();
 
     if (page != pageLast) {
@@ -376,14 +385,20 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     WRITE_ONE (index & ~1, ProgramBuffered);
 #endif
     status = nor_status (index & ~1);
-    if (!(status & Ready))
+    if (!(status & Ready)) {
+      PRINTF ("nor_write failed program start 0x%lx (0x%x)\r\n", 
+	      index & ~1, status);
       goto fail;
+    }
     
+    {
+      int av = available + (index & 1);
 #if defined (NO_WRITE)
-    printf ("0x%lx <= 0x%02x\r\n", index & ~1, available - available/2 - 1);
+      printf ("0x%lx <= 0x%02x\r\n", index & ~1, av - av/2 - 1);
 #else
-    WRITE_ONE (index & ~1, available - available/2 - 1);
+      WRITE_ONE (index & ~1, av - av/2 - 1);
 #endif
+    }
 
     if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
       int i;
@@ -552,14 +567,16 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 
     index &= ~(chip->erase_size - 1);
 
-//    printf ("nor_erase index 0x%lx  page 0x%x  available 0x%lx\r\n",
-//	    index, page, available);
+    PRINTF ("nor_erase index 0x%lx  available 0x%lx\r\n",
+	    index, available);
 
     vpen_enable ();
     //    if (page != pageLast) {
       status = nor_unlock_page (index);
-      if (status & (ProgramError | VPEN_Low | DeviceProtected))
+      if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
+	PRINTF ("nor_erase failed at 0x%lx (0x%x)\r\n", index, status);
 	goto fail;
+      }
       //      pageLast = page;
       //    }
 #if defined (NO_WRITE)
