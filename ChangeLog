@@ -1,3 +1,11 @@
+2005-04-07  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/Makefile (obj-$(CONFIG_DRIVER_EMAC_LH79524)):
+	Same as below.
+
+	* src/mach-lh7952x/drv-emac.c: Corrected configuration references
+	for the new configurator.  Macros were wrong for EMAC.
+
 2005-03-22  Marc Singer  <elf@buici.com>
 
 	* src/apex/env.c (_s): Fixed references to CONFIG_ macros that may

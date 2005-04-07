@@ -95,8 +95,8 @@
   provide the proper circuit to automatically detect the TP mode.
   This, the feature is disabled.
 
-  CONFIG_CMD_EMAC
-  ---------------
+  CONFIG_CMD_EMAC_LH79524
+  -----------------------
 
   It is possible to disable the EMAC commands altogether.  If this is
   done, the MAC address cannot be set from the APEX command line nor
@@ -125,7 +125,7 @@
 
 //#define TALK 0
 
-#if !defined (CONFIG_CMD_EMAC)
+#if !defined (CONFIG_CMD_EMAC_LH79524)
 # undef USE_DIAG
 #endif
 
@@ -505,7 +505,7 @@ static void show_tx_flags (unsigned long l)
 } 
 #endif
 
-#if defined (CONFIG_CMD_EMAC)
+#if defined (CONFIG_CMD_EMAC_LH79524)
 
 static int cmd_emac (int argc, const char** argv)
 {
@@ -859,4 +859,4 @@ _USE_DIAG(
   )
 };
 
-#endif 				/* CONFIG_CMD_EMAC */
+#endif 				/* CONFIG_CMD_EMAC_LH79524 */
