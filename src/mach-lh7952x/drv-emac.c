@@ -327,7 +327,7 @@ static void emac_phy_detect (void)
     unsigned int id2;
     id1 = emac_phy_read (phy_address & 0x1f, PHY_ID1);
     id2 = emac_phy_read (phy_address & 0x1f, PHY_ID2);
-
+//    PRINTF ("%s: %d %d %d\n", __FUNCTION__, phy_address, id1, id2);
     if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
       phy_id = (id1 << 16) | id2;
@@ -377,8 +377,7 @@ void emac_init (void)
 {
   PRINTF ("emac: init\n");
   
-#if defined (USE_DIAG)
-	/* Hardware setup */
+	/* Hardware setup -- necessary for the PHY to be detected. */
   MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));		
@@ -400,7 +399,6 @@ void emac_init (void)
 
 //  PRINTF ("CPLD_CONTROL %x => %x\n", CPLD_CONTROL,
 //	  CPLD_CONTROL | CPLD_CONTROL_WRLAN_ENABLE);
-#endif
 
   RCPC_CTRL       |=  RCPC_CTRL_UNLOCK;
   RCPC_AHBCLKCTRL &= ~(1<<2);
@@ -432,19 +430,21 @@ void emac_init (void)
 #if !defined (CONFIG_SMALL)
 static void emac_report (void)
 {
-  unsigned long bot = EMAC_SPECAD1BOT;
-  unsigned long top = EMAC_SPECAD1TOP;
+  if (phy_id) {
+    unsigned long bot = EMAC_SPECAD1BOT;
+    unsigned long top = EMAC_SPECAD1TOP;
   
-  printf ("  emac:   phy_addr %d  phy_id 0x%lx"
-	  "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-	  phy_address, phy_id,
-	  (unsigned char) (bot >>  0),
-	  (unsigned char) (bot >>  8),
-	  (unsigned char) (bot >> 16),
-	  (unsigned char) (bot >> 24),
-	  (unsigned char) (top >>  0),
-	  (unsigned char) (top >>  8)
-	  );
+    printf ("  emac:   phy_addr %d  phy_id 0x%lx"
+	    "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    phy_address, phy_id,
+	    (unsigned char) (bot >>  0),
+	    (unsigned char) (bot >>  8),
+	    (unsigned char) (bot >> 16),
+	    (unsigned char) (bot >> 24),
+	    (unsigned char) (top >>  0),
+	    (unsigned char) (top >>  8)
+	    );
+  }
 }
 #endif
 

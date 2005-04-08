@@ -1,5 +1,8 @@
 2005-04-08  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7952x/drv-emac.c (emac_init): Fixed detection of the
+	PHY.  Needed to setup MUX to get the PHY to enable.
+	
 	* src/mach-ixp42x/coprocessor.h (COPROCESSOR_WAIT\): New headers
 	to define an instruction sequence to let the MMU/coprocessor catch
 	up when there are changes to the setup.
