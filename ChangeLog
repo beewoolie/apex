@@ -1,3 +1,15 @@
+2005-04-08  Marc Singer  <elf@buici.com>
+
+	* src/mach-ixp42x/coprocessor.h (COPROCESSOR_WAIT\): New headers
+	to define an instruction sequence to let the MMU/coprocessor catch
+	up when there are changes to the setup.
+
+	* src/arch-arm/entry/entry.c (__section): New options for
+	disabling MMU at startup.
+
+	* Makefile (every): Fixed every target for the sake of adding new
+	configuration options.
+
 2005-04-07  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/Makefile (obj-$(CONFIG_DRIVER_EMAC_LH79524)):

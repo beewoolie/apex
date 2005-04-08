@@ -33,6 +33,11 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <debug_ll.h>
+#include <mach/coprocessor.h>
+
+#if !defined (COPROCESSOR_WAIT)
+# define COPROCESSOR_WAIT
+#endif
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
@@ -52,28 +57,22 @@ extern void init (void);
 
 void __naked __section (.reset) reset (void)
 {
-#if 0
-  /* *** It's enabled for the SLUG.  Perhaps this should be done by
-     *** the SLUG bootstrap itself.  */
-  /* This would disable the MMU, but there is little reason to include
-     it.  The only way this would be called would be if the CPU jumped
-     to the loader while running something that needed the MMU.  In
-     the unusual situation where the MMU maps the loader in a place
-     where it can execute, this might be necessary.  I'll leave it out
-     until there is a legitimate use.  */
+#if defined (CONFIG_DISABLE_MMU_AT_BOOT)
+
+  /* This disables the MMU, but there should be no reason to include
+     it.  However, there are some instances where it is necessary
+     because: a preexisting bootloader fails to disable the MMU before
+     calling other programs, the OS jumps to the bootloader to restart
+     the machine, something else is screwy.  If the MMU mappings are
+     wonky, disabling the MMU may have dire consequences. */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #1\n\t"
-		  "mcr p15, 0, r0, c1, c0, 0");
+		  "mcr p15, 0, r0, c1, c0, 0\n\t"
+		  );
+    COPROCESSOR_WAIT;
 #endif
 
 #if defined (CONFIG_BIGENDIAN)
-
-  /* This doesn't belong here. */
-#define COPROCESSOR_WAIT\
- ({ unsigned long v; \
-    __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
-		    "mov %0, %0\n\t" \
-		    "sub pc, pc, #4" : "=r" (v)); })
 
   {
     unsigned long v;

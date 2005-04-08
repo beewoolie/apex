@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Mar 20 21:20:05 2005
+# Fri Apr  8 13:02:49 2005
 #
 CONFIG_ARM=y
 CONFIG_ARCH_LH7952X=y
@@ -17,6 +17,7 @@ CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-"
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
+CONFIG_DISABLE_MMU_AT_BOOT=y
 # CONFIG_MACH_LPD79520 is not set
 CONFIG_MACH_LPD79524=y
 # CONFIG_MACH_KEV79524 is not set

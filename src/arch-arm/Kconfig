@@ -86,6 +86,17 @@ config ATAG
 	  it.  Including ATAG support will not preclude booting to
 	  older kernels.
 
+config DISABLE_MMU_AT_BOOT
+	bool "Disable MMU when APEX starts"
+	default n
+	help
+	  Generally, it isn't necessary to disable the MMU when APEX
+	  starts.  It is off when the CPU resets.  However, when
+	  bootstrapping from one boot loader into APEX, it is
+	  sometimes necessary to disable the MMU because the previous
+	  loader fails to do so.  It is usually safe to enable this
+	  feature.
+
 config INTERRUPTS
 	bool "Enable interrupt handlers"
 	depends on EXPERIMENTAL 

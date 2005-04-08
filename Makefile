@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 2
-SUBLEVEL = 5
+SUBLEVEL = 6
 #EXTRAVERSION = -rc3
 #NAME=Zonked Quokka
 
@@ -490,7 +490,8 @@ every:
 	$(MAKE) clean ;\
 	$(MAKE) $$i ;\
 	echo "  BUILD   $$i";\
-	$(MAKE) > makelog 2>&1;\
+	$(MAKE) oldconfig < /dev/null >  makelog 2>&1;\
+	$(MAKE)                       >> makelog 2>&1;\
 	mkdir every/$$i ;\
 	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ;\
 	done
