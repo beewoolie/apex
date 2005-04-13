@@ -46,7 +46,7 @@ static __env struct env_d e_bootaddr = {
 #endif
 
 #if (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
-    || defined (CONFIG_ENV_AUTOBOOT)
+    || defined (CONFIG_AUTOBOOT)
 static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
@@ -59,9 +59,9 @@ static __env struct env_d e_startup = {
 #if defined (CONFIG_ENV_STARTUP)
     CONFIG_ENV_STARTUP
 #endif
-#if defined (CONFIG_ENV_AUTOBOOT)
-# if CONFIG_ENV_AUTOBOOT != 0
-    "wait " CONFIG_ENV_AUTOBOOT " Press a key to cancel autoboot.;"
+#if defined (CONFIG_AUTOBOOT)
+# if CONFIG_AUTOBOOT_DELAY != 0
+    "wait " _t(CONFIG_AUTOBOOT_DELAY) " Press a key to cancel autoboot.;"
 # endif
     "boot"
 #endif

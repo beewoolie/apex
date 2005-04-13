@@ -1,3 +1,8 @@
+2005-04-13  Marc Singer  <elf@buici.com>
+
+	* src/apex/env.c: Fixed errors in the autoboot macros left over
+	from the transition to Kconfig.
+
 2005-04-08  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-emac.c (emac_init): Fixed detection of the
