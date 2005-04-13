@@ -289,7 +289,8 @@ struct ext2_info {
 };
 
 static struct ext2_info ext2;
-static const char szBlockDriver[] = "cf"; /* Underlying block driver */
+static const char szBlockDriver[] /* Underlying block driver */
+  = CONFIG_DRIVER_EXT2_BLOCKDEVICE;
 
 inline int block_groups (struct ext2_info* ext2)
 {

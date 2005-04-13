@@ -452,6 +452,7 @@ ifeq ($(config-targets),1)
 	@cp src/mach-*/$@ .config
 #	@if [ -e include/config.h ]; then rm include/config.h; fi
 #	@if [ -L include/mach ]; then rm include/mach ; fi
+	$(Q)$(MAKE) oldconfig < /dev/null
 
 %config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@

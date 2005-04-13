@@ -203,7 +203,8 @@ struct fat_info {
 static struct fat_info fat;
 
 //struct driver_d* fs_driver;	/* *** FIXME: underlying driver link hack */
-static const char szBlockDriver[] = "cf"; /* Underlying block driver */
+static const char szBlockDriver[]  /* Underlying block driver */
+  = CONFIG_DRIVER_FAT_BLOCKDEVICE;
 
 static inline unsigned short read_short (void* pv)
 {

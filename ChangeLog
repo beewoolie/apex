@@ -1,5 +1,8 @@
 2005-04-13  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-ext2.c: Added configuration option to set the
+	block device for both (fat & ext2) filesystem drivers.
+
 	* src/apex/env.c: Fixed errors in the autoboot macros left over
 	from the transition to Kconfig.
 
