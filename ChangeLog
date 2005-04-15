@@ -1,3 +1,8 @@
+2005-04-14  Marc Singer  <elf@buici.com>
+
+	* src/mach-ixp42x/initialize.c (target_init): Added neglected EXP
+	controller initializations for the nslu2.
+
 2005-04-13  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-ext2.c: Added configuration option to set the

@@ -198,7 +198,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
     | ((15 & EXP_T3_MASK)	<<EXP_T3_SHIFT)
     | (( 3 & EXP_T4_MASK)	<<EXP_T4_SHIFT)
-    | ((15 & EXP_T5_MASK)	<<EXP_T4_SHIFT)
+    | ((15 & EXP_T5_MASK)	<<EXP_T5_SHIFT)
     | ((15 & EXP_CNFG_MASK)	<<EXP_CNFG_SHIFT)	/* 16MiB window */
     | (( 0 & EXP_CYC_TYPE_MASK)	<<EXP_CYC_TYPE_SHIFT)	/* Intel cycling */
     | EXP_BYTE_RD16
@@ -300,7 +300,48 @@ static void target_init (void)
   _L(LED6);
 
   //  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
-  __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
+  //  __REG(EXP_PHYS + 0x28) |= (1<<15);	/* Undocumented, but set in redboot */
+
+#if defined (CONFIG_MACH_NSLU2)
+
+  EXP_TIMING_CS4 = 0
+    | (( 3 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
+    | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
+    | ((15 & EXP_T3_MASK)	<<EXP_T3_SHIFT)
+    | (( 3 & EXP_T4_MASK)	<<EXP_T4_SHIFT)
+    | ((15 & EXP_T5_MASK)	<<EXP_T5_SHIFT)
+    | ((0 & EXP_CNFG_MASK)	<<EXP_CNFG_SHIFT)	/* 512 b window */
+    | EXP_WR_EN
+    | EXP_CS_EN
+    | EXP_BYTE_EN;
+
+  EXP_TIMING_CS5 = 0
+    | (( 3 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
+    | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
+    | ((15 & EXP_T3_MASK)	<<EXP_T3_SHIFT)
+    | (( 3 & EXP_T4_MASK)	<<EXP_T4_SHIFT)
+    | ((15 & EXP_T5_MASK)	<<EXP_T5_SHIFT)
+    | ((0 & EXP_CNFG_MASK)	<<EXP_CNFG_SHIFT)	/* 512 b window */
+    | EXP_WR_EN
+    | EXP_CS_EN
+    | EXP_BYTE_EN;
+
+  EXP_TIMING_CS7 = 0
+    | (( 3 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
+    | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
+    | ((15 & EXP_T3_MASK)	<<EXP_T3_SHIFT)
+    | (( 3 & EXP_T4_MASK)	<<EXP_T4_SHIFT)
+    | ((15 & EXP_T5_MASK)	<<EXP_T5_SHIFT)
+    | ((0 & EXP_CNFG_MASK)	<<EXP_CNFG_SHIFT)	/* 512 b window */
+    | EXP_WR_EN
+    | EXP_MUX_EN
+    | EXP_CS_EN;
+
+  //    *IXP425_EXP_CS4 = (EXP_ADDR_T(3) | EXP_SETUP_T(3) | EXP_STROBE_T(15) | EXP_HOLD_T(3) | EXP_RECOVERY_T(15) | EXP_SZ_512 | EXP_WR_EN | EXP_CS_EN | EXP_BYTE_EN);
+  //    *IXP425_EXP_CS5 = (EXP_ADDR_T(3) | EXP_SETUP_T(3) | EXP_STROBE_T(15) | EXP_HOLD_T(3) | EXP_RECOVERY_T(15) | EXP_SZ_512 | EXP_WR_EN | EXP_CS_EN | EXP_BYTE_EN);
+  //    *IXP425_EXP_CS7 = (EXP_ADDR_T(3) | EXP_SETUP_T(3) | EXP_STROBE_T(15) | EXP_HOLD_T(3) | EXP_RECOVERY_T(15) | EXP_SZ_512 | EXP_MUX_EN | EXP_WR_EN | EXP_CS_EN);
+
+#endif
 
   _L(LED7);
 }

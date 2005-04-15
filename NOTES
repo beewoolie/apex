@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o Need a default command line setting in the config file.  It should
+    completely override the platform default, when present.
+
   o Pipes should work for streaming between drivers.  [g2] wants to be
     able to specify a list of drivers/regions to try.  This may mean
     I'll have to combine the parse and the open methods so that the
