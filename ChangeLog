@@ -1,5 +1,8 @@
 2005-04-14  Marc Singer  <elf@buici.com>
 
+	* src/arch-arm/Kconfig: New option to let the user configure a
+	default commandline to override the target's default.
+
 	* src/mach-ixp42x/initialize.c (target_init): Added neglected EXP
 	controller initializations for the nslu2.
 

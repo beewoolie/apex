@@ -160,4 +160,14 @@ struct tag* atag_commandline (struct tag* p)
 
 static __atag_1 struct atag_d _atag_commandline = { atag_commandline };
 
+#if defined (CONFIG_ENV_DEFAULT_CMDLINE)
+
+__env struct env_d e_cmdline = {
+  .key = "cmdline",
+  .default_value = CONFIG_ENV_DEFAULT_CMDLINE,
+  .description = "Linux kernel command line",
+};
+
+#endif
+
 #endif

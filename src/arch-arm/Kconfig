@@ -193,6 +193,24 @@ config ENV_REGION_RAMDISK
 	  At startup, APEX copies this region to memory for use as a
 	  ramdisk.
 
+config ENV_DEFAULT_CMDLINE_OVERRIDE
+	bool "Override the target default kernel command line"
+	default false
+	help
+	  Set this option so that you can override the target's
+	  default command line.  This may be useful if the target
+	  console is not available to the user.
+
+config ENV_DEFAULT_CMDLINE
+	string "Default kernel command line"
+	depends on ENV_DEFAULT_CMDLINE_OVERRIDE
+	help
+	  Setting this option will override the default command line
+	  for the target.  One of these is used when there is no user
+	  defined command line in the environment.  You may want to
+	  use this option to set a custom command line when there is
+	  not easy access to the console.
+
 endmenu
 
 config USES_NOR_BOOTFLASH

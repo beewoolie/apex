@@ -34,9 +34,9 @@
 #include <driver.h>
 #include <service.h>
 
-#if defined (CONFIG_MACH_LPD79520)
+#if defined (CONFIG_MACH_LPD79520) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
 
-static __env struct env_d e_cmdline = {
+__env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM1"
 		   " root=/dev/hda1"
@@ -49,9 +49,9 @@ static __env struct env_d e_cmdline = {
 
 #endif
 
-#if defined (CONFIG_MACH_LPD79524)
+#if defined (CONFIG_MACH_LPD79524) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
 
-static __env struct env_d e_cmdline = {
+__env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0"
 #if 1
@@ -71,9 +71,9 @@ static __env struct env_d e_cmdline = {
 
 #endif
 
-#if defined (CONFIG_MACH_KEV79524)
+#if defined (CONFIG_MACH_KEV79524) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
 
-static __env struct env_d e_cmdline = {
+__env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM0"
   //		   " root=/dev/hda1"

@@ -37,9 +37,9 @@
 #define _s(v) #v 
 #define _t(v) _s(v)
 
-#if defined (CONFIG_MACH_NSLU2)
+#if defined (CONFIG_MACH_NSLU2) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
 
-static __env struct env_d e_cmdline = {
+__env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyS0,115200"
   /* Acording to dyoung, we need to use /dev/slug as the root device

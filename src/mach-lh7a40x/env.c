@@ -34,9 +34,13 @@
 #include <driver.h>
 #include <service.h>
 
-static __env struct env_d e_cmdline = {
+#if ! defined (CONFIG_ENV_DEFAULT_CMDLINE)
+
+__env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = "console=ttyAM1 root=/dev/hda1 "
 		   "mtdparts=lpd7a40x_norflash:2m(boot),-(root)",
   .description = "Linux kernel command line",
 };
+
+#endif
