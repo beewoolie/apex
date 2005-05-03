@@ -5,6 +5,10 @@
 
 2005.Apr.14
 
+  o I found one initialization I wasn't making, CS4, CS5, and CS7
+    inits.  Seems unlikely that they're a problem, but there's no way
+    to know until it is tested.
+
   o Working with g2 to get the network working.
 
   He sees:
