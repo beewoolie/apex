@@ -54,9 +54,10 @@ int cmd_version (int argc, const char** argv)
 "For details, refer to the file COPYING in the program source."
 "\n\n");
   printf (
-"  apex => mem:0x%p+0x%lx\n"
+"  apex => mem:0x%p+0x%lx   (%ld bytes)\n"
 	  ,
 	  (void*) &APEX_VMA_COPY_START,
+	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START),
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
 #if defined (CONFIG_ENV_REGION)
   printf ("  env  => %s\n", CONFIG_ENV_REGION);

@@ -121,13 +121,11 @@
 #define USE_PHY_RESET		/* Reset the PHY after detection  */
 //#define USE_DISABLE_100MB
 
-//#define USE_DIAG		/* Enables diagnostic code */
-
-//#define TALK 0
-
-#if !defined (CONFIG_CMD_EMAC_LH79524)
-# undef USE_DIAG
+#if defined CONFIG_CMD_EMAC_LH79524_DIAG
+# define USE_DIAG		/* Enables diagnostic code */
+# define TALK 0
 #endif
+
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)

@@ -81,10 +81,18 @@ config CMD_XRECEIVE
 	default y
 
 config CMD_EMAC_LH79524
-	bool "Ethernet MAC" 
+	bool "LH79524 Ethernet MAC" 
 	depends on ARCH_LH79524 && DRIVER_EMAC_LH79524
 	default y
 	help
 	  Commands to configure the built-in MAC of the LH79524.
 
+config CMD_EMAC_LH79524_DIAG
+	bool "LH79524 Ethernet MAC Diagnostics"
+	depends on CMD_EMAC_LH79524
+	default n
+	help
+	  Enable this option to add diagnostic sub-commands to the
+	  emac command.  It adds a lot of code to APEX, so leave it
+	  out unless you are sure you need it.
 endmenu

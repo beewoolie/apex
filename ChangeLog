@@ -1,3 +1,11 @@
+2005-05-04  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c: Diagnostic code can be enabled from
+	the configuration. 
+
+	* src/apex/cmd-version.c (cmd_version): Display the length of apex
+	in bytes as well as hex.
+
 2005-04-14  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/Kconfig: New option to let the user configure a
