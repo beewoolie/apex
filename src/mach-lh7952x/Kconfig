@@ -46,6 +46,7 @@ config ARCH_NUMBER
 	int
 	default 537 if MACH_LPD79520
 	default 609 if MACH_LPD79524
+	default 609 if MACH_KEV79524
 
 config APEX_VMA
 	hex "APEX runtime address"

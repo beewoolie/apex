@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed May 11 09:35:08 2005
+# Wed May 11 11:35:20 2005
 #
 CONFIG_ARM=y
 CONFIG_ARCH_LH7952X=y
@@ -26,6 +26,7 @@ CONFIG_MACH_KEV79524=y
 # Platform Setup
 #
 CONFIG_ATAG_PHYS=0x20000100
+CONFIG_ARCH_NUMBER=609
 CONFIG_APEX_VMA=0x20200000
 CONFIG_KERNEL_LMA=0x20008000
 CONFIG_SDRAM_BANK0=y
