@@ -566,3 +566,40 @@ Console
 
       console=tty0 console=ttyAM0,115200
 
+Ethernet
+
+  o There is an underlying driver interface
+    o send/receive ... poll? 
+    o prefer not to have to implement interrupts for the sake of
+      complexity
+  o Protocol handler will have a discriminator?  Or will there be only
+    one available at a time.
+  o Need to support multiple streams since we will eventually support
+    telnet.  
+  o Select style interface will be best to handle console as well as
+    network streams.
+  o Handler will bind with some sort of discriminator.  Could be a
+    port or protocol or perhaps a frame interpretation function.
+  o UI will need to support ip command
+    o Model after ip route
+    o ip addr ...
+    o ip link for mac addresses and replace emac?   Hmm.
+  o Need to support DHCP at least.  RARP is desirable.  Bootp should
+    come with dhcp.
+  o Really, this should be simple.
+
+  o The challenge is making something sufficiently flexible to
+    integrate will into apex and to give reasonable operability.
+
+    o Telnet server
+    o TFTP download
+    o TFTP server for accessing system data, would accept descriptors
+    o Descriptor flow, tftp receive to a descriptor
+    o HTTP/FTP server should also be possible to retrieve information
+      about the running system.
+    o TCP state engine is more difficult and may be too much
+
+  o I prefer a very simple dispatch so that there is little admin.
+    -> slow call structure for packet dispatch
+    -> polling for packets
+
