@@ -126,4 +126,86 @@
 #define GPIO_IT2R	__REG(GPIO_PHYS + 0x14)
 #define GPIO_CLKR	__REG(GPIO_PHYS + 0x18)
 
+#define PCI_PHYS	(0xc0000000)
+#define PCI_NP_AD	__REG(PCI_PHYS + 0x00)
+#define PCI_NP_CBE	__REG(PCI_PHYS + 0x04)
+#define PCI_NP_WDATA	__REG(PCI_PHYS + 0x08)
+#define PCI_NP_RDATA	__REG(PCI_PHYS + 0x0c)
+#define PCI_CRP_AD_CBE	__REG(PCI_PHYS + 0x10)
+#define PCI_CRP_WDATA	__REG(PCI_PHYS + 0x14)
+#define PCI_CRP_RDATA	__REG(PCI_PHYS + 0x18)
+#define PCI_CSR		__REG(PCI_PHYS + 0x1c)
+#define PCI_ISR		__REG(PCI_PHYS + 0x20)
+#define PCI_INTEN	__REG(PCI_PHYS + 0x24)
+#define PCI_DMACTRL	__REG(PCI_PHYS + 0x28)
+#define PCI_AHBMEMBASE	__REG(PCI_PHYS + 0x2c)
+#define PCI_AHBIOBASE	__REG(PCI_PHYS + 0x30)
+#define PCI_PCIMEMBASE	__REG(PCI_PHYS + 0x34)
+
+#define PCI_CSR_PRST	(1<<15)
+#define PCI_CSR_IC	(1<<15)
+#define PCI_CSR_ASE	(1<<8)
+#define PCI_CSR_DBT	(1<<5)
+#define PCI_CSR_ABE	(1<<4)
+#define PCI_CSR_PDS	(1<<3)
+#define PCI_CSR_ADS	(1<<2)
+#define PCI_CSR_ARBEN	(1<<1)
+#define PCI_CSR_HOST	(1<<0)
+
+#define PCI_ISR_PSE	(1<<0)
+#define PCI_ISR_PFE	(1<<1)
+#define PCI_ISR_PPE	(1<<2)
+#define PCI_ISR_AHBE	(1<<3)
+
+#define PCI_CRP_AD_CBE_WRITE	(1<<16)
+#define PCI_CRP_AD_CBE_BE_SHIFT	20
+#define PCI_CRP_AD_CBE_BE_MASK	(0xf<<20)
+
+#define PCI_CFG_VENDOR			0x00
+#define PCI_CFG_DEVICE			0x02
+#define PCI_CFG_COMMAND			0x04
+#define PCI_CFG_STATUS			0x06
+#define PCI_CFG_CLASS_REV		0x08
+#define PCI_CFG_CACHE_LINE_SIZE		0x0c
+#define PCI_CFG_LATENCY_TIMER		0x0d
+#define PCI_CFG_HEADER_TYPE		0x0e
+#define PCI_CFG_BIST			0x0f
+#define PCI_CFG_BAR_BASE		0x10
+#define PCI_CFG_BAR_0			0x10
+#define PCI_CFG_BAR_1			0x14
+#define PCI_CFG_BAR_2			0x18
+#define PCI_CFG_BAR_3			0x1c
+#define PCI_CFG_BAR_4			0x20
+#define PCI_CFG_BAR_5			0x24
+#define PCI_CFG_CARDBUS_CIS		0x28
+#define PCI_CFG_SUB_VENDOR		0x2c
+#define PCI_CFG_SUB_ID			0x2e
+#define PCI_CFG_ROM_ADDRESS		0x30
+#define PCI_CFG_CAP_LIST		0x34
+#define PCI_CFG_INT_LINE		0x3c
+#define PCI_CFG_INT_PIN			0x3d
+#define PCI_CFG_MIN_GNT			0x3e
+#define PCI_CFG_MAX_LAT			0x3f
+
+#define PCI_CFG_COMMAND_IO		(1<<0)
+#define PCI_CFG_COMMAND_MEMORY		(1<<1)
+#define PCI_CFG_COMMAND_MASTER		(1<<2)
+#define PCI_CFG_COMMAND_SPECIAL		(1<<3)
+#define PCI_CFG_COMMAND_INVALIDATE	(1<<4)
+#define PCI_CFG_COMMAND_VGA_SNOOP	(1<<5)
+#define PCI_CFG_COMMAND_PARITY		(1<<6)
+#define PCI_CFG_COMMAND_WAIT		(1<<7)
+#define PCI_CFG_COMMAND_SERR		(1<<8)
+#define PCI_CFG_COMMAND_FAST_BACK	(1<<9)
+
+#define PCI_CONFIG_WRITE32(o,v) {\
+    PCI_CRP_AD_CBE = ((o) & ~3) | PCI_CRP_AD_CBE_WRITE;\
+    PCI_CRP_WDATA = (v); }
+
+#define PCI_CONFIG_WRITE16(o,v) {\
+    PCI_CRP_AD_CBE = ((o) & ~3) | PCI_CRP_AD_CBE_WRITE\
+      | ((((3 << (PCI_CRP_AD_CBE_BE_SHIFT + (o & 3)))\
+         ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK));\
+    PCI_CRP_WDATA = (v) << (8 * ((o) & 3)); }
+
 #endif  /* __IXP42X_H__ */
