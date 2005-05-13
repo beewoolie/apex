@@ -37,6 +37,10 @@ config KERNEL_LMA
 	hex "Kernel load address"
 	default "0x00008000"
 
+config RAMDISK_LMA
+	hex "Ramdisk load address"
+	default "0x01000000"
+
 config SDRAM_BANK0
 	bool "Enable SDRAM bank 0"
 	default y
