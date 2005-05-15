@@ -1,3 +1,18 @@
+2005-05-15  Marc Singer  <elf@cerise.buici.com>
+
+	* src/mach-ixp42x/pci.c (pci_init): Proper PCI initialization
+	brings USB and ethernet online.  Woot.
+
+	* src/mach-ixp42x/nslu2.h: GPIO constants and macros for init.
+
+	* src/mach-ixp42x/ixp42x.h: GPIO constants and macros for init.
+
+	* src/mach-ixp42x/initialize.c (target_init): Addition of dead
+	code to initialize GPIO for the Intel dev board.
+ 
+	* src/mach-ixp42x/serial.c (ixp42x_serial_init): Enabled the
+	serial FIFO.
+
 2005-05-04  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-emac.c: Diagnostic code can be enabled from

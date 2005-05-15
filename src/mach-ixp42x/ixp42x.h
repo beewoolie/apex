@@ -126,6 +126,46 @@
 #define GPIO_IT2R	__REG(GPIO_PHYS + 0x14)
 #define GPIO_CLKR	__REG(GPIO_PHYS + 0x18)
 
+#define GPIO_CLKR_CLK0DC_SHIFT 0
+#define GPIO_CLKR_CLK0TC_SHIFT 4
+#define GPIO_CLKR_MUX14	(1<<8)
+#define GPIO_CLKR_CLK1DC_SHIFT 16
+#define GPIO_CLKR_CLK1TC_SHIFT 20
+#define GPIO_CLKR_MUX15 (1<<24)
+
+  /* GPIO allocations from the Intel dev board */
+//#define GPIO_I_POWERFAIL	0
+//#define GPIO_I_DSL		1
+//#define GPIO_I_SLIC_A		2
+//#define GPIO_I_SLIC_B		3
+//#define GPIO_I_DSP		4
+//#define GPIO_I_IDE		5
+//#define GPIO_I_SPI_CS1		7
+//#define GPIO_I_SPI_CS0		8
+//#define GPIO_I_SPI_SCK		9
+//#define GPIO_I_SPI_SDI		10
+//#define GPIO_I_IORESET		12
+//#define GPIO_I_SPI_SDO		13
+
+#define GPIO_INT_TYPE_ACTIVELO 1
+#define GPIO_INT_TYPE_ACTIVEHI 0
+#define GPIO_INT_TYPE_RISING   2
+#define GPIO_INT_TYPE_FALLING  3
+
+#define GPIO_OUT_ENABLE(i)	(GPIO_ER   &= ~(1 << (i)))
+#define GPIO_OUT_DISABLE(i)	(GPIO_ER   |=   1 << (i))
+#define GPIO_OUT_SET(i)		(GPIO_OUTR |=   1 << (i))
+#define GPIO_OUT_CLEAR(i)	(GPIO_OUTR &= ~(1 << (i)))
+
+#define GPIO_INT_TYPE_MASK(i)\
+  (((i) > 7) ? (GPIO_IT2R &= ~(7 << (((i) - 8)*3)))\
+             : (GPIO_IT1R &= ~(7 << ( (i)     *3))))
+#define GPIO_INT_TYPE_SET(i,v)\
+  (((i) > 7) ? (GPIO_IT2R |= (v) << (((i) - 8)*3))\
+             : (GPIO_IT1R |= (v) << ( (i)     *3)))
+
+#define GPIO_INT_TYPE(i,v) ( GPIO_INT_TYPE_MASK (i), GPIO_INT_TYPE_SET (i,v) )
+
 #define PCI_PHYS	(0xc0000000)
 #define PCI_NP_AD	__REG(PCI_PHYS + 0x00)
 #define PCI_NP_CBE	__REG(PCI_PHYS + 0x04)
@@ -158,11 +198,13 @@
 #define PCI_ISR_AHBE	(1<<3)
 
 #define PCI_CRP_AD_CBE_WRITE	(1<<16)
+#define PCI_CRP_AD_CBE_READ	(0<<16)
 #define PCI_CRP_AD_CBE_BE_SHIFT	20
 #define PCI_CRP_AD_CBE_BE_MASK	(0xf<<20)
 
-#define PCI_CFG_VENDOR			0x00
-#define PCI_CFG_DEVICE			0x02
+#define PCI_CFG_DIDVID			0x00
+//#define PCI_CFG_VENDOR			0x00
+//#define PCI_CFG_DEVICE			0x02
 #define PCI_CFG_COMMAND			0x04
 #define PCI_CFG_STATUS			0x06
 #define PCI_CFG_CLASS_REV		0x08
@@ -207,5 +249,12 @@
       | ((((3 << (PCI_CRP_AD_CBE_BE_SHIFT + (o & 3)))\
          ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK));\
     PCI_CRP_WDATA = (v) << (8 * ((o) & 3)); }
+
+#define PCI_CONFIG_READ32(o) (\
+    PCI_CRP_AD_CBE = ((o) & ~3) | PCI_CRP_AD_CBE_READ\
+      | ((((3 << (PCI_CRP_AD_CBE_BE_SHIFT + (o & 3)))\
+         ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK)),\
+    PCI_CRP_RDATA )
+
 
 #endif  /* __IXP42X_H__ */

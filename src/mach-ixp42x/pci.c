@@ -26,81 +26,68 @@
    DESCRIPTION
    -----------
 
-   This module exists solely to initialize PCI. 
+   This service module exists solely to initialize PCI. 
 
 */
 
 #include <config.h>
 #include <service.h>
+#include <apex.h>		/* printf */
 
 #include "hardware.h"
 
 static void pci_init (void)
 {
-#if 0
-    static int inited = 0;
-    int  is_host = (*IXP425_PCI_CSR & PCI_CSR_HOST);
 
-    if (inited)
-        return;
-    else
-        inited = 1;
-            
-    // If IC is set, assume warm start
-    if (*IXP425_PCI_CSR  & PCI_CSR_IC)
-        return;
+#if defined (CONFIG_NSLU2)
 
-    // We use identity AHB->PCI address translation
-    // in the 0x48000000 address space
-    *IXP425_PCI_PCIMEMBASE = 0x48494A4B;
+  /* Configure the PCI clock, reset the PCI devices, and configure the
+     USB chip interrupt line */
 
-    // We also use identity PCI->AHB address translation
-    // in 4 16MB BARs that begin at the physical memory start
-    *IXP425_PCI_AHBMEMBASE = 0x00010203;
+#define PCI_RESET       (GPIO_OUTPUT_CLEAR (GPIO_I_PCI_RESET))
+#define PCI_NORESET     (GPIO_OUTPUT_SET   (GPIO_I_PCI_RESET))
+#define PCI_CLK_DISABLE (GPIO_CLKR &= ~GPIO_CLKR_MUX14)
+#define PCI_CLK_ENABLE  (GPIO_CLKR |=  GPIO_CLKR_MUX14)
+#define PCI_CLK_CONFIG\
+  (GPIO_CLKR |= ((0xf << GPIO_CLKR_CLK0DC_SHIFT)\
+               | (0xf << GPIO_CLKR_CLK0TC_SHIFT)))
 
-    if (is_host) {
+  PCI_RESET;
+  PCI_CLK_DISABLE;
+  PCI_CLK_CONFIG;
 
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_0, 0x00000000);
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_1, 0x01000000);
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_2, 0x02000000);
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_3, 0x03000000);
+  GPIO_OUTPUT_ENABLE  (GPIO_I_PCI_CLOCK);
+  GPIO_OUTPUT_ENABLE  (GPIO_I_PCI_RESET);
+  GPIO_OUTPUT_DISABLE (GPIO_I_PCI_INTA);
+  GPIO_INT_TYPE	      (GPIO_I_PCI_INTA, GPIO_INT_TYPE_ACTIVELO);
 
-        cyg_pci_set_memory_base(HAL_PCI_ALLOC_BASE_MEMORY);
-        cyg_pci_set_io_base(HAL_PCI_ALLOC_BASE_IO);
-
-        // This one should never get used, as we request the memory for
-        // work with PCI with GFP_DMA, which will return mem in the first 64 MB.
-        // But we still must initialize it so that it wont intersect with first 4
-        // BARs
-        // XXX: Should we initialize the BAR5 to some very large value, so that
-        // it also will not be hit?
-        //
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_4, 0x80000000);
-        HAL_PCI_CFG_WRITE_UINT32(0, 0, CYG_PCI_CFG_BAR_5, 0x90000000);
-
-        *IXP425_PCI_ISR = PCI_ISR_PSE | PCI_ISR_PFE | PCI_ISR_PPE | PCI_ISR_AHBE;
-
-        //
-        // Set Initialize Complete in PCI Control Register: allow IXP425 to
-        // respond to PCI configuration cycles. Specify that the AHB bus is
-        // operating in big endian mode. Set up byte lane swapping between 
-        // little-endian PCI and the big-endian AHB bus 
-        *IXP425_PCI_CSR = PCI_CSR_IC | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;
-    
-        HAL_PCI_CFG_WRITE_UINT16(0, 0, CYG_PCI_CFG_COMMAND,
-                 CYG_PCI_CFG_COMMAND_MASTER | CYG_PCI_CFG_COMMAND_MEMORY);
-    } else {
-
-        // Set Initialize Complete in PCI Control Register: allow IXP425 to
-        // respond to PCI configuration cycles. Specify that the AHB bus is
-        // operating in big endian mode. Set up byte lane swapping between 
-        // little-endian PCI and the big-endian AHB bus 
-        *IXP425_PCI_CSR = PCI_CSR_IC | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;
-    }
-}
-
+  usdelay (1000);		/* delay before clearing reset */
+  PCI_CLK_ENABLE;
+  usdelay (100);
+  PCI_NORESET;
 
 #endif
+
+	/* PCI initialization */
+  PCI_PCIMEMBASE = 0x48494a4b;
+  PCI_AHBMEMBASE = 0x00010203;
+
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_0, 0x00000000);
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_1, 0x01000000);
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_2, 0x02000000);
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_3, 0x03000000);
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_4, 0x80000000); /* Put these */
+  PCI_CONFIG_WRITE32 (PCI_CFG_BAR_5, 0x90000000); /*  out of reach */
+
+  //  cyg_pci_set_memory_base(HAL_PCI_ALLOC_BASE_MEMORY);
+  //  cyg_pci_set_io_base(HAL_PCI_ALLOC_BASE_IO);
+
+  PCI_ISR = PCI_ISR_PSE | PCI_ISR_PFE | PCI_ISR_PPE | PCI_ISR_AHBE;
+  PCI_CSR = PCI_CSR_IC  | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;
+  PCI_CONFIG_WRITE16 (PCI_CFG_COMMAND, 
+		      PCI_CFG_COMMAND_MASTER | PCI_CFG_COMMAND_MEMORY);
+
+  //  printf ("pci did/vid 0x%lx\n", PCI_CONFIG_READ32 (PCI_CFG_DIDVID));
 }
 
 static __service_6 struct service_d pci_service = {

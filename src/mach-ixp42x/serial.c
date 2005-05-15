@@ -92,6 +92,7 @@ void ixp42x_serial_init (void)
   UART_DLL  = divisor_l;
   UART_DLH  = divisor_h;
   UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
+  UART_FCR  = UART_FCR_TRFIFOE;
 
   UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
