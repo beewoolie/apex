@@ -451,7 +451,8 @@ ifeq ($(config-targets),1)
 	@if [ ! -e src/mach-*/$@ ]; then echo configuration $@ not found ; exit 1; fi
 	@cp src/mach-*/$@ .config
 #	@if [ -e include/config.h ]; then rm include/config.h; fi
-#	@if [ -L include/mach ]; then rm include/mach ; fi
+	@if [ -L include/mach ]; then rm include/mach ; fi
+	@if [ -L include/asm ]; then rm include/asm ; fi
 # This command would force defaults for new config options.  We're not
 # going to do it for now.   
 #	$(Q)$(MAKE) oldconfig < /dev/null
