@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri May 13 00:12:10 2005
+# Sun May 15 15:56:47 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -71,7 +71,8 @@ CONFIG_USES_NOR_CFI=y
 #
 CONFIG_NOR_BOOT=y
 # CONFIG_NAND_BOOT is not set
-# CONFIG_AUTOBOOT is not set
+CONFIG_AUTOBOOT=y
+CONFIG_AUTOBOOT_DELAY=10
 CONFIG_ENV_MUTABLE=y
 CONFIG_ENV_REGION="nor:128k+64k"
 CONFIG_ENV_STARTUP_KERNEL_COPY=y
