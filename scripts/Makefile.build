@@ -9,6 +9,9 @@ __build:
 
 # Read .config if it exist, otherwise ignore
 -include .config
+quote:="
+# "
+CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
 
 include $(if $(wildcard $(obj)/Kbuild), $(obj)/Kbuild, $(obj)/Makefile)
 
