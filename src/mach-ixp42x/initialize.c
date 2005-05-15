@@ -132,17 +132,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL('A');
 #endif
 
-  GPIO_ER &= ~0xf;
   _L(LEDf);			/* Start with all on */
-
-	/* Configure GPIO */
-  GPIO_OUTR = 0x20c3; 
-  //  GPIO_ER   &= ~GPIO_ER_OUTPUTS;
-  GPIO_ER   = GPIO_ER_V;
-  //  GPIO_ISR  = 0x31f3;
-  //  GPIO_IT1R = 0x9240;	/* GPIO2 AL; GPIO3 AL; GPIO5 RE; GPIO6 RE */
-  //  GPIO_IT2R = 0x0249;	/* GPIO8 AL; GPIO9 AL; GPIO10 AL; GPIO11 AL */
-  GPIO_CLKR = GPIO_CLKR_V;
+  GPIO_ER &= ~0xf;		/* Enable LEDs as outputs */
 
   /* *** FIXME: this CPSR and CP15 manipulation should not be
      *** necessary as we don't allow warm resets.  This is here until

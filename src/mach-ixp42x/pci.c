@@ -38,14 +38,13 @@
 
 static void pci_init (void)
 {
-
-#if defined (CONFIG_NSLU2)
+#if defined (CONFIG_MACH_NSLU2)
 
   /* Configure the PCI clock, reset the PCI devices, and configure the
      USB chip interrupt line */
 
-#define PCI_RESET       (GPIO_OUTPUT_CLEAR (GPIO_I_PCI_RESET))
-#define PCI_NORESET     (GPIO_OUTPUT_SET   (GPIO_I_PCI_RESET))
+#define PCI_RESET       (GPIO_OUT_CLEAR (GPIO_I_PCI_RESET))
+#define PCI_NORESET     (GPIO_OUT_SET   (GPIO_I_PCI_RESET))
 #define PCI_CLK_DISABLE (GPIO_CLKR &= ~GPIO_CLKR_MUX14)
 #define PCI_CLK_ENABLE  (GPIO_CLKR |=  GPIO_CLKR_MUX14)
 #define PCI_CLK_CONFIG\
@@ -56,14 +55,14 @@ static void pci_init (void)
   PCI_CLK_DISABLE;
   PCI_CLK_CONFIG;
 
-  GPIO_OUTPUT_ENABLE  (GPIO_I_PCI_CLOCK);
-  GPIO_OUTPUT_ENABLE  (GPIO_I_PCI_RESET);
-  GPIO_OUTPUT_DISABLE (GPIO_I_PCI_INTA);
+  GPIO_OUT_ENABLE  (GPIO_I_PCI_CLOCK);
+  GPIO_OUT_ENABLE  (GPIO_I_PCI_RESET);
+  GPIO_OUT_DISABLE (GPIO_I_PCI_INTA);
   GPIO_INT_TYPE	      (GPIO_I_PCI_INTA, GPIO_INT_TYPE_ACTIVELO);
 
-  usdelay (1000);		/* delay before clearing reset */
+  usleep (1000);		/* delay before clearing reset */
   PCI_CLK_ENABLE;
-  usdelay (100);
+  usleep (100);
   PCI_NORESET;
 
 #endif
@@ -78,9 +77,6 @@ static void pci_init (void)
   PCI_CONFIG_WRITE32 (PCI_CFG_BAR_3, 0x03000000);
   PCI_CONFIG_WRITE32 (PCI_CFG_BAR_4, 0x80000000); /* Put these */
   PCI_CONFIG_WRITE32 (PCI_CFG_BAR_5, 0x90000000); /*  out of reach */
-
-  //  cyg_pci_set_memory_base(HAL_PCI_ALLOC_BASE_MEMORY);
-  //  cyg_pci_set_io_base(HAL_PCI_ALLOC_BASE_IO);
 
   PCI_ISR = PCI_ISR_PSE | PCI_ISR_PFE | PCI_ISR_PPE | PCI_ISR_AHBE;
   PCI_CSR = PCI_CSR_IC  | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;

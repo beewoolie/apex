@@ -1,5 +1,8 @@
 2005-05-15  Marc Singer  <elf@cerise.buici.com>
 
+	* src/lib/spinner.c (spinner_clear): clearing LED spinner when the
+	user enters a command prompt.
+ 
 	* src/mach-ixp42x/pci.c (pci_init): Proper PCI initialization
 	brings USB and ethernet online.  Woot.
 

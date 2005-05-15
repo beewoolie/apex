@@ -40,6 +40,13 @@ void nslu2_spinner (unsigned v)
   static int step;
   static int value;
 
+  if (v == ~0) {		/* Clear */
+    value = 0;
+    step = 0;
+    _L(LED0);
+    return;
+  }
+
   v = v/128;
   if (v == value)
     return;

@@ -40,12 +40,15 @@
 
 #if defined (CONFIG_SPINNER)
 # define SPINNER_STEP spinner_step()
+# define SPINNER_CLEAR spinner_clear()
 #else
 # define SPINNER_STEP
+# define SPINNER_CLEAR
 #endif
 
 extern void (*hook_spinner) (unsigned value);
 
 void spinner_step (void);
+void spinner_clear (void);
 
 #endif  /* __SPINNER_H__ */

@@ -34,6 +34,7 @@
 #include <error.h>
 #include <linux/ctype.h>
 #include <environment.h>
+#include <spinner.h>
 
 const char* error_description;
 
@@ -169,6 +170,7 @@ void exec_monitor (void)
     const char** argv;
     int argc;
 
+    SPINNER_CLEAR;
     read_command ("\rapex> ", &argc, &argv);
     call_command (argc, argv);
 

@@ -28,6 +28,9 @@
    Implements a user feedback mechanism while performing long running
    commands.
 
+   The hook function takes as parameter the timer delta.  If the
+   parameter is ~0, the spinner hook may choose to clear its display.
+
 */
 
 #include <config.h>
@@ -57,3 +60,9 @@ void spinner_step (void)
   putchar (rgch[step]);
   step = (step + 1)%8;
 }
+
+void spinner_clear (void)
+{
+  if (hook_spinner)
+    hook_spinner (~0);
+} 
