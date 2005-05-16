@@ -1,3 +1,8 @@
+2005-05-15  Marc Singer  <elf@buici.com>
+
+	* src/mach-ixp42x/pci.c (pci_init): Added IRQ setup for all of the
+	PCI interrupt pins.
+	
 2005-05-15  Marc Singer  <elf@cerise.buici.com>
 
 	* src/lib/spinner.c (spinner_clear): clearing LED spinner when the

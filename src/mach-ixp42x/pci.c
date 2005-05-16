@@ -32,7 +32,7 @@
 
 #include <config.h>
 #include <service.h>
-#include <apex.h>		/* printf */
+//#include <apex.h>		/* printf */
 
 #include "hardware.h"
 
@@ -58,7 +58,11 @@ static void pci_init (void)
   GPIO_OUT_ENABLE  (GPIO_I_PCI_CLOCK);
   GPIO_OUT_ENABLE  (GPIO_I_PCI_RESET);
   GPIO_OUT_DISABLE (GPIO_I_PCI_INTA);
-  GPIO_INT_TYPE	      (GPIO_I_PCI_INTA, GPIO_INT_TYPE_ACTIVELO);
+  GPIO_INT_TYPE	   (GPIO_I_PCI_INTA, GPIO_INT_TYPE_ACTIVELO);
+  GPIO_OUT_DISABLE (GPIO_I_PCI_INTB);
+  GPIO_INT_TYPE	   (GPIO_I_PCI_INTB, GPIO_INT_TYPE_ACTIVELO);
+  GPIO_OUT_DISABLE (GPIO_I_PCI_INTC);
+  GPIO_INT_TYPE	   (GPIO_I_PCI_INTC, GPIO_INT_TYPE_ACTIVELO);
 
   usleep (1000);		/* delay before clearing reset */
   PCI_CLK_ENABLE;
