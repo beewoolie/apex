@@ -11,6 +11,14 @@ config MACH_NSLU2
 	select USES_NOR_BOOTFLASH
 	select BIGENDIAN
 
+config MACH_AVILA2347
+	bool "Gateworks Avila 2347"
+	select ARCH_IXP422
+	select MACH_AVILA
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select BIGENDIAN
+
 endchoice
 
 menu "Platform Setup"
@@ -85,6 +93,15 @@ config MACH
 	default "ixp42x"
 
 config ARCH_IXP420
+	bool
+
+config ARCH_IXP422
+	bool
+
+config ARCH_IXP425
+	bool
+
+config MACH_AVILA
 	bool
 
 endif
