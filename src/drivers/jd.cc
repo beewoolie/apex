@@ -1,0 +1,459 @@
+/* jd.cc
+     $Id$
+
+   written by Marc Singer
+   17 May 2005
+
+   Copyright (C) 2005 Marc Singer
+
+   -----------
+   DESCRIPTION
+   -----------
+
+   Dumper for jffs2 filesystems.
+
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <ctype.h>
+
+#define ENDIAN_SWAP
+
+#define MARKER_JFFS2_OLD	0x1984
+#define MARKER_JFFS2		0x1985
+#define MARKER_JFFS2_REV	0x5981	/* Wrong endian magic */
+#define MARKER_EMPTY		0xffff
+#define MARKER_DIRTY		0x0000
+
+#define NAME_LENGTH_MAX		254
+#define DATA_LENGTH_MIN		128	/* Smallest data node */
+
+#define JFFS2_ROOT_INO		1
+
+enum {
+  COMPRESSION_NONE	 = 0x00,
+  COMPRESSION_ZERO	 = 0x01,
+  COMPRESSION_RTIME	 = 0x02,
+  COMPRESSION_RUBINMIPS	 = 0x03,
+  COMPRESSION_COPY	 = 0x04,
+  COMPRESSION_DYNRUBIN	 = 0x05,
+  COMPRESSION_ZLIB	 = 0x06,
+  COMPRESSION_LZO	 = 0x07,
+  COMPRESSION_LZARI	 = 0x08,
+};
+
+#define COMPATIBILITY_MASK	0xc000
+#define NODE_ACCURATE		0x2000
+#define FEATURE_INCOMPAT	0xc000
+#define FEATURE_ROCOMPAT	0xc000
+#define FEATURE_RWCOMPAT_COPY	0x4000
+#define FEATURE_RWCOMPAT_DELETE	0x0000
+
+#define NODE_DIRENT		(FEATURE_INCOMPAT        | NODE_ACCURATE | 1)
+#define NODE_INODE		(FEATURE_INCOMPAT        | NODE_ACCURATE | 2)
+#define NODE_CLEAN		(FEATURE_RWCOMPAT_DELETE | NODE_ACCURATE | 3)
+//#define NODE_CHECKPOINT	(FEATURE_RWCOMPAT_DELETE | NODE_ACCURATE | 3)
+//#define NODE_OPTIONS		(FEATURE_RWCOMPAT_COPY	 | NODE_ACCURATE | 4)
+//#define NODETYPE_DIRENT_ECC	(FEATURE_INCOMPAT	 | NODE_ACCURATE | 5)
+//#define NODETYPE_INODE_ECC	(FEATURE_INCOMPAT	 | NODE_ACCURATE | 6)
+
+#define INODE_FLAG_PREREAD	1 /* Read at mount-time */
+#define INODE_FLAG_USERCOMPR	2 /* User selected compression */
+
+	// dirent types, taken from the kernel sources
+#define DT_UNKNOWN	0
+#define DT_FIFO		1
+#define DT_CHR		2
+#define DT_DIR		4
+#define DT_BLK		6
+#define DT_REG		8
+#define DT_LNK		10
+#define DT_SOCK		12
+#define DT_WHT		14
+
+typedef unsigned long u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
+
+#if defined (ENDIAN_SWAP)
+static u32 u32_to_cpu(u32 v) { 
+  return 
+      ((v &       0xff) << 24)
+    | ((v &     0xff00) <<  8)
+    | ((v &   0xff0000) >>  8)
+    | ((v & 0xff000000) >> 24);
+}
+
+static u16 u16_to_cpu(u16 v) { 
+  return 
+      ((v &       0xff) << 8)
+    | ((v &     0xff00) >>  8);
+}
+
+#else
+static u32 u32_to_cpu(u32 v) { return v; }
+static u16 u32_to_cpu(u16 v) { return v; }
+#endif
+
+struct unknown_node
+{
+  u16 marker;
+  u16 node_type;
+  u32 length;
+  u32 header_crc;
+} __attribute__((packed));
+
+struct dirent_node
+{
+  u16 marker;
+  u16 node_type;		/* NODETYPE_DIRENT */
+  u32 length;
+  u32 header_crc;
+  u32 pino;
+  u32 version;
+  u32 ino;
+  u32 mctime;
+  u8 nsize;
+  u8 type;
+  u8 unused[2];
+  u32 node_crc;
+  u32 name_crc;
+  u8 name[0];
+} __attribute__((packed));
+
+struct inode_node
+{
+  u16 marker;
+  u16 node_type;		/* NODETYPE_INODE */
+  u32 length;
+  u32 header_crc;
+  u32 ino;
+  u32 version;    /* Version number.  */
+  u32 mode;       /* The file's type or mode.  */
+  u16 uid;        /* The file's owner.  */
+  u16 gid;        /* The file's group.  */
+  u32 isize;      /* Total resultant size of this inode (used for truncations)  */
+  u32 atime;      /* Last access time.  */
+  u32 mtime;      /* Last modification time.  */
+  u32 ctime;      /* Change time.  */
+  u32 offset;     /* Where to begin to write.  */
+  u32 csize;      /* (Compressed) data size */
+  u32 dsize;	  /* Size of the node's data. (after decompression) */
+  u8 compr;       /* Compression algorithm used */
+  u8 usercompr;	  /* Compression algorithm requested by the user */
+  u16 flags;	  /* See JFFS2_INO_FLAG_* */
+  u32 data_crc;   /* CRC for the (compressed) data.  */
+  u32 node_crc;   /* CRC for the raw inode (excluding data)  */
+  //  u8 data[dsize];
+} __attribute__((packed));
+
+union node {
+	struct inode_node i;
+	struct dirent_node d;
+	struct unknown_node u;
+} __attribute__((packed));
+
+struct dirent_cache {
+  u32 ino;
+  u32 pino;
+  u32 version;
+  struct dirent_node* dirent;
+};
+
+struct inode_cache {
+  u32 ino;
+  u32 version;
+  u32 offset;
+  u32 dsize;
+  struct inode_node* inode; 
+};
+
+void hexdump (const unsigned char* rgb, int cb, unsigned long index)
+{
+  int i;
+
+  while (cb > 0) {
+    printf ("%08lx: ", index);
+    for (i = 0; i < 16; ++i) {
+      if (i < cb)
+	printf ("%02x ", rgb[i]);
+      else
+	printf ("   ");
+      if (i%8 == 7)
+	putchar (' ');
+    }
+    for (i = 0; i < 16; ++i) {
+      if (i == 8)
+	putchar (' ');
+      putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
+    }
+    printf ("\n");
+
+    cb -= 16;
+    index += 16;
+    rgb += 16;
+  }
+}
+
+unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
+{
+#define POLY        (0xedb88320)
+  const unsigned char* pb = (const unsigned char *) pv;
+
+  crc ^= 0xffffffff;
+
+  while (cb--) {
+    int i;
+    crc ^= *pb++;
+
+    for (i = 8; i--; ) {
+      if (crc & 1) {
+	crc >>= 1;
+	crc ^= POLY;
+      }
+      else
+	crc >>= 1;
+    }
+  }
+
+  return crc ^ 0xffffffff;
+}
+
+static bool verify_header_crc (const struct unknown_node& node)
+{
+  return u32_to_cpu (node.header_crc)
+    == ~compute_crc32 (~0, &node, sizeof (struct unknown_node) - 4);
+}
+
+static bool verify_dirent_crc (const struct dirent_node& node)
+{
+  return u32_to_cpu (node.node_crc)
+    == ~compute_crc32 (~0, &node, sizeof (struct dirent_node) - 8);
+}
+
+void usage (void)
+{
+  printf ("usage: jd FILENAME\n");
+  exit (1); 
+}
+
+const int find_inode (u32 inode, 
+		      const struct dirent_cache* dc,
+		      int max)
+{
+  for (int i = 0; i < max; ++i)
+    if (dc[i].ino == inode)
+      return i;
+  return -1;
+}
+
+int compare_dirent_cache (const void* _a, const void* _b)
+{
+  struct dirent_cache& a = *(struct dirent_cache*) _a;
+  struct dirent_cache& b = *(struct dirent_cache*) _b;
+
+  if (a.pino == b.pino) {
+    if (a.ino == b.ino)
+      return b.version - a.version;
+    return a.ino - b.ino;
+  }
+  return a.pino - b.pino;
+}
+
+int compare_inode_cache (const void* _a, const void* _b)
+{
+  struct inode_cache& a = *(struct inode_cache*) _a;
+  struct inode_cache& b = *(struct inode_cache*) _b;
+
+  if (a.ino == b.ino) {
+    if (a.offset == b.offset)
+      return b.version - a.version;
+    return a.offset - b.offset;
+  }
+  return a.ino - b.ino;
+}
+
+void scan (const void* pv, size_t cb)
+{
+  const int cDirentMax = 4*1024;
+  const int cInodeMax = 4*1024;
+  struct dirent_cache* dc = new struct dirent_cache[cDirentMax];
+  struct inode_cache* ic = new struct inode_cache[cInodeMax];
+  int iDirent = 0;
+  int iInode = 0;
+
+  union node* node;
+  int cbNode;
+
+  for (node = (union node*) pv; 
+       (size_t) node < (unsigned long) pv + cb; 
+       node = (union node*) ((((unsigned long) node) + cbNode + 3) & ~3)) {
+
+    switch (u16_to_cpu (node->u.marker)) {
+    case MARKER_JFFS2:
+      break;
+    case MARKER_JFFS2_REV:
+      // this is really only valid for reading the first marker of the block 
+      printf ("endian mismatch\n");
+      return;
+    default:
+//      printf ("marker %x type %x length %x\n", 
+//	      u16_to_cpu (node->u.marker),
+//	      u16_to_cpu (node->u.node_type),
+//	      u16_to_cpu (node->u.length));
+      cbNode = 4;
+      continue;
+    }
+
+    if (!verify_header_crc (node->u)) {
+#if 0
+      printf ("bad header for  marker %x type %x length %x\n", 
+	      u16_to_cpu (node->u.marker),
+	      u16_to_cpu (node->u.node_type),
+	      u16_to_cpu (node->u.length));
+#endif
+      cbNode = 4;
+      continue;
+    }
+
+    cbNode = u32_to_cpu (node->u.length);
+
+//    printf ("type %x\n", u16_to_cpu (node->u.node_type));
+    switch (u16_to_cpu (node->u.node_type)) {
+    case NODE_DIRENT:
+      dc[iDirent].ino = u32_to_cpu (node->d.ino);
+      dc[iDirent].pino = u32_to_cpu (node->d.pino);
+      dc[iDirent].version = u32_to_cpu (node->d.version);
+      dc[iDirent].dirent = &node->d;
+      ++iDirent;
+      break;
+
+    case NODE_INODE:
+      ic[iInode].ino = u32_to_cpu (node->i.ino);
+      ic[iInode].offset = u32_to_cpu (node->i.offset);
+      ic[iInode].dsize = u32_to_cpu (node->i.dsize);
+      ic[iInode].version = u32_to_cpu (node->i.version);
+      ic[iInode].inode = &node->i;
+      ++iInode;
+      break;;
+      
+    default:
+      break;
+    }
+  }
+
+  qsort (dc, iDirent, sizeof (struct dirent_cache), compare_dirent_cache);
+  qsort (ic, iInode,  sizeof (struct inode_cache),  compare_inode_cache);
+  
+  for (int i = 0; i < iDirent; ++i) {
+    printf ("%4d %4d %4d %c '%*.*s'\n", 
+	    dc[i].ino, dc[i].pino, dc[i].version, 
+	    "ufc?d?b?r?l?s?w"[dc[i].dirent->type],
+	    dc[i].dirent->nsize, 
+	    dc[i].dirent->nsize, 
+	    dc[i].dirent->name);
+  }
+
+  {
+    int inode = -1;
+    for (int i = 0; i < iInode; ++i) {
+      int index = -1;
+      if (inode != ic[i].ino) {
+	printf ("%4d", inode = ic[i].ino);
+	index = find_inode (ic[i].ino, dc, iDirent);
+      }
+      else
+	printf ("    ");
+      printf (" %6d %4d %4d %c (%5d)", 
+	      ic[i].offset, ic[i].dsize, ic[i].version, 
+	      "n0rMcDzLA"[ic[i].inode->compr],
+	      u32_to_cpu (ic[i].inode->isize));
+      if (index != -1)
+	printf ("  '%*.*s'", 
+	    dc[index].dirent->nsize, 
+	    dc[index].dirent->nsize, 
+	    dc[index].dirent->name);
+      printf ("\n");
+      if (ic[i].inode->compr == COMPRESSION_NONE
+	  && ic[i].dsize < 128) {
+	hexdump (((const unsigned char*) ic[i].inode)
+		 + sizeof (struct inode_node),
+		 ic[i].dsize, ic[i].offset);
+      }
+
+    }
+  }
+}
+
+void dump (const void* pv, size_t cb)
+{
+  union node* node;
+  int cbNode;
+
+  for (node = (union node*) pv; 
+       (size_t) node < (unsigned long) pv + cb; 
+       node = (union node*) ((((unsigned long) node) + cbNode + 3) & ~3)) {
+    if (node->u.marker != MARKER_JFFS2) {
+      cbNode = 4;
+      continue;
+    }
+    if (!verify_header_crc (node->u)) {
+      printf ("bad header\n");
+      cbNode = 4;
+      continue;
+    }
+
+    cbNode = node->u.length;
+
+    switch (node->u.node_type) {
+    case NODE_DIRENT:
+      printf ("dir: pino %4d  version %4d  ino %4d"
+	      "  nsize %2d  type %d  '%*.*s'\n",
+      	      node->d.pino, node->d.version, node->d.ino, node->d.nsize,
+	      node->d.type, node->d.nsize, node->d.nsize, node->d.name);
+      break;
+    case NODE_INODE:
+      printf ("ino:  ino %4d  version %4d  offset %6d size %4d/%4d  "
+	      "compr %d",
+	      node->i.ino, node->i.version, node->i.offset,
+	      node->i.csize, node->i.dsize, node->i.compr);
+      if (node->i.flags)
+	printf ("  flags %d", node->i.flags);
+      printf ("\n");
+      break;
+    default:
+      printf ("marker %0x  node_type %0x  length %x (%d)\n", 
+	      node->u.marker, node->u.node_type, 
+	      node->u.length, node->u.length);
+    }
+
+  }
+
+}
+
+int main (int argc, char** argv)
+{
+  if (argc != 2)
+    usage ();
+
+  int fh = open (argv[1], O_RDONLY);
+  size_t cb = lseek (fh, 0, SEEK_END);
+//  lseek (fh, 0, SEEK_SET);
+  void* pv = NULL;
+  if (fh != -1)
+    pv = mmap (NULL, cb, PROT_READ, MAP_PRIVATE, fh, 0);
+
+  if (!pv) {
+    printf ("unable to open and map file %s\n", argv[1]);
+    exit (1);
+  }
+
+  scan (pv, cb);
+  //  dump (pv, cb);
+  exit (0);
+}

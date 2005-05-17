@@ -99,6 +99,7 @@ SECTIONS
 		. = ALIGN (4);
 		*(.ethernet.bss)
 		*(.clcdc.bss)
+		*(.jffs2.bss)
 	}
 	. += 8192;
 	APEX_VMA_STACK_START = .;
