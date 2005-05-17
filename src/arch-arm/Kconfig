@@ -184,6 +184,7 @@ config ENV_REGION_KERNEL
 config ENV_STARTUP_RAMDISK_COPY
 	bool "Copy ramdisk to RAM at startup" 
 	default y if MACH_NSLU2
+	depends on USE_RAMDISK
 	
 config ENV_REGION_RAMDISK
 	string "Source region for ramdisk image"

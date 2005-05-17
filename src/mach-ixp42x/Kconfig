@@ -45,9 +45,23 @@ config KERNEL_LMA
 	hex "Kernel load address"
 	default "0x00008000"
 
+config USE_RAMDISK
+	bool "Enable ramdisk options"
+	help
+	  This option doesn't enable the ramdisk, per se.  It enables
+	  other configuration options that help setup a default
+	  ramdisk.  The kernel command line and the APEX startup
+	  commands may be overridden to perform the same steps.
+
+	  There is a separate option in the Environment section that
+	  controls whether or not APEX copies the ramdisk from flash
+	  into RAM at startup.  That is where the ramdisk region is
+	  defined.
+
 config RAMDISK_LMA
 	hex "Ramdisk load address"
 	default "0x01000000"
+	depends on USE_RAMDISK
 
 config SDRAM_BANK0
 	bool "Enable SDRAM bank 0"
