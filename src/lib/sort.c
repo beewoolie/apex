@@ -35,6 +35,8 @@
  * Jan 23 2005  Matt Mackall <mpm@selenic.com>
  */
 
+#include <linux/types.h>
+
 void u32_swap(void *a, void *b, int size)
 {
 	u32 t = *(u32 *)a;
