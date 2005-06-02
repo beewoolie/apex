@@ -82,7 +82,7 @@
 
 #include <mach/drv-cf.h>
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
