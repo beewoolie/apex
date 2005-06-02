@@ -82,7 +82,7 @@
 
 #include <mach/drv-cf.h>
 
-//#define TALK
+#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -169,7 +169,14 @@ static void write8 (int reg, unsigned char value)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
+  IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
+  /* This sleep was added for the sake of the reading a particular
+     card on the 79520.  It isn't clear why it would be necessary as
+     the 79524 has no problems and other cards are OK.  Better to
+     perform the sleep and waste loads of time figuring out precise
+     timings...for now. */
+  usleep (1);
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = v;
   IOBARRIER_READ;
 }
@@ -240,7 +247,6 @@ static int cf_identify (void)
   ENTRY (0);
 
   cf_d.type = REG (CF_PHYS);
-
   IOBARRIER_READ;
 
 #if 0
@@ -286,7 +292,9 @@ static int cf_identify (void)
     for (i = 0; i < 128; ++i)
       rgs[i] = read16 (IDE_DATA);
 
-    //    dump ((void*) rgs, 256, 0);
+#if defined (TALK)
+    dump ((void*) rgs, 256, 0);
+#endif
 
     if (rgs[0] != 0x848a) {
       cf_d.type = -1;
