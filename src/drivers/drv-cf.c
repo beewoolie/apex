@@ -129,6 +129,15 @@
 
 #define USE_LBA
 
+  /* This sleep was added for the sake of the reading a particular
+     card on the 79520.  It isn't clear why it would be necessary as
+     the 79524 has no problems and other cards are OK.  Better to
+     perform the sleep and waste loads of time figuring out precise
+     timings...for now.  Unfortunately, this delay make the IO
+     unbearably slow.  Oh well. */
+//#define DELAY usleep(1)
+#define DELAY
+
 enum {
   typeMultifunction = 0,
   typeMemory = 1,
@@ -171,12 +180,7 @@ static void write8 (int reg, unsigned char value)
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
   IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
-  /* This sleep was added for the sake of the reading a particular
-     card on the 79520.  It isn't clear why it would be necessary as
-     the 79524 has no problems and other cards are OK.  Better to
-     perform the sleep and waste loads of time figuring out precise
-     timings...for now. */
-  usleep (1);
+  DELAY;
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = v;
   IOBARRIER_READ;
 }

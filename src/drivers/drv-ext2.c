@@ -496,6 +496,7 @@ static int ext2_identify (void)
     if (d.driver->read (&d, &rgb, 2) != 2
 	|| rgb[0] != 0x55
 	|| rgb[1] != 0xaa) {
+      PRINTF ("sig is %x %x\n", rgb[0], rgb[1]);
       close_descriptor (&d);
       return -1;
     }
