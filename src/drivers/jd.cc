@@ -10,7 +10,25 @@
    DESCRIPTION
    -----------
 
-   Dumper for jffs2 filesystems.
+   Dumper for jffs2 filesystems.  Much of the internal structure of
+   this code is designed to emulate the structure of the drv-jffs2
+   module.  Don't take offense.
+
+   Truncated Files
+   ---------------
+
+   We may need more logic to handle file truncation.  If the size of
+   the file has been reduced, it is possible that there are file
+   extent fragments that don't reflect this new length.  There will be
+   a later version inode to indicate the proper truncated length, but
+   intermediate inode records may still exist.  This deserves some
+   testing to be certain.
+
+   Checksums
+   ---------
+
+   We aren't checking many of the checksums.  This must change.  All
+   of them should be verified before data is considered valid. 
 
 */
 
@@ -20,7 +38,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <string.h>
 #include <ctype.h>
+#include <linux/stat.h>
 
 #define ENDIAN_SWAP
 
@@ -137,7 +157,7 @@ struct inode_node
   u32 mode;       /* The file's type or mode.  */
   u16 uid;        /* The file's owner.  */
   u16 gid;        /* The file's group.  */
-  u32 isize;      /* Total resultant size of this inode (used for truncations)  */
+  u32 isize;      /* Total size of this inode (used for truncations)  */
   u32 atime;      /* Last access time.  */
   u32 mtime;      /* Last modification time.  */
   u32 ctime;      /* Change time.  */
@@ -162,7 +182,10 @@ struct dirent_cache {
   u32 ino;
   u32 pino;
   u32 version;
-  struct dirent_node* dirent;
+  u32 index_dirent;
+  u32 sizeof_dirent;		// *** should change to name size
+  u8 type;			// Important accelerator
+//  struct dirent_node* dirent;
 };
 
 struct inode_cache {
@@ -170,8 +193,18 @@ struct inode_cache {
   u32 version;
   u32 offset;
   u32 dsize;
-  struct inode_node* inode; 
+  u32 index_inode;
+//  struct inode_node* inode; 
 };
+
+// Globals in order to emulate structure of the APEX driver.
+
+const int cDirentMax = 4*1024;
+const int cInodeMax = 4*1024;
+struct dirent_cache g_dirent_cache[cDirentMax];
+struct inode_cache  g_inode_cache[cInodeMax];
+int iDirent;
+int iInode;
 
 void hexdump (const unsigned char* rgb, int cb, unsigned long index)
 {
@@ -242,14 +275,69 @@ void usage (void)
   exit (1); 
 }
 
-const int find_inode (u32 inode, 
-		      const struct dirent_cache* dc,
-		      int max)
+const int find_cached_inode (u32 inode, 
+			     const struct inode_cache* ic,
+			     int max)
+{
+  int min = 0;
+
+  while (min + 1 < max) {
+    int mid = (min + max)/2;
+    if (ic[mid].ino == inode) {
+      while (mid > 0 && ic[mid - 1].ino == inode)
+	--mid;
+      return mid;
+    }
+    if (ic[mid].ino < inode)
+      min = mid;
+    else
+      max = mid;
+  }
+
+  return (ic[min].ino == inode) ? min : -1;
+}
+
+/* find_cached_directory_node
+
+   searches for an inode in the dirent cache.  This array is sorted by
+   parent inodes, so this search has to be an O(n) scan of the
+   array...for now.
+
+*/
+
+const int find_cached_directory_inode (u32 inode, 
+				       const struct dirent_cache* dc,
+				       int max)
 {
   for (int i = 0; i < max; ++i)
     if (dc[i].ino == inode)
       return i;
   return -1;
+}
+
+const int find_cached_parent_inode (u32 inode, 
+				    const struct dirent_cache* dc,
+				    int max)
+{
+  int min = 0;
+
+  while (min + 1 < max) {
+    int mid = (min + max)/2;
+    if (dc[mid].pino == inode) {
+      while (mid > 0 && dc[mid - 1].pino == inode)
+	--mid;
+      min = mid;
+      break;
+    }
+//    if (dc[mid].ino == 0)
+//      max = mid;
+    /*    else */ if (dc[mid].pino < inode)
+      min = mid;
+    else
+      max = mid;
+  }
+
+  return (dc[min].pino == inode) ? min : -1;
 }
 
 int compare_dirent_cache (const void* _a, const void* _b)
@@ -278,21 +366,32 @@ int compare_inode_cache (const void* _a, const void* _b)
   return a.ino - b.ino;
 }
 
+void read_node (void* node, const void* pv, size_t cb, 
+		size_t ib, size_t cbRead = 0)
+{
+  fflush (stdout);
+  if (!cbRead)
+    cbRead = sizeof (union node);
+  cb -= ib;
+  if (cbRead > cb)
+    cbRead = cb;
+  memcpy (node, (const unsigned char*) pv + ib, cbRead);
+}
+
 void scan (const void* pv, size_t cb)
 {
-  const int cDirentMax = 4*1024;
-  const int cInodeMax = 4*1024;
-  struct dirent_cache* dc = new struct dirent_cache[cDirentMax];
-  struct inode_cache* ic = new struct inode_cache[cInodeMax];
-  int iDirent = 0;
-  int iInode = 0;
+  struct dirent_cache* dc = g_dirent_cache;
+  struct inode_cache* ic = g_inode_cache;
 
-  union node* node;
+  size_t ib;			// Index into the filesystem data
+
+  union node _node;
+  union node* node = &_node;
   int cbNode;
 
-  for (node = (union node*) pv; 
-       (size_t) node < (unsigned long) pv + cb; 
-       node = (union node*) ((((unsigned long) node) + cbNode + 3) & ~3)) {
+  for (ib = 0; ib < cb; ib = (ib + cbNode + 3) & ~3) {
+
+    read_node (node, pv, cb, ib);
 
     switch (u16_to_cpu (node->u.marker)) {
     case MARKER_JFFS2:
@@ -329,7 +428,9 @@ void scan (const void* pv, size_t cb)
       dc[iDirent].ino = u32_to_cpu (node->d.ino);
       dc[iDirent].pino = u32_to_cpu (node->d.pino);
       dc[iDirent].version = u32_to_cpu (node->d.version);
-      dc[iDirent].dirent = &node->d;
+      dc[iDirent].index_dirent = ib;
+      dc[iDirent].sizeof_dirent = sizeof (struct dirent_node) + node->d.nsize;
+      dc[iDirent].type = node->d.type;
       ++iDirent;
       break;
 
@@ -338,7 +439,7 @@ void scan (const void* pv, size_t cb)
       ic[iInode].offset = u32_to_cpu (node->i.offset);
       ic[iInode].dsize = u32_to_cpu (node->i.dsize);
       ic[iInode].version = u32_to_cpu (node->i.version);
-      ic[iInode].inode = &node->i;
+      ic[iInode].index_inode = ib;
       ++iInode;
       break;;
       
@@ -349,48 +450,65 @@ void scan (const void* pv, size_t cb)
 
   qsort (dc, iDirent, sizeof (struct dirent_cache), compare_dirent_cache);
   qsort (ic, iInode,  sizeof (struct inode_cache),  compare_inode_cache);
-  
+}
+
+void dump (const void* pv, size_t cb)
+{
+  struct dirent_cache* dc = g_dirent_cache;
+  struct inode_cache* ic = g_inode_cache;
+
   for (int i = 0; i < iDirent; ++i) {
-    printf ("%4d %4d %4d %c '%*.*s'\n", 
+    char rgb[dc[i].sizeof_dirent];
+    struct dirent_node& d = *(dirent_node*) rgb;
+    read_node (rgb, pv, cb, dc[i].index_dirent, dc[i].sizeof_dirent);
+
+    printf ("i %4d  p %4d  v %4d t %c '%*.*s'\n", 
 	    dc[i].ino, dc[i].pino, dc[i].version, 
-	    "ufc?d?b?r?l?s?w"[dc[i].dirent->type],
-	    dc[i].dirent->nsize, 
-	    dc[i].dirent->nsize, 
-	    dc[i].dirent->name);
+	    "ufc?d?b?r?l?s?w"[d.type], d.nsize, d.nsize, d.name);
   }
 
   {
     int inode = -1;
     for (int i = 0; i < iInode; ++i) {
+      struct inode_node ino;
+      read_node (&ino, pv, cb, ic[i].index_inode, sizeof (struct inode_node));
+
       int index = -1;
       if (inode != ic[i].ino) {
 	printf ("%4d", inode = ic[i].ino);
-	index = find_inode (ic[i].ino, dc, iDirent);
+	index = find_cached_directory_inode (ic[i].ino, dc, iDirent);
       }
       else
 	printf ("    ");
-      printf (" %6d %4d %4d %c (%5d)", 
+      printf (" o %6d l %4d v %4d %c (s %5d)", 
 	      ic[i].offset, ic[i].dsize, ic[i].version, 
-	      "n0rMcDzLA"[ic[i].inode->compr],
-	      u32_to_cpu (ic[i].inode->isize));
-      if (index != -1)
-	printf ("  '%*.*s'", 
-	    dc[index].dirent->nsize, 
-	    dc[index].dirent->nsize, 
-	    dc[index].dirent->name);
+	      "n0rMcDzLA"[ino.compr],
+	      u32_to_cpu (ino.isize));
+      if (index != -1) {
+	char rgb[dc[index].sizeof_dirent];
+	struct dirent_node& d = *(dirent_node*) rgb;
+	read_node (rgb, pv, cb, 
+		   dc[index].index_dirent, dc[index].sizeof_dirent);
+
+	printf ("  '%*.*s'", d.nsize, d.nsize, d.name);
+      }
       printf ("\n");
-      if (ic[i].inode->compr == COMPRESSION_NONE
-	  && ic[i].dsize < 128) {
-	hexdump (((const unsigned char*) ic[i].inode)
-		 + sizeof (struct inode_node),
-		 ic[i].dsize, ic[i].offset);
+      if (ino.compr == COMPRESSION_NONE && ic[i].dsize < 128 && ic[i].dsize) {
+	int cbRead = ic[i].dsize;
+	if (cbRead > 128)
+	  cbRead = 128;
+	unsigned char rgb[cbRead];
+	read_node (rgb, pv, cb, 
+		   ic[i].index_inode + sizeof (struct inode_node),
+		   cbRead);
+	hexdump (rgb, cbRead, ic[i].offset);
       }
 
     }
   }
 }
 
-void dump (const void* pv, size_t cb)
+void old_dump (const void* pv, size_t cb)
 {
   union node* node;
   int cbNode;
@@ -436,14 +554,130 @@ void dump (const void* pv, size_t cb)
 
 }
 
+int find_ino (void* pv, size_t cb, const char* szPath)
+{
+  int cchPath = szPath ? strlen (szPath) : 0;
+  if (!cchPath) {
+    printf ("empty path\n");
+    return 0;
+  }
+
+  if (szPath[0] != '/') {
+    printf ("relative path is invalid\n");
+    return 0;
+  }
+
+  char sz[strlen (szPath + 1) + 1];
+  strcpy (sz, szPath + 1);
+  char* context = NULL;
+
+  int ino = JFFS2_ROOT_INO;
+
+  char* pch;
+  for (pch = strtok_r (sz,   "/", &context); pch; 
+       pch = strtok_r (NULL, "/", &context)) {
+    int i = find_cached_parent_inode (ino, g_dirent_cache, iDirent);
+    if (i == -1) {
+      printf ("path not found\n");
+      return 0;
+    }
+    for (; i < iDirent; ++i) {
+      if (g_dirent_cache[i].sizeof_dirent - sizeof (dirent_node)
+	  != strlen (pch))
+	continue;
+
+      char rgb[g_dirent_cache[i].sizeof_dirent];
+      struct dirent_node& d = *(dirent_node*) rgb;
+      read_node (rgb, pv, cb, 
+		 g_dirent_cache[i].index_dirent, 
+		 g_dirent_cache[i].sizeof_dirent);
+      if (strncmp (pch, (const char*) d.name, d.nsize))
+	continue;
+
+      // Matching node found
+      ino = u32_to_cpu (d.ino);
+      break;
+    }
+
+    printf ("'%s'\n", pch);
+  }
+  printf ("inode %d\n", ino);
+  return ino;
+}
+
+void show_ino (void* pv, size_t cb, int ino)
+{
+  u32 mode;
+
+  if (ino != 1) {
+    int index = find_cached_inode (ino, g_inode_cache, iInode);
+    if (index == -1) {
+      printf ("no inode %d\n", ino);
+      return;
+    }
+  
+    struct inode_node inode;
+    read_node (&inode, pv, cb, g_inode_cache[index].index_inode, 
+	       sizeof (struct inode_node));
+  
+    mode = u32_to_cpu (inode.mode);
+
+    printf ("  m %08o  o %ld  c %ld  d %ld  s %ld\n", 
+	    u32_to_cpu (inode.mode), u32_to_cpu (inode.offset), 
+	    u32_to_cpu (inode.csize), u32_to_cpu (inode.dsize),
+	    u32_to_cpu (inode.isize));
+    if (S_ISDIR (mode)) 
+      printf ("    directory\n");
+    if (S_ISREG (mode)) 
+      printf ("    regular file\n");
+    if (S_ISLNK (mode)) 
+      printf ("    link\n");
+    if (S_ISCHR (mode)) 
+      printf ("    char dev\n");
+    if (S_ISBLK (mode)) 
+      printf ("    blk dev\n");
+  }
+
+  if (S_ISDIR (mode) || ino == 1) {
+    int i = find_cached_parent_inode (ino, g_dirent_cache, iDirent);
+    for (; i != -1 && i < iDirent && g_dirent_cache[i].pino == ino; ++i) {
+      if (g_dirent_cache[i].ino == 0)
+	continue;
+
+      char rgb[g_dirent_cache[i].sizeof_dirent];
+      struct dirent_node& d = *(dirent_node*) rgb;
+      read_node (rgb, pv, cb, 
+		 g_dirent_cache[i].index_dirent, 
+		 g_dirent_cache[i].sizeof_dirent);
+
+      printf ("  %*.*s", d.nsize, d.nsize, d.name );
+      switch (g_dirent_cache[i].type) {
+      case DT_DIR:
+	printf ("/");
+	break;
+      case DT_LNK:
+	printf ("@");
+	break;
+      case DT_REG:
+	break;
+      default:
+	printf ("(%d)", g_dirent_cache[i].type);
+	break;
+      }
+      printf ("\n");
+    }
+  }
+
+}
+
+
 int main (int argc, char** argv)
 {
-  if (argc != 2)
+  if (argc > 3)
     usage ();
 
   int fh = open (argv[1], O_RDONLY);
   size_t cb = lseek (fh, 0, SEEK_END);
-//  lseek (fh, 0, SEEK_SET);
   void* pv = NULL;
   if (fh != -1)
     pv = mmap (NULL, cb, PROT_READ, MAP_PRIVATE, fh, 0);
@@ -453,7 +687,17 @@ int main (int argc, char** argv)
     exit (1);
   }
 
+  char* szPath = NULL;
+  if (argc == 3)
+    szPath = argv[2];
+
   scan (pv, cb);
-  //  dump (pv, cb);
+  if (szPath) {
+    int ino = find_ino (pv, cb, szPath);
+    show_ino (pv, cb, ino);
+  }
+  else
+    dump (pv, cb);
+
   exit (0);
 }

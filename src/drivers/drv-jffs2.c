@@ -147,7 +147,7 @@ struct inode_node
   u32 mode;       /* The file's type or mode.  */
   u16 uid;        /* The file's owner.  */
   u16 gid;        /* The file's group.  */
-  u32 isize;      /* Total resultant size of this inode (used for truncations)  */
+  u32 isize;      /* Total size of this inode (used for truncations)  */
   u32 atime;      /* Last access time.  */
   u32 mtime;      /* Last modification time.  */
   u32 ctime;      /* Change time.  */
