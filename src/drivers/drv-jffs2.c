@@ -67,6 +67,8 @@
 #include <error.h>
 #include <sort.h>
 #include <linux/stat.h>
+#include <zlib.h>
+#include <zlib-heap.h>
 
 //#define TALK
 
