@@ -222,6 +222,12 @@ static const char szBlockDriver[]  /* Underlying block driver */
   = CONFIG_DRIVER_JFFS2_BLOCKDEVICE;
 
 
+static inline read_node (void* pv, size_t ib, size_t cb)
+{
+  jffs2.d.driver->seek (&jffs2.d, ib, SEEK_SET);
+  jffs2.d.driver->read (&jffs2.d, pv, cb);
+}
+
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
 
 static int verify_header_crc (struct unknown_node* node)
@@ -591,12 +597,60 @@ static void jffs2_info (struct descriptor_d* d)
 {
   union node node;
   int inode;
+  int i;
 
   if (jffs2_identify ())
     return;
 
   inode = jffs2_path_to_inode (0, d, &node);
-  printf ("found inode %d\n", inode);
+  if (inode <= 0) {
+    printf ("path not found\n"); 
+    return;
+  }
+
+  i = find_cached_inode (inode);
+
+  read_node (&node, g_inode_cache[i].index_inode, sizeof (struct inode_node));
+  printf ("  m %08o  o %ld  c %ld  d %ld  s %ld\n", 
+	  inode.mode, inode.offset, inode.csize, inode.dsize, inode.isize);
+  if (S_ISDIR (mode)) 
+    printf ("    directory\n");
+  if (S_ISREG (mode)) 
+    printf ("    regular file\n");
+  if (S_ISLNK (mode)) 
+    printf ("    link\n");
+  if (S_ISCHR (mode)) 
+    printf ("    char dev\n");
+  if (S_ISBLK (mode)) 
+    printf ("    blk dev\n");
+  
+  if (S_ISDIR (mode) || inode == 1) {
+    i = find_cached_parent_inode (inode);
+    for (; i != -1 && i < iDirent && g_dirent_cache[i].pino == ino; ++i) {
+      char rgb[512];
+      if (g_dirent_cache[i].ino == 0)
+	continue;
+
+      struct dirent_node* dirent = (struct dirent_node*) rgb;
+      read_node (rgb, g_dirent_cache[i].index, cb);
+
+      printf ("  %*.*s", dirent->nsize, dirent-nsize, dirent->name );
+      switch (g_dirent_cache[i].type) {
+      case DT_DIR:
+	printf ("/");
+	break;
+      case DT_LNK:
+	printf ("@");
+	break;
+      case DT_REG:
+	break;
+      default:
+	printf ("(%d)", g_dirent_cache[i].type);
+	break;
+      }
+      printf ("\n");
+    }
+  }
 
   return;
 }
