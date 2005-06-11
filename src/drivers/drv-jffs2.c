@@ -668,7 +668,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       size_t available = jffs2.cbCache - offset;
       if (available > cb)
 	available = cb;
-      memcpy (pv, jffs2.rgbCache[offset], available);
+      memcpy (pv, &jffs2.rgbCache[offset], available);
       cb -= available;
       pv += available;
       continue;
