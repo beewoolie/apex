@@ -44,6 +44,16 @@
    inode.  We scan all of the inode records when we want to get
    information about the file.  Ugh.
 
+   reading
+   -------
+
+   It is possible that our algorithms are too simple for reading from
+   a file.  We assume that the inodes are in reasonable shape.  The
+   presence of an overlay inode may cause an invalid read.  It's
+   really difficult to know.  The simplest way to handle this would be
+   to perform a fixup on the inode cache that makes it clear where
+   valid file data can be found.
+
 */
 
 #include <config.h>
@@ -76,7 +86,8 @@
 #define MARKER_EMPTY		0xffff
 #define MARKER_DIRTY		0x0000
 
-#define BLOCK_SIZE_SMALLEST	(64*1024)
+#define BLOCK_SIZE_MAX		(4*1024)
+#define ERASEBLOCK_SIZE		(64*1024) 
 #define EMPTY_THRESHOLD		16
 
 #define NAME_LENGTH_MAX		254
@@ -208,16 +219,11 @@ struct jffs2_info {
   struct descriptor_d d;	/* Descriptor for underlying driver */
 
   int fCached;			/* Set after the caches are loaded */
-  //  struct partition partition[4];
-  //  struct superblock superblock;
-  //  int block_size;
-  //  int rg_blocking[3];		/* Tier block counts */
 
-  //  struct inode inode;		/* Current inode */
-  //  int inode_number;		/* Number of current inode */
-  //  int blockCache;		/* Number of first block in cache */
-  //  int cCache;			/* Count of cached block numbers */
-  //  char rgbCache[BLOCK_SIZE_MAX]; /* Cache of block numbers from inode */
+  u32 inode;			/* Open inode */
+  size_t ibCache;		/* Offset of cached block */
+  size_t cbCache;		/* Length of cached block */
+  char rgbCache[BLOCK_SIZE_MAX];
 
 };
 
@@ -416,7 +422,7 @@ void jffs2_load_cache (void)
 	if (++cEmpties < EMPTY_THRESHOLD)
 	  continue;
 	cEmpties = 0;
-	cbNode = BLOCK_SIZE_SMALLEST - (ib % BLOCK_SIZE_SMALLEST);
+	cbNode = ERASEBLOCK_SIZE - (ib % ERASEBLOCK_SIZE);
       }
       continue;
     }
@@ -469,8 +475,7 @@ void jffs2_load_cache (void)
 
 */
 
-static int jffs2_path_to_inode (int inode, struct descriptor_d* d,
-				union node* node_result)
+static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 {
   int i = d->iRoot;
   //  unsigned long version = 0;
@@ -519,14 +524,12 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d,
 	continue;
 
       inode = dirent->ino;
-      memcpy (node_result, dirent, sizeof (struct dirent_node));
       break;
     }
 
 //    inode = dotdot ? node->d.pino : node->d.ino;
   }
 
-  //  *node_result = *node;
   return inode;
 }
 
@@ -622,6 +625,17 @@ static long jffs2_decompress_page (void* pv,
 
 static int jffs2_open (struct descriptor_d* d)
 {
+  int result = 0;
+
+  if ((result = jffs2_identify ()))
+    return result;
+
+  jffs2.inode = jffs2_path_to_inode (0, d);
+  if (jffs2.inode <= 0)
+    return ERROR_FILENOTFOUND;
+
+  /* *** FIXME: Need to summarize so we have the correct file extent */
+
   return 0;
 }
 
@@ -635,6 +649,43 @@ static void jffs2_close (struct descriptor_d* d)
 
 static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 {
+  /* Need to keep a couple of things in mind here.  If the request is
+     within an existing cached block, satisfy it and return.  If the
+     request is in another block, scan the inode data for the record
+     and either copy it to the cache (if compressed) or read directly
+     from source.  That should be it, actually.  */
+
+
+  while (cb) {
+    size_t index = d->start + d->index;
+    int i;
+
+	/* Read from the cache */
+    if (index >= jffs2.ibCache && index < jffs2.ibCache + jffs2.cbCache) {
+      size_t offset = index - jffs2.ibCache;
+      size_t available = jffs2.cbCache - offset;
+      if (available > cb)
+	available = cb;
+      memcpy (pv, jffs2.rgbCache[offset], available);
+      cb -= available;
+      pv += available;
+      continue;
+    } 
+
+    for (i = find_cached_inode (jffs2.inode);
+	 i < cInodeCache; ++i) {
+      if (inode_cache[i].ino != jffs2.inode)
+	return 0;		/* Past end of the file */
+      if (index < inode_cache[i].offset)
+	continue;
+      /* Found the inode, read it and decompress? */
+    }
+
+
+//    size_t remain = 0;
+  }
+
+
   return 0;
 }
 
@@ -647,7 +698,7 @@ static void jffs2_info (struct descriptor_d* d)
   if (jffs2_identify ())
     return;
 
-  inode = jffs2_path_to_inode (0, d, &node);
+  inode = jffs2_path_to_inode (0, d);
   if (inode <= 0) {
     printf ("path not found\n"); 
     return;

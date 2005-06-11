@@ -46,14 +46,6 @@
        #include "image.h"
       };
 
-   o Heap
-
-     A very crude heap is made available to the zlib routines.  It
-     allocates, but doesn't deallocate.  As we don't care much about
-     using memory, this is OK.  However, it is quite dumb and should
-     be replaced with the inflate code from the kernel which uses
-     static buffers.
-
    o CRC
 
      We don't bother checking the CRCs.  As this is supposed to run
@@ -75,16 +67,13 @@
 #include <linux/kernel.h>
 
 #include <zlib.h>
+#include <zlib-heap.h>
 #include <png.h>
 
 struct chunk {
   u32 length;
   u32 id;
 };
-
-/* *** FIXME: this heap isn't going to cut it */
-static unsigned char heap [128*1024]; /* Fake heap */
-static size_t heap_allocated;	/* Bytes allocated on the heap */
 
 struct png {
   const unsigned char* pb;
@@ -104,27 +93,6 @@ struct png {
 };
 
 static struct png png;
-
-static voidpf heap_alloc (voidpf opaque, uInt items, uInt size)
-{
-  int cb = (items*size + 3) & ~3;
-  voidpf result = heap + heap_allocated;
-
-  if (heap_allocated + cb > sizeof (heap)) {
-    printf ("%s: heap overflow %d %d\n", __FUNCTION__, heap_allocated, cb);
-    return Z_NULL;
-  }
-
-  heap_allocated += cb;
-//  printf ("%s: %p <= %d %d = %d (%d)\n", __FUNCTION__, 
-//	  result, items, size, cb, heap_allocated);
-  return result;
-}
-
-static void heap_free (voidpf opaque, voidpf address, uInt nbytes)
-{
-//  printf ("%s: %p %d\n", __FUNCTION__, address, nbytes);
-}
 
 static inline int paeth_predictor (int a, int b, int c)
 {
@@ -174,7 +142,7 @@ static int next_chunk (struct png* png)
 
 void* open_png (const void* pv, size_t cb)
 {
-  heap_allocated = 0;		/* Completely clobber heap */
+  zlib_heap_reset ();
   png.pbThis = 0;		/* In lieu of free */
   png.pbPrev = 0;		/* In lieu of free */
 
@@ -263,8 +231,8 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
 //    printf ("%s: inflateInit\n", __FUNCTION__); 
     memset (&png->z, 0, sizeof (png->z));
-    png->z.zalloc = heap_alloc;
-    png->z.zfree = heap_free;
+    png->z.zalloc = zlib_heap_alloc;
+    png->z.zfree = zlib_heap_free;
     if (inflateInit (&png->z) != Z_OK)
       return -1;
   }
@@ -308,8 +276,8 @@ const unsigned char* read_png_row (void* pv)
   char filter;
 
   if (png->pbThis == NULL) {
-    png->pbThis = heap_alloc (0, 1, png->cbRow + bpp - 1);
-    png->pbPrev = heap_alloc (0, 1, png->cbRow + bpp - 1);
+    png->pbThis = zlib_heap_alloc (0, 1, png->cbRow + bpp - 1);
+    png->pbPrev = zlib_heap_alloc (0, 1, png->cbRow + bpp - 1);
     memset (png->pbPrev, 0, png->cbRow + bpp - 1);
   }
 
