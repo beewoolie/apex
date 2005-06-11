@@ -68,6 +68,13 @@ config CMD_GO
 	help
 	  Allows transfer of execution to any memory address.
 
+config CMD_INFO
+	bool "Info"
+	default y
+	help
+	  Show information about a region descriptor.  Use this command
+	  to list the contents of a filesystem directory.
+
 config CMD_PAUSE
 	bool "Pause"
 	default n

@@ -10,6 +10,9 @@
    DESCRIPTION
    -----------
 
+   Linkage for kernel's sort routine.  We import it for the sake of
+   drv-jffs2.
+
 */
 
 #if !defined (__SORT_H__)

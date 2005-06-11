@@ -44,8 +44,9 @@
 #include <spinner.h>
 #include <linux/kernel.h>
 #include <error.h>
+#include <sort.h>
 
-//#define TALK
+#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -62,6 +63,9 @@
 #define MARKER_JFFS2_REV	0x5981	/* Wrong endian magic */
 #define MARKER_EMPTY		0xffff
 #define MARKER_DIRTY		0x0000
+
+#define BLOCK_SIZE_SMALLEST	(64*1024)
+#define EMPTY_THRESHOLD		16
 
 #define NAME_LENGTH_MAX		254
 #define DATA_LENGTH_MIN		128	/* Smallest data node */
@@ -97,6 +101,9 @@ enum {
 
 #define INODE_FLAG_PREREAD	1 /* Read at mount-time */
 #define INODE_FLAG_USERCOMPR	2 /* User selected compression */
+
+#define DIRENT_CACHE_MAX	8192
+#define INODE_CACHE_MAX		8192
 
 enum {
   DT_UNKNOWN = 0,
@@ -173,6 +180,8 @@ struct dirent_cache {
   u32 pino;
   u32 version;
   u32 index;			/* Offset to the struct dirent_node */
+  u32 nsize;			/* Size of the name field */
+  u8 type;			/* Cached entry type (DT_) */
 };
 
 struct inode_cache {
@@ -182,9 +191,6 @@ struct inode_cache {
   u32 dsize;
   u32 index;			/* Offset to the struct inode_node */
 };
-
-#define DIRENT_CACHE_MAX	8192
-#define INODE_CACHE_MAX		8192
 
 struct jffs2_info {
   struct descriptor_d d;	/* Descriptor for underlying driver */
@@ -209,6 +215,8 @@ static struct dirent_cache __attribute__((section(".jffs2.bss")))
      dirent_cache[DIRENT_CACHE_MAX];
 static struct inode_cache __attribute__((section(".jffs2.bss")))
      inode_cache[INODE_CACHE_MAX];
+int cDirentCache;
+int cInodeCache;
 
 static const char szBlockDriver[]  /* Underlying block driver */
   = CONFIG_DRIVER_JFFS2_BLOCKDEVICE;
@@ -226,31 +234,101 @@ static int verify_dirent_crc (struct dirent_node* node)
   return node->node_crc == ~compute_crc32 (~0, node, sizeof (*node) - 8);
 }
 
+const int find_cached_inode (u32 inode)
+{
+  int min = 0;
+  int max = cInodeCache;
+
+  ENTRY (0);
+
+  while (min + 1 < max) {
+    int mid = (min + max)/2;
+    if (inode_cache[mid].ino == inode) {
+      while (mid > 0 && inode_cache[mid - 1].ino == inode)
+	--mid;
+      return mid;
+    }
+    if (inode_cache[mid].ino < inode)
+      min = mid;
+    else
+      max = mid;
+  }
+
+  return (inode_cache[min].ino == inode) ? min : -1;
+}
+
+
+/* find_cached_directory_node
+
+   searches for an inode in the dirent cache.  This array is sorted by
+   parent inodes, so this search has to be an O(n) scan of the
+   array...for now.
+
+*/
+
+const int find_cached_directory_inode (u32 inode)
+{
+  int max = cDirentCache;
+  int i;
+
+  ENTRY (0);
+
+  for (i = 0; i < max; ++i)
+    if (dirent_cache[i].ino == inode)
+      return i;
+  return -1;
+}
+
+const int find_cached_parent_inode (u32 inode)
+{
+  int min = 0;
+  int max = cDirentCache;
+
+  ENTRY (0);
+
+  while (min + 1 < max) {
+    int mid = (min + max)/2;
+    if (dirent_cache[mid].pino == inode) {
+      while (mid > 0 && dirent_cache[mid - 1].pino == inode)
+	--mid;
+      min = mid;
+      break;
+    }
+    if (dirent_cache[mid].pino < inode)
+      min = mid;
+    else
+      max = mid;
+  }
+
+  return (dirent_cache[min].pino == inode) ? min : -1;
+}
+
 int compare_dirent_cache (const void* _a, const void* _b)
 {
-  struct dirent_cache& a = *(struct dirent_cache*) _a;
-  struct dirent_cache& b = *(struct dirent_cache*) _b;
+  struct dirent_cache* a = (struct dirent_cache*) _a;
+  struct dirent_cache* b = (struct dirent_cache*) _b;
 
-  if (a.pino == b.pino) {
-    if (a.ino == b.ino)
-      return b.version - a.version;
-    return a.ino - b.ino;
+  if (a->pino == b->pino) {
+    if (a->ino == b->ino)
+      return b->version - a->version;
+    return a->ino - b->ino;
   }
-  return a.pino - b.pino;
+  return a->pino - b->pino;
 }
 
 int compare_inode_cache (const void* _a, const void* _b)
 {
-  struct inode_cache& a = *(struct inode_cache*) _a;
-  struct inode_cache& b = *(struct inode_cache*) _b;
+  struct inode_cache* a = (struct inode_cache*) _a;
+  struct inode_cache* b = (struct inode_cache*) _b;
 
-  if (a.ino == b.ino) {
-    if (a.offset == b.offset)
-      return b.version - a.version;
-    return a.offset - b.offset;
+  if (a->ino == b->ino) {
+    if (a->offset == b->offset)
+      return b->version - a->version;
+    return a->offset - b->offset;
   }
-  return a.ino - b.ino;
+  return a->ino - b->ino;
 }
+
 
 /* jffs2_load_cache
 
@@ -269,36 +347,74 @@ void jffs2_load_cache (void)
   size_t ib;
   size_t cbNode;
   union node node;
+  int cEmpties = 0;		/* Count of consecutive empties */
 
-  for (ib = 0; ib < jffs2.d.length; ib += cbNode) {
+  ENTRY (0);
+
+  for (ib = 0; ib < jffs2.d.length; ib = (ib + cbNode + 3) & ~3) {
+
+//    PRINTF ("reading node @0x%x\n", ib);
 
     jffs2.d.driver->seek (&jffs2.d, ib, SEEK_SET);
     jffs2.d.driver->read (&jffs2.d, &node, sizeof (node));
 
     if (node.u.marker != MARKER_JFFS2 
 	|| !verify_header_crc (&node.u)) {
-      if (node.u.marker == MARKER_JFFS2_REV)
-	return NULL;		/* endian mismatch */
       cbNode = 4;
+      if (node.u.marker == MARKER_JFFS2_REV)
+	return;			/* endian mismatch */
+
+		/* Check for empty block */
+      if (*(unsigned long*) &node == ~0) {
+	if (++cEmpties < EMPTY_THRESHOLD)
+	  continue;
+	cEmpties = 0;
+	cbNode = BLOCK_SIZE_SMALLEST - (ib % BLOCK_SIZE_SMALLEST);
+      }
       continue;
     }
+    
+    cEmpties = 0;
 
-    cbNode = (current->u.length + 3) & ~3;
+    cbNode = (node.u.length + 3) & ~3;
 
-    if (current->d.node_type == NODE_DIRENT 
-	&& !verify_dirent_crc (&current->d))
-      continue;
+    switch (node.u.node_type) {
+    case NODE_DIRENT:
+      if (!verify_dirent_crc (&node.d))
+	continue;
 
-    switch (
+      dirent_cache[cDirentCache].ino = node.d.ino;
+      dirent_cache[cDirentCache].pino = node.d.pino;
+      dirent_cache[cDirentCache].version = node.d.version;
+      dirent_cache[cDirentCache].index = ib;
+      dirent_cache[cDirentCache].nsize = node.d.nsize;
+      dirent_cache[cDirentCache].type = node.d.type;
+      ++cDirentCache;
+      break;
 
-	/* Match */
-      version = current->d.version;
-      node = current;
+    case NODE_INODE:
+      inode_cache[cInodeCache].ino = node.i.ino;
+      inode_cache[cInodeCache].offset = node.i.offset;
+      inode_cache[cInodeCache].dsize = node.i.dsize;
+      inode_cache[cInodeCache].version = node.i.version;
+      inode_cache[cInodeCache].index = ib;
+      ++cInodeCache;
+      break;;
+
+    default:
+      break;
     }
+  }
 
+  sort (dirent_cache, cDirentCache, sizeof (struct dirent_cache), 
+	compare_dirent_cache, NULL);
+  sort (inode_cache,  cInodeCache,  sizeof (struct inode_cache), 
+	compare_inode_cache, NULL);
 
-
+  PRINTF ("%s: %d directory entries %d inodes entries\n", __FUNCTION__,
+	  cDirentCache, cInodeCache);
 }
+
 
 /* jffs2_find_file
 
@@ -306,15 +422,15 @@ void jffs2_load_cache (void)
 
 */
 
-static union node *jffs2_path_to_inode (int inode, struct descriptor_d* d,
-					 union node* node_result)
+static int jffs2_path_to_inode (int inode, struct descriptor_d* d,
+				union node* node_result)
 {
   int i = d->iRoot;
-  unsigned long version = 0;
-  union node nodes[2];
-  union node* current = &nodes[0];
-  union node* node = NULL;
-  size_t cbNode;
+  //  unsigned long version = 0;
+  //  union node nodes[2];
+  //  union node* current = &nodes[0];
+  //  union node* node = NULL;
+  //  int ino;
 
   ENTRY (0);
   
@@ -323,70 +439,80 @@ static union node *jffs2_path_to_inode (int inode, struct descriptor_d* d,
 
   for (; i < d->c; ++i) {
     int length = strlen (d->pb[i]);
-    int dotdot = length == 2 && strcmp (d->pb[i], "..") == 0;
-    size_t ib;
+//    int dotdot = length == 2 && strcmp (d->pb[i], "..") == 0;
+    //    size_t ib;
+    int index;
 
-	/* Make sure we have an empty buffer */
-    if (node && current == node)
-      current = (node == &nodes[0] ? &node[1] : &node[0]);
+    index = find_cached_parent_inode (inode);
+    if (index == -1)
+      return 0;			/* Path not found */
 
-	/* Search entire filesystem for the node */
-    for (ib = 0; ib < jffs2.d.length; ib += cbNode) {
+    for (; index < cDirentCache; ++index) {
+		/* Short-circuit for name length mismatch */
+      char rgb[512];
+      size_t cbNode;
+      struct dirent_node* dirent = (struct dirent_node*) rgb;
 
-      jffs2.d.driver->seek (&jffs2.d, ib, SEEK_SET);
-      jffs2.d.driver->read (&jffs2.d, current, sizeof (&current));
-
-      if (current->u.marker != MARKER_JFFS2 
-	  || !verify_header_crc (&current->u)) {
-	if (current->u.marker == MARKER_JFFS2_REV)
-	  return NULL;		/* endian mismatch */
-	cbNode = 4;
+      if (dirent_cache[i].nsize != length)
 	continue;
-      }
+      
+      cbNode = sizeof (struct dirent_node) + dirent_cache[i].nsize;
+      if (cbNode > sizeof (rgb))
+	cbNode = sizeof (rgb);
 
-      cbNode = (current->u.length + 3) & ~3;
-
-      if (current->d.node_type != NODE_DIRENT
-	  || !verify_dirent_crc (&current->d))
-	continue;
-
-      if (current->d.version <= version)
+      jffs2.d.driver->seek (&jffs2.d, dirent_cache[i].index,
+			    SEEK_SET);
+      jffs2.d.driver->read (&jffs2.d, dirent, cbNode);
+		/* memcmp OK because we know the strings are the same length */
+      if (memcmp (d->pb[i], (const char*) dirent->name, dirent->nsize))
 	continue;
 
-      if (dotdot) {
-	if (   current->d.ino   != inode)
-	  continue;
-      }
-      else {
-	if (   current->d.pino  != inode
-	    || current->d.nsize != length
-	    || strncmp (jffs2.d.pb[i], current->d.name, length))
-	  continue;
-      }
-	/* Match */
-      version = current->d.version;
-      node = current;
+      inode = dirent->ino;
+      memcpy (node_result, dirent, sizeof (struct dirent_node));
+      break;
     }
 
-    if (!node) 
-      return NULL;		/* path not found */
-
-//    if (node->type == DT_LNK)
-//      if (!(node = do_symlink(part, node))) 
-//	return NULL;
-
-    inode = dotdot ? node->d.pino : node->d.ino;
+//    inode = dotdot ? node->d.pino : node->d.ino;
   }
 
-  *node_result = *node;
-  return node_result;
+  //  *node_result = *node;
+  return inode;
 }
+
+
+/* jffs2_identify
+
+   loads the jffs2 cache and makes sure to do it only once.
+
+*/
+
+static int jffs2_identify (void)
+{
+  int result;
+  struct descriptor_d d;
+
+  ENTRY (0);
+
+  if (jffs2.fCached)
+    return 0;
+
+  if (   (result = parse_descriptor (szBlockDriver, &d))
+      || (result = open_descriptor (&d))) 
+    return result;
+  
+  jffs2.d = d;
+  jffs2_load_cache ();
+  jffs2.fCached = 1;
+  return 0;
+}
+
 
 /* decompress a page from the flash, first contains a linked list of references
  * all the nodes of this file, sorted is decending order (newest first). Return
  * the number of total bytes decompressed (not accurate, because some strips
  * overlap, but at least we know we decompressed something) */
 
+#if 0
 static long jffs2_decompress_page (void* pv,
 				   struct data_strip *first, u32 page)
 {
@@ -440,7 +566,7 @@ static long jffs2_decompress_page (void* pv,
 	}
 	return first->length + uncompressed;
 }
-
+#endif
 
 
 static int jffs2_open (struct descriptor_d* d)
@@ -461,6 +587,20 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
   return 0;
 }
 
+static void jffs2_info (struct descriptor_d* d)
+{
+  union node node;
+  int inode;
+
+  if (jffs2_identify ())
+    return;
+
+  inode = jffs2_path_to_inode (0, d, &node);
+  printf ("found inode %d\n", inode);
+
+  return;
+}
+
 static void jffs2_report (void)
 {
 }
@@ -475,6 +615,7 @@ static __driver_6 struct driver_d jffs2_driver = {
 //  .write = cf_write,
 //  .erase = cf_erase,
   .seek = seek_helper,
+  .info = jffs2_info,
 };
 
 static __service_6 struct service_d jffs2_service = {
