@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <linux/stat.h>
 
-#define ENDIAN_SWAP
+//#define ENDIAN_SWAP
 
 #define MARKER_JFFS2_OLD	0x1984
 #define MARKER_JFFS2		0x1985
@@ -117,7 +117,7 @@ static u16 u16_to_cpu(u16 v) {
 
 #else
 static u32 u32_to_cpu(u32 v) { return v; }
-static u16 u32_to_cpu(u16 v) { return v; }
+static u16 u16_to_cpu(u16 v) { return v; }
 #endif
 
 struct unknown_node
