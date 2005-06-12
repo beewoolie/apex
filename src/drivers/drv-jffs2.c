@@ -779,7 +779,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
   ENTRY (0);
 
   if (d->index >= d->length)
-    return 0;
+    return cbRead;
 
   /* Need to keep a couple of things in mind here.  If the request is
      within an existing cached block, satisfy it and return.  If the
@@ -819,9 +819,9 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 	      __FUNCTION__, jffs2.inode, i, inode_cache[i].offset,
 	      inode_cache[i].version, inode_cache[i].dsize);
       if (inode_cache[i].ino != jffs2.inode)
-	return 0;		/* End of the file */
+	return cbRead;		/* End of the file */
       if (index < inode_cache[i].offset)
-	return 0;		/* Peculiar error condition, a hole? */
+	return cbRead;		/* Peculiar error condition, a hole? */
       if (index >= inode_cache[i].offset + inode_cache[i].dsize)
 	continue;
 
