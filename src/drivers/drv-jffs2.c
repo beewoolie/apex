@@ -54,6 +54,28 @@
    to perform a fixup on the inode cache that makes it clear where
    valid file data can be found.
 
+   empty blocks
+   ------------
+
+   We're making an assumption about the structure of empty storage.
+   JFFS2 always writes at least one node to a block if that block is
+   in use.  There will never be gaps between nodes of more than a
+   single byte.  Flash contains the byte value 0xff when it is erased.
+   This all translates into the assumption than a run of 0xff's of
+   some length indicates that the rest of the block is unused.  We
+   don't make a distinction between finding 0xff's at the beginning of
+   a block or the end.  Moreover, we don't make an effort to determine
+   the true eraseblock size.  This heuristic is very important when
+   reducing the cache-load time for a filesystem with lots of empty
+   space.
+
+   crc's
+   -----
+
+   We're checking CRCs sparsely.  Should be done everywhere possible.
+   Enough said.
+   
+
 */
 
 #include <config.h>
@@ -70,7 +92,7 @@
 #include <zlib.h>
 #include <zlib-heap.h>
 
-//#define TALK
+#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -90,7 +112,7 @@
 
 #define BLOCK_SIZE_MAX		(4*1024)
 #define ERASEBLOCK_SIZE		(64*1024) 
-#define EMPTY_THRESHOLD		16
+#define EMPTY_THRESHOLD		8
 
 #define NAME_LENGTH_MAX		254
 #define DATA_LENGTH_MIN		128	/* Smallest data node */
@@ -213,7 +235,8 @@ struct inode_cache {
   u32 ino;
   u32 version;
   u32 offset;
-  u32 dsize;			/* Length of this node's data */
+  u32 csize;			/* Length of this node's data compressed */
+  u32 dsize;			/* Length of this node's data uncompressed */
   u32 index;			/* Offset to the struct inode_node */
 };
 
@@ -450,6 +473,7 @@ void jffs2_load_cache (void)
     case NODE_INODE:
       inode_cache[cInodeCache].ino = node.i.ino;
       inode_cache[cInodeCache].offset = node.i.offset;
+      inode_cache[cInodeCache].csize = node.i.csize;
       inode_cache[cInodeCache].dsize = node.i.dsize;
       inode_cache[cInodeCache].version = node.i.version;
       inode_cache[cInodeCache].index = ib;
@@ -563,10 +587,97 @@ static int jffs2_identify (void)
 }
 
 
+/* jffs2_decompress_node
+
+   copies the given node, references by inode_cache index, to the
+   single node cache which is limited to 4KiB.  
+
+   *** FIXME: we could do some optimizations for when a) the node is
+   *** zero and b) when the node is uncompressed.  For the time being,
+   *** we'll leave it at this.
+
+*/
+
+static int jffs2_decompress_node (int index)
+{
+  unsigned char rgb[BLOCK_SIZE_MAX + sizeof (struct inode_node)];
+  struct inode_node* node = (struct inode_node*) rgb;
+  size_t dsize;
+  size_t csize;
+
+  ENTRY (0);
+
+  read_node (rgb, inode_cache[index].offset, 
+	     sizeof (struct inode_node) + inode_cache[index].csize);
+  dsize = node->dsize;
+  if (dsize > BLOCK_SIZE_MAX)
+    dsize = BLOCK_SIZE_MAX;
+  csize = node->csize;
+  if (csize > BLOCK_SIZE_MAX)
+    csize = BLOCK_SIZE_MAX;
+
+  PRINTF ("%s: %d of %d  cs %d  ds %d\n", __FUNCTION__, 
+	  index, 
+	  inode_cache[index].offset, 
+	  inode_cache[index].csize, 
+	  inode_cache[index].dsize);
+  PRINTF ("%s: z %d  of %d  cs %d  ds %d\n", __FUNCTION__, 
+	  node->compr, node->offset, node->csize, node->dsize);
+
+  switch (node->compr) {
+
+  case COMPRESSION_NONE:
+    memcpy (jffs2.rgbCache, node + 1, dsize);
+    jffs2.ibCache = node->offset;
+    jffs2.cbCache = dsize;
+    break;
+
+  case COMPRESSION_ZERO:
+    memset (jffs2.rgbCache, 0, dsize);
+    jffs2.ibCache = node->offset;
+    jffs2.cbCache = dsize;
+    break;
+
+  case COMPRESSION_ZLIB:
+    {
+      z_stream z;
+      int result;
+      memset (&z, 0, sizeof (z));
+      z.zalloc = zlib_heap_alloc;
+      z.zfree = zlib_heap_free;
+      zlib_heap_reset ();
+      if (inflateInit (&z) != Z_OK)
+	return ERROR_FAILURE;
+      z.next_in = (Bytef*) (node + 1);
+      z.avail_in = csize;
+      z.next_out = (Bytef*) jffs2.rgbCache;
+      z.avail_out = BLOCK_SIZE_MAX;
+      result = inflate (&z, 0);
+      jffs2.ibCache = node->offset;
+      jffs2.cbCache = (result == 0) ? dsize : 0;
+      return (result == 0) ? 0 : ERROR_FAILURE;
+    }
+    break;
+
+  case COMPRESSION_RTIME:
+  case COMPRESSION_RUBINMIPS:
+  case COMPRESSION_COPY:
+  case COMPRESSION_DYNRUBIN:
+  case COMPRESSION_LZO:
+  case COMPRESSION_LZARI:
+  default:
+    jffs2.ibCache = 0;
+    jffs2.cbCache = 0;
+    return ERROR_UNSUPPORTED;
+  }
+}
+
+
 /* decompress a page from the flash, first contains a linked list of references
  * all the nodes of this file, sorted is decending order (newest first). Return
  * the number of total bytes decompressed (not accurate, because some strips
  * overlap, but at least we know we decompressed something) */
+
 
 #if 0
 static long jffs2_decompress_page (void* pv,
@@ -588,7 +699,7 @@ static long jffs2_decompress_page (void* pv,
 		}
 	}
 	
-	/* reached the end of the list without finding any pages */		
+	/* reached the end of the list without finding any pages */
 	if (!first) return 0;
 	
 	/* if we aren't covering what's behind us, uncompress that first.
@@ -651,6 +762,8 @@ static void jffs2_close (struct descriptor_d* d)
 
 static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 {
+  ENTRY (0);
+
   /* Need to keep a couple of things in mind here.  If the request is
      within an existing cached block, satisfy it and return.  If the
      request is in another block, scan the inode data for the record
@@ -661,6 +774,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
   while (cb) {
     size_t index = d->start + d->index;
     int i;
+    int state = 0;
 
 	/* Read from the cache */
     if (index >= jffs2.ibCache && index < jffs2.ibCache + jffs2.cbCache) {
@@ -671,6 +785,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       memcpy (pv, &jffs2.rgbCache[offset], available);
       cb -= available;
       pv += available;
+      state = 0;
       continue;
     } 
 
@@ -680,16 +795,19 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 	return 0;		/* Past end of the file */
       if (index < inode_cache[i].offset)
 	continue;
-      /* Found the inode, read it and decompress? */
+
+      jffs2_decompress_node (i); /* Decompress into the cache block */
+      ++state;
+      break;
     }
 
-
-//    size_t remain = 0;
+    if (state == 0)
+      return ERROR_FAILURE;
   }
-
 
   return 0;
 }
+
 
 static void jffs2_info (struct descriptor_d* d)
 {
