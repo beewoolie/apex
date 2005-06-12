@@ -75,6 +75,11 @@
    We're checking CRCs sparsely.  Should be done everywhere possible.
    Enough said.
    
+   find_cached_inode
+   -----------------
+
+   Should take an index parameter so that we can find the exact record
+   we care about.  This will make reading faster.
 
 */
 
@@ -92,7 +97,7 @@
 #include <zlib.h>
 #include <zlib-heap.h>
 
-#define TALK
+//#define TALK
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -461,22 +466,22 @@ void jffs2_load_cache (void)
       if (!verify_dirent_crc (&node.d))
 	continue;
 
-      dirent_cache[cDirentCache].ino = node.d.ino;
-      dirent_cache[cDirentCache].pino = node.d.pino;
+      dirent_cache[cDirentCache].ino     = node.d.ino;
+      dirent_cache[cDirentCache].pino    = node.d.pino;
       dirent_cache[cDirentCache].version = node.d.version;
-      dirent_cache[cDirentCache].index = ib;
-      dirent_cache[cDirentCache].nsize = node.d.nsize;
-      dirent_cache[cDirentCache].type = node.d.type;
+      dirent_cache[cDirentCache].index   = ib;
+      dirent_cache[cDirentCache].nsize   = node.d.nsize;
+      dirent_cache[cDirentCache].type    = node.d.type;
       ++cDirentCache;
       break;
 
     case NODE_INODE:
-      inode_cache[cInodeCache].ino = node.i.ino;
-      inode_cache[cInodeCache].offset = node.i.offset;
-      inode_cache[cInodeCache].csize = node.i.csize;
-      inode_cache[cInodeCache].dsize = node.i.dsize;
-      inode_cache[cInodeCache].version = node.i.version;
-      inode_cache[cInodeCache].index = ib;
+      inode_cache[cInodeCache].ino       = node.i.ino;
+      inode_cache[cInodeCache].offset    = node.i.offset;
+      inode_cache[cInodeCache].csize     = node.i.csize;
+      inode_cache[cInodeCache].dsize     = node.i.dsize;
+      inode_cache[cInodeCache].version   = node.i.version;
+      inode_cache[cInodeCache].index     = ib;
       ++cInodeCache;
       break;;
 
@@ -607,7 +612,7 @@ static int jffs2_decompress_node (int index)
 
   ENTRY (0);
 
-  read_node (rgb, inode_cache[index].offset, 
+  read_node (rgb, inode_cache[index].index, 
 	     sizeof (struct inode_node) + inode_cache[index].csize);
   dsize = node->dsize;
   if (dsize > BLOCK_SIZE_MAX)
@@ -646,16 +651,21 @@ static int jffs2_decompress_node (int index)
       z.zalloc = zlib_heap_alloc;
       z.zfree = zlib_heap_free;
       zlib_heap_reset ();
-      if (inflateInit (&z) != Z_OK)
+      result = inflateInit (&z);
+      if (result != Z_OK) {
+	PRINTF ("%s: inflateInit %d\n", __FUNCTION__, result);
 	return ERROR_FAILURE;
+      }
       z.next_in = (Bytef*) (node + 1);
       z.avail_in = csize;
       z.next_out = (Bytef*) jffs2.rgbCache;
       z.avail_out = BLOCK_SIZE_MAX;
       result = inflate (&z, 0);
+      if (result)
+	PRINTF ("%s: inflate %d\n", __FUNCTION__, result);
       jffs2.ibCache = node->offset;
-      jffs2.cbCache = (result == 0) ? dsize : 0;
-      return (result == 0) ? 0 : ERROR_FAILURE;
+      jffs2.cbCache = (result >= 0) ? dsize : 0;
+      return (result >= 0) ? 0 : ERROR_FAILURE;
     }
     break;
 
@@ -739,6 +749,7 @@ static long jffs2_decompress_page (void* pv,
 static int jffs2_open (struct descriptor_d* d)
 {
   int result = 0;
+  union node node;
 
   if ((result = jffs2_identify ()))
     return result;
@@ -747,7 +758,8 @@ static int jffs2_open (struct descriptor_d* d)
   if (jffs2.inode <= 0)
     return ERROR_FILENOTFOUND;
 
-  /* *** FIXME: Need to summarize so we have the correct file extent */
+  summarize_inode (jffs2.inode, &node);
+  d->length = node.i.isize;
 
   return 0;
 }
@@ -762,7 +774,12 @@ static void jffs2_close (struct descriptor_d* d)
 
 static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 {
+  ssize_t cbRead = 0;
+
   ENTRY (0);
+
+  if (d->index >= d->length)
+    return 0;
 
   /* Need to keep a couple of things in mind here.  If the request is
      within an existing cached block, satisfy it and return.  If the
@@ -775,6 +792,10 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
     size_t index = d->start + d->index;
     int i;
     int state = 0;
+    int result;
+
+    PRINTF ("%s: index %d  cb %d  ibCache %d  cbCache %d  cbRead %d\n",
+	    __FUNCTION__, index, cb, jffs2.ibCache, jffs2.cbCache, cbRead);
 
 	/* Read from the cache */
     if (index >= jffs2.ibCache && index < jffs2.ibCache + jffs2.cbCache) {
@@ -782,21 +803,34 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       size_t available = jffs2.cbCache - offset;
       if (available > cb)
 	available = cb;
+      PRINTF ("%s: available %d  offset %d\n",
+	      __FUNCTION__, available, offset);
       memcpy (pv, &jffs2.rgbCache[offset], available);
       cb -= available;
       pv += available;
+      d->index += available;
+      cbRead += available;
       state = 0;
       continue;
     } 
 
-    for (i = find_cached_inode (jffs2.inode);
-	 i < cInodeCache; ++i) {
+    for (i = find_cached_inode (jffs2.inode); i < cInodeCache; ++i) {
+      PRINTF ("%s: inode %d  i %d  offset %d  version %d  dsize %d\n",
+	      __FUNCTION__, jffs2.inode, i, inode_cache[i].offset,
+	      inode_cache[i].version, inode_cache[i].dsize);
       if (inode_cache[i].ino != jffs2.inode)
-	return 0;		/* Past end of the file */
+	return 0;		/* End of the file */
       if (index < inode_cache[i].offset)
+	return 0;		/* Peculiar error condition, a hole? */
+      if (index >= inode_cache[i].offset + inode_cache[i].dsize)
 	continue;
 
-      jffs2_decompress_node (i); /* Decompress into the cache block */
+      PRINTF ("%s: decom'ing %d for index %d  offset %d\n",
+	      __FUNCTION__, i, index, inode_cache[i].offset);
+
+      result = jffs2_decompress_node (i); /* Decompress into the cache block */
+      if (result)
+	PRINTF ("%s: decompression returned %d\n", __FUNCTION__, result);
       ++state;
       break;
     }
@@ -805,7 +839,8 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       return ERROR_FAILURE;
   }
 
-  return 0;
+  PRINTF ("%s: returning %d\n", __FUNCTION__, cbRead);
+  return cbRead;
 }
 
 
