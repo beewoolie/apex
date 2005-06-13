@@ -509,11 +509,6 @@ void jffs2_load_cache (void)
 static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 {
   int i = d->iRoot;
-  //  unsigned long version = 0;
-  //  union node nodes[2];
-  //  union node* current = &nodes[0];
-  //  union node* node = NULL;
-  //  int ino;
 
   ENTRY (0);
   
@@ -522,7 +517,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 
   for (; i < d->c; ++i) {
     int length = strlen (d->pb[i]);
-//    int dotdot = length == 2 && strcmp (d->pb[i], "..") == 0;
+    //    int dotdot = length == 2 && strcmp (d->pb[i], "..") == 0;
     //    size_t ib;
     int index;
 
@@ -682,70 +677,6 @@ static int jffs2_decompress_node (int index)
   }
 }
 
-
-/* decompress a page from the flash, first contains a linked list of references
- * all the nodes of this file, sorted is decending order (newest first). Return
- * the number of total bytes decompressed (not accurate, because some strips
- * overlap, but at least we know we decompressed something) */
-
-
-#if 0
-static long jffs2_decompress_page (void* pv,
-				   struct data_strip *first, u32 page)
-{
-	int i;
-	long uncompressed = 0;
-	char *src = 0;
-
-	/* look for the next reference to this page */
-	for (; first; first = first->next) {
-		/* This might be a page to uncompress, check that its the right
-		 * page, and that the crc matches */
-		if (first->page == page) {
-			src = ((char *) first->inode) +
-			       sizeof(struct jffs2_raw_inode);
-			if (first->inode->data_crc ==
-			    crc32(0, src, first->inode->csize)) break;
-		}
-	}
-	
-	/* reached the end of the list without finding any pages */
-	if (!first) return 0;
-	
-	/* if we aren't covering what's behind us, uncompress that first.
-	 * Note: if the resulting doesn't quite fill the order, we are in
-	 * trouble */
-	if (first->length != 4096)
-		uncompressed = jffs2_uncompress_page(dest, first->next, page);
-
-	dest += first->inode->offset;
-	switch (first->inode->compr) {
-	case JFFS2_COMPR_NONE:
-		memcpy(dest, src, first->length);
-		break;
-	case JFFS2_COMPR_ZERO:
-		for (i = 0; i < first->length; i++) *(dest++) = 0;
-		break;
-	case JFFS2_COMPR_RTIME:
-		rtime_decompress(src, dest, first->inode->csize, 
-				 first->length);
-		break;
-	case JFFS2_COMPR_DYNRUBIN:
-		dynrubin_decompress(src, dest, first->inode->csize, 
-				    first->length);
-		break;
-	case JFFS2_COMPR_ZLIB:
-		zlib_decompress(src, dest, first->inode->csize, first->length);
-		break;
-	default:
-		/* unknown, attempt to ignore the page */
-		return uncompressed;
-	}
-	return first->length + uncompressed;
-}
-#endif
-
-
 static int jffs2_open (struct descriptor_d* d)
 {
   int result = 0;
@@ -785,8 +716,14 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
      within an existing cached block, satisfy it and return.  If the
      request is in another block, scan the inode data for the record
      and either copy it to the cache (if compressed) or read directly
-     from source.  That should be it, actually.  */
+     from source.  That should be it, actually. 
 
+     The truth is that we aren't that smart.  We read from flash and
+     either copy or decompress the data.  We don't do anything smart
+     if the data isn't compressed.  It's easier this way and the
+     performance is reasonable.
+
+ */
 
   while (cb) {
     size_t index = d->start + d->index;
@@ -818,6 +755,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       PRINTF ("%s: inode %d  i %d  offset %d  version %d  dsize %d\n",
 	      __FUNCTION__, jffs2.inode, i, inode_cache[i].offset,
 	      inode_cache[i].version, inode_cache[i].dsize);
+
       if (inode_cache[i].ino != jffs2.inode)
 	return cbRead;		/* End of the file */
       if (index < inode_cache[i].offset)
@@ -839,10 +777,8 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       return ERROR_FAILURE;
   }
 
-  PRINTF ("%s: returning %d\n", __FUNCTION__, cbRead);
   return cbRead;
 }
-
 
 static void jffs2_info (struct descriptor_d* d)
 {
@@ -858,8 +794,6 @@ static void jffs2_info (struct descriptor_d* d)
     printf ("path not found\n"); 
     return;
   }
-
-  //  printf ("inode %d\n", inode);
 
   if (inode != 1) {
 
@@ -923,8 +857,6 @@ static __driver_6 struct driver_d jffs2_driver = {
   .open = jffs2_open,
   .close = jffs2_close,
   .read = jffs2_read,
-//  .write = cf_write,
-//  .erase = cf_erase,
   .seek = seek_helper,
   .info = jffs2_info,
 };
