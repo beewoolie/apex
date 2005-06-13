@@ -233,7 +233,7 @@ struct dirent_cache {
   u32 version;
   u32 index;			/* Offset to the struct dirent_node */
   u32 nsize;			/* Size of the name field */
-  u8 type;			/* Cached entry type (DT_) */
+  u8  type;			/* Cached entry type (DT_) */
 };
 
 struct inode_cache {
@@ -500,93 +500,6 @@ void jffs2_load_cache (void)
 }
 
 
-/* jffs2_find_file
-
-   finds a file given the parent inode number and the path.
-
-*/
-
-static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
-{
-  int i = d->iRoot;
-
-  ENTRY (0);
-  
-  if (!inode)
-    inode = JFFS2_ROOT_INO;
-
-  for (; i < d->c; ++i) {
-    int length = strlen (d->pb[i]);
-    //    int dotdot = length == 2 && strcmp (d->pb[i], "..") == 0;
-    //    size_t ib;
-    int index;
-
-    //    printf ("%s: %d %d\n", __FUNCTION__, i, d->c);
-
-    index = find_cached_parent_inode (inode);
-    if (index == -1)
-      return 0;			/* Path not found */
-
-    //    printf ("%s: index %d\n", __FUNCTION__, index);
-
-    for (; index < cDirentCache; ++index) {
-		/* Short-circuit for name length mismatch */
-      char rgb[512];
-      size_t cbNode;
-      struct dirent_node* dirent = (struct dirent_node*) rgb;
-
-      if (dirent_cache[index].nsize != length)
-	continue;
-      
-      cbNode = sizeof (struct dirent_node) + dirent_cache[index].nsize;
-      if (cbNode > sizeof (rgb))
-	cbNode = sizeof (rgb);
-
-      jffs2.d.driver->seek (&jffs2.d, dirent_cache[index].index,
-			    SEEK_SET);
-      jffs2.d.driver->read (&jffs2.d, dirent, cbNode);
-		/* memcmp OK because we know the strings are the same length */
-      if (memcmp (d->pb[i], (const char*) dirent->name, dirent->nsize))
-	continue;
-
-      inode = dirent->ino;
-      break;
-    }
-
-//    inode = dotdot ? node->d.pino : node->d.ino;
-  }
-
-  return inode;
-}
-
-
-/* jffs2_identify
-
-   loads the jffs2 cache and makes sure to do it only once.
-
-*/
-
-static int jffs2_identify (void)
-{
-  int result;
-  struct descriptor_d d;
-
-  ENTRY (0);
-
-  if (jffs2.fCached)
-    return 0;
-
-  if (   (result = parse_descriptor (szBlockDriver, &d))
-      || (result = open_descriptor (&d))) 
-    return result;
-  
-  jffs2.d = d;
-  jffs2_load_cache ();
-  jffs2.fCached = 1;
-  return 0;
-}
-
-
 /* jffs2_decompress_node
 
    copies the given node, references by inode_cache index, to the
@@ -675,7 +588,136 @@ static int jffs2_decompress_node (int index)
     jffs2.cbCache = 0;
     return ERROR_UNSUPPORTED;
   }
+
+  return 0;
 }
+
+/* jffs2_find_file
+
+   finds a file given the parent inode number and the path.
+
+*/
+
+static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
+{
+  int i = d->iRoot;
+
+  ENTRY (0);
+  
+  if (!inode)
+    inode = JFFS2_ROOT_INO;
+
+  PRINTF ("%s: starting with inode %d\n", __FUNCTION__, inode);
+
+  for (; i < d->c; ++i) {
+    int length = strlen (d->pb[i]);
+    int index;
+
+    printf ("%s: %d %d\n", __FUNCTION__, i, d->c);
+
+    if (length == 1 && strcmp (d->pb[0], ".") == 0)
+      continue;
+
+    if (length == 2 && strcmp (d->pb[i], "..") == 0) {
+      int index;
+      if (inode == JFFS2_ROOT_INO)
+	continue;
+      index = find_cached_directory_inode (inode);
+      inode = dirent_cache[index].pino;
+      continue;
+    }
+
+    index = find_cached_parent_inode (inode);
+    if (index == -1)
+      return 0;			/* Path not found */
+
+    PRINTF ("%s: index %d\n", __FUNCTION__, index);
+
+    for (; index < cDirentCache; ++index) {
+		/* Short-circuit for name length mismatch */
+      char rgb[512];
+      size_t cbNode;
+      struct dirent_node* dirent = (struct dirent_node*) rgb;
+
+      if (dirent_cache[index].nsize != length)
+	continue;
+      
+      cbNode = sizeof (struct dirent_node) + dirent_cache[index].nsize;
+      if (cbNode > sizeof (rgb))
+	cbNode = sizeof (rgb);
+
+      jffs2.d.driver->seek (&jffs2.d, dirent_cache[index].index,
+			    SEEK_SET);
+      jffs2.d.driver->read (&jffs2.d, dirent, cbNode);
+		/* memcmp OK because we know the strings are the same length */
+      if (memcmp (d->pb[i], (const char*) dirent->name, dirent->nsize))
+	continue;
+
+      inode = dirent->ino;
+
+      if (dirent->type == DT_LNK) {
+	int pino = dirent->pino;
+	while (1) {
+	  int i = find_cached_inode (inode);
+	  int cbDriver;
+	  char sz[32 + inode_cache[i].dsize];
+	  struct descriptor_d d2;
+	  union node node;
+
+	  jffs2_decompress_node (i); /* One and only one */
+
+	  strcpy (sz, DRIVER_NAME);
+	  cbDriver = strlen (sz); sz[cbDriver++] = ':';
+	  memcpy (sz + cbDriver, jffs2.rgbCache, inode_cache[i].dsize);
+	  sz[cbDriver + inode_cache[i].dsize] = 0;
+	  PRINTF ("%s: chasing symlink '%s'\n", __FUNCTION__, sz);
+	  if (parse_descriptor (sz, &d2))
+	    return 0;		/* Unable to chase link */
+	  inode = jffs2_path_to_inode (pino, &d2);
+	  summarize_inode (inode, &node);
+	  if (!S_ISLNK (node.i.mode))
+	    break;
+	  i = find_cached_directory_inode (inode);
+	  pino = dirent_cache[i].pino;
+	}
+      }
+
+      break;
+    }
+
+//    inode = dotdot ? node->d.pino : node->d.ino;
+  }
+
+  return inode;
+}
+
+
+/* jffs2_identify
+
+   loads the jffs2 cache and makes sure to do it only once.
+
+*/
+
+static int jffs2_identify (void)
+{
+  int result;
+  struct descriptor_d d;
+
+  ENTRY (0);
+
+  if (jffs2.fCached)
+    return 0;
+
+  if (   (result = parse_descriptor (szBlockDriver, &d))
+      || (result = open_descriptor (&d))) 
+    return result;
+  
+  jffs2.d = d;
+  jffs2_load_cache ();
+  jffs2.fCached = 1;
+  return 0;
+}
+
 
 static int jffs2_open (struct descriptor_d* d)
 {

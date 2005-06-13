@@ -633,7 +633,7 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
 	while (1) {
 	  int cb = ext2.inode.i_size;
 	  int cbDriver;
-	  char sz[cb + 32];
+	  char sz[3 + cb];
 	  struct descriptor_d d2;
 		 /* Kindofa dumb hack to coerce the descriptor parser
 		    into parsing the symlink path */

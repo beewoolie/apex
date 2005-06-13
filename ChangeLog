@@ -1,3 +1,11 @@
+2005-06-12  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-info.c: New command to query information about a
+	region from a driver.  It's used by the jffs2 driver to show the
+	contents of a directory.  Other filesystems ought to follow suit.
+    
+	* src/drivers/drv-jffs2.c: New jffs2 reading filesystem driver.
+
 2005-05-15  Marc Singer  <elf@buici.com>
 
 	* src/mach-ixp42x/pci.c (pci_init): Added IRQ setup for all of the
