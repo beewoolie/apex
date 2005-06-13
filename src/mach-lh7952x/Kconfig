@@ -113,7 +113,8 @@ config ENV_STARTUP
 	help
 	  This string is added to the default startup command string.
 	  This is generally not needed, but the facility is available
-	  ust in case.
+	  just in case.  One platforms, for example, sets the MAC
+	  address of the Ethernet controller this way.
 
 endmenu
 
