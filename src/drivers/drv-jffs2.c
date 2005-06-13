@@ -25,6 +25,14 @@
    DESCRIPTION
    -----------
 
+   endianness
+   -----------
+
+   JFFS2 is defined such that the endianness of the data in flash must
+   match the endianness of the CPU.  As such, the code herein makes
+   only an effort to quickly recognize an endianness mismatch.
+
+
    CRC32
    -----
    
