@@ -653,7 +653,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
     int length = strlen (d->pb[i]);
     int index;
 
-    printf ("%s: %d %d\n", __FUNCTION__, i, d->c);
+    PRINTF ("%s: %d %d\n", __FUNCTION__, i, d->c);
 
     if (length == 1 && strcmp (d->pb[0], ".") == 0)
       continue;
