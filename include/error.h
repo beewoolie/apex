@@ -44,6 +44,7 @@ extern const char* error_description;
 #define ERROR_BADPARTITION (-14)
 #define ERROR_FILENOTFOUND (-15)
 #define ERROR_IOFAILURE	   (-16)
+#define ERROR_CRCFAILURE   (-17)
 
 #if defined (CONFIG_SMALL)
 # define ERROR_RETURN(v,m) return (v)

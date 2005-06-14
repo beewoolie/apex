@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <linux/stat.h>
 
-//#define ENDIAN_SWAP
+#define ENDIAN_SWAP
 
 #define MARKER_JFFS2_OLD	0x1984
 #define MARKER_JFFS2		0x1985
@@ -269,6 +269,17 @@ static bool verify_dirent_crc (const struct dirent_node& node)
     == ~compute_crc32 (~0, &node, sizeof (struct dirent_node) - 8);
 }
 
+static bool verify_inode_crc (const struct inode_node& node)
+{
+  return u32_to_cpu (node.node_crc)
+    == ~compute_crc32 (~0, &node, sizeof (struct inode_node) - 8);
+}
+
+static bool verify_crc (const void* pv, size_t cb, u32 crc)
+{
+  return crc == ~compute_crc32 (~0, pv, cb);
+}
+
 void usage (void)
 {
   printf ("usage: jd FILENAME\n");
@@ -393,19 +404,22 @@ void scan (const void* pv, size_t cb)
 
     read_node (node, pv, cb, ib);
 
+    cbNode = 4;
+
     switch (u16_to_cpu (node->u.marker)) {
     case MARKER_JFFS2:
       break;
     case MARKER_JFFS2_REV:
       // this is really only valid for reading the first marker of the block 
-      printf ("endian mismatch\n");
-      return;
+      printf ("endian mismatch @%x\n", ib);
+      if (ib == 0)
+	return;
+      continue;
     default:
 //      printf ("marker %x type %x length %x\n", 
 //	      u16_to_cpu (node->u.marker),
 //	      u16_to_cpu (node->u.node_type),
 //	      u16_to_cpu (node->u.length));
-      cbNode = 4;
       continue;
     }
 
@@ -416,7 +430,6 @@ void scan (const void* pv, size_t cb)
 	      u16_to_cpu (node->u.node_type),
 	      u16_to_cpu (node->u.length));
 #endif
-      cbNode = 4;
       continue;
     }
 
@@ -425,6 +438,20 @@ void scan (const void* pv, size_t cb)
 //    printf ("type %x\n", u16_to_cpu (node->u.node_type));
     switch (u16_to_cpu (node->u.node_type)) {
     case NODE_DIRENT:
+      if (!verify_dirent_crc (node->d)) {
+	printf ("dirent_crc error\n");
+	break;
+      }
+
+      {
+	char sz[node->d.nsize];
+	read_node (sz,  pv, cb, ib + sizeof (struct dirent_node), 
+		   node->d.nsize);
+	if (!verify_crc (sz, node->d.nsize, u32_to_cpu (node->d.name_crc))) {
+	  printf ("name crc failure\n");
+	}
+      }
+
       dc[iDirent].ino = u32_to_cpu (node->d.ino);
       dc[iDirent].pino = u32_to_cpu (node->d.pino);
       dc[iDirent].version = u32_to_cpu (node->d.version);
@@ -435,6 +462,11 @@ void scan (const void* pv, size_t cb)
       break;
 
     case NODE_INODE:
+      if (!verify_inode_crc (node->i)) {
+	printf ("inode_crc error\n");
+	break;
+      }
+
       ic[iInode].ino = u32_to_cpu (node->i.ino);
       ic[iInode].offset = u32_to_cpu (node->i.offset);
       ic[iInode].dsize = u32_to_cpu (node->i.dsize);

@@ -1,3 +1,18 @@
+2005-06-13  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-jffs2.c (jffs2_path_to_inode): Needed to
+	invalidate the cached block after chasing links.
+	(find_cached_inode): Enhanced find_cached_inode() to accept an
+	offset within the file.  This may improve the performance of
+	reading since it doesn't have to scan the inode list from the top
+	every time.  Moreover, the algorithm of the find_cached_inode
+	function is more efficient for larget files.
+	(jffs2_load_cache): Changed the logic for handling reversed
+	markers.  The previous code would prematurely terminate if a
+	reversed marker was found among the filesystem detritus. 
+	(jffs2_load_cache): Added a CRC check for inodes.
+	(jffs2_path_to_inode): Added a CRC check for filenames.
+
 2005-06-12  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-info.c: New command to query information about a

@@ -83,12 +83,6 @@
    We're checking CRCs sparsely.  Should be done everywhere possible.
    Enough said.
    
-   find_cached_inode
-   -----------------
-
-   Should take an index parameter so that we can find the exact record
-   we care about.  This will make reading faster.
-
 */
 
 #include <config.h>
@@ -230,8 +224,8 @@ struct inode_node
 } __attribute__((packed));
 
 union node {
-	struct inode_node i;
-	struct dirent_node d;
+	struct inode_node   i;
+	struct dirent_node  d;
 	struct unknown_node u;
 } __attribute__((packed));
 
@@ -298,7 +292,28 @@ static int verify_dirent_crc (struct dirent_node* node)
   return node->node_crc == ~compute_crc32 (~0, node, sizeof (*node) - 8);
 }
 
-const int find_cached_inode (u32 inode)
+static int verify_inode_crc (struct inode_node* node)
+{
+  return node->node_crc == ~compute_crc32 (~0, node, sizeof (*node) - 8);
+}
+
+static int verify_crc (void* pv, size_t cb, u32 crc)
+{
+  return crc == ~compute_crc32 (~0, pv, cb);
+}
+
+/* find_cached_inode
+
+   performs a binary search on the inode data to find the cached inode
+   for the given inode number and file offset.  
+
+   *** FIXME: we cannot be totally sure that we've found the right
+   *** inode record unless we account for the potentiality of
+   *** overlapping or redundant records, but version number.
+
+*/
+
+const int find_cached_inode (u32 inode, size_t ib)
 {
   int min = 0;
   int max = cInodeCache;
@@ -307,15 +322,23 @@ const int find_cached_inode (u32 inode)
 
   while (min + 1 < max) {
     int mid = (min + max)/2;
-    if (inode_cache[mid].ino == inode) {
-      while (mid > 0 && inode_cache[mid - 1].ino == inode)
-	--mid;
-      return mid;
+
+    if (inode > inode_cache[mid].ino) {
+      min = mid + 1;
+      continue;
     }
-    if (inode_cache[mid].ino < inode)
-      min = mid;
-    else
+
+    if (inode < inode_cache[mid].ino
+	|| ib < inode_cache[mid].offset) {
       max = mid;
+      continue;
+    }
+
+	/* == inode and ib is >= offset */
+    if (ib < inode_cache[mid].offset + inode_cache[mid].dsize)
+      return mid;
+
+    min = mid + 1;
   }
 
   return (inode_cache[min].ino == inode) ? min : -1;
@@ -403,7 +426,7 @@ int compare_inode_cache (const void* _a, const void* _b)
 
 void summarize_inode (u32 inode, union node* node)
 {
-  int i = find_cached_inode (inode);
+  int i = find_cached_inode (inode, 0);
   u32 version = 0;
   
   for (; i < cInodeCache; ++i) {
@@ -449,11 +472,13 @@ void jffs2_load_cache (void)
     jffs2.d.driver->seek (&jffs2.d, ib, SEEK_SET);
     jffs2.d.driver->read (&jffs2.d, &node, sizeof (node));
 
-    if (node.u.marker != MARKER_JFFS2 
-	|| !verify_header_crc (&node.u)) {
+    if (node.u.marker != MARKER_JFFS2 || !verify_header_crc (&node.u)) {
       cbNode = 4;
-      if (node.u.marker == MARKER_JFFS2_REV)
-	return;			/* endian mismatch */
+      if (node.u.marker == MARKER_JFFS2_REV) {
+	if (ib == 0)
+	  return;		/* endian mismatch only on first read */
+	continue;
+      }
 
 		/* Check for empty block */
       if (*(unsigned long*) &node == ~0) {
@@ -484,6 +509,9 @@ void jffs2_load_cache (void)
       break;
 
     case NODE_INODE:
+      if (!verify_inode_crc (&node.i))
+	continue;
+
       inode_cache[cInodeCache].ino       = node.i.ino;
       inode_cache[cInodeCache].offset    = node.i.offset;
       inode_cache[cInodeCache].csize     = node.i.csize;
@@ -530,6 +558,10 @@ static int jffs2_decompress_node (int index)
 
   read_node (rgb, inode_cache[index].index, 
 	     sizeof (struct inode_node) + inode_cache[index].csize);
+
+  if (!verify_crc (node + 1, node->csize, node->data_crc))
+    return ERROR_CRCFAILURE;
+
   dsize = node->dsize;
   if (dsize > BLOCK_SIZE_MAX)
     dsize = BLOCK_SIZE_MAX;
@@ -657,6 +689,10 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
       jffs2.d.driver->seek (&jffs2.d, dirent_cache[index].index,
 			    SEEK_SET);
       jffs2.d.driver->read (&jffs2.d, dirent, cbNode);
+
+      if (!verify_crc (dirent->name, dirent->nsize, dirent->name_crc))
+	continue;		/* Simply ignore invalid names */
+
 		/* memcmp OK because we know the strings are the same length */
       if (memcmp (d->pb[i], (const char*) dirent->name, dirent->nsize))
 	continue;
@@ -666,7 +702,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
       if (dirent->type == DT_LNK) {
 	int pino = dirent->pino;
 	while (1) {
-	  int i = find_cached_inode (inode);
+	  int i = find_cached_inode (inode, 0);
 	  int cbDriver;
 	  char sz[32 + inode_cache[i].dsize];
 	  struct descriptor_d d2;
@@ -688,6 +724,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 	  i = find_cached_directory_inode (inode);
 	  pino = dirent_cache[i].pino;
 	}
+	jffs2.cbCache = 0;	/* Invalidate cached data  */
       }
 
       break;
@@ -731,6 +768,8 @@ static int jffs2_open (struct descriptor_d* d)
 {
   int result = 0;
   union node node;
+
+  ENTRY (0);
 
   if ((result = jffs2_identify ()))
     return result;
@@ -801,11 +840,13 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       continue;
     } 
 
-    for (i = find_cached_inode (jffs2.inode); i < cInodeCache; ++i) {
+    for (i = find_cached_inode (jffs2.inode, index); i < cInodeCache; ++i) {
       PRINTF ("%s: inode %d  i %d  offset %d  version %d  dsize %d\n",
 	      __FUNCTION__, jffs2.inode, i, inode_cache[i].offset,
 	      inode_cache[i].version, inode_cache[i].dsize);
 
+		/* *** FIXME: we may be able to simplify these checks
+			      since enhancing find_cached_inode (). */
       if (inode_cache[i].ino != jffs2.inode)
 	return cbRead;		/* End of the file */
       if (index < inode_cache[i].offset)
