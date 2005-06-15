@@ -468,8 +468,6 @@ static int fat_open (struct descriptor_d* d)
       d->length = fat.file.length - d->start;
   }
 
-  /* *** Do we want to set the default length to be the whole file?  */
-
   return result;
 }
 
@@ -547,6 +545,96 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
   }
   return cbRead;
 }
+
+#if defined (CONFIG_CMD_INFO) && 0
+
+static int fat_info (struct descriptor_d* d)
+{
+  int result = 0;
+  char sz[128];
+
+  ENTRY (0);
+
+  fat.fOK = 0;
+  fat.sector_fat = 0;
+
+  if ((result = fat_identify ()))
+    return result;
+  fat.fOK = 1;
+
+#if defined (TALK)
+  PRINTF ("descript %d %d\n", d->c, d->iRoot);
+  {
+    int i;
+    for (i = 0; i < d->c; ++i)
+      PRINTF ("  %d: (%s)\n", i, d->pb[i]);
+  }
+#endif
+
+		/* Read just the partition table */
+  if (d->c == 0) {
+    snprintf (sz, sizeof (sz), "%s:%d+%d", 
+	      szBlockDriver, 
+	      SECTOR_SIZE - 66, 16*4);
+    d->length = 16*4;
+  }
+  else {
+    int partition = 0;
+    if (d->iRoot > 0 && d->c)
+      partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
+    if (partition < 0 || partition > 3 || fat.partition[partition].length == 0)
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
+	      szBlockDriver, 
+	      fat.partition[partition].start, fat.partition[partition].length);
+  }
+
+  PRINTF ("  opening %s\n", sz);
+
+	/* Open descriptor for the partition */
+  if (   (result = parse_descriptor (sz, &fat.d))
+      || (result = open_descriptor (&fat.d))) 
+    return result;
+
+	/* Read parameter block */
+  fat.d.driver->seek (&fat.d, 0, SEEK_SET);
+  fat.d.driver->read (&fat.d, &fat.parameter, sizeof (struct parameter));
+  fat.index_cluster_2
+    = (fat.parameter.reserved_sectors
+       + fat.parameter.fats*fat.parameter.sectors_per_fat)
+    *SECTOR_SIZE
+    + fat.parameter.root_entries*32;
+  fat.bytes_per_cluster = fat.parameter.sectors_per_cluster*SECTOR_SIZE;
+
+	/* Decode FAT type */
+  fat.fat_type = 0;
+  if (memcmp (fat.parameter.type, "FAT12", 5) == 0)
+    fat.fat_type = fat12;
+  if (memcmp (fat.parameter.type, "FAT16", 5) == 0)
+    fat.fat_type = fat16;
+
+	/* Open file by finding directory entry and thus, the first cluster */
+  if (d->c != 0) {
+    result = fat_find (d);
+    fat.cluster_file = fat.file.cluster;
+    fat.index_cluster_file = 0;
+
+    if (d->length == 0)		/* Defaulting to length of whole file */
+      d->length = fat.file.length;
+
+    if (d->start > fat.file.length)
+      d->start = fat.file.length;
+    if (d->start + d->length > fat.file.length)
+      d->length = fat.file.length - d->start;
+  }
+
+  /* *** Do we want to set the default length to be the whole file?  */
+
+  return 0;
+}
+
+#endif
 
 #if !defined (CONFIG_SMALL)
 
@@ -639,6 +727,9 @@ static __driver_6 struct driver_d fat_driver = {
 //  .write = cf_write,
 //  .erase = cf_erase,
   .seek = seek_helper,
+#if defined (CONFIG_CMD_INFO) && 0
+  .info = fat_info,
+#endif
 };
 
 static __service_6 struct service_d fat_service = {
