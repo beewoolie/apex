@@ -895,19 +895,21 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
-static void jffs2_info (struct descriptor_d* d)
+#if defined (CONFIG_CMD_INFO)
+
+static int jffs2_info (struct descriptor_d* d)
 {
   union node node;
   int inode;
   int i;
 
   if (jffs2_identify ())
-    return;
+    return -1;
 
   inode = jffs2_path_to_inode (0, d);
   if (inode <= 0) {
     printf ("path not found\n"); 
-    return;
+    return -1;
   }
 
   if (inode != 1) {
@@ -958,8 +960,9 @@ static void jffs2_info (struct descriptor_d* d)
     }
   }
 
-  return;
+  return 0;
 }
+#endif
 
 static void jffs2_report (void)
 {
@@ -973,7 +976,9 @@ static __driver_6 struct driver_d jffs2_driver = {
   .close = jffs2_close,
   .read = jffs2_read,
   .seek = seek_helper,
+#if defined (CONFIG_CMD_INFO)
   .info = jffs2_info,
+#endif
 };
 
 static __service_6 struct service_d jffs2_service = {

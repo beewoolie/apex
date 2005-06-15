@@ -80,6 +80,14 @@
        followed.  The main reason for this is that is must be tested
        and I don't have a > 60 (15*4) character link to test.  
 
+
+   o ext2_info()
+     o The call isn't elegant.  Because partition parsing is part of
+       this driver, and because the info() call doesn't use an open
+       file, we have to do the same effort as an open() call to handle
+       info().  Needless repetition.  Either pull the partition code
+       out, or get on the stick with chaining.
+
 */
 
 #include <config.h>
@@ -855,6 +863,115 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
+#if defined (CONFIG_CMD_INFO)
+
+static int ext2_info (struct descriptor_d* d)
+{
+  int result = 0;
+  char sz[128];
+
+  ENTRY (0);
+
+  ext2.fOK = 0;
+
+  if ((result = ext2_identify ()))
+    return result;
+  ext2.fOK = 1;
+
+#if defined (TALK)
+  PRINTF ("descript %d %d\n", d->c, d->iRoot);
+  {
+    int i;
+    for (i = 0; i < d->c; ++i)
+      PRINTF ("  %d: (%s)\n", i, d->pb[i]);
+  }
+#endif
+
+  {
+    int partition = 0;
+    if (d->iRoot > 0 && d->c)
+      partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
+    if (partition < 0 || partition > 3 
+		      || ext2.partition[partition].length == 0)
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
+	      szBlockDriver, 
+	      ext2.partition[partition].start, 
+	      ext2.partition[partition].length);
+  }
+
+  PRINTF ("  opening %s\n", sz);
+#if defined (TALK)
+  PRINTF ("descript %d %d\n", d->c, d->iRoot);
+  {
+    int i;
+    for (i = 0; i < d->c; ++i)
+      PRINTF ("  %d: (%s)\n", i, d->pb[i]);
+  }
+#endif
+
+	/* Open descriptor for the partition */
+  if (   (result = parse_descriptor (sz, &ext2.d))
+      || (result = open_descriptor (&ext2.d))) 
+    return result;
+
+	/* Default for superblock is 1 1KiB block into the partition */
+  ext2.d.driver->seek (&ext2.d, BLOCK_SIZE, SEEK_SET);
+  if (ext2.d.driver->read (&ext2.d, &ext2.superblock, 
+			   sizeof (ext2.superblock)) 
+      != sizeof (ext2.superblock)
+      || ext2.superblock.s_magic != MAGIC_EXT2) {
+    close_descriptor (&ext2.d); 
+    return -1;
+  }
+  
+	/* Precompute constants based on block size */
+  ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
+  ext2.rg_blocking[0] = 12;
+  ext2.rg_blocking[1] = ext2.block_size/sizeof (long);
+  ext2.rg_blocking[2] = ext2.rg_blocking[1]*(ext2.block_size/sizeof (long));
+
+	/* Parse an inode number */
+  if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {
+    int inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
+    if (ext2_find_inode (inode_target)) {
+      close_descriptor (&ext2.d); 
+      return ERROR_FILENOTFOUND;
+    }
+  }
+  else {
+    if (ext2_path_to_inode (0, d) == EXT2_NULL_INO) {
+      close_descriptor (&ext2.d);
+      return ERROR_FILENOTFOUND;
+    }
+  }
+
+  /* Dump it as a dir if it is one */
+  if (S_ISDIR (ext2.inode.i_mode)) {
+    void* h = NULL;
+    struct directory* dir;
+    while ((h = ext2_enum_directory (h, &dir)))
+      printf ("%*.*s%c\n", dir->name_len, dir->name_len, dir->name,
+	      "  /    @"[dir->file_type]);
+  }      
+  else {
+    printf ("inode %d  size %d  blocks %d\n", 
+	    ext2.inode_number, ext2.inode.i_size, ext2.inode.i_blocks);
+    printf ("  [%d %d %d %d %d %d %d %d]\n", 
+	    ext2.inode.i_block[0], ext2.inode.i_block[1],
+	    ext2.inode.i_block[2], ext2.inode.i_block[3],
+	    ext2.inode.i_block[4], ext2.inode.i_block[5],
+	    ext2.inode.i_block[6], ext2.inode.i_block[7]);
+  }
+
+//  dump ((void*) &ext2.inode, 0x80, 0);
+
+  return 0;
+}
+
+#endif
+
 #if !defined (CONFIG_SMALL)
 static void ext2_report (void)
 {
@@ -908,6 +1025,9 @@ static __driver_6 struct driver_d ext2_driver = {
 //  .write = cf_write,
 //  .erase = cf_erase,
   .seek = seek_helper,
+#if defined CONFIG_CMD_INFO
+  .info = ext2_info,
+#endif
 };
 
 static __service_6 struct service_d ext2_service = {
