@@ -201,8 +201,8 @@ struct inode_cache {
 
 const int cDirentMax = 4*1024;
 const int cInodeMax = 4*1024;
-struct dirent_cache g_dirent_cache[cDirentMax];
-struct inode_cache  g_inode_cache[cInodeMax];
+struct dirent_cache dirent_cache[cDirentMax];
+struct inode_cache  inode_cache[cInodeMax];
 int iDirent;
 int iInode;
 
@@ -286,26 +286,34 @@ void usage (void)
   exit (1); 
 }
 
-const int find_cached_inode (u32 inode, 
-			     const struct inode_cache* ic,
-			     int max)
+const int find_cached_inode (u32 inode, size_t ib = 0)
 {
   int min = 0;
+  int max = iInode;
 
   while (min + 1 < max) {
     int mid = (min + max)/2;
-    if (ic[mid].ino == inode) {
-      while (mid > 0 && ic[mid - 1].ino == inode)
-	--mid;
-      return mid;
+
+    if (inode > inode_cache[mid].ino) {
+      min = mid + 1;
+      continue;
     }
-    if (ic[mid].ino < inode)
-      min = mid;
-    else
+
+    if (inode < inode_cache[mid].ino
+	|| ib < inode_cache[mid].offset) {
       max = mid;
+      continue;
+    }
+
+	/* == inode and ib is >= offset */
+    if (  (ib == 0 && ib == inode_cache[mid].offset)
+	|| ib < inode_cache[mid].offset + inode_cache[mid].dsize)
+      return mid;
+
+    min = mid + 1;
   }
 
-  return (ic[min].ino == inode) ? min : -1;
+  return (inode_cache[min].ino == inode) ? min : -1;
 }
 
 /* find_cached_directory_node
@@ -391,8 +399,8 @@ void read_node (void* node, const void* pv, size_t cb,
 
 void scan (const void* pv, size_t cb)
 {
-  struct dirent_cache* dc = g_dirent_cache;
-  struct inode_cache* ic = g_inode_cache;
+  struct dirent_cache* dc = dirent_cache;
+  struct inode_cache* ic = inode_cache;
 
   size_t ib;			// Index into the filesystem data
 
@@ -486,8 +494,8 @@ void scan (const void* pv, size_t cb)
 
 void dump (const void* pv, size_t cb)
 {
-  struct dirent_cache* dc = g_dirent_cache;
-  struct inode_cache* ic = g_inode_cache;
+  struct dirent_cache* dc = dirent_cache;
+  struct inode_cache*  ic = inode_cache;
 
   for (int i = 0; i < iDirent; ++i) {
     char rgb[dc[i].sizeof_dirent];
@@ -608,21 +616,21 @@ int find_ino (void* pv, size_t cb, const char* szPath)
   char* pch;
   for (pch = strtok_r (sz,   "/", &context); pch; 
        pch = strtok_r (NULL, "/", &context)) {
-    int i = find_cached_parent_inode (ino, g_dirent_cache, iDirent);
+    int i = find_cached_parent_inode (ino, dirent_cache, iDirent);
     if (i == -1) {
       printf ("path not found\n");
       return 0;
     }
     for (; i < iDirent; ++i) {
-      if (g_dirent_cache[i].sizeof_dirent - sizeof (dirent_node)
+      if (dirent_cache[i].sizeof_dirent - sizeof (dirent_node)
 	  != strlen (pch))
 	continue;
 
-      char rgb[g_dirent_cache[i].sizeof_dirent];
+      char rgb[dirent_cache[i].sizeof_dirent];
       struct dirent_node& d = *(dirent_node*) rgb;
       read_node (rgb, pv, cb, 
-		 g_dirent_cache[i].index_dirent, 
-		 g_dirent_cache[i].sizeof_dirent);
+		 dirent_cache[i].index_dirent, 
+		 dirent_cache[i].sizeof_dirent);
       if (strncmp (pch, (const char*) d.name, d.nsize))
 	continue;
 
@@ -642,14 +650,14 @@ void show_ino (void* pv, size_t cb, int ino)
   u32 mode;
 
   if (ino != 1) {
-    int index = find_cached_inode (ino, g_inode_cache, iInode);
+    int index = find_cached_inode (ino);
     if (index == -1) {
       printf ("no inode %d\n", ino);
       return;
     }
   
     struct inode_node inode;
-    read_node (&inode, pv, cb, g_inode_cache[index].index_inode, 
+    read_node (&inode, pv, cb, inode_cache[index].index_inode, 
 	       sizeof (struct inode_node));
   
     mode = u32_to_cpu (inode.mode);
@@ -671,19 +679,19 @@ void show_ino (void* pv, size_t cb, int ino)
   }
 
   if (S_ISDIR (mode) || ino == 1) {
-    int i = find_cached_parent_inode (ino, g_dirent_cache, iDirent);
-    for (; i != -1 && i < iDirent && g_dirent_cache[i].pino == ino; ++i) {
-      if (g_dirent_cache[i].ino == 0)
+    int i = find_cached_parent_inode (ino, dirent_cache, iDirent);
+    for (; i != -1 && i < iDirent && dirent_cache[i].pino == ino; ++i) {
+      if (dirent_cache[i].ino == 0)
 	continue;
 
-      char rgb[g_dirent_cache[i].sizeof_dirent];
+      char rgb[dirent_cache[i].sizeof_dirent];
       struct dirent_node& d = *(dirent_node*) rgb;
       read_node (rgb, pv, cb, 
-		 g_dirent_cache[i].index_dirent, 
-		 g_dirent_cache[i].sizeof_dirent);
+		 dirent_cache[i].index_dirent, 
+		 dirent_cache[i].sizeof_dirent);
 
       printf ("  %*.*s", d.nsize, d.nsize, d.name );
-      switch (g_dirent_cache[i].type) {
+      switch (dirent_cache[i].type) {
       case DT_DIR:
 	printf ("/");
 	break;
@@ -693,7 +701,7 @@ void show_ino (void* pv, size_t cb, int ino)
       case DT_REG:
 	break;
       default:
-	printf ("(%d)", g_dirent_cache[i].type);
+	printf ("(%d)", dirent_cache[i].type);
 	break;
       }
       printf ("\n");

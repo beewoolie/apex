@@ -156,8 +156,8 @@ enum {
 #define INODE_FLAG_PREREAD	1 /* Read at mount-time */
 #define INODE_FLAG_USERCOMPR	2 /* User selected compression */
 
-#define DIRENT_CACHE_MAX	8192
-#define INODE_CACHE_MAX		8192
+#define DIRENT_CACHE_MAX	( 3*1024)
+#define INODE_CACHE_MAX		(10*1024)
 
 enum {
   DT_UNKNOWN = 0,
@@ -335,7 +335,8 @@ const int find_cached_inode (u32 inode, size_t ib)
     }
 
 	/* == inode and ib is >= offset */
-    if (ib < inode_cache[mid].offset + inode_cache[mid].dsize)
+    if (  (ib == 0 && ib == inode_cache[mid].offset)
+	|| ib < inode_cache[mid].offset + inode_cache[mid].dsize)
       return mid;
 
     min = mid + 1;
@@ -779,7 +780,8 @@ static int jffs2_open (struct descriptor_d* d)
     return ERROR_FILENOTFOUND;
 
   summarize_inode (jffs2.inode, &node);
-  d->length = node.i.isize;
+  if (!d->length || d->length > node.i.isize)
+    d->length = node.i.isize;
 
   return 0;
 }
@@ -797,6 +799,9 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
   ssize_t cbRead = 0;
 
   ENTRY (0);
+
+  PRINTF ("%s: d->index %d  d->length %lu\n",
+	  __FUNCTION__, d->index, d->length);
 
   if (d->index >= d->length)
     return cbRead;
@@ -816,6 +821,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
 
   while (cb) {
     size_t index = d->start + d->index;
+    size_t remain = d->length - d->index; /* total remaining */
     int i;
     int state = 0;
     int result;
@@ -823,12 +829,19 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
     PRINTF ("%s: index %d  cb %d  ibCache %d  cbCache %d  cbRead %d\n",
 	    __FUNCTION__, index, cb, jffs2.ibCache, jffs2.cbCache, cbRead);
 
+    if (remain == 0)
+      return cbRead;
+
 	/* Read from the cache */
     if (index >= jffs2.ibCache && index < jffs2.ibCache + jffs2.cbCache) {
       size_t offset = index - jffs2.ibCache;
-      size_t available = jffs2.cbCache - offset;
+      size_t available = jffs2.cbCache - offset; /* available in the cache */
+      PRINTF ("%s: offset %d  available %d  remain %d  cb %d\n", 
+	      __FUNCTION__, offset, available, remain, cb);
       if (available > cb)
 	available = cb;
+      if (available > remain)
+	available = remain;
       PRINTF ("%s: available %d  offset %d\n",
 	      __FUNCTION__, available, offset);
       memcpy (pv, &jffs2.rgbCache[offset], available);

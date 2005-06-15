@@ -821,6 +821,9 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
     int block_index;
     int block;
 
+    /* *** FIXME: this code doesn't properly bound the read on the
+       extent of the descriptor. */
+
     if (index >= ext2.inode.i_size)
       break;
     if (index + available > ext2.inode.i_size)
