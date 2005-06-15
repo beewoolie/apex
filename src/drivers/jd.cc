@@ -497,6 +497,8 @@ void dump (const void* pv, size_t cb)
   struct dirent_cache* dc = dirent_cache;
   struct inode_cache*  ic = inode_cache;
 
+  printf ("%d directory nodes  %d inode nodes\n", iDirent, iInode);
+
   for (int i = 0; i < iDirent; ++i) {
     char rgb[dc[i].sizeof_dirent];
     struct dirent_node& d = *(dirent_node*) rgb;

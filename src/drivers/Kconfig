@@ -2,6 +2,7 @@ menu "Generic Drivers"
 
 config DRIVER_FAT
 	bool "FAT Filesystem"
+	select USES_PATHNAME_PARSER
 	default n
 	help
 	  This driver implements a FAT filesystem driver.
@@ -19,6 +20,7 @@ config DRIVER_FAT_BLOCKDEVICE
 
 config DRIVER_EXT2
 	bool "EXT2 Filesystem"
+	select USES_PATHNAME_PARSER
 	default n
 	help
 	  This driver implements an Ext2 filesystem driver.
@@ -36,6 +38,7 @@ config DRIVER_EXT2_BLOCKDEVICE
 
 config DRIVER_JFFS2
 	bool "JFFS2 Filesystem"
+	select USES_PATHNAME_PARSER
 	default n
 	help
 	  This driver implements a JFFS2 filesystem driver.
@@ -74,3 +77,5 @@ config USES_NOR_CFI
 config USES_COMPACTFLASH
 	bool
 
+config USES_PATHNAME_PARSER
+	bool

@@ -107,7 +107,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   if (!d->driver)
     return ERROR_NODRIVER;
 
-#if defined (CONFIG_DRIVER_FAT) || defined (CONFIG_DRIVER_EXT2)
+#if defined (CONFIG_USES_PATHNAME_PARSER)
   if (d->driver->flags & DRIVER_DESCRIP_FS) {
     int state = 0;
     strlcpy (d->rgb, sz + ib, sizeof (d->rgb));
@@ -212,7 +212,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
     }
   }
 
-#if defined (CONFIG_DRIVER_FAT) || defined (CONFIG_DRIVER_EXT2)
+#if defined (CONFIG_USES_PATHNAME_PARSER)
 		/* Make sure there is an empty field when there are /'s */
   if (d->c == 0 && d->rgb[0])
     d->pb[d->c++] = &d->rgb[ib];

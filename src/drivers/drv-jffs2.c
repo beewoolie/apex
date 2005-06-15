@@ -374,6 +374,8 @@ const int find_cached_parent_inode (u32 inode)
 
   ENTRY (0);
 
+  PRINTF ("%s: inode %d\n", __FUNCTION__, inode);
+
   while (min + 1 < max) {
     int mid = (min + max)/2;
     if (dirent_cache[mid].pino == inode) {
@@ -387,6 +389,9 @@ const int find_cached_parent_inode (u32 inode)
     else
       max = mid;
   }
+
+  PRINTF ("%s: min %d  pino %d\n", __FUNCTION__, 
+	  min, dirent_cache[min].pino);
 
   return (dirent_cache[min].pino == inode) ? min : -1;
 }
@@ -648,13 +653,14 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
   if (!inode)
     inode = JFFS2_ROOT_INO;
 
-  PRINTF ("%s: starting with inode %d\n", __FUNCTION__, inode);
+  PRINTF ("%s: starting with inode %d (%d %d %d)\n", __FUNCTION__, inode,
+	  i, d->c, d->iRoot);
 
   for (; i < d->c; ++i) {
     int length = strlen (d->pb[i]);
     int index;
 
-    PRINTF ("%s: %d %d\n", __FUNCTION__, i, d->c);
+    PRINTF ("%s: %d %d '%s'\n", __FUNCTION__, i, d->c, d->pb[i]);
 
     if (length == 1 && strcmp (d->pb[0], ".") == 0)
       continue;
