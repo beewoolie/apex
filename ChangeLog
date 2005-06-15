@@ -1,5 +1,7 @@
 2005-06-14  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-fat.c (fat_read): Region length calc, again.
+
 	* src/drivers/drv-ext2.c (ext2_read): Fixed the region length
 	calcs.
 

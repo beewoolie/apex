@@ -490,6 +490,7 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
   while (cb) {
     size_t available = cb;
     size_t index = d->start + d->index;
+    size_t remain = d->length - d->index;
     if (index < fat.index_cluster_file) {
       /* Rewinding not supported   */
       return -1;
@@ -502,6 +503,10 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 	return -1;		/* An unrecoverable error */
       fat.index_cluster_file += fat.parameter.sectors_per_cluster*SECTOR_SIZE;
     }
+
+    /* Bound within region */
+    if (available > remain)
+      available = remain;
 
     /* Bound within the cluster */
     if (index + available > fat.index_cluster_file + fat.bytes_per_cluster)
