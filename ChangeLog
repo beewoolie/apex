@@ -1,3 +1,11 @@
+2005-06-14  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-ext2.c (ext2_read): Fixed the region length
+	calcs.
+
+	* src/drivers/drv-jffs2.c (jffs2_open): Fixed some of the region
+	length calcs.
+
 2005-06-13  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-jffs2.c (jffs2_path_to_inode): Needed to

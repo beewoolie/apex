@@ -780,8 +780,13 @@ static int jffs2_open (struct descriptor_d* d)
     return ERROR_FILENOTFOUND;
 
   summarize_inode (jffs2.inode, &node);
-  if (!d->length || d->length > node.i.isize)
+  if (!d->length)		/* Default length is whole file */
     d->length = node.i.isize;
+
+  if (d->start > node.i.isize)
+    d->start = node.i.isize;
+  if (d->start + d->length > node.i.isize)
+    d->length = node.i.isize - d->start;
 
   return 0;
 }
@@ -829,7 +834,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
     PRINTF ("%s: index %d  cb %d  ibCache %d  cbCache %d  cbRead %d\n",
 	    __FUNCTION__, index, cb, jffs2.ibCache, jffs2.cbCache, cbRead);
 
-    if (remain == 0)
+    if (remain <= 0)
       return cbRead;
 
 	/* Read from the cache */

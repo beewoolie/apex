@@ -762,7 +762,7 @@ static int ext2_open (struct descriptor_d* d)
     }
   }
 
-  if (d->length == 0)		/* Defaulting to length of whole file */
+  if (!d->length)		/* Default length is whole file */
     d->length = ext2.inode.i_size;
 
   if (d->start > ext2.inode.i_size)
@@ -814,22 +814,23 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   PRINTF ("%s: inode %d\n", __FUNCTION__, ext2.inode_number);
 
   while (cb) {
-    size_t available = cb;
+//    size_t available = cb;
     size_t index = d->start + d->index;
     size_t offset = (index & (ext2.block_size - 1));
-    size_t remain = ext2.block_size - offset;
+    size_t available = ext2.block_size - offset;
+//    size_t remain = ext2.block_size - offset;
+    size_t remain = d->length - d->index;
     int block_index;
     int block;
 
-    /* *** FIXME: this code doesn't properly bound the read on the
-       extent of the descriptor. */
-
     if (index >= ext2.inode.i_size)
       break;
-    if (index + available > ext2.inode.i_size)
-      available = ext2.inode.i_size - index;
+    if (available > cb)
+      available = cb;
     if (available > remain)
       available = remain;
+//    if (index + available > ext2.inode.i_size)
+//      available = ext2.inode.i_size - index;
 
     block_index = index/ext2.block_size;
 //    PRINTF ("%s: index %d  block_index %d  offset %d  available %d\n",
