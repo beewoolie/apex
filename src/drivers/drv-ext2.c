@@ -80,7 +80,6 @@
        followed.  The main reason for this is that is must be tested
        and I don't have a > 60 (15*4) character link to test.  
 
-
    o ext2_info()
      o The call isn't elegant.  Because partition parsing is part of
        this driver, and because the info() call doesn't use an open
