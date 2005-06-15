@@ -37,13 +37,14 @@
 #include <linux/string.h>
 //#include <linux/kernel.h>
 //#include <driver.h>
+#include <error.h>
 
 #define SIZE_ALIAS_HEAP_MAX	(16*1024)
 
-static char __attribute__((section(".alias.bss")))
+static unsigned char __attribute__((section(".alias.bss")))
      rgbAlias[SIZE_ALIAS_HEAP_MAX];
 
-size_t ibAliases;
+size_t ibAlias;
 
 struct entry {
   unsigned short cb;		/* Length of this whole node. */
@@ -52,10 +53,10 @@ struct entry {
 
 static struct entry* _alias_find (const char* szKey)
 {
-  struct entry* entry;
+  struct entry* entry = (struct entry*) rgbAlias;
   size_t ib = 0;
 
-  for (ib < ibAlias; ib += entry->cb) {
+  for (; ib < ibAlias; ib += entry->cb) {
     if (!entry->rgb[0])		/* Deleted */
       continue;
     if (!strcmp (szKey, entry->rgb))
@@ -75,6 +76,19 @@ void* alias_enumerate (void* pv, const char** pszKey, const char** pszValue)
     entry = (struct entry*) pv;
     entry = (struct entry*) ((unsigned char*) pv + entry->cb);
   }
+
+  for (; ((unsigned char*) entry - rgbAlias) < ibAlias; 
+       entry = (struct entry*) ((unsigned char*) pv + entry->cb)) {
+
+    if (!entry->rgb[0])
+      continue;
+
+    *pszKey = entry->rgb;
+    *pszValue = entry->rgb + strlen (entry->rgb) + 1;
+    return entry;
+  }
+
+  return 0;
 }
 
 const char* alias_lookup (const char* szKey)
@@ -84,7 +98,7 @@ const char* alias_lookup (const char* szKey)
   if (!szKey)
     return NULL;
 
-  entry = _alias_lookup (szKey);
+  entry = _alias_find (szKey);
   return entry ? (entry->rgb + strlen (entry->rgb) + 1) : NULL;
 }
 
@@ -94,17 +108,17 @@ int alias_set (const char* szKey, const char* szValue)
   size_t cbValue = szValue ? strlen (szValue) : 0; 
   size_t cbEntry = (sizeof (struct entry)
 		    + cbKey + 1 + cbValue + 1 + 0x3) & ~0x3;
-  struct entry* entry = &rgbAlias[ibAliases];
+  struct entry* entry = (struct entry*) &rgbAlias[ibAlias];
   
   if (cbKey == 0 || cbValue == 0)
     return ERROR_PARAM;
-  if (ibAliases + cbEntry > SIZE_ALIAS_HEAP_MAX)
+  if (ibAlias + cbEntry > SIZE_ALIAS_HEAP_MAX)
     return ERROR_OUTOFMEMORY;
   
   memset (entry, 0, sizeof (struct entry));
   entry->cb = cbEntry;
   memcpy (entry->rgb, szKey, cbKey + 1);
-  memcpy (entry->rgb + cbKey + 1, szValue + 1);
+  memcpy (entry->rgb + cbKey + 1, szValue, cbValue + 1);
   
   ibAlias += cbEntry;
 
@@ -113,6 +127,14 @@ int alias_set (const char* szKey, const char* szValue)
 
 int alias_unset (const char* szKey)
 {
+  struct entry* entry;
 
+  if (!szKey)
+    return ERROR_PARAM;
+
+  entry = _alias_find (szKey);
+  if (entry)
+    entry->rgb[0] = 0;		/* Delete */
+  return entry ? 0 : ERROR_FALSE;
 }
 

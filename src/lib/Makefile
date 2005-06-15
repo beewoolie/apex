@@ -27,6 +27,7 @@ lib-y += dump.o
 lib-y += zlib.o zlib-heap.o
 lib-y += png.o
 lib-y += sort.o
+lib-y += alias.o
 
 #lib-y += div64.o
 #lib-y += udiv.o
