@@ -91,6 +91,13 @@
      able to cope with vfat names.  Writing a function is going to be
      necessary in order to search for files along a path.
 
+   o directories and subdirectories.  The reason this code doesn't yet
+     support directories is that the fs format isn't uniform.  The
+     root directory is handled differently from other directories.
+     When I have the patience, I'll add some general directory
+     handling code which will make it possible to implement full paths
+     as well as fat_info().
+
 */
 
 #include <config.h>
