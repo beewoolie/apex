@@ -8,12 +8,24 @@ easy to extend.  It uses some code and the build system from the Linux
 kernel.  There are pieces of code taken from BLOB and UBoot as well.
 
 
+  Newer Versions of APEX
+  ----------------------
+
+There is an ftp archive of APEX releases.
+
+  <ftp://ftp.buici.com/pub/apex>
+
+There is also a wiki with information about APEX.
+
+  <http://wiki.buici.com>    
+
+
   Supported Targets
   -----------------
 
-The loader is fully functional for the LPD79524, LPD7A400, LPD7A404.
-It builds for the LPD79520, but there is presently no version of the
-Linux kernel that recognizes the correct architecture number.
+The loader is fully functional for the LPD79524, LPD7A400, LPD7A404,
+IXP42X.  It builds for the LPD79520, but there is presently no version
+of the Linux kernel that recognizes the correct architecture number.
 
 
   Building APEX
