@@ -81,7 +81,7 @@ int cmd_version (int argc, const char** argv)
   }
 
 #if defined (CONFIG_ALLHELP)
-  printf ("\nUse the 'help .' command to get a list of help topics.\n\n");
+  printf ("\nUse the command 'help help' to get started.\n\n");
 #endif
 
   return 0;

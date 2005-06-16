@@ -94,6 +94,7 @@ static __command struct command_d c_help = {
 "  for commands that would match that prefix.\n"
 "  e.g.  help dump             # Show help for dump command\n"
 "        help d                # Show help for all 'd' commands\n"
+"        help                  # List the available commands\n"
 "        help .                # Show all help topics\n"
   )
 };

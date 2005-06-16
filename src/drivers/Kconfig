@@ -59,7 +59,8 @@ config DRIVER_NOR_CFI
 	depends on USES_NOR_CFI=y
 	default y
 	help
-	  This driver implements a standard CFI compliant NOR flash driver. 
+	  This driver implements a CFI compliant NOR flash driver
+	  which works with most contemporary NOR flash chips. 
 
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"

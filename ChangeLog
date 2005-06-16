@@ -1,3 +1,10 @@
+2005-06-15  Marc Singer  <elf@buici.com>
+
+	* src/apex/command.c (exec_monitor): Adding configuration option
+	to sort commands for the sake of better help.
+
+	* src/apex/cmd-xreceive.c: Revising help text.
+
 2005-06-14  Marc Singer  <elf@buici.com>
 
 	* src/drivers/driver.c (parse_descriptor): Fixed the driver parser

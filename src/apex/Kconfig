@@ -7,24 +7,35 @@ config ALLHELP
 	help
 	  Setting this option will include all help text for APEX commands.
 
+config ALPHABETIZE_COMMANDS
+	bool "Sort commands alphabetically in help"
+	default y
+	depends on SMALL=n
+	help
+	  Setting this option will sort alphabetically the commands
+	  shown in the help listing.  This option makes it easier to
+	  browse the help text.  It forces the inclusion of sort
+	  function, so it is automatically disabled when the SMALL
+	  configuration option is set.
+ 
 config CMD_CHECKSUM
-	bool "Checksum Region"
+	bool "Define Checksum Region Command"
 	default y
 	help
 	  Computes a CCITT CRC32 checksum over a region.
 
 config CMD_COPY
-	bool "Copy Regions"
+	bool "Define Copy Regions Command"
 	default y
 	help
 	  Copies from one region to another.
 
 config CMD_COMPARE
-	bool "Compare Regions"
+	bool "Define Compare Regions Command"
 	default y
 
 config CMD_DRVINFO
-	bool "Driver Info"
+	bool "Define Driver Info Command"
 	default y
 	help
 	  Informational command that reports the status of APEX
@@ -32,17 +43,17 @@ config CMD_DRVINFO
 	  trying to make APEX small.
 
 config CMD_DUMP
-	bool "Dump Region"
+	bool "Define Dump Region Command"
 	default y
 	help
 	  Shows the contents of a region on the console.
 
 config CMD_ENV
-	bool "Environment Commands"
+	bool "Define Environment Commands"
 	default y
 
 config CMD_ERASEENV
-	bool "Erase Environment"
+	bool "Define Erase Environment Command"
 	depends on CMD_ENV=y && ENV_MUTABLE=y
 	default n
 	help
@@ -50,52 +61,52 @@ config CMD_ERASEENV
 	  the environment.
 
 config CMD_SETENV
-	bool "Set/unset Environment Variable"
+	bool "Define Set/unset Environment Variable Commands"
 	depends on CMD_ENV=y && ENV_MUTABLE=y
 	default y
 
 config CMD_ERASE
-	bool "Erase Region"
+	bool "Define Erase Region Command"
 	default y
 
 config CMD_FILL
-	bool "Fill Region"
+	bool "Define Fill Region Command"
 	default y
 
 config CMD_GO
-	bool "Go"
+	bool "Define Go Command"
 	default y
 	help
 	  Allows transfer of execution to any memory address.
 
 config CMD_INFO
-	bool "Info"
+	bool "Define Info Command"
 	default y
 	help
 	  Show information about a region descriptor.  Use this command
 	  to list the contents of a filesystem directory.
 
 config CMD_PAUSE
-	bool "Pause"
+	bool "Define Pause Command"
 	default n
 
 config CMD_WAIT
-	bool "Wait"
+	bool "Define Wait Command"
 	default y
 
 config CMD_XRECEIVE
-	bool "Xmodem Receive"
+	bool "Define Xmodem Receive Command"
 	default y
 
 config CMD_EMAC_LH79524
-	bool "LH79524 Ethernet MAC" 
+	bool "Define LH79524 Ethernet MAC Command" 
 	depends on ARCH_LH79524 && DRIVER_EMAC_LH79524
 	default y
 	help
 	  Commands to configure the built-in MAC of the LH79524.
 
 config CMD_EMAC_LH79524_DIAG
-	bool "LH79524 Ethernet MAC Diagnostics"
+	bool "Define LH79524 Ethernet MAC Diagnostics"
 	depends on CMD_EMAC_LH79524
 	default n
 	help

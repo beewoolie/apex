@@ -35,6 +35,7 @@
 #include <linux/ctype.h>
 #include <environment.h>
 #include <spinner.h>
+#include <sort.h>
 
 const char* error_description;
 
@@ -140,6 +141,17 @@ int call_command (int argc, const char** argv)
 }
 
 
+#if defined (CONFIG_ALPHABETIZE_COMMANDS)
+
+static int compare_commands (const void* _a, const void* _b)
+{
+  struct command_d* a = (struct command_d*) _a;
+  struct command_d* b = (struct command_d*) _b;
+
+  return strcmp (a->command, b->command);
+}
+#endif
+
 void exec_monitor (void)
 {
   const char* szStartup;
@@ -147,6 +159,16 @@ void exec_monitor (void)
 //  printf ("exec_monitor\n");
   szStartup = env_fetch ("startup");
 //  printf (" startup %s\n", szStartup);
+
+#if defined (CONFIG_ALPHABETIZE_COMMANDS)
+  {
+    extern char APEX_COMMAND_START;
+    extern char APEX_COMMAND_END;
+    sort (&APEX_COMMAND_START,
+	  (&APEX_COMMAND_END - &APEX_COMMAND_START)/sizeof (struct command_d),
+	  sizeof (struct command_d), compare_commands, NULL);
+  }
+#endif
 
   if (szStartup) {
     char sz[strlen (szStartup) + 1];
