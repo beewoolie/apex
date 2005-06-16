@@ -142,9 +142,9 @@ static __command struct command_d c_help_commandline = {
   .description = "help on the APEX command line",
   COMMAND_HELP(
 "command-line\n"
-"  The command line interpreter is simple.  Command words are separated\n"
-"  separated into words and passed to the command interpreting function.\n"
-"  Quoting is not yet supported.  Command words are separated by\n"
+"  The command line interpreter is simple.  Commands are separated\n"
+"  into words and passed to a command interpreting function.\n"
+"  Quoting is not yet supported.  Command words are delimited by\n"
 "  whitespace.  Command lines may be edited with ^H and DEL to erase the\n"
 "  previous character and ^U to clobber the whole line.  There is no \n"
 "  command history.\n\n"
