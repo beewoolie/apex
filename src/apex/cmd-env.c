@@ -157,7 +157,7 @@ static int cmd_setenv (int argc, const char** argv)
 
 static __command struct command_d c_setenv = {
   .command = "setenv",
-  .description = "Set environment variable",
+  .description = "set environment variable",
   .func = cmd_setenv,
   COMMAND_HELP(
 "setenv KEY VALUE\n"
