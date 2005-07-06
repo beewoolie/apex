@@ -61,21 +61,21 @@ static int cmd_unalias (int argc, const char** argv)
 
 static __command struct command_d c_alias = {
   .command = "alias",
-  .description = "Set/show aliases",
+  .description = "show or set aliases",
   .func = cmd_alias,
   COMMAND_HELP(
-"alias NAME [VALUE]\n"
-"  Show or set an alias\n"
-"  Similar to th eenvironment, aliases are run-time defined only.\n" 
+"alias [KEY [VALUE]]\n"
+"  Show all aliases, the alias KEY or set an alias KEY to value VALUE.\n"
+"  Similar to the environment, aliases are run-time defined only.\n" 
   )
 };
 
 static __command struct command_d c_unalias = {
   .command = "unalias",
-  .description = "Unset aliases",
+  .description = "remove an alias",
   .func = cmd_unalias,
   COMMAND_HELP(
-"unalias NAME\n"
-"  Remove an alias\n"
+"unalias KEY\n"
+"  Remove alias KEY.\n"
   )
 };
