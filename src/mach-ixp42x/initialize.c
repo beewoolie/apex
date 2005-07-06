@@ -119,6 +119,22 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
 
+#if 0
+  __asm volatile ("mov r1, #0xc8000000\n\t"
+		  "add r1, r1, #0x4000\n\t"
+		  "ldr r0, [r1, #4]\n\t"
+		  "bic r0, r0, #0xf\n\t"
+		  "str r0, [r1,#4]\n\t"
+		  "ldr r0, [r1, #0]\n\t"
+		  "bic r0, r0, #0xf\n\t"
+		  "orr r0, r0, #5\n\t"
+		  "0: str r0, [r1, #0]\n\t"
+		  "eor r0, r0, #0xf\n\t"
+		  "b 0b");
+#endif
+
+
+
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 #if defined (CONFIG_DEBUG_LL)

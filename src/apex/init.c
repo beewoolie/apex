@@ -34,6 +34,9 @@
 #include <service.h>
 #include <debug_ll.h>
 
+#if defined (CONFIG_CMD_ALIAS)
+#include <alias.h>
+#endif
 extern int cmd_version (int, const char**);
 
 static void init_services (void)
@@ -74,6 +77,19 @@ void init (void)
 {
   PUTC_LL ('I');
   init_services ();
+
+#if defined (CONFIG_CMD_ALIAS)
+  {
+    extern char APEX_VMA_COPY_START;
+    extern char APEX_VMA_COPY_END;
+    char sz[80];
+    sprintf (sz, "mem:0x%p+0x%lx", 
+	     (void*) &APEX_VMA_COPY_START,
+	     (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+    alias_set ("apex", sz);
+  }
+#endif
+
   cmd_version (-1, NULL);	/* Signon */
   PUTC_LL ('i');
   exec_monitor ();

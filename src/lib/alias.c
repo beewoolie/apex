@@ -53,13 +53,15 @@ struct entry {
 
 static struct entry* _alias_find (const char* szKey)
 {
-  struct entry* entry = (struct entry*) rgbAlias;
+  struct entry* entry;
   size_t ib = 0;
 
   for (; ib < ibAlias; ib += entry->cb) {
+    entry = (struct entry*) (rgbAlias + ib);
     if (!entry->rgb[0])		/* Deleted */
       continue;
-    if (!strcmp (szKey, entry->rgb))
+//    printf ("  compare '%s' '%s'\n", szKey, entry->rgb);
+    if (strcmp (szKey, entry->rgb) == 0)
       return entry;
   }
 
@@ -78,7 +80,7 @@ void* alias_enumerate (void* pv, const char** pszKey, const char** pszValue)
   }
 
   for (; ((unsigned char*) entry - rgbAlias) < ibAlias; 
-       entry = (struct entry*) ((unsigned char*) pv + entry->cb)) {
+       entry = (struct entry*) ((unsigned char*) entry + entry->cb)) {
 
     if (!entry->rgb[0])
       continue;

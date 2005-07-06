@@ -35,6 +35,7 @@ obj-$(CONFIG_CMD_INFO)		+= cmd-info.o
 obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
 obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
 obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
+obj-$(CONFIG_CMD_ALIAS)		+= cmd-alias.o
 
 #CFLAGS += -mthumb
 #CFLAGS_xmodem.o += -mthumb

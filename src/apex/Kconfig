@@ -18,6 +18,14 @@ config ALPHABETIZE_COMMANDS
 	  function, so it is automatically disabled when the SMALL
 	  configuration option is set.
  
+config CMD_ALIAS
+        bool "Define Alias Commands"
+	default y
+	help
+	  Aliases are a lighter-weight form of environment-like variable.
+	  Aliases are not saved to flash and nor are they limited to
+	  pre-defined keys as environment variables are.
+
 config CMD_CHECKSUM
 	bool "Define Checksum Region Command"
 	default y
