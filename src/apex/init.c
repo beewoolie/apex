@@ -53,7 +53,10 @@ static void init_services (void)
        service < (struct service_d*) &APEX_SERVICE_END;
        ++service, ++i) {
     PUTC_LL (i%8 + '0');
-//    printf ("init # %d %p\n", i, service->init);
+    PUTC_LL (',');
+    PUTHEX_LL (&service->init);
+    PUTC_LL ('\r');
+    PUTC_LL ('\n');
     if (service->init)
       service->init ();
     PUTC_LL ('|');

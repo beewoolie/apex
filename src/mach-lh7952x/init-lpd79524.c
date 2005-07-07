@@ -269,6 +269,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 static void target_init (void)
 {
+  PUTC_LL('T');
 #if !defined (CONFIG_NAND_LPD)
 	/* IOCON to clear special NAND modes.  These modes must be
 	   controlled explicitly within driver code. */
@@ -282,6 +283,8 @@ static void target_init (void)
   IOCON_RESCTL7  = IOCON_RESCTL7_V;   /* pull-down */
   IOCON_MUXCTL14 = IOCON_MUXCTL14_V;  /* nCS0 normalize */
 #endif
+
+  PUTC_LL('a');
 
 	/* CompactFlash, 16 bit */
   EMC_SCONFIG2    = 0x81;
@@ -298,6 +301,8 @@ static void target_init (void)
   EMC_SWAITWR2    = 0x1f;
   EMC_STURN2      = 0xf;
 
+  PUTC_LL('b');
+
 	/* CPLD, 16 bit */
   EMC_SWAITWEN3   = 2;
   EMC_SWAITOEN3   = 2;
@@ -306,7 +311,11 @@ static void target_init (void)
   EMC_SWAITWR3    = 5;
   EMC_STURN3      = 2;
 
+  PUTC_LL('c');
+
   BOOT_CS1OV &= ~(1<<0);
+
+  PUTC_LL('d');
 }
 
 static void target_release (void)

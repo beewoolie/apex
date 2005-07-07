@@ -34,7 +34,6 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <config.h>
-#include <debug_ll.h>
 
 #if defined (CONFIG_ATAG)
 # include <atag.h>
@@ -42,6 +41,7 @@
 
 #include <mach/memory.h>
 
+#include <debug_ll.h>
 
 //#define TALK
 

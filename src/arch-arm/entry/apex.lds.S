@@ -40,6 +40,7 @@ SECTIONS
 	.data . : {
 		*(.data)
 	}
+	. = ALIGN (4);
 	.service . : {
 		APEX_SERVICE_START = .;
 		*(.service.0)
@@ -91,7 +92,7 @@ SECTIONS
 	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
-	. = ALIGN (8);
+	. = ALIGN (4);
 	.bss . : {
 		APEX_VMA_BSS_START = .;
 		*(.bss)

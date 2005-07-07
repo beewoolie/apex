@@ -197,6 +197,13 @@ static int head_rx;		/* Index of next receive buffer */
 #define RX0__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2]
 #define RX1__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2 + 1]
 
+#define TX1_USED	(1<<31)
+#define TX1_WRAP	(1<<30)
+#define TX1_RETRYLIMIT	(1<<29)
+#define TX1_UNDERRUN	(1<<28)
+#define TX1_BUFEX	(1<<27)
+#define TX1_LAST	(1<<15)
+
 #define RX0_USED	(1<<0)
 #define RX0_WRAP	(1<<1)
 #define RX1_START	(1<<14)
@@ -584,7 +591,7 @@ static void show_rx_flags (unsigned long l0, unsigned long l1)
   if (l1 & RX1_BROADCAST)
     printf (" bcast");
   if (l1 & RX1_SPEC1)
-    printf (" bcast");
+    printf (" addr1");
   if (l1 & RX1_START)
     printf (" start");
   if (l1 & RX1_END)
@@ -958,19 +965,43 @@ static int eth_open (struct descriptor_d* d)
 }
 
 
+static void eth_clean_rx_queue (void)
+{
+  int i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
+
+  if (RX0_ (-1) & RX0_USED)
+    DBG (1, "+++ receive queue full on clean\n");
+
+  if (!(RX0__ (i) & RX0_USED)) {
+    DBG (1, "  *** used bit false alarm #%d\n", i);
+    return;
+  }
+  do {
+    DBG (1, "  *** clean rx queue #%d %8lx %8lx\n",
+	 i, RX0__ (i), RX1__ (i));
+//    rgl_rx_descriptor[i*2 + 1] = 0;
+    rgl_rx_descriptor[i*2]    &= ~RX0_USED;
+    i = (i + 1) % RX_QUEUE_LENGTH;
+  } while (i != head_rx && (rgl_rx_descriptor[i*2] & RX0_USED));
+}
+
+
 static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   int c;
   int i;
   int frame_len = 0;
   unsigned long status = EMAC_RXSTATUS;
-
-  if (!(status & EMAC_RXSTATUS_FRMREC))
-    return 0;
-
   EMAC_RXSTATUS = 0xff;
 
-  if (!(RX0 () & RX0_USED))	/* Spurious receive */
+  //  if (!(status & EMAC_RXSTATUS_FRMREC))
+  //    return 0;
+
+  if (status & EMAC_RXSTATUS_BUFNOTAVAIL)
+    eth_clean_rx_queue ();
+
+ restart:
+  if (!(RX0 () & RX0_USED))	/* End of  receive */
     return 0;
 
   printf ("%s: frame received (%d)\n", __FUNCTION__, head_rx);
@@ -989,7 +1020,8 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
     } while (   (RX0 () & RX0_USED) 
 	     && (RX1 () & RX1_START) == 0);
-    return 0;			/* Nothing to receive at the moment */
+    goto restart;
+//    return 0;			/* Nothing to receive at the moment */
   }
 		
   EMAC_RXSTATUS = EMAC_RXSTATUS_FRMREC;
@@ -1003,19 +1035,20 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 	 rgl_rx_descriptor[i*2], rgl_rx_descriptor[i*2 + 1]);
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_START) 
 	&& i != head_rx) 
-      goto cleanup;	/* incomplete frame */
+      goto cleanup;		/* incomplete frame */
     ++c;
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_END) == 0)
       continue;
     frame_len +=  rgl_rx_descriptor[i*2 + 1] & 0x7ff;
+    if (!(rgl_rx_descriptor[i*2 + 1] & (RX1_BROADCAST | RX1_SPEC1)))
+      goto cleanup;		/* bogus frame */
     break;
   }
 
   DBG (3, "rxcomplete RXBQP  0x%lx #%d (%d) - %lx %lx\n"
        "  len 0x%x (%d) %d buf\n",
        EMAC_RXBQP,
-       ((void*) EMAC_RXBQP 
-	- (void*) rgl_rx_descriptor)/8,
+       ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8,
        head_rx,
        RX0 (), RX1 (),
        frame_len, frame_len, c);
@@ -1060,21 +1093,26 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 
 static ssize_t eth_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
+  printf ("%s: %p %d\n", __FUNCTION__, pv, cb);
+
   if (cb > CB_TX_BUFFER)
     cb = CB_TX_BUFFER;
 
-  memcpy (rgbTxBuffer, pv, cb);
+  memcpy ((void*) rgl_tx_descriptor[0], pv, cb);
+  rgl_tx_descriptor[1] &= ~0x7ff;
+  rgl_tx_descriptor[1] |= TX1_LAST | (cb << 0);
+  rgl_tx_descriptor[1] &= ~TX1_USED;
 
-  rgl_tx_descriptor[0] = (unsigned long) rgbTxBuffer;
-  rgl_tx_descriptor[1] = (1<<30)|(1<<15)|(cb<<0);
-  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+  dump ((void*) rgl_tx_descriptor[0], cb, 0);
 
   EMAC_TXSTATUS |= EMAC_TXSTATUS_TXCOMPLETE;
+
+  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
   EMAC_NETCTL	|= EMAC_NETCTL_STARTTX;
 
   /* *** FIXME: we're busy waiting until the packet is sent */
-  while (!(EMAC_TXSTATUS & EMAC_TXSTATUS_TXCOMPLETE))
-    ;
+//  while (!(EMAC_TXSTATUS & EMAC_TXSTATUS_TXCOMPLETE))
+//    ;
 
   return cb;
 }

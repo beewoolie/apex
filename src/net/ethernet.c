@@ -70,7 +70,7 @@ struct arp_entry {
 };
 
 char host_ip_address[4] = { 192, 168, 8, 203 };
-char host_mac_address[6];
+char host_mac_address[6] = { 0x00, 0x08, 0xee, 0x00, 0x77, 0x9c };
 
 enum {
   state_free = 0,
