@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   Declarations for APEXs simple network stack.
+   Declarations for APEXs super-simple, network stack.
 
 */
 
@@ -55,6 +55,11 @@ struct header_arp {
   u8  hardware_address_length;
   u8  protocol_address_length;
   u16 opcode;
+  /* These fields depend on the address lengths above */
+  u8 sender_hardware_address[6];
+  u8 sender_protocol_address[4];
+  u8 target_hardware_address[6];
+  u8 target_protocol_address[4];
 };
 
 struct header_ipv4 {
@@ -80,12 +85,12 @@ struct header_udp {
 
 /* ----- Prototypes */
 
-#define ETH_PROTO_IP	0x0800
-#define ETH_PROTO_ARP	0x0806
-#define ETH_PROTO_RARP	0x8035
+#define ETH_PROTO_IP		0x0800
+#define ETH_PROTO_ARP		0x0806
+#define ETH_PROTO_RARP		0x8035
 
-#define IP_PROTO_ICMP	1
-#define IP_PROTO_UDP	17
+#define IP_PROTO_ICMP		1
+#define IP_PROTO_UDP		17
 
 #define ARP_HARDW_ETHERNET	1
 #define ARP_HARDW_IEEE802	6
