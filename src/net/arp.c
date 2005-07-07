@@ -51,7 +51,7 @@ int cmd_arp (int argc, const char** argv)
       ethernet_receive (&d, frame);
       frame->cb = 0;
     }
-  } while (console_driver->poll (0, 1));
+  } while (!console_driver->poll (0, 1));
 
   console_driver->read (0, &ch, 1);
 

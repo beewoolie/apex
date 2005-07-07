@@ -128,7 +128,6 @@
 # define USE_DIAG		/* Enables diagnostic code */
 # define TALK 0
 
-
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
 #else
@@ -202,6 +201,8 @@ static int head_rx;		/* Index of next receive buffer */
 #define RX0_WRAP	(1<<1)
 #define RX1_START	(1<<14)
 #define RX1_END		(1<<15)
+#define RX1_BROADCAST	(1<<31)
+#define RX1_SPEC1	(1<<26)
 
 #if defined (USE_DIAG)
 
@@ -266,7 +267,7 @@ static int emac_phy_read (int phy_address, int phy_register)
 {
   unsigned short result;
 
-  PRINTF3 ("emac_phy_read %d %d\n", phy_address, phy_register);
+  //  PRINTF3 ("emac_phy_read %d %d\n", phy_address, phy_register);
 
   EMAC_NETCTL |= EMAC_NETCTL_MANGEEN;
   EMAC_PHYMAINT
@@ -282,7 +283,7 @@ static int emac_phy_read (int phy_address, int phy_register)
 
   EMAC_NETCTL &= ~EMAC_NETCTL_MANGEEN;
 
-  PRINTF3 ("emac_phy_read => 0x%x\n", result);
+  //  PRINTF3 ("emac_phy_read => 0x%x\n", result);
 
   return result;
 }
@@ -580,6 +581,10 @@ static void show_rx_flags (unsigned long l0, unsigned long l1)
     printf (" used");
   if (l0 & RX0_WRAP)
     printf (" wrap");
+  if (l1 & RX1_BROADCAST)
+    printf (" bcast");
+  if (l1 & RX1_SPEC1)
+    printf (" bcast");
   if (l1 & RX1_START)
     printf (" start");
   if (l1 & RX1_END)
@@ -788,6 +793,8 @@ static int cmd_emac (int argc, const char** argv)
 		i, &rgl_rx_descriptor[i*2], 
 		rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+	if (i == head_rx)
+	  printf (" *");
 	printf ("\n");
       }
     }
@@ -963,7 +970,10 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 
   EMAC_RXSTATUS = 0xff;
 
-  printf ("%s: frame received\n", __FUNCTION__);
+  if (!(RX0 () & RX0_USED))	/* Spurious receive */
+    return 0;
+
+  printf ("%s: frame received (%d)\n", __FUNCTION__, head_rx);
 
   if (RX0_ (-1) & RX0_USED)
     DBG (1, "+++ receive queue full\n");
@@ -972,8 +982,10 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   if ((RX1 () & RX1_START) == 0) {
   cleanup:
     do {
-      RX1 () = RX_BUFFER_SIZE;
+      printf ("cleanup %d @%p %lx %lx\n", head_rx, &RX0 (), RX0 (), RX1 ());
+      RX1 () = 0;
       RX0 () &= ~RX0_USED;
+      printf ("   %lx %lx\n", RX0 (), RX1 ());
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
     } while (   (RX0 () & RX0_USED) 
 	     && (RX1 () & RX1_START) == 0);
@@ -987,6 +999,8 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   for (i = head_rx; 1; i = (i + 1) %RX_QUEUE_LENGTH) {
     if ((rgl_rx_descriptor[i*2] & RX0_USED) == 0)
       return 0;     /* as yet, incompleted receive */
+    DBG (3, "  #%d(%d) %lx %lx\n", i, head_rx, 
+	 rgl_rx_descriptor[i*2], rgl_rx_descriptor[i*2 + 1]);
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_START) 
 	&& i != head_rx) 
       goto cleanup;	/* incomplete frame */
@@ -997,7 +1011,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
     break;
   }
 
-  DBG (3, "rxcomplete RXBQP  0x%x #%d (%d) - %lx %lx\n",
+  DBG (3, "rxcomplete RXBQP  0x%lx #%d (%d) - %lx %lx\n"
        "  len 0x%x (%d) %d buf\n",
        EMAC_RXBQP,
        ((void*) EMAC_RXBQP 
@@ -1018,12 +1032,13 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
       ++c;
       if (cbCopy > RX_BUFFER_SIZE)
 	cbCopy = RX_BUFFER_SIZE;
-      DBG (3, "  #%d %lx %lx  len 0x%x (%d)\n",
-	   head_rx, RX0 (), RX1 (), cb, cbCopy);
+//      DBG (3, "  #%d %lx %lx  len 0x%x (%d)\n",
+//	   head_rx, RX0 (), RX1 (), cb, cbCopy);
       memcpy (pb, &rgbRxBuffer[head_rx*RX_BUFFER_SIZE], cbCopy);
       cb -= cbCopy;
       pb += cbCopy;
-      RX1 () = RX_BUFFER_SIZE;
+      cbRead += cbCopy;
+      RX1 () = 0;
       RX0 () &= ~RX0_USED;
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
     }

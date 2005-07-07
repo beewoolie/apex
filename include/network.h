@@ -42,8 +42,8 @@
 //typedef unsigned short u16;
 //typedef unsigned long  u32;
 
-#define ntohs(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
-#define htons(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
+#define NTOHS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
+#define HTONS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 
 #define octetstoip(a,b,c,d)\
    ((a & 0xff) <<  0)\
@@ -55,7 +55,7 @@ struct header_ethernet {
   u8 destination_address[6];
   u8 source_address[6];
   u16 protocol;
-};
+} __attribute__((packed));
 
 struct header_arp {
   u16 hardware_type;
@@ -68,7 +68,7 @@ struct header_arp {
   u8 sender_protocol_address[4];
   u8 target_hardware_address[6];
   u8 target_protocol_address[4];
-};
+} __attribute__((packed));
 
 struct header_ipv4 {
   u8  version_ihl;		/* version (4 lsb) and header length (4 msb) */
@@ -80,14 +80,14 @@ struct header_ipv4 {
   u16 checksum;
   u8 source_ip[4];
   u8 destination_ip[4];
-};
+} __attribute__((packed));
 
 struct header_udp {
   u16 source_port;
   u16 destination_port;
   u16 length;
   u16 checksum;
-};
+} __attribute__((packed));
 
 /* ----- Globals */
 

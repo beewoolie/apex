@@ -47,6 +47,8 @@
 #include <config.h>
 #include <linux/types.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
+#include <apex.h>	/* printf */
 #include <driver.h>
 #include <network.h>
 #include <ethernet.h>
@@ -149,22 +151,30 @@ void arp_receive_reply (const char* hardware_address,
 
 void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
+  printf ("%s\n", __FUNCTION__);
+
+  printf ("%s: checking length\n", __FUNCTION__);
   if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
 	    + 6*2 + 4*2))
     return;			/* runt */
 
+  printf ("%s: checking protocol lengths %d %d\n", __FUNCTION__,
+	  ARP_F (frame)->hardware_address_length,
+	  ARP_F (frame)->protocol_address_length);
   if (   ARP_F (frame)->hardware_address_length != 6
       || ARP_F (frame)->protocol_address_length != 4)
     return;			/* unrecognized form */
 
+  printf ("%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
+
   switch (ARP_F (frame)->opcode) {
-  case htons (ARP_REQUEST):
+  case HTONS (ARP_REQUEST):
     if (memcmp (host_ip_address, ARP_F (frame)->target_protocol_address, 4))
       return;			/* Not a match */
 
 	/* Send reply to request for our address */
     ethernet_frame_reply (frame);
-    ARP_F (frame)->opcode = htons (ARP_REPLY);
+    ARP_F (frame)->opcode = HTONS (ARP_REPLY);
 
     memcpy (ARP_F (frame)->target_hardware_address,
 	    ARP_F (frame)->sender_hardware_address,
@@ -179,7 +189,7 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     d->driver->write (d, frame->rgb, frame->cb);
     break;
 
-  case htons (ARP_REPLY):
+  case HTONS (ARP_REPLY):
     arp_receive_reply (ARP_F (frame)->sender_hardware_address,
 		       ARP_F (frame)->sender_protocol_address);
     break;
@@ -196,16 +206,18 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 
 void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
+  printf ("%s\n", __FUNCTION__);
+
   if (frame->cb < sizeof (struct header_ethernet))
     return;			/* runt */
 
   switch (ETH_F (frame)->protocol) {
-  case htons (ETH_PROTO_IP):
+  case HTONS (ETH_PROTO_IP):
     break;
-  case htons (ETH_PROTO_ARP):
+  case HTONS (ETH_PROTO_ARP):
     arp_receive (d, frame);
     break;
-  case htons (ETH_PROTO_RARP):
+  case HTONS (ETH_PROTO_RARP):
     break;
   }
 }
