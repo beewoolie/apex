@@ -36,19 +36,90 @@
 #include <environment.h>
 #include <spinner.h>
 #include <sort.h>
+#include <alias.h>  
 
 const char* error_description;
+
+#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_CMD_ENV)
+
+static char* expand_variables (const char* rgbSrc)
+{
+  const char* pchSrc;
+  static char rgb[1024];
+  char* pch = rgb;
+  char* pchKey = NULL;
+  int state = 0;
+  const char* value;
+  int fChanged = 0;
+
+  for (pchSrc = rgbSrc; pch < rgb + sizeof (rgb) - 1; ++pchSrc) {
+    switch (state) {
+    case 0:			/* Beginning of word */
+      if (*pchSrc == '"')
+	state = 11;
+      if (*pchSrc == '$') {
+	state = 2;
+	pchKey = pch;		/* Mark start of key */
+      }
+      break;
+
+    case 1:			/* Mid-word */
+      if (isspace (*pchSrc))
+	state = 0;
+      break;
+
+    case 2:			/* Scanning variable key */
+      if (isalpha (*pchSrc) || *pchSrc == '_')
+	break;
+      *pch = 0;
+      value = alias_lookup (pchKey + 1);
+      if (!value)
+	value = env_fetch (pchKey + 1);
+      if (value) {
+	if (pch + strlen (value) + 1 >= rgb + sizeof (rgb) - 1)
+	  return 0;		/* Simple failure on overflow */
+	strcpy (pchKey, value);
+	pch = pchKey + strlen (value);
+	fChanged = 1;
+	state = 0;
+      }
+      break;
+
+    case 11:			/* Quoting */
+      if (*pchSrc == '"')
+	state = 1;
+      break;
+    }
+    *pch++ = *pchSrc;
+    if (!*pchSrc)
+      break;
+  }
+  return fChanged && state == 0 ? rgb : NULL;
+}
+#endif
 
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
   static const char* argv[64];	/* Command words */
-  int cb = strlen (rgb);
+  char* pb;
+  int cb;
+
+#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_CMD_ENV)
+  pb = expand_variables (rgb);
+  if (pb) {
+    rgb = pb;
+    printf ("# %s\n", pb);
+  }
+  else
+    pb = rgb;
+#else
+  pb = rgb;
+#endif
+  cb = strlen (pb);
 
 	/* Construct argv.  We allow simple quoting within double
 	   quotation marks.  */
   {
-    char* pb = rgb;
-
     while (isspace (*pb))
       ++pb;
 

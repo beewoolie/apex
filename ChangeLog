@@ -1,3 +1,12 @@
+2005-07-06  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-dump.c (cmd_dump): Added more mode to the dump
+	command.
+
+	* src/apex/command.c (expand_variables): Alias and environment
+	expansion in the command line.  This will make some people's lives
+	easier.
+
 2005-06-15  Marc Singer  <elf@buici.com>
 
 	* src/apex/command.c (exec_monitor): Adding configuration option

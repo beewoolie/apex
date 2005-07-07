@@ -35,11 +35,15 @@
 #include <error.h>
 
 
+#define MORE_PAGE	(16*16)
+#define MORE_LINE	(16)
+
 int cmd_dump (int argc, const char** argv)
 {
   struct descriptor_d d;
   int result = 0;
   unsigned long index;
+  unsigned long more;
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -56,6 +60,8 @@ int cmd_dump (int argc, const char** argv)
     goto fail;
 
   index = d.start;
+  more = index + MORE_PAGE;
+
   /* *** FIXME: it would be a very good idea to let this function read
      *** more than 16 bytes from the input stream.  It might be
      *** expensive to fetch the incoming data (e.g. NAND) so we'd like
@@ -73,7 +79,34 @@ int cmd_dump (int argc, const char** argv)
 
     dump (rgb, cb, index);
     index += cb;
+
+    if (index >= more) {
+      extern struct driver_d* console_driver;
+      char ch;
+
+      printf (" --More--");
+      console_driver->read (0, &ch, 1);
+      switch (ch) {
+      default:
+      case 'q':
+      case '.':
+	index = d.start + d.length;
+	break;
+
+      case '\r':
+      case '\n':
+	more = index + MORE_LINE;
+	break;
+
+      case ' ':
+	more = index + MORE_PAGE;
+	break;
+      }
+      printf ("\r");
+    }
   }
+
+  printf ("         \r");
 
  fail:
   close_descriptor (&d);

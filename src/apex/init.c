@@ -29,6 +29,7 @@
 
 #include <linux/types.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
 #include <apex.h>
 #include <command.h>
 #include <service.h>
@@ -87,6 +88,9 @@ void init (void)
 	     (void*) &APEX_VMA_COPY_START,
 	     (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
     alias_set ("apex", sz);
+# if defined (CONFIG_ENV_REGION)
+    alias_set ("env", CONFIG_ENV_REGION);
+# endif
   }
 #endif
 
