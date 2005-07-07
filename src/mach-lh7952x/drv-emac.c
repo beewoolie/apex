@@ -125,6 +125,8 @@
 # define USE_DIAG		/* Enables diagnostic code */
 # define TALK 0
 #endif
+# define USE_DIAG		/* Enables diagnostic code */
+# define TALK 0
 
 
 #if defined (TALK)
@@ -137,6 +139,12 @@
 #define PRINTF3(f...)		printf (f)
 #else
 #define PRINTF3(f...)		do {} while (0)
+#endif
+
+#if TALK > 0
+# define DBG(l,f...) if (l >= TALK) printf (f);
+#else
+# define DBG(l,f...)		do {} while (0)
 #endif
 
 #define PHY_CONTROL	0
@@ -159,22 +167,43 @@
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
 
+
+#define  C_TX_BUFFER	2
+#define CB_TX_BUFFER	1536
+#define  C_RX_BUFFER	24
+#define CB_RX_BUFFER	128
+
+#define RX_QUEUE_LENGTH	 C_RX_BUFFER
+#define RX_BUFFER_SIZE	 CB_RX_BUFFER
+#define TX_QUEUE_LENGTH	 C_TX_BUFFER
+#define TX_BUFFER_SIZE	 CB_TX_BUFFER
+
+#define ETH_BSS		__attribute__((section(".ethernet.bss"))) 
+
+static long ETH_BSS rgl_rx_descriptor[2*C_RX_BUFFER];
+static long ETH_BSS rgl_tx_descriptor[2*C_TX_BUFFER];
+static char ETH_BSS rgbRxBuffer[CB_RX_BUFFER*C_RX_BUFFER];
+static char ETH_BSS rgbTxBuffer[CB_TX_BUFFER*C_RX_BUFFER];
+
+static int head_rx;		/* Index of next receive buffer */
+
+#define RX0()		rgl_rx_descriptor[head_rx*2]
+#define RX1()		rgl_rx_descriptor[head_rx*2 + 1]
+#define RX0_(i)		rgl_rx_descriptor[((head_rx\
+					      + i + RX_QUEUE_LENGTH)\
+					      %RX_QUEUE_LENGTH)*2]
+#define RX1_(i)		rgl_rx_descriptor[((head_rx\
+					      + i + RX_QUEUE_LENGTH)\
+					      %RX_QUEUE_LENGTH)*2 + 1]
+#define RX0__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2]
+#define RX1__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2 + 1]
+
+#define RX0_USED	(1<<0)
+#define RX0_WRAP	(1<<1)
+#define RX1_START	(1<<14)
+#define RX1_END		(1<<15)
+
 #if defined (USE_DIAG)
-
-/* There are two sets of buffers, one for receive and one for transmit.
-   The first half are rx and the second half are tx. */
-
-#define C_BUFFER	2	/* Number of buffers for each rx/tx */
-#define CB_BUFFER	1536
-  /* Leave the descriptors in normal BSS so they get zeroed */
-static long // __attribute__((section(".ethernet.bss"))) 
-     rgl_rx_descriptor[C_BUFFER*2];
-static long // __attribute__((section(".ethernet.bss"))) 
-     rgl_tx_descriptor[C_BUFFER*2];
-static char __attribute__((section(".ethernet.bss")))
-     rgbRxBuffer[CB_BUFFER*C_BUFFER];
-static char __attribute__((section(".ethernet.bss")))
-     rgbTxBuffer[CB_BUFFER*C_BUFFER];
 
 struct ethernet_header {
   unsigned char dest[6];
@@ -192,14 +221,13 @@ static void msleep (int ms)
 
 #endif
 
-#if defined (USE_DIAG)
+#if defined (USE_DIAG) && 0
 static void emac_setup (void)
 {
   int i;
   for (i = 0; i < C_BUFFER; ++i) {
     /* RX */
-    rgl_rx_descriptor[i*2]     = ((unsigned long)(rgbRxBuffer + i*CB_BUFFER) 
-				  & ~3)
+    rgl_rx_descriptor[i*2] = ((unsigned long)(rgbRxBuffer + i*CB_BUFFER) & ~3)
       | ((i == C_BUFFER - 1) ? (1<<1) : 0);
     rgl_rx_descriptor[i*2 + 1] = 0;
     /* TX */
@@ -231,7 +259,7 @@ static void emac_setup (void)
     ;
 }
 #else
-#define emac_setup() do {} while (0)
+//#define emac_setup() do {} while (0)
 #endif
 
 static int emac_phy_read (int phy_address, int phy_register)
@@ -371,6 +399,57 @@ static int emac_read_mac (char rgbResult[6])
 }
 
 
+/* emac_setup
+
+   performs the high-level configuration of the Ethernet interface,
+   buffer management and preparation for IO.
+
+*/
+
+static void emac_setup (void)
+{
+  int i;
+
+  for (i = 0; i < C_RX_BUFFER; ++i) {
+    /* RX */
+    rgl_rx_descriptor[i*2]    = ((unsigned long)(rgbRxBuffer + i*CB_RX_BUFFER) 
+			      & ~3)
+      | ((i == C_RX_BUFFER - 1) ? (1<<1) : 0);
+    rgl_rx_descriptor[i*2 + 1] = 0;
+  }
+
+  for (i = 0; i < C_TX_BUFFER; ++i) {
+    rgl_tx_descriptor[i*2]     = (unsigned long)(rgbTxBuffer + i*CB_TX_BUFFER);
+    rgl_tx_descriptor[i*2 + 1] = (1<<31)|(1<<15)
+      | ((i == C_TX_BUFFER - 1) ? (1<<30) : 0);
+  }
+
+  PRINTF ("emac: setup rgl_rx_descriptor %p\n", rgl_rx_descriptor);
+
+  EMAC_RXBQP = (unsigned long) rgl_rx_descriptor;
+  EMAC_RXSTATUS &= 
+    ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC 
+      | EMAC_RXSTATUS_BUFNOTAVAIL);
+
+  PRINTF ("emac: setup rgl_tx_descriptor %p\n", rgl_tx_descriptor);
+  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+  EMAC_TXSTATUS &=
+    ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
+	 
+  MASK_AND_SET (EMAC_NETCONFIG, 3<<10, EMAC_NETCONFIG_DIV32);
+  EMAC_NETCONFIG |= 0
+    //    | EMAC_NETCONFIG_FULLDUPLEX
+    //    | EMAC_NETCONFIG_100MB
+    | EMAC_NETCONFIG_CPYFRM
+    ;
+//  EMAC_NETCONFIG |= EMAC_NETCONFIG_RECBYTE;
+  EMAC_NETCTL |= 0
+    | EMAC_NETCTL_RXEN
+    | EMAC_NETCTL_TXEN
+    | EMAC_NETCTL_CLRSTAT
+    ;
+}
+
 void emac_init (void)
 {
   PRINTF ("emac: init\n");
@@ -446,14 +525,7 @@ static void emac_report (void)
 }
 #endif
 
-static __service_6 struct service_d lh7952x_emac_service = {
-  .init = emac_init,
-#if !defined (CONFIG_SMALL)
-  .report = emac_report,
-#endif
-};
-
-#if defined (USE_DIAG)
+#if defined (USE_DIAG) && 0
 
 void emac_send_packet (void)
 {
@@ -501,6 +573,18 @@ static void show_tx_flags (unsigned long l)
   if (l & (1<<27))
     printf (" exhaust");
 } 
+
+static void show_rx_flags (unsigned long l0, unsigned long l1)
+{
+  if (l0 & RX0_USED)
+    printf (" used");
+  if (l0 & RX0_WRAP)
+    printf (" wrap");
+  if (l1 & RX1_START)
+    printf (" start");
+  if (l1 & RX1_END)
+    printf (" end");
+} 
 #endif
 
 #if defined (CONFIG_CMD_EMAC_LH79524)
@@ -528,7 +612,7 @@ static int cmd_emac (int argc, const char** argv)
 	{  6, "anexp" },
 	{  7, "anpag" },
 
-#if 0
+#if 1
 	/* Altima */
 	{ 16, "btic" },
 	{ 17, "intr" },
@@ -608,6 +692,7 @@ static int cmd_emac (int argc, const char** argv)
     }
     {
       unsigned long l;
+      int i;
       l = emac_phy_read (phy_address, 0);
       PRINTF ("phy_control 0x%lx\n", l);
       l = emac_phy_read (phy_address, 1);
@@ -689,28 +774,28 @@ static int cmd_emac (int argc, const char** argv)
       PRINTF ("emac_rxstatus 0x%lx\n", EMAC_RXSTATUS);
       PRINTF ("emac_txbqp 0x%lx\n", EMAC_TXBQP);
       PRINTF ("emac_rxbqp 0x%lx\n", EMAC_RXBQP);
-      printf ("emac:tx0 & %p 0 0x%lx  1 0x%lx", 
-	      rgl_tx_descriptor, 
-	      rgl_tx_descriptor[0], 
-	      rgl_tx_descriptor[1]);
-      show_tx_flags (rgl_tx_descriptor[1]);
-      printf ("\n");
-      printf ("emac:tx1 & %p 0 0x%lx  1 0x%lx", 
-	      &rgl_tx_descriptor[2], rgl_tx_descriptor[2], 
-	      rgl_tx_descriptor[3]);
-      show_tx_flags (rgl_tx_descriptor[3]);
-      printf ("\n");
-      printf ("emac:rx0 & %p 0 0x%lx  1 0x%lx\n", 
-	      rgl_rx_descriptor, rgl_rx_descriptor[0], rgl_rx_descriptor[1]);
-      printf ("emac:rx1 & %p 0 0x%lx  1 0x%lx\n", 
-	      &rgl_rx_descriptor[2], rgl_rx_descriptor[2], 
-	      rgl_rx_descriptor[3]);
+
+      for (i = 0; i < TX_QUEUE_LENGTH; ++i) {
+	printf ("emac:tx%02d & %p 0 0x%lx  1 0x%lx", 
+		i, &rgl_tx_descriptor[i*2], 
+		rgl_tx_descriptor[i*2 + 0], 
+		rgl_tx_descriptor[i*2 + 1]);
+	show_tx_flags (rgl_tx_descriptor[i*2 + 1]);
+	printf ("\n");
+      }
+      for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
+	printf ("emac:rx%02d & %p 0 0x%lx  1 0x%lx", 
+		i, &rgl_rx_descriptor[i*2], 
+		rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+	show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+	printf ("\n");
+      }
     }
 #endif
 #endif
   }
   else {
-#if defined (USE_DIAG)
+#if defined (USE_DIAG) && 0
     if (strcmp (argv[1], "clear") == 0) {
       EMAC_TXSTATUS = 0x7f;
       rgl_tx_descriptor[0] = 0;
@@ -858,3 +943,141 @@ _USE_DIAG(
 };
 
 #endif 				/* CONFIG_CMD_EMAC_LH79524 */
+
+
+static int eth_open (struct descriptor_d* d)
+{
+  return 0;			/* No problems */
+}
+
+
+static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  int c;
+  int i;
+  int frame_len = 0;
+  unsigned long status = EMAC_RXSTATUS;
+
+  if (!(status & EMAC_RXSTATUS_FRMREC))
+    return 0;
+
+  EMAC_RXSTATUS = 0xff;
+
+  printf ("%s: frame received\n", __FUNCTION__);
+
+  if (RX0_ (-1) & RX0_USED)
+    DBG (1, "+++ receive queue full\n");
+
+  /* Short-circuit on corrupt receive, USED but not START */
+  if ((RX1 () & RX1_START) == 0) {
+  cleanup:
+    do {
+      RX1 () = RX_BUFFER_SIZE;
+      RX0 () &= ~RX0_USED;
+      head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
+    } while (   (RX0 () & RX0_USED) 
+	     && (RX1 () & RX1_START) == 0);
+    return 0;			/* Nothing to receive at the moment */
+  }
+		
+  EMAC_RXSTATUS = EMAC_RXSTATUS_FRMREC;
+
+	/* Determine length of frame */
+  c = 0;
+  for (i = head_rx; 1; i = (i + 1) %RX_QUEUE_LENGTH) {
+    if ((rgl_rx_descriptor[i*2] & RX0_USED) == 0)
+      return 0;     /* as yet, incompleted receive */
+    if ((rgl_rx_descriptor[i*2 + 1] & RX1_START) 
+	&& i != head_rx) 
+      goto cleanup;	/* incomplete frame */
+    ++c;
+    if ((rgl_rx_descriptor[i*2 + 1] & RX1_END) == 0)
+      continue;
+    frame_len +=  rgl_rx_descriptor[i*2 + 1] & 0x7ff;
+    break;
+  }
+
+  DBG (3, "rxcomplete RXBQP  0x%x #%d (%d) - %lx %lx\n",
+       "  len 0x%x (%d) %d buf\n",
+       EMAC_RXBQP,
+       ((void*) EMAC_RXBQP 
+	- (void*) rgl_rx_descriptor)/8,
+       head_rx,
+       RX0 (), RX1 (),
+       frame_len, frame_len, c);
+
+  if (frame_len == 0)
+    return 0;	/* Return immediately if no frame */
+
+  {
+    char* pb = pv;
+    size_t cbRead = 0; 
+    c = 0;
+    while (cbRead < frame_len) {
+      size_t cbCopy = cb;
+      ++c;
+      if (cbCopy > RX_BUFFER_SIZE)
+	cbCopy = RX_BUFFER_SIZE;
+      DBG (3, "  #%d %lx %lx  len 0x%x (%d)\n",
+	   head_rx, RX0 (), RX1 (), cb, cbCopy);
+      memcpy (pb, &rgbRxBuffer[head_rx*RX_BUFFER_SIZE], cbCopy);
+      cb -= cbCopy;
+      pb += cbCopy;
+      RX1 () = RX_BUFFER_SIZE;
+      RX0 () &= ~RX0_USED;
+      head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
+    }
+    DBG(2, "  %d buf -> %d\n", c, head_rx);
+    dump (pv, frame_len, 0);
+//    PRINT_PKT (skb->data, frame_len);
+  }
+
+  /* *** FIXME: account errors? */
+  EMAC_RXSTATUS
+    = EMAC_RXSTATUS_RXCOVERRUN
+    | EMAC_RXSTATUS_FRMREC
+    | EMAC_RXSTATUS_BUFNOTAVAIL;
+
+  return frame_len;
+}
+
+
+
+static ssize_t eth_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  if (cb > CB_TX_BUFFER)
+    cb = CB_TX_BUFFER;
+
+  memcpy (rgbTxBuffer, pv, cb);
+
+  rgl_tx_descriptor[0] = (unsigned long) rgbTxBuffer;
+  rgl_tx_descriptor[1] = (1<<30)|(1<<15)|(cb<<0);
+  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+
+  EMAC_TXSTATUS |= EMAC_TXSTATUS_TXCOMPLETE;
+  EMAC_NETCTL	|= EMAC_NETCTL_STARTTX;
+
+  /* *** FIXME: we're busy waiting until the packet is sent */
+  while (!(EMAC_TXSTATUS & EMAC_TXSTATUS_TXCOMPLETE))
+    ;
+
+  return cb;
+}
+
+
+static __driver_4 struct driver_d eth_driver = {
+  .name = "eth-lh7952x",
+  .description = "lh7952x Ethernet driver",
+  .flags = DRIVER_NET,
+  .open = eth_open,
+  .close = close_helper,
+  .read = eth_read,
+  .write = eth_write,
+};
+
+static __service_6 struct service_d lh7952x_emac_service = {
+  .init = emac_init,
+#if !defined (CONFIG_SMALL)
+  .report = emac_report,
+#endif
+};

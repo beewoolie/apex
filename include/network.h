@@ -36,12 +36,20 @@
 
 /* ----- Types */
 
-typedef unsigned char  u8;
-typedef unsigned short u16;
-typedef unsigned long  u32;
+#include <linux/types.h>
+
+//typedef unsigned char  u8;
+//typedef unsigned short u16;
+//typedef unsigned long  u32;
 
 #define ntohs(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 #define htons(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
+
+#define octetstoip(a,b,c,d)\
+   ((a & 0xff) <<  0)\
+ | ((b & 0xff) <<  8)\
+ | ((c & 0xff) << 16)\
+ | ((d & 0xff) << 24)
 
 struct header_ethernet {
   u8 destination_address[6];
@@ -70,8 +78,8 @@ struct header_ipv4 {
   u8  ttl;
   u8  protocol;
   u16 checksum;
-  u32 source_ip;
-  u32 destination_ip;
+  u8 source_ip[4];
+  u8 destination_ip[4];
 };
 
 struct header_udp {

@@ -19,26 +19,5 @@
 #   USA.
 #
 
-LDFLAGS_apex := -p --no-undefined -X -g
-OBJCOPYFLAGS := -O binary -R .note -R .comment -R .bss
-GZFLAGS      := -9
-
-# *** This lets the clean target work, but I'm not sure it's a good
-# idea to include it.
--include .config
-quote:="
-# "
-CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
-
-CFLAGS += -Os
-
-init-y += src/arch-arm/entry/ 
-core-y += src/mach-$(CONFIG_MACH)/ src/drivers/ src/net/ src/arch-arm/linux/
-libs-y += src/arch-arm/lib/
-
--include src/mach-$(CONFIG_MACH)/Makefile.libs
-
-rom := src/arch-arm/rom
-
-apex.bin apex.srec : include/config.h apex
-	$(Q)$(MAKE) $(build)=$(rom) $(rom)/$@
+obj-$(CONFIG_ETHERNET) += ethernet.o
+obj-$(CONFIG_CMD_ARP)  += arp.o

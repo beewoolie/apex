@@ -45,38 +45,35 @@
 */
 
 #include <config.h>
+#include <linux/types.h>
+#include <linux/string.h>
+#include <driver.h>
 #include <network.h>
+#include <ethernet.h>
 
 #define ARP_TABLE_LENGTH	8
 #define FRAME_TABLE_LENGTH	8 
-#define FRAME_LENGTH_MAX	1536
 
 #define ARP_SECONDS_LIVE	30		
 
 #define ETH_F(f) \
-	((struct ethernet_header*) (f->rgb))
+	((struct header_ethernet*) (f->rgb))
 #define ARP_F(f) \
-	((struct arp_header*) (f->rgb + sizeof (struct ethernet_header)))
+	((struct header_arp*) (f->rgb + sizeof (struct header_ethernet)))
 
 struct arp_entry {
   u8  address[6];
-  u32 ip;
+  u8  ip[4];
   u32 seconds;		/* Number of seconds that this entry is valid */
 };
 
-char host_ip_address[4];
+char host_ip_address[4] = { 192, 168, 8, 203 };
 char host_mac_address[6];
 
 enum {
   state_free = 0,
   state_allocated = 1,
   state_queued = 2,
-};
-
-struct ethernet_frame {
-  size_t cb;
-  int state;
-  char rgb[FRAME_LENGTH_MAX];
 };
 
 struct arp_entry arp_table[ARP_TABLE_LENGTH];
@@ -86,11 +83,11 @@ void ethernet_init (void)
 {
 }
 
-/* ethernet_allocate_frame
+/* ethernet_frame_allocate
 
 */
 
-struct ethernet_frame* ethernet_allocate_frame (void)
+struct ethernet_frame* ethernet_frame_allocate (void)
 {
   int i;
   for (i = 0; i < FRAME_TABLE_LENGTH; ++i)
@@ -102,13 +99,20 @@ struct ethernet_frame* ethernet_allocate_frame (void)
   return NULL;
 }
 
+
+void ethernet_frame_release (struct ethernet_frame* frame)
+{
+  frame->state = state_free;
+}
+
+
 /* ethernet_frame_reply
 
    turns a frame around to reply to the sender's hardware address.
 
 */
 
-void ethernet_frame_reply (struct frame* f)
+void ethernet_frame_reply (struct ethernet_frame* f)
 {
   memcpy (ETH_F (f)->destination_address, ETH_F (f)->source_address, 6);
   memcpy (ETH_F (f)->source_address,		     host_mac_address, 6);
@@ -128,12 +132,13 @@ void arp_receive_reply (const char* hardware_address,
 {
   int i;
   for (i = 0; i < ARP_TABLE_LENGTH; ++i)
-    if (memcmp (arp_table[i].ip, ip_address, 4) == 0) {
+    if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
       memcpy (arp_table[i].ip, hardware_address, 6);
       arp_table[i].seconds = ARP_SECONDS_LIVE;
       break;
     }
 }
+
 
 /* arp_receive
 
@@ -142,7 +147,7 @@ void arp_receive_reply (const char* hardware_address,
 
 */
 
-void arp_receive (struct ethernet_frame* frame)
+void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
   if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
 	    + 6*2 + 4*2))
@@ -152,9 +157,9 @@ void arp_receive (struct ethernet_frame* frame)
       || ARP_F (frame)->protocol_address_length != 4)
     return;			/* unrecognized form */
 
-  switch (p->opcode) {
+  switch (ARP_F (frame)->opcode) {
   case htons (ARP_REQUEST):
-    if (memcmp (host_ip_address, p->target_protocol_address, 4))
+    if (memcmp (host_ip_address, ARP_F (frame)->target_protocol_address, 4))
       return;			/* Not a match */
 
 	/* Send reply to request for our address */
@@ -167,11 +172,11 @@ void arp_receive (struct ethernet_frame* frame)
     memcpy (ARP_F (frame)->sender_hardware_address,
 	    host_mac_address,
 	    6);
-    memcpy (arp_f (frame)->sender_protocol_address,
+    memcpy (ARP_F (frame)->sender_protocol_address,
 	    host_ip_address,
 	    4);
-    ethernet_send (frame);
-
+    frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
+    d->driver->write (d, frame->rgb, frame->cb);
     break;
 
   case htons (ARP_REPLY):
@@ -182,33 +187,26 @@ void arp_receive (struct ethernet_frame* frame)
   
 }
 
+
 /* ethernet_receive
 
    accepts packets into the network stack.
 
 */
 
-void ethernet_receive (struct ethernet_frame* frame)
+void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
-  struct header_ethernet* p;
-
   if (frame->cb < sizeof (struct header_ethernet))
     return;			/* runt */
 
-  p = (struct header_ethernet*) frame->rgb;
-
-  switch (p->protocol) {
+  switch (ETH_F (frame)->protocol) {
   case htons (ETH_PROTO_IP):
     break;
   case htons (ETH_PROTO_ARP):
-    arp_receive (frame);
+    arp_receive (d, frame);
     break;
   case htons (ETH_PROTO_RARP):
     break;
   }
 }
 
-void ethernet_send (struct ethernet_frame* frame)
-{
-  frame->state = state_queued;
-}

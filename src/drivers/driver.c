@@ -73,7 +73,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   memzero (d, sizeof (*d));
 
   ib = cb = strcspn (sz, ":");
-  if (sz[ib] == ':') {
+   if (sz[ib] == ':') {
     cb = ++ib;
     if (cb > sizeof (d->driver_name))
       cb = sizeof (d->driver_name);

@@ -84,7 +84,7 @@ int cmd_dump (int argc, const char** argv)
       extern struct driver_d* console_driver;
       char ch;
 
-      printf (" --More--");
+      printf (" --More-- ");
       console_driver->read (0, &ch, 1);
       switch (ch) {
       default:
