@@ -1,0 +1,30 @@
+menu "Ethernet Networking"
+
+config ETHERNET
+	bool "Ethernet Network Stack"
+	default n
+	help
+	  This options enabled the Ethernet network stack, protocols
+	  and commands. 
+
+config CMD_ARP
+	bool "ARP Command for Testing"
+	default n
+	help
+	  This option adds an arp command for testing the ethernet
+	  interface.
+
+config CMD_RARP
+	bool "RARP Autoconfiguration Command"
+	default n
+	help
+	  This protocol may be used to configure the Ethernet
+	  interface IP parameters.
+
+config NET_TFTP
+	bool "TFTP Protocol"
+	default n
+	help
+	  This protocol may be used to transfer files over the network.
+
+endmenu
