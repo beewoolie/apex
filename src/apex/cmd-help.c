@@ -31,13 +31,27 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <command.h>
+#include <sort.h>
 #include <error.h>
+
+#define MAX_COMMANDS	128 	/* Used to sort */
+
+static int compare_commands (const void* _a, const void* _b)
+{
+  struct command_d** a = (struct command_d**) _a;
+  struct command_d** b = (struct command_d**) _b;
+
+  return strcmp ((*a)->command, (*b)->command);
+}
 
 int cmd_help (int argc, const char** argv)
 {
   extern char APEX_COMMAND_START;
   extern char APEX_COMMAND_END;
-  struct command_d* command;
+  struct command_d* rgc[MAX_COMMANDS];
+  int cCommands;
+  int i;
+
 #if defined (CONFIG_ALLHELP)
   const char* sz = NULL;
   int cb = 0;
@@ -58,10 +72,18 @@ int cmd_help (int argc, const char** argv)
     return ERROR_PARAM;
 #endif
 
-  for (command = (struct command_d*) &APEX_COMMAND_START;
-       command < (struct command_d*) &APEX_COMMAND_END;
-       ++command) {
-    if (!command->command || (!command->func
+  cCommands = 0;
+  {
+    struct command_d* command;
+    for (command = (struct command_d*) &APEX_COMMAND_START;
+	 command < (struct command_d*) &APEX_COMMAND_END;
+	 ++command, ++cCommands)
+      rgc[cCommands] = command;
+  }
+  sort (rgc, cCommands, sizeof (struct command_d*), compare_commands, NULL);
+
+  for (i = 0; i < cCommands; ++i) {
+    if (!rgc[i]->command || (!rgc[i]->func
 #if defined (CONFIG_ALLHELP)
 			      && !fAll && cb == 0
 #endif
@@ -69,15 +91,15 @@ int cmd_help (int argc, const char** argv)
       continue;
 #if defined (CONFIG_ALLHELP)
     if (cb) {
-      if (!command->help)
+      if (!rgc[i]->help)
 	continue;
-      if (strnicmp (sz, command->command, cb) == 0)
-	printf (command->help);
+      if (strnicmp (sz, rgc[i]->command, cb) == 0)
+	printf (rgc[i]->help);
       continue;
     }
 #endif
-    printf (" %-*.*s - %s\n", 16, 16, command->command, 
-	    command->description ? command->description : "?");
+    printf (" %-*.*s - %s\n", 16, 16, rgc[i]->command, 
+	    rgc[i]->description ? rgc[i]->description : "?");
   }
 
   return 0;

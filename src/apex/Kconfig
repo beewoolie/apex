@@ -7,17 +7,6 @@ config ALLHELP
 	help
 	  Setting this option will include all help text for APEX commands.
 
-config ALPHABETIZE_COMMANDS
-	bool "Sort commands alphabetically in help"
-	default y
-	depends on SMALL=n
-	help
-	  Setting this option will sort alphabetically the commands
-	  shown in the help listing.  This option makes it easier to
-	  browse the help text.  It forces the inclusion of sort
-	  function, so it is automatically disabled when the SMALL
-	  configuration option is set.
- 
 config CMD_ALIAS
         bool "Define Alias Commands"
 	default y
