@@ -38,6 +38,10 @@
 # include "lh7a40x.h"
 #endif
 
+#if defined (CONFIG_ARCH_LH7A404)
+# include "lh7a404.h"
+#endif
+
 #if  defined (CONFIG_MACH_LPD7A400) \
   || defined (CONFIG_MACH_LPD7A404) \
   || defined (CONFIG_MACH_LPD7A40X)

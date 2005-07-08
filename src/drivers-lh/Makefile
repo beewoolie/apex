@@ -19,6 +19,4 @@
 #   USA.
 #
 
-obj-y := arch.o initialize.o serial.o timer.o env.o cpuinfo.o
-obj-$(CONFIG_CLCDC)		+= clcdc.o
-obj-$(CONFIG_ADC)		+= adc.o
+obj-$(CONFIG_DRIVER_LH_ADC)	+= adc.o

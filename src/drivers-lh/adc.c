@@ -68,7 +68,7 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <command.h>
-#include "hardware.h"
+#include <mach/hardware.h>
 
 #define ENTRY(l) printf ("%s\n", __FUNCTION__)
 
@@ -241,6 +241,12 @@ static void adc_init (void)
 
   ENTRY (0);
 
+  /* On the lh79524, we need to enable the ADC and configure the pin
+     multiplexer for the proper output pins.  On the lh7a404, we
+     don't. */
+
+#if defined (CONFIG_ARCH_LH79524)
+
   RCPC_CTRL      |=  (1<<9);	/* Unlock */
   RCPC_ADCPRE     =  RCPC_ADCPRE_V/2;
   RCPC_PCLKSEL1  &= ~(1<<2);	/* ADC src HCLK */
@@ -250,6 +256,8 @@ static void adc_init (void)
 
 
   IOCON_MUXCTL25  = 0;	/* Take all of the ADC pins */
+
+#endif
 
   ADC_IM = 0; /* Disable all interrupts */
 

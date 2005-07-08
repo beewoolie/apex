@@ -1,0 +1,20 @@
+if DRIVERS_LH
+
+menu "Sharp-LH Drivers"
+
+config DRIVER_LH_ADC
+	bool "ADC"
+	depends on HAS_LH_ADC
+	default n
+	help
+	  This driver includes commands to initialize and test the
+	  ADC/touchscreen controller.
+endmenu
+
+endif
+
+config HAS_LH_ADC
+	bool
+
+config DRIVERS_LH
+	bool

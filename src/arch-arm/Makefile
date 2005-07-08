@@ -33,7 +33,9 @@ CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
 CFLAGS += -Os
 
 init-y += src/arch-arm/entry/ 
-core-y += src/mach-$(CONFIG_MACH)/ src/drivers/ src/net/ src/arch-arm/linux/
+core-y += src/mach-$(CONFIG_MACH)/ 
+core-y += src/drivers/ src/net/ src/arch-arm/linux/
+core-$(CONFIG_DRIVERS_LH) +=  src/drivers-lh/
 libs-y += src/arch-arm/lib/
 
 -include src/mach-$(CONFIG_MACH)/Makefile.libs

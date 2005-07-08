@@ -11,6 +11,7 @@ config MACH_LPD79520
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
+	select DRIVERS_LH
 
 config MACH_LPD79524
 	bool "Logic Product Development LPD79524"
@@ -20,6 +21,8 @@ config MACH_LPD79524
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
 	select USES_NAND_BOOTFLASH
+	select DRIVERS_LH
+	select HAS_LH_ADC
 
 config MACH_KEV79524
 	bool "Sharp KEV79524"
@@ -27,6 +30,8 @@ config MACH_KEV79524
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
 	select USES_NAND_BOOTFLASH
+	select DRIVERS_LH
+	select HAS_LH_ADC
 
 endchoice
 
@@ -135,14 +140,6 @@ config CLCDC
 	default n
 	help
 	  This driver initializes and tests the CLCD controller.
-
-config ADC
-	bool "ADC"
-	depends on ARCH_LH79524
-	default n
-	help
-	  This driver includes commands to initialize and test the
-	  ADC/touchscreen controller.
 
 config CODEC
 	bool "Audio Codec"

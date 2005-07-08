@@ -114,6 +114,8 @@ source src/mach-ixp42x/Kconfig
 source src/apex/Kconfig
 
 source src/drivers/Kconfig
+source src/drivers-lh/Kconfig
+
 source src/net/Kconfig
 
 menu "Environment"
