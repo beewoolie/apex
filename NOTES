@@ -5,6 +5,20 @@ APEX Boot Loader
 
 TODO:
 
+  o Do we want to be able to show all variables, env and aliases in
+    the same command?
+
+  o ipconf command
+    o ipconf rarp
+    o ipconf dhcp
+    o ipconf boot
+    o ipconf 192.168.8.203/24
+    o ipconf clear
+
+    This will make it clearer to users how to clobber the
+    configuration.  Also, we may be able to enforce reconfiguration
+    this way.
+
   * There are two copies of the adc driver, one in the 7952x directory
     and another in the 7a40x directory.  I'd like to reduce the
     redundancy, but that would require moving the driver to be outside
