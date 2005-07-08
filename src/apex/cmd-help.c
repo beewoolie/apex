@@ -36,6 +36,8 @@
 
 #define MAX_COMMANDS	128 	/* Used to sort */
 
+#if defined (CONFIG_ALPHABETIZE_COMMANDS)
+
 static int compare_commands (const void* _a, const void* _b)
 {
   struct command_d** a = (struct command_d**) _a;
@@ -43,6 +45,8 @@ static int compare_commands (const void* _a, const void* _b)
 
   return strcmp ((*a)->command, (*b)->command);
 }
+
+#endif
 
 int cmd_help (int argc, const char** argv)
 {
@@ -80,7 +84,10 @@ int cmd_help (int argc, const char** argv)
 	 ++command, ++cCommands)
       rgc[cCommands] = command;
   }
+
+#if defined (CONFIG_ALPHABETIZE_COMMANDS)
   sort (rgc, cCommands, sizeof (struct command_d*), compare_commands, NULL);
+#endif
 
   for (i = 0; i < cCommands; ++i) {
     if (!rgc[i]->command || (!rgc[i]->func
