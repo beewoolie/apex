@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o We've added RARP which can configure the IP address.  There is a
+    problem, tho.  The user can get the IP address from the alias
+    list.  If the user clobbers it, the host_ip_address isn't
+    clobbered.  The user might think that erasing the alias removes
+    the IP address setting.  We need to either detect the loss of the
+    alias, or we need to no store the IP address in an array. 
+
   o Need a default command line setting in the config file.  It should
     completely override the platform default, when present.
 

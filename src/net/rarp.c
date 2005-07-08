@@ -39,12 +39,13 @@
 #include <command.h>
 #include <driver.h>
 #include <error.h>
+#include <alias.h>
 #include <spinner.h>
 
 #include <network.h>
 #include <ethernet.h>
 
-#define TALK 2
+//#define TALK 2
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -92,7 +93,7 @@ int cmd_rarp (int argc, const char** argv)
   memcpy (ARP_F (frame)->target_hardware_address, 
 	  ARP_F (frame)->sender_hardware_address, 10);
   frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
-  dump (frame->rgb, frame->cb, 0);
+//  dump (frame->rgb, frame->cb, 0);
 
   do {
     DBG (1,"%s: send frame\n", __FUNCTION__);
@@ -103,6 +104,8 @@ int cmd_rarp (int argc, const char** argv)
     timeStart = timer_read ();
 
     do {
+      SPINNER_STEP;
+
       frame->cb = d.driver->read (&d, frame->rgb, FRAME_LENGTH_MAX);
       if (frame->cb > 0) {
 	DBG (1,"%s: received frame\n", __FUNCTION__);
@@ -112,6 +115,18 @@ int cmd_rarp (int argc, const char** argv)
     } while (UNCONFIGURED_IP
 	     && timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
   } while (UNCONFIGURED_IP && tries < TRIES_MAX);
+
+  if (UNCONFIGURED_IP)
+    printf ("\rRARP failed\n");
+
+#if defined (CONFIG_CMD_ALIAS)
+  else {
+    const char* sz = alias_lookup ("hostip");
+    printf ("\rhostip %s\n", sz);
+    sz = alias_lookup ("serverip");
+    printf("serverip %s\n", sz);
+  }
+#endif
 
   ethernet_frame_release (frame);
 
