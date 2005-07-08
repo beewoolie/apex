@@ -5,13 +5,14 @@ APEX Boot Loader
 
 TODO:
 
-  o There are two copies of the adc driver, one in the 7952x directory
+  * There are two copies of the adc driver, one in the 7952x directory
     and another in the 7a40x directory.  I'd like to reduce the
     redundancy, but that would require moving the driver to be outside
     of mach-*/.  Either make a mach-lh/ or put them in drivers/.  The
     trouble is that I need a way to make sure that...Perhaps I should
     have a drivers-lh/ for shared drivers specific to Sharp products.
     That way, I can make it clear.
+    * Done and it's nice.
 
   o We've added RARP which can configure the IP address.  There is a
     problem, tho.  The user can get the IP address from the alias
@@ -29,10 +30,11 @@ TODO:
     open can continue until it succeeds.  
       E.g. nor:128k+1m|(ext2,vfat):/boot/zImage
     Trouble ensues when the options are more complex, NxM.
-  o Aliases can be simple text substitutions.
+  * Aliases can be simple text substitutions.
      alias flpart nor:128k+1m
      alias kernel /boot/zImage
      flpart|(ext2,vfat):kernel
+     * Done.  Substitution is with $.
   o The splashscreen should be able to be read from a filesystem
      copy ext2:/boot/splash fb:
     This will also require that we be able to store an image in the
