@@ -38,13 +38,8 @@
 
 #include <linux/types.h>
 
-//typedef unsigned char  u8;
-//typedef unsigned short u16;
-//typedef unsigned long  u32;
-
 #define NTOHS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 #define HTONS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
-//#define HTONL(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 
 #define octetstoip(a,b,c,d)\
    ((a & 0xff) <<  0)\
@@ -115,6 +110,8 @@ struct header_udp {
 #define ARP_HARDW_ETHERNET	1
 #define ARP_HARDW_IEEE802	6
 
+#define ARP_PROTO_IP		0x0800
+
 #define ARP_REQUEST		1
 #define ARP_REPLY		2
 #define ARP_REVERSEREQUEST	3
@@ -143,5 +140,31 @@ struct header_udp {
 #define TFTP_ERROR_NOUSER	7
 #define TFTP_ERROR_OPTIONTERMINATE 8
 
+#define ETH_F(f)	((struct header_ethernet*) (f->rgb))
+
+#define ARP_F(f)	((struct header_arp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)))
+
+#define IPV4_F(f)		((struct header_ipv4*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)))
+
+#define ICMP_F(f)	((struct header_icmp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)))
+
+#define ICMP_PING_F(f)	((struct message_icmp_ping*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)\
+			  + sizeof (struct header_icmp)))
+
+extern char host_ip_address[];
+extern char host_mac_address[];
+extern const char szNetDriver[];
+
+#define UNCONFIGURED_IP ((*(u32*) host_ip_address) == 0)
 
 #endif  /* __NETWORK_H__ */

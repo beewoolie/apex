@@ -421,7 +421,6 @@ char * strsep(char **s, const char *ct)
 EXPORT_SYMBOL(strsep);
 #endif
 
-#if 0
 /**
  * memset - Fill a region of memory with the given value
  * @s: Pointer to the start of the area.
@@ -430,6 +429,8 @@ EXPORT_SYMBOL(strsep);
  *
  * Do not use memset() to access IO space, use memset_io() instead.
  */
+
+#undef memset
 void * memset(void * s,int c,size_t count)
 {
 	char *xs = (char *) s;
@@ -440,7 +441,7 @@ void * memset(void * s,int c,size_t count)
 	return s;
 }
 EXPORT_SYMBOL(memset);
-#endif
+
 
 #if 0
 /**

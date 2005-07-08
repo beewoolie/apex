@@ -1,5 +1,7 @@
 2005-07-07  Marc Singer  <elf@buici.com>
 
+	* src/net/rarp.c (cmd_rarp): RARP implemented.
+
 	* src/apex/cmd-help.c (cmd_help): Changed the way that commands
 	are sorted such that there is no change to the R/O portion of the
 	file.  Now, sorting is done only when displaying the help text.

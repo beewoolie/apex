@@ -42,6 +42,11 @@
    o The multitude of byte-count compares and copies suggests that we
      be clever in how these are coded for optimal density.
 
+   o The ICMP echo reply is not properly turned around.  Though it
+     works, it does so because we send the reply to the same MAC
+     address as the sender.  Really, we should be finding our route to
+     the destination with ARP.
+
 */
 
 #include <config.h>
@@ -52,11 +57,12 @@
 #include <driver.h>
 #include <network.h>
 #include <ethernet.h>
+#include <alias.h>
 
 //#define TALK
 
 #if TALK > 0
-# define DBG(l,f...)		if (l >= TALK) printf (f);
+# define DBG(l,f...)		if (l <= TALK) printf (f);
 #else
 # define DBG(l,f...)		do {} while (0)
 #endif
@@ -66,40 +72,20 @@
 
 #define ARP_SECONDS_LIVE	30		
 
-#define ETH_F(f)	((struct header_ethernet*) (f->rgb))
-
-#define ARP_F(f)	((struct header_arp*)\
-			 (f->rgb\
-			  + sizeof (struct header_ethernet)))
-
-#define IPV4_F(f)		((struct header_ipv4*)\
-			 (f->rgb\
-			  + sizeof (struct header_ethernet)))
-
-#define ICMP_F(f)	((struct header_icmp*)\
-			 (f->rgb\
-			  + sizeof (struct header_ethernet)\
-			  + sizeof (struct header_ipv4)))
-
-#define ICMP_PING_F(f)	((struct message_icmp_ping*)\
-			 (f->rgb\
-			  + sizeof (struct header_ethernet)\
-			  + sizeof (struct header_ipv4)\
-			  + sizeof (struct header_icmp)))
-
 struct arp_entry {
   u8  address[6];
   u8  ip[4];
   u32 seconds;		/* Number of seconds that this entry is valid */
 };
 
-char host_ip_address[4] = { 192, 168, 8, 203 };
+char host_ip_address[4];
 char host_mac_address[6] = { 0x00, 0x08, 0xee, 0x00, 0x77, 0x9c };
+const char szNetDriver[] = "eth:";
 
 enum {
-  state_free = 0,
+  state_free      = 0,
   state_allocated = 1,
-  state_queued = 2,
+  state_queued    = 2,
 };
 
 struct arp_entry arp_table[ARP_TABLE_LENGTH];
@@ -120,6 +106,7 @@ static u16 checksum (void* pv, int cb)
 void ethernet_init (void)
 {
 }
+
 
 /* ethernet_frame_allocate
 
@@ -166,7 +153,8 @@ void ipv4_frame_reply (struct ethernet_frame* f)
 					  sizeof (struct header_ipv4)));
 }
 
-/* arp_receive_reply
+
+/* arp_cache_update
 
    accepts the data from ARP_REPLY packets and updates the ARP cache
    accordingly.  Note that we don't snoop ARP entries.  Instead, we
@@ -174,16 +162,25 @@ void ipv4_frame_reply (struct ethernet_frame* f)
 
 */
 
-void arp_receive_reply (const char* hardware_address,
-			const char* protocol_address)
+void arp_cache_update (const char* hardware_address,
+		       const char* protocol_address,
+		       int force)
 {
   int i;
-  for (i = 0; i < ARP_TABLE_LENGTH; ++i)
+  int iEmpty = -1;
+  for (i = 0; i < ARP_TABLE_LENGTH; ++i) {
+    if (iEmpty == -1 && memcmp (arp_table[i].address, "\0\0\0\0\0", 6) == 0)
+      iEmpty = i;
     if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
       memcpy (arp_table[i].ip, hardware_address, 6);
       arp_table[i].seconds = ARP_SECONDS_LIVE;
-      break;
+      return;
     }
+  }
+  if (force && iEmpty != -1) {
+    memcpy (arp_table[iEmpty].address, hardware_address, 6);
+    memcpy (arp_table[iEmpty].ip,      protocol_address, 4);
+  }
 }
 
 
@@ -206,6 +203,7 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   DBG (2,"%s: checking protocol lengths %d %d\n", __FUNCTION__,
 	  ARP_F (frame)->hardware_address_length,
 	  ARP_F (frame)->protocol_address_length);
+
   if (   ARP_F (frame)->hardware_address_length != 6
       || ARP_F (frame)->protocol_address_length != 4)
     return;			/* unrecognized form */
@@ -235,8 +233,30 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     break;
 
   case HTONS (ARP_REPLY):
-    arp_receive_reply (ARP_F (frame)->sender_hardware_address,
-		       ARP_F (frame)->sender_protocol_address);
+    arp_cache_update (ARP_F (frame)->sender_hardware_address,
+		      ARP_F (frame)->sender_protocol_address, 
+		      0);
+    break;
+
+  case HTONS (ARP_REVERSEREPLY):
+    if (memcmp (ARP_F (frame)->target_hardware_address,
+		host_mac_address, 6))
+      break;
+    memcpy (host_ip_address, ARP_F (frame)->target_protocol_address, 4);
+		/* Add ARP entry for the server */
+    arp_cache_update (ARP_F (frame)->sender_hardware_address,
+		      ARP_F (frame)->sender_protocol_address, 
+		      1);
+    {
+      char sz[80];
+      unsigned char* p = ARP_F (frame)->sender_protocol_address;
+      sprintf (sz, "%d.%d.%d.%d", 
+	       host_ip_address[0], host_ip_address[1], 
+	       host_ip_address[2], host_ip_address[3]);
+      alias_set ("hostip", sz);
+      sprintf (sz, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+      alias_set ("serverip", sz);
+    }
     break;
   }
   
@@ -268,7 +288,7 @@ void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   
   switch (ICMP_F (frame)->type) {
   case ICMP_TYPE_ECHO:
-    ethernet_frame_reply (frame);
+    ethernet_frame_reply (frame); /* This isn't really valid, is it? */
     ipv4_frame_reply (frame);
     ICMP_F (frame)->type = ICMP_TYPE_ECHO_REPLY;
     ICMP_F (frame)->checksum = 0;
@@ -303,9 +323,8 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     }
     break;
   case HTONS (ETH_PROTO_ARP):
-    arp_receive (d, frame);
-    break;
   case HTONS (ETH_PROTO_RARP):
+    arp_receive (d, frame);
     break;
   }
 }

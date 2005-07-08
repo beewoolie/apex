@@ -139,7 +139,7 @@
 #endif
 
 #if TALK > 0
-# define DBG(l,f...) if (l >= TALK) printf (f);
+# define DBG(l,f...)		if (l <= TALK) printf (f);
 #else
 # define DBG(l,f...)		do {} while (0)
 #endif
