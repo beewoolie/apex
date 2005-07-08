@@ -40,6 +40,7 @@ struct service_d {
   void (*init) (void);
   void (*report) (void);	/* Informative output from service */
   void (*release) (void);
+//  void (*service) (void);	/* Background service */
 };
 
 #define __service_0 __used __section(.service.0) /* target */

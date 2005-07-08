@@ -1,3 +1,12 @@
+2005-07-07  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c (eth_open): Basis of ethernet driver
+	is working.
+
+	* src/arch-arm/entry/apex.lds.S: Neglected alignment caused a
+	crash when the data segment wasn't aligned.  The service data was
+	misaligned such that the service start addresses were wrong. 
+
 2005-07-06  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-dump.c (cmd_dump): Added more mode to the dump

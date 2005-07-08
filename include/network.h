@@ -44,6 +44,7 @@
 
 #define NTOHS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 #define HTONS(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
+//#define HTONL(v) ((((v) >> 8) & 0xff) | (((v) & 0xff) << 8))
 
 #define octetstoip(a,b,c,d)\
    ((a & 0xff) <<  0)\
@@ -78,8 +79,19 @@ struct header_ipv4 {
   u8  ttl;
   u8  protocol;
   u16 checksum;
-  u8 source_ip[4];
-  u8 destination_ip[4];
+  u8  source_ip[4];
+  u8  destination_ip[4];
+} __attribute__((packed));
+
+struct header_icmp {
+  u8 type;
+  u8 code;
+  u16 checksum;
+} __attribute__((packed));
+
+struct message_icmp_ping {
+  u16 identifier;
+  u16 sequence;
 } __attribute__((packed));
 
 struct header_udp {
@@ -108,6 +120,9 @@ struct header_udp {
 #define ARP_REVERSEREQUEST	3
 #define ARP_REVERSEREPLY	4
 #define ARP_NAK			10
+
+#define ICMP_TYPE_ECHO		8
+#define ICMP_TYPE_ECHO_REPLY	0
 
 #define PORT_TFTP		69
 

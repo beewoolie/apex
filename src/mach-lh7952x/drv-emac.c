@@ -125,8 +125,6 @@
 # define USE_DIAG		/* Enables diagnostic code */
 # define TALK 0
 #endif
-# define USE_DIAG		/* Enables diagnostic code */
-# define TALK 0
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -144,6 +142,12 @@
 # define DBG(l,f...) if (l >= TALK) printf (f);
 #else
 # define DBG(l,f...)		do {} while (0)
+#endif
+
+#if TALK > 0
+# define PRINT_PKT(p,l)		dump ((void*) p, l, 0)
+#else
+# define PRINT_PKT(p,l)		do {} while (0)
 #endif
 
 #define PHY_CONTROL	0
@@ -185,6 +189,8 @@ static char ETH_BSS rgbRxBuffer[CB_RX_BUFFER*C_RX_BUFFER];
 static char ETH_BSS rgbTxBuffer[CB_TX_BUFFER*C_RX_BUFFER];
 
 static int head_rx;		/* Index of next receive buffer */
+static int head_tx;
+static int tail_tx;		/* Index of next available transmit buffer */
 
 #define RX0()		rgl_rx_descriptor[head_rx*2]
 #define RX1()		rgl_rx_descriptor[head_rx*2 + 1]
@@ -196,6 +202,11 @@ static int head_rx;		/* Index of next receive buffer */
 					      %RX_QUEUE_LENGTH)*2 + 1]
 #define RX0__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2]
 #define RX1__(i)	rgl_rx_descriptor[((i)%RX_QUEUE_LENGTH)*2 + 1]
+
+#define TXH0()		rgl_tx_descriptor[head_tx*2]
+#define TXH1()		rgl_tx_descriptor[head_tx*2 + 1]
+#define TXT0()		rgl_tx_descriptor[tail_tx*2]
+#define TXT1()		rgl_tx_descriptor[tail_tx*2 + 1]
 
 #define TX1_USED	(1<<31)
 #define TX1_WRAP	(1<<30)
@@ -227,47 +238,6 @@ static void msleep (int ms)
   } while (timer_delta (time, timer_read ()) < ms);
 }
 
-#endif
-
-#if defined (USE_DIAG) && 0
-static void emac_setup (void)
-{
-  int i;
-  for (i = 0; i < C_BUFFER; ++i) {
-    /* RX */
-    rgl_rx_descriptor[i*2] = ((unsigned long)(rgbRxBuffer + i*CB_BUFFER) & ~3)
-      | ((i == C_BUFFER - 1) ? (1<<1) : 0);
-    rgl_rx_descriptor[i*2 + 1] = 0;
-    /* TX */
-    //    rgl_tx_descriptor[i*2]     = (unsigned long)(rgbTxBuffer + i*CB_BUFFER);
-    //    rgl_tx_descriptor[i*2 + 1] = (1<<31)|(1<<15)
-    //      | ((i == C_BUFFER - 1) ? (1<<30) : 0);
-  }
-  PRINTF ("emac: setup rgl_rx_descriptor %p\n", rgl_rx_descriptor);
-  EMAC_RXBQP = (unsigned long) rgl_rx_descriptor;
-  EMAC_RXSTATUS &= 
-    ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC 
-      | EMAC_RXSTATUS_BUFNOTAVAIL);
-  PRINTF ("emac: setup rgl_tx_descriptor %p\n", rgl_tx_descriptor);
-  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
-  EMAC_TXSTATUS &=
-    ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
-	 
-  MASK_AND_SET (EMAC_NETCONFIG, 3<<10, EMAC_NETCONFIG_DIV32);
-  EMAC_NETCONFIG |= 0
-    //    | EMAC_NETCONFIG_FULLDUPLEX
-    //    | EMAC_NETCONFIG_100MB
-    | EMAC_NETCONFIG_CPYFRM
-    ;
-//  EMAC_NETCONFIG |= EMAC_NETCONFIG_RECBYTE;
-  EMAC_NETCTL |= 0
-    | EMAC_NETCTL_RXEN
-    | EMAC_NETCTL_TXEN
-    | EMAC_NETCTL_CLRSTAT
-    ;
-}
-#else
-//#define emac_setup() do {} while (0)
 #endif
 
 static int emac_phy_read (int phy_address, int phy_register)
@@ -441,8 +411,8 @@ static void emac_setup (void)
 
   PRINTF ("emac: setup rgl_tx_descriptor %p\n", rgl_tx_descriptor);
   EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
-  EMAC_TXSTATUS &=
-    ~(EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX);
+  EMAC_TXSTATUS
+    = EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX;
 	 
   MASK_AND_SET (EMAC_NETCONFIG, 3<<10, EMAC_NETCONFIG_DIV32);
   EMAC_NETCONFIG |= 0
@@ -533,39 +503,6 @@ static void emac_report (void)
 }
 #endif
 
-#if defined (USE_DIAG) && 0
-
-void emac_send_packet (void)
-{
-  struct ethernet_header* header = (struct ethernet_header*)rgbTxBuffer;
-  int length = 128;
-
-  {
-    int i;
-    for (i = 0; i < 128; ++i)
-      rgbTxBuffer[i] = (unsigned char) i;
-  }
-
-  header->dest[0] = 0xff;
-  header->dest[1] = 0xff;
-  header->dest[2] = 0xff;
-  header->dest[3] = 0xff;
-  header->dest[4] = 0xff;
-  header->dest[5] = 0xff;
-  memcpy (&header->src, &header->dest, sizeof (header->src));
-  header->protocol = htons (0x0806);
-
-  rgl_tx_descriptor[0] = (unsigned long) rgbTxBuffer;
-  rgl_tx_descriptor[1] = (1<<30)|(1<<15)|(length<<0);
-  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
-
-  printf ("  preparing to send %lx %lx\n",   
-	  rgl_tx_descriptor[0], 
-	  rgl_tx_descriptor[1]);
-  EMAC_NETCTL |= EMAC_NETCTL_STARTTX;
-}
-#endif
-
 #if defined (USE_DIAG)
 
 static void show_tx_flags (unsigned long l)
@@ -591,13 +528,14 @@ static void show_rx_flags (unsigned long l0, unsigned long l1)
   if (l1 & RX1_BROADCAST)
     printf (" bcast");
   if (l1 & RX1_SPEC1)
-    printf (" addr1");
+    printf (" spec1");
   if (l1 & RX1_START)
     printf (" start");
   if (l1 & RX1_END)
     printf (" end");
 } 
 #endif
+
 
 #if defined (CONFIG_CMD_EMAC_LH79524)
 
@@ -793,6 +731,12 @@ static int cmd_emac (int argc, const char** argv)
 		rgl_tx_descriptor[i*2 + 0], 
 		rgl_tx_descriptor[i*2 + 1]);
 	show_tx_flags (rgl_tx_descriptor[i*2 + 1]);
+	if (i == head_tx)
+	  printf (" head");
+	if (i == tail_tx)
+	  printf (" tail");
+	if (i == ((void*)EMAC_TXBQP - (void*) rgl_tx_descriptor)/8)
+	  printf  (" *");
 	printf ("\n");
       }
       for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
@@ -801,7 +745,9 @@ static int cmd_emac (int argc, const char** argv)
 		rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	if (i == head_rx)
-	  printf (" *");
+	  printf (" head");
+	if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
+	  printf  (" *");
 	printf ("\n");
       }
     }
@@ -809,50 +755,6 @@ static int cmd_emac (int argc, const char** argv)
 #endif
   }
   else {
-#if defined (USE_DIAG) && 0
-    if (strcmp (argv[1], "clear") == 0) {
-      EMAC_TXSTATUS = 0x7f;
-      rgl_tx_descriptor[0] = 0;
-      rgl_tx_descriptor[1] = 0;
-    }
-    else if (strcmp (argv[1], "send") == 0) {
-      emac_send_packet ();
-    }
-    else if (strcmp (argv[1], "loop") == 0) {
-      emac_phy_reset (phy_address);
-      emac_phy_configure (phy_address);
-      printf ("emac: loopback and restart anen\n");
-      emac_phy_write (phy_address, 0,
-		      PHY_CONTROL_RESTART_ANEN
-		      | PHY_CONTROL_ANEN_ENABLE 
-		      | PHY_CONTROL_LOOPBACK
-		      | emac_phy_read (phy_address, 0));
-      EMAC_NETCONFIG |= 0
-	| EMAC_NETCONFIG_IGNORE
-	| EMAC_NETCONFIG_ENFRM
-	| EMAC_NETCONFIG_CPYFRM
-	//	| EMAC_NETCONFIG_FULLDUPLEX
-	;
-    }
-    else if (strcmp (argv[1], "anen") == 0) {
-      emac_phy_reset (phy_address);
-      emac_phy_configure (phy_address);
-      printf ("emac: restart anen\n");
-      emac_phy_write (phy_address, 0,
-		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
-		      | emac_phy_read (phy_address, 0));
-    }
-    else if (strcmp (argv[1], "force") == 0) {
-      emac_phy_reset (phy_address);
-      emac_phy_configure (phy_address);
-      PRINTF ("emac: forcing power-up and restarting anen\n");
-      emac_phy_write (phy_address, 22, 0); /* Force power-up */
-      emac_phy_write (phy_address, 0, /* restart anen */
-		      PHY_CONTROL_RESTART_ANEN | PHY_CONTROL_ANEN_ENABLE
-		      | emac_phy_read (phy_address, 0));
-    }
-#endif
-
     	/* Set mac address */
     if (strcmp (argv[1], "mac") == 0) {
       unsigned char rgb[6];
@@ -985,6 +887,35 @@ static void eth_clean_rx_queue (void)
   } while (i != head_rx && (rgl_rx_descriptor[i*2] & RX0_USED));
 }
 
+static inline void eth_clean_tx_queue (void)
+{
+  int state = 0;
+
+  DBG (2, "clean [%lx %lx] #%d  txstatus 0x%x\n", 
+       TXH0 (), TXH1 (),
+       head_tx, EMAC_TXSTATUS);
+
+  while (state >= 0) {
+    switch (state) {
+    case 0:
+      if (   (TXH1 () & 0x7ff)
+	  && (TXH1 () & TX1_USED))
+	++state;
+      else {
+	--state;
+	break;
+      }
+      /* fall through */
+    case 1:
+      if (TXH1 () & TX1_LAST)
+	--state;
+      /* Mark free */
+      TXH1 () = (TXH1 () & TX1_WRAP) | TX1_USED;
+    }
+    if (state >= 0)
+      head_tx = (head_tx + 1) % TX_QUEUE_LENGTH;
+  }
+}
 
 static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 {
@@ -1004,7 +935,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   if (!(RX0 () & RX0_USED))	/* End of  receive */
     return 0;
 
-  printf ("%s: frame received (%d)\n", __FUNCTION__, head_rx);
+  DBG (2,"%s: frame received (%d)\n", __FUNCTION__, head_rx);
 
   if (RX0_ (-1) & RX0_USED)
     DBG (1, "+++ receive queue full\n");
@@ -1013,10 +944,10 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   if ((RX1 () & RX1_START) == 0) {
   cleanup:
     do {
-      printf ("cleanup %d @%p %lx %lx\n", head_rx, &RX0 (), RX0 (), RX1 ());
+      DBG (1,"cleanup %d @%p %lx %lx\n", head_rx, &RX0 (), RX0 (), RX1 ());
       RX1 () = 0;
       RX0 () &= ~RX0_USED;
-      printf ("   %lx %lx\n", RX0 (), RX1 ());
+      DBG (1,"   %lx %lx\n", RX0 (), RX1 ());
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
     } while (   (RX0 () & RX0_USED) 
 	     && (RX1 () & RX1_START) == 0);
@@ -1076,8 +1007,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
     }
     DBG(2, "  %d buf -> %d\n", c, head_rx);
-    dump (pv, frame_len, 0);
-//    PRINT_PKT (skb->data, frame_len);
+    PRINT_PKT (pv, frame_len);
   }
 
   /* *** FIXME: account errors? */
@@ -1089,30 +1019,45 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   return frame_len;
 }
 
-
-
-static ssize_t eth_write (struct descriptor_d* d, const void* pv, size_t cb)
+ssize_t eth_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
-  printf ("%s: %p %d\n", __FUNCTION__, pv, cb);
+  int need;
+  int available;
+
+ wait:
+  eth_clean_tx_queue ();
+
+  need = (cb + TX_BUFFER_SIZE - 1)/TX_BUFFER_SIZE;
+  available = head_tx - tail_tx;
+  if (available < 0 || (TXT1 () & TX1_USED) != 0)
+    available += TX_QUEUE_LENGTH;
+
+  //  printf ("%s: %p %d %d/%d\n", __FUNCTION__, pv, cb, need, available);
+
+  if (available < need)
+    goto wait;			/* Loop until there is a free buffer */
 
   if (cb > CB_TX_BUFFER)
     cb = CB_TX_BUFFER;
 
-  memcpy ((void*) rgl_tx_descriptor[0], pv, cb);
-  rgl_tx_descriptor[1] &= ~0x7ff;
-  rgl_tx_descriptor[1] |= TX1_LAST | (cb << 0);
-  rgl_tx_descriptor[1] &= ~TX1_USED;
+  /* *** FIXME: we're assuming that we need only one buffer */
+  memcpy ((void*) TXT0 (), pv, cb);
+  TXT1 () = (TXT1 () & TX1_WRAP) | TX1_LAST | (cb & 0x7ff);
 
-  dump ((void*) rgl_tx_descriptor[0], cb, 0);
+  PRINT_PKT (rgl_tx_descriptor[0], cb);
 
-  EMAC_TXSTATUS |= EMAC_TXSTATUS_TXCOMPLETE;
+  tail_tx = (tail_tx + 1) % TX_QUEUE_LENGTH;
 
-  EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
+  EMAC_TXSTATUS = 0xff; // EMAC_TXSTATUS_TXCOMPLETE;
+
   EMAC_NETCTL	|= EMAC_NETCTL_STARTTX;
 
-  /* *** FIXME: we're busy waiting until the packet is sent */
-//  while (!(EMAC_TXSTATUS & EMAC_TXSTATUS_TXCOMPLETE))
-//    ;
+  /* We don't wait for the transmit to complete because we check for
+     available buffer space when we transmit.  In this way, we get
+     some overlap in the IO. */
+
+  //  while (!(EMAC_TXSTATUS & EMAC_TXSTATUS_TXCOMPLETE))
+  //    ;
 
   return cb;
 }

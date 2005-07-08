@@ -53,15 +53,39 @@
 #include <network.h>
 #include <ethernet.h>
 
+//#define TALK
+
+#if TALK > 0
+# define DBG(l,f...)		if (l >= TALK) printf (f);
+#else
+# define DBG(l,f...)		do {} while (0)
+#endif
+
 #define ARP_TABLE_LENGTH	8
 #define FRAME_TABLE_LENGTH	8 
 
 #define ARP_SECONDS_LIVE	30		
 
-#define ETH_F(f) \
-	((struct header_ethernet*) (f->rgb))
-#define ARP_F(f) \
-	((struct header_arp*) (f->rgb + sizeof (struct header_ethernet)))
+#define ETH_F(f)	((struct header_ethernet*) (f->rgb))
+
+#define ARP_F(f)	((struct header_arp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)))
+
+#define IPV4_F(f)		((struct header_ipv4*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)))
+
+#define ICMP_F(f)	((struct header_icmp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)))
+
+#define ICMP_PING_F(f)	((struct message_icmp_ping*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)\
+			  + sizeof (struct header_icmp)))
 
 struct arp_entry {
   u8  address[6];
@@ -80,6 +104,18 @@ enum {
 
 struct arp_entry arp_table[ARP_TABLE_LENGTH];
 struct ethernet_frame frame_table[FRAME_TABLE_LENGTH];
+
+static u16 checksum (void* pv, int cb)
+{
+  u16* p = (u16*) pv;
+  u32 sum = 0;
+  for (; cb > 0; cb -= 2) {
+    unsigned short s = *p++;
+    sum += HTONS (s);
+  }
+
+  return ~ ((sum & 0xffff) + (sum >> 16));
+}
 
 void ethernet_init (void)
 {
@@ -121,6 +157,15 @@ void ethernet_frame_reply (struct ethernet_frame* f)
 }
 
 
+void ipv4_frame_reply (struct ethernet_frame* f)
+{
+  memcpy (IPV4_F (f)->destination_ip, IPV4_F (f)->source_ip, 4);
+  memcpy (IPV4_F (f)->source_ip, host_ip_address, 4);
+  IPV4_F (f)->checksum = 0;
+  IPV4_F (f)->checksum = htons (checksum ((void*) IPV4_F (f), 
+					  sizeof (struct header_ipv4)));
+}
+
 /* arp_receive_reply
 
    accepts the data from ARP_REPLY packets and updates the ARP cache
@@ -151,21 +196,21 @@ void arp_receive_reply (const char* hardware_address,
 
 void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
-  printf ("%s\n", __FUNCTION__);
+  DBG (1,"%s\n", __FUNCTION__);
 
-  printf ("%s: checking length\n", __FUNCTION__);
+  DBG (2,"%s: checking length\n", __FUNCTION__);
   if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
 	    + 6*2 + 4*2))
     return;			/* runt */
 
-  printf ("%s: checking protocol lengths %d %d\n", __FUNCTION__,
+  DBG (2,"%s: checking protocol lengths %d %d\n", __FUNCTION__,
 	  ARP_F (frame)->hardware_address_length,
 	  ARP_F (frame)->protocol_address_length);
   if (   ARP_F (frame)->hardware_address_length != 6
       || ARP_F (frame)->protocol_address_length != 4)
     return;			/* unrecognized form */
 
-  printf ("%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
+  DBG (2,"%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
 
   switch (ARP_F (frame)->opcode) {
   case HTONS (ARP_REQUEST):
@@ -197,6 +242,41 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   
 }
 
+void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
+{
+  int l;
+
+  DBG (1,"%s\n", __FUNCTION__);
+
+  DBG (2,"%s: checking length\n", __FUNCTION__);
+  if (frame->cb < (sizeof (struct header_ethernet)
+		   + sizeof (struct header_ipv4)
+		   + sizeof (struct header_icmp)))
+    return;			/* runt */
+
+  DBG (2,"%s: icmp %d received\n", __FUNCTION__, ICMP_F (frame)->type);
+
+  l = htons (IPV4_F (frame)->length) - sizeof (struct header_ipv4);
+  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__, 
+	  ICMP_F (frame)->checksum,
+	  checksum (ICMP_F (frame), l), l);
+
+  if (checksum (ICMP_F (frame), l) != 0) {
+    DBG (1,"%s: icmp discarded, header checksum incorrect\n", __FUNCTION__);
+    return;
+  }
+  
+  switch (ICMP_F (frame)->type) {
+  case ICMP_TYPE_ECHO:
+    ethernet_frame_reply (frame);
+    ipv4_frame_reply (frame);
+    ICMP_F (frame)->type = ICMP_TYPE_ECHO_REPLY;
+    ICMP_F (frame)->checksum = 0;
+    ICMP_F (frame)->checksum = htons (checksum (ICMP_F (frame), l));
+    d->driver->write (d, frame->rgb, frame->cb);
+    break;
+  }
+}
 
 /* ethernet_receive
 
@@ -206,13 +286,21 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 
 void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
-  printf ("%s\n", __FUNCTION__);
+  DBG (1,"%s\n", __FUNCTION__);
 
   if (frame->cb < sizeof (struct header_ethernet))
     return;			/* runt */
 
   switch (ETH_F (frame)->protocol) {
   case HTONS (ETH_PROTO_IP):
+    /* *** FIXME: verify that the destination IP address is ours */
+    switch (IPV4_F (frame)->protocol) {
+    case IP_PROTO_ICMP:
+      icmp_receive (d, frame);
+      break;
+    case IP_PROTO_UDP:
+      break;
+    }
     break;
   case HTONS (ETH_PROTO_ARP):
     arp_receive (d, frame);

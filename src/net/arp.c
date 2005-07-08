@@ -27,6 +27,14 @@
 #include <network.h>
 #include <ethernet.h>
 
+//#define TALK
+
+#if TALK > 0
+# define DBG(l,f...)		if (l >= TALK) printf (f);
+#else
+# define DBG(l,f...)		do {} while (0)
+#endif
+
 const char szNetDriver[] = "eth:";
 
 int cmd_arp (int argc, const char** argv)
@@ -41,7 +49,7 @@ int cmd_arp (int argc, const char** argv)
       || (result = open_descriptor (&d))) 
     return result;
 
-  printf ("%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
+  DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
 
   frame = ethernet_frame_allocate ();
 
