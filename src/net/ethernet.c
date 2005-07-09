@@ -79,6 +79,7 @@ struct arp_entry {
 };
 
 char host_ip_address[4];
+char gw_ip_address[4];
 char host_mac_address[6] = { 0x00, 0x08, 0xee, 0x00, 0x77, 0x9c };
 const char szNetDriver[] = "eth:";
 
@@ -172,7 +173,7 @@ void arp_cache_update (const char* hardware_address,
     if (iEmpty == -1 && memcmp (arp_table[i].address, "\0\0\0\0\0", 6) == 0)
       iEmpty = i;
     if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
-      memcpy (arp_table[i].ip, hardware_address, 6);
+      memcpy (arp_table[i].address, hardware_address, 6);
       arp_table[i].seconds = ARP_SECONDS_LIVE;
       return;
     }
@@ -181,6 +182,24 @@ void arp_cache_update (const char* hardware_address,
     memcpy (arp_table[iEmpty].address, hardware_address, 6);
     memcpy (arp_table[iEmpty].ip,      protocol_address, 4);
   }
+}
+
+
+/* arp_cache_lookup
+
+   returns a pointer to the MAC address for the given IP address or
+   NULL if there is none.
+
+*/
+
+const char* arp_cache_lookup (const char* protocol_address)
+{
+  int i;
+  for (i = 0; i < ARP_TABLE_LENGTH; ++i)
+    if (memcmp (arp_table[i].ip, protocol_address, 4) == 0)
+      return arp_table[i].address;
+
+  return NULL;
 }
 
 
@@ -329,3 +348,44 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   }
 }
 
+
+void udp_setup (struct ethernet_frame* frame, 
+		const char* destination_ip, u16 destination_port,
+		u16 source_port, size_t cb)
+{
+  const char* addr = arp_cache_lookup (destination_ip);
+  if (!addr)
+    addr = arp_cache_lookup (gw_ip_address);
+
+  memset (IPV4_F (frame), 0, 
+	  sizeof (struct header_ipv4) + sizeof (struct header_udp));
+
+  /* Ethernet frame header */
+  if (addr)
+    memcpy (ETH_F (frame)->destination_address, addr, 6);
+  else
+    memset (ETH_F (frame)->destination_address, 0xff, 6);
+  memcpy (ETH_F (frame)->source_address, host_mac_address, 6);
+  ETH_F (frame)->protocol = HTONS (ETH_PROTO_IP);
+
+  /* IPv4 header */
+  IPV4_F (frame)->version_ihl = 4<<4 | 5;
+  IPV4_F (frame)->length
+    = htons (sizeof (struct header_ipv4) + sizeof (struct header_udp) + cb);
+  IPV4_F (frame)->ttl = 64;
+  IPV4_F (frame)->protocol = IP_PROTO_UDP;
+  memcpy (IPV4_F (frame)->source_ip, host_ip_address, 4);
+  memcpy (IPV4_F (frame)->destination_ip, destination_ip, 4);
+
+  /* UDP header */
+  UDP_F (frame)->source_port = HTONS (source_port);
+  UDP_F (frame)->destination_port = HTONS (destination_port);
+  UDP_F (frame)->length = sizeof (struct header_udp) + cb;
+
+  /* Checksums, UDP and then TCP */
+  UDP_F (frame)->checksum
+    = checksum (UDP_F (frame), sizeof (struct header_udp) + cb);
+  IPV4_F (frame)->checksum
+    = checksum (IPV4_F (frame), sizeof (struct header_ipv4));
+}
+		

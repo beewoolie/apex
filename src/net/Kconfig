@@ -21,10 +21,10 @@ config CMD_RARP
 	  This protocol may be used to configure the Ethernet
 	  interface IP parameters.
 
-config NET_TFTP
-	bool "TFTP Protocol"
+config CMD_TFTP
+	bool "TFTP File Transfer Command"
 	default n
 	help
-	  This protocol may be used to transfer files over the network.
+	  This protocol transfers files over the network.
 
 endmenu

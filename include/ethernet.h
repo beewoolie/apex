@@ -34,8 +34,10 @@ struct ethernet_frame {
 /* ----- Prototypes */
 
 struct ethernet_frame* ethernet_frame_allocate (void);
-void ethernet_frame_release (struct ethernet_frame* frame);
-void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame);
+void ethernet_frame_release (struct ethernet_frame*);
+void ethernet_receive (struct descriptor_d*, struct ethernet_frame*);
+
+void udp_setup (struct ethernet_frame*, const char*, u16, u16, size_t);
 
 
 #endif  /* __ETHERNET_H__ */

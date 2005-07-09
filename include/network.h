@@ -89,6 +89,11 @@ struct message_icmp_ping {
   u16 sequence;
 } __attribute__((packed));
 
+struct message_tftp {
+  u16 opcode;
+  u8 data[];
+} __attribute__((packed));
+
 struct header_udp {
   u16 source_port;
   u16 destination_port;
@@ -146,9 +151,14 @@ struct header_udp {
 			 (f->rgb\
 			  + sizeof (struct header_ethernet)))
 
-#define IPV4_F(f)		((struct header_ipv4*)\
+#define IPV4_F(f)	((struct header_ipv4*)\
 			 (f->rgb\
 			  + sizeof (struct header_ethernet)))
+
+#define UDP_F(f)	((struct header_udp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)))
 
 #define ICMP_F(f)	((struct header_icmp*)\
 			 (f->rgb\
@@ -161,7 +171,15 @@ struct header_udp {
 			  + sizeof (struct header_ipv4)\
 			  + sizeof (struct header_icmp)))
 
+#define TFTP_F(f)	((struct message_tftp*)\
+			 (f->rgb\
+			  + sizeof (struct header_ethernet)\
+			  + sizeof (struct header_ipv4)\
+			  + sizeof (struct header_udp))) 
+
+
 extern char host_ip_address[];
+extern char gw_ip_address[];
 extern char host_mac_address[];
 extern const char szNetDriver[];
 
