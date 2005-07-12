@@ -78,9 +78,9 @@
 #define USE_16
 #define USE_STEREO
 #define USE_SIGNED_CONVERSION
-#define USE_8KHZ
+//#define USE_8KHZ
 //#define USE_22KHZ
-//#define USE_44KHZ
+#define USE_44KHZ
 #define USE_LOOPS	2000
 //#define USE_LOOPS	5
 
@@ -311,7 +311,7 @@ static void codec_configure (int frequency, int sample_size)
   
   ac97_store (REG_RATE_DAC_FRONT, v);
 
-  DBG (2, "sampling 0x%04x 0x%04x 0x%04x\n", 
+  DBG (3, "sampling 0x%04x 0x%04x 0x%04x\n", 
        ac97_fetch (REG_RATE_DAC_FRONT),
        ac97_fetch (REG_RATE_DAC_SURR),
        ac97_fetch (REG_RATE_DAC_LFE));
