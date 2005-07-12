@@ -70,7 +70,17 @@
 #include <command.h>
 #include <mach/hardware.h>
 
-#define ENTRY(l) printf ("%s\n", __FUNCTION__)
+//#define TALK 1
+
+#if defined (TALK)
+#define PRINTF(f...)		printf (f)
+#define ENTRY(l)		printf ("%s\n", __FUNCTION__)
+#define DBG(l,f...)		do { if (TALK >= l) printf (f); } while (0)
+#else
+#define PRINTF(f...)		do {} while (0)
+#define ENTRY(l)		do {} while (0)
+#define DBG(l,f...)		do {} while (0)
+#endif
 
 #define ADC_FS_FFF		(1<<3)
 #define ADC_FS_FEMPTY		(1<<2)
@@ -172,7 +182,7 @@ static void adc_setup (void)
 
   ENTRY (0);
 
-  printf ("adc: A2DCLK %d  SETTIME(US) %0xx\n", A2DCLK, SETTIME(US_SETTLING));
+  PRINTF ("adc: A2DCLK %d  SETTIME(US) %0xx\n", A2DCLK, SETTIME(US_SETTLING));
 
   ADC_IC = ADC_IC_BOI | ADC_IC_PEN | ADC_IC_EOS;
 

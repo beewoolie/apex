@@ -89,17 +89,17 @@
 
 
 #if defined (USE_8KHZ)
-# include "pcm8-8.h"
+# include <audio/pcm8-8.h>
 # define SAMPLE_FREQUENCY 8021
 #endif
 
 #if defined (USE_22KHZ)// || defined (USE_44KHZ)
-# include "pcm2205-16.h"
+# include <audio/pcm2205-16.h>
 # define SAMPLE_FREQUENCY 22050
 #endif
 
 #if defined (USE_44KHZ)// && 0 // || defined (USE_22KHZ)
-# include "pcm441-16b.h"
+# include <audio/pcm441-16b.h>
 # define SAMPLE_FREQUENCY 44100
 #endif
 

@@ -97,7 +97,7 @@ int cmd_dump (int argc, const char** argv)
     dumpw (rgb, cb, index, width);
     index += cb;
 
-    if (index >= more) {
+    if (index >= more && index < d.start + d.length) {
       extern struct driver_d* console_driver;
       char ch;
 

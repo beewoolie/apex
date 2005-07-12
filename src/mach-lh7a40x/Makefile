@@ -21,4 +21,5 @@
 
 obj-y := arch.o initialize.o serial.o timer.o env.o cpuinfo.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o
+obj-$(CONFIG_CODEC)		+= codec.o
 obj-$(CONFIG_ADC)		+= adc.o

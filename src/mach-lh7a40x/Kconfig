@@ -79,6 +79,13 @@ config CLCDC
 	help
 	  This driver initializes and tests the CLCD controller.
 
+config CODEC
+	bool "Audio Codec"
+	default n
+	help
+	  This driver includes commands to initialize and test the
+	  AC97 link and associated codec.
+
 endmenu
 
 config MACH
