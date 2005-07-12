@@ -34,15 +34,29 @@
 #include <driver.h>
 #include <error.h>
 
-void dump (const unsigned char* rgb, int cb, unsigned long index)
+void dumpw (const unsigned char* rgb, int cb, unsigned long index, int width)
 {
   int i;
 
   while (cb > 0) {
     printf ("%08lx: ", index);
     for (i = 0; i < 16; ++i) {
-      if (i < cb)
-	printf ("%02x ", rgb[i]);
+      if (i < cb) {
+	switch (width) {
+	default:
+	case 1:
+	  printf ("%02x ", rgb[i]);
+	  break;
+	case 2:
+	  printf ("%04x ", *((u16*)&rgb[i]));
+	  ++i;
+	  break;
+	case 4:
+	  printf ("%08x ", *((u32*)&rgb[i]));
+	  i += 3;
+	  break;
+	}
+      }
       else
 	printf ("   ");
       if (i%8 == 7)

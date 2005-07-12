@@ -44,6 +44,23 @@ int cmd_dump (int argc, const char** argv)
   int result = 0;
   unsigned long index;
   unsigned long more;
+  static int width;
+
+  /* Parse arguments */
+  while (argc > 1 && *argv[1] == '-') {
+    switch (argv[1][1]) {
+    case '1':
+    case '2':
+    case '4':
+      width = argv[1][1] - '0';
+      break;
+    default:
+      return ERROR_PARAM;
+      break;
+    }
+    --argc;
+    ++argv;
+  }
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -77,7 +94,7 @@ int cmd_dump (int argc, const char** argv)
       goto fail;
     }
 
-    dump (rgb, cb, index);
+    dumpw (rgb, cb, index, width);
     index += cb;
 
     if (index >= more) {
@@ -119,10 +136,13 @@ static __command struct command_d c_dump = {
   .description = "dump data to the console",
   .func = cmd_dump,
   COMMAND_HELP(
-"dump SRC\n"
+"dump [-1|-2|-4] SRC\n"
 "  Display SRC region data on the console.\n"
-"  The default SRC region length is 64 bytes.\n\n"
-"  e.g.  dump nor:0\n"
+"  The default SRC region length is 64 bytes.  The -# options\n"
+"  denote the width of each field to display.  The width option\n"
+"  is sticky.  Once changed it will remain in effect until changed\n"
+"  again.\n\n"
+"  e.g.  dump -4 nor:0		# Display 32 bit words\n"
 "        dump 0x20200000\n"
   )
 };

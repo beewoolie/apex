@@ -1,3 +1,8 @@
+2005-07-11  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-dump.c (cmd_dump): Added dump display width to make
+	it easier to read registers and machine code.
+
 2005-07-07  Marc Singer  <elf@buici.com>
 
 	* src/net/rarp.c (cmd_rarp): RARP implemented.
