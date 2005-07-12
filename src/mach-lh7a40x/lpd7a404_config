@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri Jul  8 11:53:27 2005
+# Mon Jul 11 16:29:55 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -89,7 +89,7 @@ CONFIG_DRIVERS_LH=y
 # CONFIG_ETHERNET is not set
 # CONFIG_CMD_ARP is not set
 # CONFIG_CMD_RARP is not set
-# CONFIG_NET_TFTP is not set
+# CONFIG_CMD_TFTP is not set
 
 #
 # Environment

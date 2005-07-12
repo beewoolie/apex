@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Jul  7 20:38:54 2005
+# Mon Jul 11 19:43:52 2005
 #
 CONFIG_ARM=y
 CONFIG_ARCH_LH7952X=y
@@ -45,8 +45,7 @@ CONFIG_ENV_STARTUP=""
 # Platform Drivers
 #
 CONFIG_DRIVER_EMAC_LH79524=y
-# CONFIG_CLCDC is not set
-# CONFIG_ADC is not set
+CONFIG_CLCDC=y
 # CONFIG_CODEC is not set
 CONFIG_MACH="lh7952x"
 CONFIG_ARCH_LH79524=y
@@ -92,12 +91,19 @@ CONFIG_USES_COMPACTFLASH=y
 CONFIG_USES_PATHNAME_PARSER=y
 
 #
+# Sharp-LH Drivers
+#
+CONFIG_DRIVER_LH_ADC=y
+CONFIG_HAS_LH_ADC=y
+CONFIG_DRIVERS_LH=y
+
+#
 # Ethernet Networking
 #
 CONFIG_ETHERNET=y
 CONFIG_CMD_ARP=y
 CONFIG_CMD_RARP=y
-# CONFIG_NET_TFTP is not set
+# CONFIG_CMD_TFTP is not set
 
 #
 # Environment
