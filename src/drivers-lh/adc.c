@@ -75,9 +75,13 @@
 #define ADC_FS_FFF		(1<<3)
 #define ADC_FS_FEMPTY		(1<<2)
 
-#define ADC_IC_BOIC		(1<<2)
-#define ADC_IC_PENINC		(1<<1)
-#define ADC_IC_EOSINTC		(1<<0)
+#define ADC_IC_BOI		(1<<2)
+#define ADC_IC_PEN		(1<<1)
+#define ADC_IC_EOS		(1<<0)
+
+#define ADC_IS_BROWNOUT		(1<<4)
+#define ADC_IS_PEN		(1<<3)
+#define ADC_IS_EOS		(1<<2)
 
 #define ADC_PC_CLKSEL_SHIFT	(8)
 #define ADC_PC_CLKSEL_MASK	(7<<ADC_PC_CLKSEL_SHIFT)
@@ -138,13 +142,25 @@
 #define ADC_GC_FIFOWMK_SHIFT	(3)
 #define ADC_GC_FIFOWMK_MASK	(0xf<<ADC_GC_FIFOWMK_SHIFT)
 
-#define US_SETTLING		(20)		/* Signal stablization */
-#define RCPC_ADCPRE_V		(1)
-#define ADC_CLKSEL		(0x7)
-#define ADC_PC_CLKSEL_V		(ADC_CLKSEL<<ADC_PC_CLKSEL_SHIFT)
-#define CLKSEL			(1<<ADC_CLKSEL)
+# define US_SETTLING		(20)		/* Signal stablization */
 
-#define A2DCLK			(50803200/RCPC_ADCPRE_V/CLKSEL)
+	/* We're aiming for sampling at about 400KHz */
+
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
+# define ADC_CLKSEL		(0x7)
+# define CLKSEL			(1<<ADC_CLKSEL)
+# define RCPC_ADCPRE_V		(1)
+# define A2DCLK			(50803200/RCPC_ADCPRE_V/CLKSEL)
+#endif
+
+#if defined (CONFIG_ARCH_LH7A404)
+# define ADC_CLKSEL		(0x2)
+# define CLKSEL			(1<<ADC_CLKSEL)
+# define A2DCLK			(1843200/CLKSEL)
+#endif
+
+#define ADC_PC_CLKSEL_V		(ADC_CLKSEL<<ADC_PC_CLKSEL_SHIFT)
+
 #define SETTIME(us)		(((A2DCLK*(us) + 1000000/2)/1000000)\
 				 <<ADC_HW_SETTIME_SHIFT)
 
@@ -156,9 +172,9 @@ static void adc_setup (void)
 
   ENTRY (0);
 
-//  printf ("adc: A2DCLK %d  SETTIME(US) %d\n", A2DCLK, SETTIME(US_SETTLING));
+  printf ("adc: A2DCLK %d  SETTIME(US) %0xx\n", A2DCLK, SETTIME(US_SETTLING));
 
-  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
+  ADC_IC = ADC_IC_BOI | ADC_IC_PEN | ADC_IC_EOS;
 
 				/* Flush the results FIFO */
   while ((ADC_FS & ADC_FS_FEMPTY) == 0)
@@ -172,7 +188,8 @@ static void adc_setup (void)
 
   MASK_AND_SET (ADC_GC,
 		ADC_GC_SSM_MASK | ADC_GC_FIFOWMK_MASK,
-		ADC_GC_SSM_SSB
+//		ADC_GC_SSM_SSB
+		ADC_GC_SSM_SSB_PEN
 		//		| (12<<ADC_GC_FIFOWMK_SHIFT)
 		);
 
@@ -262,7 +279,10 @@ static void adc_init (void)
   ADC_IM = 0; /* Disable all interrupts */
 
   ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF | (1<<ADC_PC_NOC_SHIFT);
-  ADC_GC = ADC_GC_SSM_SSB | (0xf<<ADC_GC_FIFOWMK_SHIFT);
+  ADC_GC = 
+//    ADC_GC_SSM_SSB
+    ADC_GC_SSM_SSB_PEN
+    | (0xf<<ADC_GC_FIFOWMK_SHIFT);
 
 
   for (i = 0; i < SAMPLES; ++i) {
@@ -279,30 +299,52 @@ static void adc_init (void)
   while ((ADC_FS & ADC_FS_FEMPTY) == 0)
     ADC_RR;
 
-  ADC_IC = ADC_IC_BOIC | ADC_IC_PENINC | ADC_IC_EOSINTC;
+  ADC_IC = ADC_IC_BOI | ADC_IC_PEN | ADC_IC_EOS;
 
   adc_setup ();
 }
 
 
+#define MS_TIMEOUT 2*1000
+
 static int cmd_adc (int argc, const char** argv)
 {
   unsigned long status = ADC_GS;
   int i;
+  unsigned long timeStart;
+
+				/* Flush the results FIFO */
+  while ((ADC_FS & ADC_FS_FEMPTY) == 0)
+    ADC_RR;
+
+  if (ADC_IS & ADC_IS_PEN)
+    printf ("pen down\n");
 
   printf ("fifo %lx\n", ADC_FS);
   printf ("start %lx\n", status);
+
+  ADC_IC |= ADC_IC_EOS | ADC_IC_PEN;
   ADC_GC |= (1<<2);		/* Start sampling */
 
-  while (1) {
+  timeStart = timer_read (); 
+
+  do {
+    if (ADC_IS & ADC_IS_EOS)
+      break;
+#if 0
     unsigned long l = ADC_GS;
     if ((l & (0xf<<4)) != (status & (0xf<<4)))
       printf ("state %lx\n", (l >> 4) & 0xf);
     status = l;
-    if (((status >> 4) & 0xf) == 0x4)
+    if (((status >> 4) & 0xf) == 0x4) /* End of sequence */
       break;
-  }
-  printf ("done\n");
+    if (((status >> 4) & 0xf) == 0x1) /* Idle, which is really an error */
+      break;
+#endif
+  } while (timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
+
+
+  printf ("done (gs %lx)\n", ADC_GS);
   printf ("fifo %lx\n", ADC_FS);
 
   for (i = 0; i < SAMPLES; ++i) {
