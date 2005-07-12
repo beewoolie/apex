@@ -73,11 +73,11 @@
 #define DBG(l,f...)		do {} while (0)
 #endif
 
-//#define USE_DMA
-//#define USE_DMA_CAP
+#define USE_DMA
 #define USE_16
 #define USE_STEREO
 #define USE_SIGNED_CONVERSION
+#define USE_COMPACT_MODE
 //#define USE_8KHZ
 //#define USE_22KHZ
 #define USE_44KHZ
@@ -88,7 +88,8 @@
 //#define USE_E5_RIGHT
 
 
-#define US_FRAME	30
+//#define US_FRAME	30
+#define US_FRAME	100
 
 #if defined (USE_8KHZ)
 # include <audio/pcm8-8.h>
@@ -337,11 +338,13 @@ static void codec_init (void)
 {
   ENTRY (0);
 
-  AC97_GCR |= AC97_GCR_IFE;		/* Enable AC97 link */
   __REG(GPIO_PHYS + GPIO_PINMUX) &= ~(1<<2); /* AC97 CODECON */
+  AC97_GCR |= AC97_GCR_IFE;		/* Enable AC97 link */
 
+  DBG (1, "%s: reset\n", __FUNCTION__);
   AC97_RESET |= AC97_RESET_TIMEDRESET;
 
+  DBG (1, "%s: waiting for powerup\n", __FUNCTION__);
   if (!wait_for_powerup ()) {
     DBG (0, "codec didn't power-up\n");
     return;
@@ -556,8 +559,6 @@ error
 static int cmd_codec_test (int argc, const char** argv)
 {
   int samples = convert_source ();
-  int index;			/* Index for DMA */
-  int count;
   int loops = 
 #if defined USE_LOOPS
       USE_LOOPS
@@ -567,61 +568,90 @@ static int cmd_codec_test (int argc, const char** argv)
     ;
 
 #if defined (USE_DMA)
-  codec_unmute ();
 
-#if defined (USE_DMA_CAP)
-  DMA0_CTRL    &= ~(1<<0); /* Disable */
-  DMA0_SOURCELO =  SSP_DR_PHYS        & 0xffff;
-  DMA0_SOURCEHI = (SSP_DR_PHYS >> 16) & 0xffff;
-  DMA0_DESTLO   =  ((unsigned long)&cap)        & 0xffff;
-  DMA0_DESTHI   = (((unsigned long)&cap) >> 16) & 0xffff;
-  DMA0_MAX	= 0xffff;
+ {
+   int index;			/* Index for DMA */
+   int count;
+
+   DBG (2, "%s: codec setup\n", __FUNCTION__);
+
+   AC97_RXCR1 = 0;		/* Disable */
+   AC97_TXCR1 = AC97_CR_EN
+     | AC97_CR_SLOT(3) | AC97_CR_SLOT(4)
+     | AC97_CR_SIZE_16
+#if defined (USE_COMPACT_MODE)
+     | AC97_CR_CM
 #endif
+     ;
+
+   codec_unmute ();
+
+   DBG (2, "%s: dma enable\n", __FUNCTION__);
+   DMAC_P_PCONTROL (DMAC_M2P4) |= DMAC_PCONTROL_ENABLE;
+   DBG (2, "%s: dma set count\n", __FUNCTION__);
+   DMAC_P_MAXCNT1 (DMAC_M2P4)   = 0;
+   DBG (2, "%s: dma set base\n", __FUNCTION__);
+   DMAC_P_BASE1 (DMAC_M2P4)     = (unsigned long) buffer;
 
  restart:
-  index = 0;
+   index = 0;
 
  play_more:
-  count = samples;
-  if (index + count > samples)
-    count = samples - index;
-  if (count > 65534)
-    count = 65534;
+   count = samples;
+   if (index + count > samples)
+     count = samples - index;
+   if (count > 0x10000 - 4)
+     count = 0x10000 - 4;
 
-  DMA1_CTRL    &= ~(1<<0); /* Disable */
-  DMA1_SOURCELO =  ((unsigned long)(buffer + index))        & 0xffff;
-  DMA1_SOURCEHI = (((unsigned long)(buffer + index)) >> 16) & 0xffff;
-  DMA1_DESTLO   =  SSP_DR_PHYS        & 0xffff;
-  DMA1_DESTHI   = (SSP_DR_PHYS >> 16) & 0xffff;
-  DMA1_MAX	= count;
+   if (DMAC_P_PSTATUS (DMAC_M2P4) & DMAC_PSTATUS_NEXTBUF) {
+     DBG (2, "%s: nextbuf 1\n", __FUNCTION__);
+     DMAC_P_MAXCNT1 (DMAC_M2P4)   = count;
+     DMAC_P_BASE1 (DMAC_M2P4)     = (unsigned long) (buffer + index);
+   }
+   else {
+     DBG (2, "%s: nextbuf 0\n", __FUNCTION__);
+     DMAC_P_MAXCNT0 (DMAC_M2P4)   = count;
+     DMAC_P_BASE0 (DMAC_M2P4)     = (unsigned long) (buffer + index);
+   }
 
-  DMA_CLR = 0xff;
+   DBG (2, "%s: waiting for completion\n", __FUNCTION__);
 
-#if defined (USE_DMA_CAP)
-  DMA0_CTRL |= (1<<0);		/* Enable RX DMA */
-#endif
-  DMA1_CTRL |= (1<<0);		/* Enable TX DMA */
+				/* Wait for buffer completion */
+   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<1)) == 0) {
+     extern struct driver_d* console_driver;
+     if (console_driver->poll (0, 1)) {
+       int ch;
+       console_driver->read (0, &ch, 1);
+       samples = 0;
+       loops = -1;
+       break;
+     }
+   }
 
-#if defined (USE_I2S)
-  I2S_CTRL |= 0
-    | I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
-#if defined (USE_LOOPBACK_I2S)
-    | I2S_CTRL_LOOP
-#endif
-    ;
-#endif
+   index += count;
+   if (index < samples)
+     goto play_more;
 
-				/* Wait for completion */
-  while ((DMA_STATUS & (1<<1)) == 0)
-    ;
+   DBG (2, "%s: waiting for stall\n", __FUNCTION__);
 
-  index += count;
-  if (index < samples)
-    goto play_more;
+				/* Wait for stall */
+   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<0)) == 0 && loops >= 0) {
+     extern struct driver_d* console_driver;
+     if (console_driver->poll (0, 1)) {
+       int ch;
+       console_driver->read (0, &ch, 1);
+       samples = 0;
+       loops = 0;
+       break;
+     }
+   }
 
-  if (loops--) {
-    goto restart;
-  }
+   if (loops-- > 0)
+     goto restart;
+
+   DMAC_P_PCONTROL (DMAC_M2P4) &= ~DMAC_PCONTROL_ENABLE;
+
+ }
 
 #endif
 
@@ -629,9 +659,12 @@ static int cmd_codec_test (int argc, const char** argv)
 
   AC97_RXCR1 = 0;		/* Disable */
   AC97_TXCR1 = AC97_CR_EN
-    // | AC97_CR_CM
     | AC97_CR_SLOT(3) | AC97_CR_SLOT(4)
-    | AC97_CR_SIZE_16;
+    | AC97_CR_SIZE_16
+#if defined (USE_COMPACT_MODE)
+    | AC97_CR_CM
+#endif
+    ;
 
   codec_unmute ();
 
@@ -650,9 +683,13 @@ static int cmd_codec_test (int argc, const char** argv)
 	/* Wait for room in the FIFO */
 	while (AC97_SR1 & AC97_SR_TXFF)
 	  ;
-//	AC97_DR1 = buffer[i] | (buffer[i+1]<<16);
+#if defined (USE_COMPACT_MODE)
+	AC97_DR1 = buffer[i] | (buffer[i+1]<<16);
+	i += 2;
+#else
 	AC97_DR1 = buffer[i];
 	++i;
+#endif
 
 	if (console_driver->poll (0, 1)) {
 	  int ch;
