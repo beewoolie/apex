@@ -605,15 +605,20 @@ static int cmd_codec_test (int argc, const char** argv)
      count = 0x10000 - 4;
 
    if (DMAC_P_PSTATUS (DMAC_M2P4) & DMAC_PSTATUS_NEXTBUF) {
-     DBG (2, "%s: nextbuf 1\n", __FUNCTION__);
+     DBG (2, "%s: nextbuf 1 (0x%lx)\n", __FUNCTION__, 
+	  DMAC_P_PSTATUS (DMAC_M2P4));
      DMAC_P_MAXCNT1 (DMAC_M2P4)   = count;
      DMAC_P_BASE1 (DMAC_M2P4)     = (unsigned long) (buffer + index);
    }
    else {
-     DBG (2, "%s: nextbuf 0\n", __FUNCTION__);
+     DBG (2, "%s: nextbuf 0 (0x%lx)\n", __FUNCTION__, 
+	  DMAC_P_PSTATUS (DMAC_M2P4));
      DMAC_P_MAXCNT0 (DMAC_M2P4)   = count;
      DMAC_P_BASE0 (DMAC_M2P4)     = (unsigned long) (buffer + index);
    }
+
+   DBG (2, "%s:  -> (0x%lx)\n", __FUNCTION__, 
+	DMAC_P_PSTATUS (DMAC_M2P4));
 
    DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
 	count, index, samples);
@@ -650,7 +655,8 @@ static int cmd_codec_test (int argc, const char** argv)
      goto restart;
 
  done:
-   DMAC_P_PCONTROL (DMAC_M2P4) &= ~DMAC_PCONTROL_ENABLE;
+   ;
+//   DMAC_P_PCONTROL (DMAC_M2P4) &= ~DMAC_PCONTROL_ENABLE;
 
  }
 
