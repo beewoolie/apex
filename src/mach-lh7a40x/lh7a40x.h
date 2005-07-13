@@ -204,7 +204,7 @@
 #define DMAC_PORT_UART2		7
 #define DMAC_PORT_UART3		8
 
-#define DMAC_PSTATUS_NEXTBUF	 (1<<7)
+#define DMAC_PSTATUS_NEXTBUF	 (1<<6)
 
 
 #endif  /* __LH7A40X_H__ */

@@ -42,14 +42,6 @@
   o There seems to be more at play in the signed versus unsigned
     arena.  The WAV format certainly uses signed integers for the
     sample values. 
-  o As slave, the CPU appears to properly sequence data out in that
-    the data starts one (or perhaps two) cycles after the start of the
-    IWS signal transition.
-  o As master, the CPU appears to correctly delay the data for one
-    clock cycle.  According to the I2S spec, the waveform is correct
-    with the LSB appearing just after then IWS transition
-  o In I2S CPU master mode, setting WSDEL to 1 breaks I2S framing.
-    The SSP pulse isn't converted to a proper IWS pulse.
 
 */
 
@@ -87,6 +79,9 @@
 //#define USE_E5
 //#define USE_E5_RIGHT
 
+
+#define DMAC_CHAN DMAC_M2P4
+//#define DMAC_CHAN DMAC_M2P5
 
 //#define US_FRAME	30
 #define US_FRAME	100
@@ -556,6 +551,28 @@ error
   return buffer_samples;
 } 
 
+static void print_status (unsigned long v)
+{
+  printf (" 0x%lx: %ld b  nb %ld  s (%ld)", 
+	  v,
+	  (v >> 7) & 0x1f, 
+	  (v >> 6) & 1,
+	  (v >> 4) & 3);
+  switch ((v >> 4) & 3) {
+  default:
+  case 0: printf (" idle"); break;
+  case 1: printf (" on"); break;
+  case 2: printf (" stall"); break;
+  case 3: printf (" next"); break;
+  }
+  if (v & (1<<3))
+    printf (" cherint");
+  if (v & (1<<1))
+    printf (" nfbrint");
+  if (v & (1<<0))
+    printf (" stallrint");
+}
+
 static int cmd_codec_test (int argc, const char** argv)
 {
   int samples = convert_source ();
@@ -575,7 +592,31 @@ static int cmd_codec_test (int argc, const char** argv)
 
    DBG (2, "%s: codec setup\n", __FUNCTION__);
 
+   codec_unmute ();
+
+//   CSC_PWRCNT &= ~(CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN);
+//   usleep (100);
+   CSC_PWRCNT |= CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN;
+//   usleep (100);
+   DMAC_P_PPALLOC (DMAC_CHAN) = 2;	  /* Port 4/5, AC97-1 */
+
+ restart:
+   index = 0;
+
    AC97_RXCR1 = 0;		/* Disable */
+   AC97_TXCR1 = 0;
+
+   DBG (2, "%s: dma enable\n", __FUNCTION__);
+   DMAC_P_PCONTROL (DMAC_CHAN) &= ~DMAC_PCONTROL_ENABLE;
+   DMAC_P_PCONTROL (DMAC_CHAN);
+   DMAC_P_PCONTROL (DMAC_CHAN) |= DMAC_PCONTROL_ENABLE;
+   //   DBG (2, "%s: dma set count\n", __FUNCTION__);
+   //   DMAC_P_MAXCNT1 (DMAC_CHAN)   = 0;
+   //   DBG (2, "%s: dma set base\n", __FUNCTION__);
+   //   DMAC_P_BASE1 (DMAC_CHAN)     = 0; // (unsigned long) buffer;
+
+//   DMAC_P_PINTERRUPT (DMAC_CHAN) = 0xb;
+
    AC97_TXCR1 = AC97_CR_EN
      | AC97_CR_SLOT(3) | AC97_CR_SLOT(4)
      | AC97_CR_SIZE_16
@@ -584,19 +625,6 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
      ;
 
-   codec_unmute ();
-
-   CSC_PWRCNT |= CSC_PWRCNT_DMAC_M2P4_EN; /* Enable power to the channel */
-   DBG (2, "%s: dma enable\n", __FUNCTION__);
-   DMAC_P_PCONTROL (DMAC_M2P4) |= DMAC_PCONTROL_ENABLE;
-   DBG (2, "%s: dma set count\n", __FUNCTION__);
-   DMAC_P_MAXCNT1 (DMAC_M2P4)   = 0;
-   DBG (2, "%s: dma set base\n", __FUNCTION__);
-   DMAC_P_BASE1 (DMAC_M2P4)     = (unsigned long) buffer;
-
- restart:
-   index = 0;
-
  play_more:
    count = samples;
    if (index + count > samples)
@@ -604,21 +632,24 @@ static int cmd_codec_test (int argc, const char** argv)
    if (count > 0x10000 - 4)
      count = 0x10000 - 4;
 
-   if (DMAC_P_PSTATUS (DMAC_M2P4) & DMAC_PSTATUS_NEXTBUF) {
-     DBG (2, "%s: nextbuf 1 (0x%lx)\n", __FUNCTION__, 
-	  DMAC_P_PSTATUS (DMAC_M2P4));
-     DMAC_P_MAXCNT1 (DMAC_M2P4)   = count;
-     DMAC_P_BASE1 (DMAC_M2P4)     = (unsigned long) (buffer + index);
+   if (DMAC_P_PSTATUS (DMAC_CHAN) & DMAC_PSTATUS_NEXTBUF) {
+     DBG (2, "%s: nextbuf 1\n   ", __FUNCTION__);
+     print_status (DMAC_P_PSTATUS (DMAC_CHAN));
+     printf ("\n");
+     DMAC_P_MAXCNT1 (DMAC_CHAN)   = count;
+     DMAC_P_BASE1 (DMAC_CHAN)     = (unsigned long) (buffer + index);
    }
    else {
-     DBG (2, "%s: nextbuf 0 (0x%lx)\n", __FUNCTION__, 
-	  DMAC_P_PSTATUS (DMAC_M2P4));
-     DMAC_P_MAXCNT0 (DMAC_M2P4)   = count;
-     DMAC_P_BASE0 (DMAC_M2P4)     = (unsigned long) (buffer + index);
+     DBG (2, "%s: nextbuf 0\n   ", __FUNCTION__);
+     print_status (DMAC_P_PSTATUS (DMAC_CHAN));
+     printf ("\n");
+     DMAC_P_MAXCNT0 (DMAC_CHAN)   = count;
+     DMAC_P_BASE0 (DMAC_CHAN)     = (unsigned long) (buffer + index);
    }
 
-   DBG (2, "%s:  -> (0x%lx)\n", __FUNCTION__, 
-	DMAC_P_PSTATUS (DMAC_M2P4));
+   printf (" ->");
+   print_status (DMAC_P_PSTATUS (DMAC_CHAN));
+   printf ("\n");
 
    DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
 	count, index, samples);
@@ -627,7 +658,7 @@ static int cmd_codec_test (int argc, const char** argv)
 
 				/* Wait for buffer completion */
    if (index < samples) {
-     while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<1)) == 0) {
+     while ((DMAC_P_PSTATUS (DMAC_CHAN) & (1<<1)) == 0) {
        extern struct driver_d* console_driver;
        if (console_driver->poll (0, 1)) {
 	 int ch;
@@ -638,11 +669,13 @@ static int cmd_codec_test (int argc, const char** argv)
      goto play_more;
    }
 
-   DBG (2, "%s: waiting for stall 0x%lx\n", __FUNCTION__, 
-	DMAC_P_PSTATUS (DMAC_M2P4));
+   printf ("AC97_S 0x%lx\n", AC97_SR1);
+   DBG (2, "%s: waiting for stall\n", __FUNCTION__);
+   print_status (DMAC_P_PSTATUS (DMAC_CHAN));
+   printf ("\n");
 
 				/* Wait for stall */
-   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<0)) == 0) {
+   while ((DMAC_P_PSTATUS (DMAC_CHAN) & (1<<0)) == 0) {
      extern struct driver_d* console_driver;
      if (console_driver->poll (0, 1)) {
        int ch;
@@ -656,7 +689,6 @@ static int cmd_codec_test (int argc, const char** argv)
 
  done:
    ;
-//   DMAC_P_PCONTROL (DMAC_M2P4) &= ~DMAC_PCONTROL_ENABLE;
 
  }
 
