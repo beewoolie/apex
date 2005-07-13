@@ -81,8 +81,8 @@
 //#define USE_8KHZ
 //#define USE_22KHZ
 #define USE_44KHZ
-#define USE_LOOPS	2000
-//#define USE_LOOPS	5
+//#define USE_LOOPS	2000
+#define USE_LOOPS	5
 
 //#define USE_E5
 //#define USE_E5_RIGHT
@@ -586,6 +586,7 @@ static int cmd_codec_test (int argc, const char** argv)
 
    codec_unmute ();
 
+   CSC_PWRCNT |= CSC_PWRCNT_DMAC_M2P4_EN; /* Enable power to the channel */
    DBG (2, "%s: dma enable\n", __FUNCTION__);
    DMAC_P_PCONTROL (DMAC_M2P4) |= DMAC_PCONTROL_ENABLE;
    DBG (2, "%s: dma set count\n", __FUNCTION__);
@@ -614,41 +615,41 @@ static int cmd_codec_test (int argc, const char** argv)
      DMAC_P_BASE0 (DMAC_M2P4)     = (unsigned long) (buffer + index);
    }
 
-   DBG (2, "%s: waiting for completion\n", __FUNCTION__);
-
-				/* Wait for buffer completion */
-   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<1)) == 0) {
-     extern struct driver_d* console_driver;
-     if (console_driver->poll (0, 1)) {
-       int ch;
-       console_driver->read (0, &ch, 1);
-       samples = 0;
-       loops = -1;
-       break;
-     }
-   }
+   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
+	count, index, samples);
 
    index += count;
-   if (index < samples)
-     goto play_more;
 
-   DBG (2, "%s: waiting for stall\n", __FUNCTION__);
+				/* Wait for buffer completion */
+   if (index < samples) {
+     while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<1)) == 0) {
+       extern struct driver_d* console_driver;
+       if (console_driver->poll (0, 1)) {
+	 int ch;
+	 console_driver->read (0, &ch, 1);
+	 goto done;
+       }
+     }
+     goto play_more;
+   }
+
+   DBG (2, "%s: waiting for stall 0x%lx\n", __FUNCTION__, 
+	DMAC_P_PSTATUS (DMAC_M2P4));
 
 				/* Wait for stall */
-   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<0)) == 0 && loops >= 0) {
+   while ((DMAC_P_PSTATUS (DMAC_M2P4) & (1<<0)) == 0) {
      extern struct driver_d* console_driver;
      if (console_driver->poll (0, 1)) {
        int ch;
        console_driver->read (0, &ch, 1);
-       samples = 0;
-       loops = 0;
-       break;
+       goto done;
      }
    }
 
-   if (loops-- > 0)
+   if (loops--)
      goto restart;
 
+ done:
    DMAC_P_PCONTROL (DMAC_M2P4) &= ~DMAC_PCONTROL_ENABLE;
 
  }

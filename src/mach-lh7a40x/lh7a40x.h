@@ -88,6 +88,18 @@
 
 
 #define CSC_PWRCNT_USBH_EN	(1<<28)	/* USB Host power enable */
+#define CSC_PWRCNT_DMAC_M2M1_EN	(1<<27)
+#define CSC_PWRCNT_DMAC_M2M0_EN	(1<<26)
+#define CSC_PWRCNT_DMAC_M2P8_EN	(1<<25)
+#define CSC_PWRCNT_DMAC_M2P9_EN	(1<<24)
+#define CSC_PWRCNT_DMAC_M2P6_EN	(1<<23)
+#define CSC_PWRCNT_DMAC_M2P7_EN	(1<<22)
+#define CSC_PWRCNT_DMAC_M2P4_EN	(1<<21)
+#define CSC_PWRCNT_DMAC_M2P5_EN	(1<<20)
+#define CSC_PWRCNT_DMAC_M2P2_EN	(1<<19)
+#define CSC_PWRCNT_DMAC_M2P3_EN	(1<<18)
+#define CSC_PWRCNT_DMAC_M2P0_EN	(1<<17)
+#define CSC_PWRCNT_DMAC_M2P1_EN	(1<<16)
 
 #define SMC_BCR0		__REG (SMC_PHYS + 0x00)
 #define SMC_BCR1		__REG (SMC_PHYS + 0x04)
@@ -156,18 +168,18 @@
 #define DMAC_GIR_MPI0		(1<<1)
 #define DMAC_GIR_MPI1		(1<<0)
 
-#define DMAC_M2P0		0x2800
-#define DMAC_M2P1		0x2840
-#define DMAC_M2P2		0x2880
-#define DMAC_M2P3		0x28c0
-#define DMAC_M2P4		0x2a40
-#define DMAC_M2P5		0x2a00
-#define DMAC_M2P6		0x2ac0
-#define DMAC_M2P7		0x2a80
-#define DMAC_M2P8		0x2b40
-#define DMAC_M2P9		0x2b00
-#define DMAC_M2M0		0x2900
-#define DMAC_M2M1		0x2940
+#define DMAC_M2P0		0x0000
+#define DMAC_M2P1		0x0040
+#define DMAC_M2P2		0x0080
+#define DMAC_M2P3		0x00c0
+#define DMAC_M2P4		0x0240
+#define DMAC_M2P5		0x0200
+#define DMAC_M2P6		0x02c0
+#define DMAC_M2P7		0x0280
+#define DMAC_M2P8		0x0340
+#define DMAC_M2P9		0x0300
+#define DMAC_M2M0		0x0100
+#define DMAC_M2M1		0x0140
 
 #define DMAC_P_PCONTROL(c)	__REG(DMAC_PHYS + (c) + 0x00)
 #define DMAC_P_PINTERRUPT(c)	__REG(DMAC_PHYS + (c) + 0x04)
