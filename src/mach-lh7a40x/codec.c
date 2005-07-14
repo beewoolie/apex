@@ -70,9 +70,9 @@
 #define USE_STEREO
 #define USE_SIGNED_CONVERSION
 #define USE_COMPACT_MODE
-//#define USE_8KHZ
+#define USE_8KHZ
 //#define USE_22KHZ
-#define USE_44KHZ
+//#define USE_44KHZ
 //#define USE_LOOPS	2000
 #define USE_LOOPS	5
 
@@ -358,48 +358,6 @@ static void codec_init (void)
   }
 #endif
 
-
-#if defined (USE_DMA) && 0
-  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
-  RCPC_AHBCLKCTRL &= ~(1<<0); /* Enable DMA AHB clock */
-  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
-
-  DMA0_CTRL
-    = (0<<13)			/* Peripheral source */
-    | (0<<9)			/* Load base addresses on start  */
-    | (1<<7)			/* Destination size 2 bytes */
-    | (1<<3)			/* Source size is 2 bytes */
-    | (0<<2)			/* Destination fixed */
-    | (0<<1);			/* Source fixed */
-
-  DMA1_CTRL
-    = (1<<13)			/* Peripheral destination */
-#if defined (USE_16)
-    | (1<<7)			/* Destination size 2 bytes */
-    | (1<<3)			/* Source size is 2 bytes */
-    | (1<<5)			/* Source burst 4 incrementing */
-#else
-    | (0<<7)			/* Destination size 1 bytes */
-    | (0<<3)			/* Source size is 1 byte */
-    | (1<<5)			/* Source burst 4 incrementing */
-#endif
-    | (0<<9)			/* Wrapping: Load base addresses on start  */
-    | (0<<2)			/* Destination fixed */
-    | (1<<1);			/* Source incremented */
-
-  DMA_CLR   = 0xff;
-  DMA_MASK |= (1<<1);		/* Enable of DMA channel 1 */
-#endif
-  
-#if defined (USE_DMA) && 0
-  SSP_DCR = 0
-    | (1<<1)			/* TX DMA enabled */
-    | (1<<0)			/* RX DMA enabled */
-    ;
-//#else
-  SSP_DCR = 0;
-#endif
-
   codec_mute ();
 
   codec_configure (SAMPLE_FREQUENCY, 16);
@@ -553,7 +511,7 @@ error
 
 static void print_status (unsigned long v)
 {
-  printf (" 0x%lx: %ld b  nb %ld  s (%ld)", 
+  printf (" 0x%04lx: b %ld  nb %ld  s (%ld)", 
 	  v,
 	  (v >> 7) & 0x1f, 
 	  (v >> 6) & 1,
@@ -561,8 +519,8 @@ static void print_status (unsigned long v)
   switch ((v >> 4) & 3) {
   default:
   case 0: printf (" idle"); break;
-  case 1: printf (" on"); break;
-  case 2: printf (" stall"); break;
+  case 1: printf (" stall"); break;
+  case 2: printf (" on"); break;
   case 3: printf (" next"); break;
   }
   if (v & (1<<3))
@@ -600,8 +558,6 @@ static int cmd_codec_test (int argc, const char** argv)
 //   usleep (100);
    DMAC_P_PPALLOC (DMAC_CHAN) = 2;	  /* Port 4/5, AC97-1 */
 
- restart:
-   index = 0;
 
    AC97_RXCR1 = 0;		/* Disable */
    AC97_TXCR1 = 0;
@@ -625,22 +581,28 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
      ;
 
+   samples *= 2;		/* samples -> bytes */
+
+ restart:
+   printf ("restart\n");
+   index = 0;
+
  play_more:
-   count = samples;
-   if (index + count > samples)
-     count = samples - index;
+   count = samples - index;
+//   if (index + count > samples)
+//     count = samples - index;
    if (count > 0x10000 - 4)
      count = 0x10000 - 4;
 
    if (DMAC_P_PSTATUS (DMAC_CHAN) & DMAC_PSTATUS_NEXTBUF) {
-     DBG (2, "%s: nextbuf 1\n   ", __FUNCTION__);
+     DBG (2, "%s: load 1 %d\n   ", __FUNCTION__, index);
      print_status (DMAC_P_PSTATUS (DMAC_CHAN));
      printf ("\n");
      DMAC_P_MAXCNT1 (DMAC_CHAN)   = count;
      DMAC_P_BASE1 (DMAC_CHAN)     = (unsigned long) (buffer + index);
    }
    else {
-     DBG (2, "%s: nextbuf 0\n   ", __FUNCTION__);
+     DBG (2, "%s: load 0 %d\n   ", __FUNCTION__, index);
      print_status (DMAC_P_PSTATUS (DMAC_CHAN));
      printf ("\n");
      DMAC_P_MAXCNT0 (DMAC_CHAN)   = count;
@@ -651,23 +613,35 @@ static int cmd_codec_test (int argc, const char** argv)
    print_status (DMAC_P_PSTATUS (DMAC_CHAN));
    printf ("\n");
 
-   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
-	count, index, samples);
+//   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
+//	count, index, samples);
 
    index += count;
 
-				/* Wait for buffer completion */
-   if (index < samples) {
-     while ((DMAC_P_PSTATUS (DMAC_CHAN) & (1<<1)) == 0) {
+				/* Wait for rooom in the queue */
+   if (index < samples || loops--) {
+//     static unsigned long vPrev = 0;
+     while (((DMAC_P_PSTATUS (DMAC_CHAN) >> 4) & 0x3) == 0x3) {
+//       unsigned long v = DMAC_P_PSTATUS (DMAC_CHAN);
        extern struct driver_d* console_driver;
+//       v &= ~(0x1f << 7);
+//       if (v != vPrev) {
+//	 print_status (v);
+//	 printf ("\n");
+//	 vPrev = v;
+//       }
        if (console_driver->poll (0, 1)) {
 	 int ch;
 	 console_driver->read (0, &ch, 1);
 	 goto done;
        }
      }
-     goto play_more;
+     if (index < samples)
+       goto play_more;
+
+     goto restart;		/* loops */
    }
+
 
    printf ("AC97_S 0x%lx\n", AC97_SR1);
    DBG (2, "%s: waiting for stall\n", __FUNCTION__);
@@ -683,9 +657,6 @@ static int cmd_codec_test (int argc, const char** argv)
        goto done;
      }
    }
-
-   if (loops--)
-     goto restart;
 
  done:
    ;
