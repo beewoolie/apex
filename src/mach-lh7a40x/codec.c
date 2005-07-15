@@ -79,6 +79,7 @@
 //#define USE_E5
 //#define USE_E5_RIGHT
 
+#define DMA_LENGTH_MAX	(0x10000 - 4)
 
 #define DMAC_CHAN DMAC_M2P4
 //#define DMAC_CHAN DMAC_M2P5
@@ -387,8 +388,8 @@ static buffer_t __attribute__((section(".pcm.bss"))) buffer[128*1024];
 static int convert_source (void)
 {
   int source_samples = C_SAMPLES;
-  int buffer_samples = sizeof (buffer)/sizeof (buffer[0]); 
-  sample_t* rgb = (sample_t*) &rgbPCM[0];
+  int buffer_samples = sizeof (buffer)/sizeof (*buffer); 
+  sample_t* rgb = (sample_t*) rgbPCM;
   int is;
   int ib;
 
@@ -547,6 +548,7 @@ static int cmd_codec_test (int argc, const char** argv)
  {
    int index;			/* Index for DMA */
    int count;
+   int length;			/* Byte length of audio array */
 
    DBG (2, "%s: codec setup\n", __FUNCTION__);
 
@@ -581,32 +583,30 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
      ;
 
-   samples *= 2;		/* samples -> bytes */
+   length = samples*2;
 
  restart:
    printf ("restart\n");
    index = 0;
 
  play_more:
-   count = samples - index;
-//   if (index + count > samples)
-//     count = samples - index;
-   if (count > 0x10000 - 4)
-     count = 0x10000 - 4;
+   count = length - index;
+   if (count > DMA_LENGTH_MAX)
+     count = DMA_LENGTH_MAX;
 
    if (DMAC_P_PSTATUS (DMAC_CHAN) & DMAC_PSTATUS_NEXTBUF) {
      DBG (2, "%s: load 1 %d\n   ", __FUNCTION__, index);
      print_status (DMAC_P_PSTATUS (DMAC_CHAN));
      printf ("\n");
      DMAC_P_MAXCNT1 (DMAC_CHAN)   = count;
-     DMAC_P_BASE1 (DMAC_CHAN)     = (unsigned long) (buffer + index);
+     DMAC_P_BASE1 (DMAC_CHAN)     = (unsigned long) ((void*)buffer + index);
    }
    else {
      DBG (2, "%s: load 0 %d\n   ", __FUNCTION__, index);
      print_status (DMAC_P_PSTATUS (DMAC_CHAN));
      printf ("\n");
      DMAC_P_MAXCNT0 (DMAC_CHAN)   = count;
-     DMAC_P_BASE0 (DMAC_CHAN)     = (unsigned long) (buffer + index);
+     DMAC_P_BASE0 (DMAC_CHAN)     = (unsigned long) ((void*)buffer + index);
    }
 
    printf (" ->");
@@ -614,12 +614,12 @@ static int cmd_codec_test (int argc, const char** argv)
    printf ("\n");
 
 //   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
-//	count, index, samples);
+//	count, index, length);
 
    index += count;
 
 				/* Wait for rooom in the queue */
-   if (index < samples || loops--) {
+   if (index < length || loops--) {
 //     static unsigned long vPrev = 0;
      while (((DMAC_P_PSTATUS (DMAC_CHAN) >> 4) & 0x3) == 0x3) {
 //       unsigned long v = DMAC_P_PSTATUS (DMAC_CHAN);
@@ -636,7 +636,7 @@ static int cmd_codec_test (int argc, const char** argv)
 	 goto done;
        }
      }
-     if (index < samples)
+     if (index < length)
        goto play_more;
 
      goto restart;		/* loops */
