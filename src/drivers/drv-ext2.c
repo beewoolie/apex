@@ -492,8 +492,10 @@ static int ext2_identify (void)
 
   snprintf (sz, sizeof (sz), "%s:+1s", szBlockDriver);
   if (   (result = parse_descriptor (sz, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d))) {
+    PRINTF ("%s: unable to open block driver '%s'\n", __FUNCTION__, sz);
     return result;
+  }
 
 	/* Check for signature */
   {
