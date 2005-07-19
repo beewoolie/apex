@@ -5,6 +5,12 @@ APEX Boot Loader
 
 TODO:
 
+  o The filesystem drivers don't say enough about where they get their
+    source devices.  Perhaps it would be best to use aliases so that
+    we can control it at runtime.
+
+  o The adc test driver needs to be able to check for touch events.  
+
   o Do we want to be able to show all variables, env and aliases in
     the same command?
 

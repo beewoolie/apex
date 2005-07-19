@@ -82,10 +82,13 @@
 #define CSC_PWRSR_CHIPID_SHIFT	(16)
 #define CSC_PWRSR_CHIPID_MASK	(0xff)
 
+	      /* FCLK_HCLK_PCLK */
 #define CSC_CLKSET_200_100_50	(0x0004ee39)
 #define CSC_CLKSET_150_75_37	(0x00048eb1)
 #define CSC_CLKSET_200_66_33	(0x0004ee3a)
 
+#define CSC_CLKSET_V		CSC_CLKSET_200_100_50
+#define HCLK			99993600
 
 #define CSC_PWRCNT_USBH_EN	(1<<28)	/* USB Host power enable */
 #define CSC_PWRCNT_DMAC_M2M1_EN	(1<<27)

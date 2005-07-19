@@ -99,30 +99,16 @@
    accessible. */
 
 
-//#define USE_SLOW
-
-
-#define KHZ			(100000)
-
-#if defined (USE_SLOW)
-# define CSC_CLKSET_V		CSC_CLKSET_150_75_37
-# define FREQ_HCLK		(75*KHZ)
-#else
-# define CSC_CLKSET_V		CSC_CLKSET_200_100_50
-# define FREQ_HCLK		(100*KHZ)
-#endif
-
 #define SDRAM_CMD_NORMAL	(0x80000000)
 #define SDRAM_CMD_PRECHARGEALL	(0x80000001)
 #define SDRAM_CMD_MODE		(0x80000002)
 #define SDRAM_CMD_NOP		(0x80000003)
 
-
 // The charging time should be at least 100ns.  Longer is OK as will be
 // the case for other HCLK frequencies.
 
 #define SDRAM_REFRESH_CHARGING	(10)		// HCLKs, 10 //100MHz -> 100ns
-#define SDRAM_REFRESH		(FREQ_HCLK/64000 - 1) // HCLK/64KHz - 1
+#define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
 
 #if defined (USE_SLOW)
 # define SDRAM_CHIP_MODE	(0x32<<10)	// CAS3 BURST4

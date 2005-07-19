@@ -58,16 +58,17 @@
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
-	/* Sharp PN LQ057Q3DC02 */
+	/* Sharp PN LQ057Q3DC02, QVGA mode */
+#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
 #define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(7)
+#define TOP_MARGIN	(7)	/* 7 */
 #define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(16)
-#define VSYNC_WIDTH	(1)
+#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
+#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
 #endif
 
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
@@ -85,7 +86,7 @@
 #define IOE	(1<<14)
 #define IPC	(1<<13)
 #define IHS	(1<<12)
-#define PCD(v)	((v) & 0x1f)
+#define PCD(v)	(((v) - 2) & 0x1f)
 #define WATERMARK (1<<16)
 #define PWR	(1<<11)
 #define BEPO	(1<<10)
@@ -115,8 +116,8 @@ static void msleep (int ms)
 }
 
 /* cannot do scaling without __divsi3 */
-//#define I(c,i) ((c)*(i)/255)
-#define I(c,i) (c)
+#define I(c,i) ((c)*(i)/255)
+//#define I(c,i) (c)
 
 #define RGB(r,g,b) ( (((r) & 0xf8) >>  3)\
 		    |(((g) & 0xf8) <<  2)\
@@ -170,7 +171,7 @@ static void clcdc_init (void)
 //  __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef300e;
 //  __REG(CLCDC_PHYS + CLCDC_CTRL)      = 0x00010028;
 
-  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
+  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0x10);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
@@ -184,7 +185,7 @@ static void clcdc_init (void)
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 
-  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
+  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (HCLK/PEL_CLOCK);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
