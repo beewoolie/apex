@@ -74,7 +74,7 @@
 //#define USE_22KHZ
 //#define USE_44KHZ
 //#define USE_LOOPS	2000
-#define USE_LOOPS	5
+#define USE_LOOPS	2
 
 //#define USE_E5
 //#define USE_E5_RIGHT
@@ -549,25 +549,36 @@ static int cmd_codec_test (int argc, const char** argv)
    int index;			/* Index for DMA */
    int count;
    int length;			/* Byte length of audio array */
+   int ac97_enabled = 0;
 
    DBG (2, "%s: codec setup\n", __FUNCTION__);
 
    codec_unmute ();
 
+   AC97_GCR &= ~AC97_GCR_IFE;	/* Clear the FIFOs */
+   usleep (100);
+   AC97_GCR |= AC97_GCR_IFE;
+   usleep (100);
+
+   AC97_RXCR1 = 0;		/* Disable */
+   AC97_TXCR1 = 0;
+   
 //   CSC_PWRCNT &= ~(CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN);
 //   usleep (100);
    CSC_PWRCNT |= CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN;
 //   usleep (100);
-   DMAC_P_PPALLOC (DMAC_CHAN) = 2;	  /* Port 4/5, AC97-1 */
+//   DMAC_P_PPALLOC (DMAC_CHAN) = 2;	  /* Port 4/5, AC97-1 */
 
+   DMAC_P_MAXCNT0 (DMAC_CHAN) = 0;
+   DMAC_P_BASE0 (DMAC_CHAN) = 0;
+   DMAC_P_MAXCNT1 (DMAC_CHAN) = 0;
+   DMAC_P_BASE1 (DMAC_CHAN) = 0;
 
-   AC97_RXCR1 = 0;		/* Disable */
-   AC97_TXCR1 = 0;
 
    DBG (2, "%s: dma enable\n", __FUNCTION__);
-   DMAC_P_PCONTROL (DMAC_CHAN) &= ~DMAC_PCONTROL_ENABLE;
-   DMAC_P_PCONTROL (DMAC_CHAN);
+//   DMAC_P_PCONTROL (DMAC_CHAN) &= ~DMAC_PCONTROL_ENABLE;
    DMAC_P_PCONTROL (DMAC_CHAN) |= DMAC_PCONTROL_ENABLE;
+   DMAC_P_PCONTROL (DMAC_CHAN);
    //   DBG (2, "%s: dma set count\n", __FUNCTION__);
    //   DMAC_P_MAXCNT1 (DMAC_CHAN)   = 0;
    //   DBG (2, "%s: dma set base\n", __FUNCTION__);
@@ -575,13 +586,7 @@ static int cmd_codec_test (int argc, const char** argv)
 
 //   DMAC_P_PINTERRUPT (DMAC_CHAN) = 0xb;
 
-   AC97_TXCR1 = AC97_CR_EN
-     | AC97_CR_SLOT(3) | AC97_CR_SLOT(4)
-     | AC97_CR_SIZE_16
-#if defined (USE_COMPACT_MODE)
-     | AC97_CR_CM
-#endif
-     ;
+   DBG (2, "RGIS 0x%lx  RISR 0x%lx\n", AC97_RGIS, AC97_RISR1);
 
    length = samples*2;
 
@@ -617,6 +622,16 @@ static int cmd_codec_test (int argc, const char** argv)
 //	count, index, length);
 
    index += count;
+
+   if (!ac97_enabled) {
+     AC97_TXCR1 = AC97_CR_EN
+       | AC97_CR_SLOT(3) | AC97_CR_SLOT(4)
+       | AC97_CR_SIZE_16
+#if defined (USE_COMPACT_MODE)
+       | AC97_CR_CM
+#endif
+       ;
+   }
 
 				/* Wait for rooom in the queue */
    if (index < length || loops--) {
@@ -661,6 +676,31 @@ static int cmd_codec_test (int argc, const char** argv)
  done:
    ;
 
+   AC97_RXCR1 = 0;
+   AC97_TXCR1 = 0;
+
+   {
+     unsigned long status;
+     for (status = DMAC_P_PSTATUS (DMAC_CHAN); 
+	  ((status >> 7) & 0x1f) & 0x3;
+	  status = DMAC_P_PSTATUS (DMAC_CHAN)) {
+       AC97_TXCR1 = AC97_CR_EN
+	 | AC97_CR_SLOT(5)
+	 | AC97_CR_SIZE_16
+#if defined (USE_COMPACT_MODE)
+	 | AC97_CR_CM
+#endif
+	 ;
+       AC97_TXCR1 = 0;
+
+       DBG (1,"term: st 0x%lx  b %ld\n",  status, (status >> 7) & 0x1f);
+     }
+   }
+
+   DMAC_P_PCONTROL (DMAC_CHAN) = 0; /* Disable the channel */
+   DMAC_P_PCONTROL (DMAC_CHAN);
+
+   CSC_PWRCNT &= ~(CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN);
  }
 
 #endif
@@ -710,8 +750,6 @@ static int cmd_codec_test (int argc, const char** argv)
       }
     }
   }
-
-  codec_mute ();
 
 #endif /* !USE_DMA */
 

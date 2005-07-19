@@ -79,6 +79,25 @@ config CLCDC
 	help
 	  This driver initializes and tests the CLCD controller.
 
+choice
+	prompt "LCD Panel"
+	depends on CLCDC
+	default LCD_3_5_QVGA_20
+
+config LCD_3_5_QVGA_20
+	bool "LCD 3.5\" QVGA w/HRTFT IC"
+
+config LCD_5_7_QVGA_10
+	bool "LCD 5.7\" QVGA"
+
+config LCD_6_4_VGA_10
+	bool "LCD 6.4\" VGA"
+
+config LCD_12_1_SVGA_10
+	bool "LCD 12.1\" SVGA"
+	
+endchoice
+
 config CODEC
 	bool "Audio Codec"
 	default n

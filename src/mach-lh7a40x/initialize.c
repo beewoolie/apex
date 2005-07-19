@@ -281,15 +281,18 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 */
 
-#if 0
 void __naked target_init (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
+	/* Drive PE4 high to prevent CPLD crash */
+  GPIO_PEDD |= (1<<4);
+  GPIO_PED |= (1<<4);
+
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
-#endif
+
 
 static void target_release (void)
 {
