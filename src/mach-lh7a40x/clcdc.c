@@ -184,7 +184,6 @@ static void clcdc_init (void)
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 
-  //  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
   CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
