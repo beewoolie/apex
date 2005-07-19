@@ -49,10 +49,10 @@
 #define PEL_WIDTH	(240)
 #define PEL_HEIGHT	(320)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(15)
-#define RIGHT_MARGIN	(21)
-#define TOP_MARGIN	(7)
-#define BOTTOM_MARGIN	(5)
+#define LEFT_MARGIN	(21)
+#define RIGHT_MARGIN	(15)
+#define TOP_MARGIN	(96)
+#define BOTTOM_MARGIN	(8)
 #define HSYNC_WIDTH	(61)
 #define VSYNC_WIDTH	(1)
 #endif
@@ -62,8 +62,8 @@
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(15)
-#define RIGHT_MARGIN	(21)
+#define LEFT_MARGIN	(21)
+#define RIGHT_MARGIN	(15)
 #define TOP_MARGIN	(7)
 #define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(16)
@@ -184,6 +184,7 @@ static void clcdc_init (void)
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 
+  //  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
   CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0xe);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
