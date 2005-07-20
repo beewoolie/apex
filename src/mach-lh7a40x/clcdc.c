@@ -45,26 +45,32 @@
 #define BPP8	(3<<1)
 #define BPP16	(4<<1)
 
+#define NS_TO_CLOCK(ns,c)	((((ns)*((c)/1000) + (1000000 - 1))/1000000))
+#define CLOCK_TO_DIV(e,c)	(((c) + (e) - 1)/(e))
+
 #if defined (CONFIG_LCD_3_5_QVGA_20)
 	/* Sharp PN LQ035Q7DB02 */
 #define PANEL_NAME	"LCD 3.5\" QVGA"
-#define PEL_CLOCK   	(6300000)     /* ?-6.3MHz-7MHz */
+#define PEL_CLOCK_EST	(6800000)     /* 4.5MHz-?-6.8MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(240)
 #define PEL_HEIGHT	(320)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(16)
 #define RIGHT_MARGIN	(21)
-#define TOP_MARGIN	(7)	/* 7 */
+#define TOP_MARGIN	(8)	/* 8 */
 #define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(61)
-#define VSYNC_WIDTH	(1)
-#define INVERT_HSYNC
+#define VSYNC_WIDTH	NS_TO_CLOCK (60, PEL_CLOCK)
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 	/* Sharp PN LQ057Q3DC02, QVGA mode */
 #define PANEL_NAME	"LCD 5.7\" QVGA"
-#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
+#define PEL_CLOCK_EST	(7000000)     /* ?-6.3MHz-7MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
 #define BITS_PER_PEL_2	BPP16
@@ -75,13 +81,15 @@
 #define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
 #define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
 #define INVERT_HSYNC
+#define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_6_4_VGA_10)
 	/* Sharp PN LQ64D343 */
-/* negative sync pulses for 480 lines */
 #define PANEL_NAME	"LCD 6.4\" VGA"
-#define PEL_CLOCK   	(28330000)     /* ?-25.18MHz-28.33MHz */
+#define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(640)
 #define PEL_HEIGHT	(480)
 #define BITS_PER_PEL_2	BPP16
@@ -98,31 +106,41 @@
 #if defined (CONFIG_LCD_10_4_VGA_10)
 	/* Sharp PN LQ10D368 */
 #define PANEL_NAME	"LCD 10.4\" VGA"
-//#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
-#define PEL_WIDTH	(320)
-#define PEL_HEIGHT	(240)
+#define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	(640)
+#define PEL_HEIGHT	(480)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
 #define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(7)	/* 7 */
+#define TOP_MARGIN	(34)	/* 34 */
 #define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
 #define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define INVERT_HSYNC
+#define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_12_1_SVGA_10)
 	/* Sharp PN LQ121S1DG41, was LQ121S1DG31 */
 #define PANEL_NAME	"LCD 12.1\" SVGA"
-//#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
-#define PEL_WIDTH	(320)
-#define PEL_HEIGHT	(240)
+/* *** FIXME: this target frequency range isn't achievable with HCLK
+   *** at 99993900 Hz. */
+#define PEL_CLOCK_EST	(42000000)     /* 35MHz-40MHz-42MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	(800)
+#define PEL_HEIGHT	(600)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(21)
+#define LEFT_MARGIN	(86)
 #define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(7)	/* 7 */
+#define TOP_MARGIN	(23)	/* 23 */
 #define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
-#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define HSYNC_WIDTH	(128)	/* 2-128-200 clocks */
+#define VSYNC_WIDTH	(1)	/* 2-4-6 lines */
+#define INVERT_HSYNC
+#define INVERT_VSYNC
 #endif
 
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
@@ -189,6 +207,10 @@ extern int determine_arch_number (void); /* *** HACK */
 static void clcdc_init (void)
 {
   printf ("clcdc: initializing %s\n", PANEL_NAME);
+  printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
+	  HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
+	  HSYNC_WIDTH, VSYNC_WIDTH,
+	  LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
 
 #if defined (USE_FILL)
 
@@ -239,7 +261,7 @@ static void clcdc_init (void)
 #if defined (INVERT_VSYNC)
     | IVS
 #endif
-    | PCD (HCLK/PEL_CLOCK);
+    | PCD (PEL_CLOCK_DIV);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
@@ -271,10 +293,6 @@ static void clcdc_init (void)
     GPIO_PCDD |= (1<<3);
     GPIO_PCD  |= (1<<3);
   }
-
-//  printf ("CLDC\n");
-//  dump ((void*) HRTFTC_PHYS, 16, HRTFTC_PHYS);
-//  dump ((void*) CLCDC_PHYS, 0x40, CLCDC_PHYS);
 }
 
 static void clcdc_release (void)
@@ -295,10 +313,6 @@ static void clcdc_release (void)
 #if defined (CONFIG_ARCH_LH7A404)
   ALI_SETUP &= ~(1<<13); /* Disable ALI */
 #endif
-
-
-//  printf ("clcdc %x %x\n", 
-//	  __REG(CLCDC_PHYS + CLCDC_CTRL), __REG(HRTFTC_PHYS + HRTFTC_SETUP));
 }
 
 static __service_7 struct service_d lpd7a40x_clcdc_service = {
