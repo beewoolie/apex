@@ -57,7 +57,6 @@
 #define RTC_PHYS	(0x80000d00)	/* Real-time Clock */
 #define GPIO_PHYS	(0x80000e00)	/* General Purpose IO */
 #define BMI_PHYS	(0x80000f00)	/* Battery Monitor Interface */
-#define HRTFTC_PHYS	(0x80001000)	/* High-res TFT Controller */
 #define WDT_PHYS	(0x80001400)	/* Watchdog Timer */
 #define SMC_PHYS	(0x80002000)	/* Static Memory Controller */
 #define SDRC_PHYS	(0x80002400)	/* SDRAM Controller */
@@ -145,11 +144,6 @@
 #define CLCDC_UPCURR		__REG (CLCDC_PHYS + 0x28)
 #define CLCDC_LPCURR		__REG (CLCDC_PHYS + 0x2c)
 #define CLCDC_PALETTE		__REG (CLCDC_PHYS + 0x200)
-
-#define HRTFTC_SETUP		__REG (CLCDC_PHYS + 0x00)
-#define HRTFTC_CON		__REG (CLCDC_PHYS + 0x04)
-#define HRTFTC_TIMING1		__REG (CLCDC_PHYS + 0x08)
-#define HRTFTC_TIMING2		__REG (CLCDC_PHYS + 0x0c)
 
 #define GPIO_PINMUX		__REG (GPIO_PHYS + 0x2c)
 #define GPIO_PADD		__REG (GPIO_PHYS + 0x10)

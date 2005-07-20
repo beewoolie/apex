@@ -6,7 +6,7 @@ choice
 
 config MACH_LPD7A400
 	bool "Logic Product Development LPD7A400"
-	select ARCH_LH79520
+	select ARCH_LH7A400
 	select MACH_LPD7A40X
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH

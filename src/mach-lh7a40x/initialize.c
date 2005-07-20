@@ -273,7 +273,7 @@ void __naked target_init (void)
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
 	/* Drive PE4 high to prevent CPLD crash */
-  GPIO_PEDD |= (1<<4);
+  //  GPIO_PEDD |= (1<<4);
   GPIO_PED |= (1<<4);
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
@@ -287,6 +287,6 @@ static void target_release (void)
 }
 
 static __service_0 struct service_d lh7a40x_target_service = {
-//  .init    = target_init,
+  .init    = target_init,
   .release = target_release,
 };

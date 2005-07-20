@@ -37,6 +37,7 @@
 #include "hardware.h"
 
 //#define USE_BORDER
+#define USE_FILL
 
 #define BPP1	(0<<1)
 #define BPP2	(1<<1)
@@ -46,19 +47,22 @@
 
 #if defined (CONFIG_LCD_3_5_QVGA_20)
 	/* Sharp PN LQ035Q7DB02 */
+#define PANEL_NAME	"LCD 3.5\" QVGA"
+#define PEL_CLOCK   	(6300000)     /* ?-6.3MHz-7MHz */
 #define PEL_WIDTH	(240)
 #define PEL_HEIGHT	(320)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(21)
-#define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(96)
-#define BOTTOM_MARGIN	(8)
+#define LEFT_MARGIN	(16)
+#define RIGHT_MARGIN	(21)
+#define TOP_MARGIN	(7)	/* 7 */
+#define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(61)
 #define VSYNC_WIDTH	(1)
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 	/* Sharp PN LQ057Q3DC02, QVGA mode */
+#define PANEL_NAME	"LCD 5.7\" QVGA"
 #define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
@@ -123,21 +127,31 @@ static void msleep (int ms)
 		    |(((g) & 0xf8) <<  2)\
 		    |(((b) & 0xf8) <<  7))
 
+
+#define RGBI(r,g,b,i) ( (((r) & 0xf8) >>  3)\
+		       |(((g) & 0xf8) <<  2)\
+		       |(((b) & 0xf8) <<  7)\
+		       |(((i) & 1) << 15))
+
 extern int determine_arch_number (void); /* *** HACK */
 
 static void clcdc_init (void)
 {
+  printf ("clcdc: initializing %s\n", PANEL_NAME);
+
+#if defined (USE_FILL)
+
   {
     int i;
     for (i = 0; i < PEL_WIDTH*PEL_HEIGHT; ++i) {
-      if (i > 3*(PEL_WIDTH*PEL_HEIGHT)/4)
-	buffer[i] = 0xffff;
-      else if (i > 2*(PEL_WIDTH*PEL_HEIGHT)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
-      else if (i > 1*(PEL_WIDTH*PEL_HEIGHT)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<5;
-      else if (i > 0*(PEL_WIDTH*PEL_HEIGHT)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<0;
+      if (i >= 3*(PEL_WIDTH*PEL_HEIGHT)/4)
+	buffer[i] = 0xefff;
+      else if (i >= 2*(PEL_WIDTH*PEL_HEIGHT)/4)
+	buffer[i] = RGB(0,0,(i%PEL_WIDTH)*255/PEL_WIDTH);
+      else if (i >= 1*(PEL_WIDTH*PEL_HEIGHT)/4)
+	buffer[i] = RGB(0,(i%PEL_WIDTH)*255/PEL_WIDTH,0);
+      else if (i >= 0*(PEL_WIDTH*PEL_HEIGHT)/4)
+	buffer[i] = RGB((i%PEL_WIDTH)*255/PEL_WIDTH,0,0);
     }
   }
 
@@ -145,7 +159,7 @@ static void clcdc_init (void)
 
   {
     int row;
-    printf ("rgb value %x\n", RGB (0x80, 0x80, 0x80));
+    //    printf ("rgb value %x\n", RGB (0x80, 0x80, 0x80));
     for (row = 0; row < PEL_HEIGHT; ++row) {
       buffer[row*PEL_WIDTH] = RGB (0x80, 0x80, 0x80);
       buffer[row*PEL_WIDTH + 1] = 0;
@@ -156,6 +170,10 @@ static void clcdc_init (void)
   }
 
 #endif
+#endif
+
+  /* Note that PE4 must be driven high on the LPD7A404 to prevent the
+     CPLD JTAG chain from crashing the board.  */
 
   GPIO_PINMUX |= (1<<1) | (1<<0); /* LCDVD[15:4] */
 
@@ -163,32 +181,25 @@ static void clcdc_init (void)
     | PPL (PEL_WIDTH);
   CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH) 
     | LPP (PEL_HEIGHT);
-
-#if defined (CONFIG_LCD_3_5_QVGA_20)
-
-//  __REG(CLCDC_PHYS + CLCDC_TIMING0)   = 0x0e143c38;
-//  __REG(CLCDC_PHYS + CLCDC_TIMING1)   = 0x075f013f;
-//  __REG(CLCDC_PHYS + CLCDC_TIMING2)   = 0x00ef300e;
-//  __REG(CLCDC_PHYS + CLCDC_CTRL)      = 0x00010028;
-
-  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (0x10);
-
-  CLCDC_UPBASE    = (unsigned long) buffer;
-  CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
-
-  HRTFTC_SETUP   = 0x00002efd;
-  HRTFTC_CON     = 0x00000003;
-  HRTFTC_TIMING1 = 0x0000087d;
-  HRTFTC_TIMING2 = 0x00009ad0;
-
-#endif
-
-#if defined (CONFIG_LCD_5_7_QVGA_10)
-
   CLCDC_TIMING2   = CPL | IPC | IHS | PCD (HCLK/PEL_CLOCK);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
+
+#if defined (CONFIG_LCD_3_5_QVGA_20)
+# if defined (CONFIG_ARCH_LH7A400)
+  HRTFTC_SETUP   = 0x00002efd;
+  HRTFTC_CON     = 0x00000003;
+  HRTFTC_TIMING1 = 0x0000087d;
+  HRTFTC_TIMING2 = 0x00009ad0;
+# endif
+
+# if defined (CONFIG_ARCH_LH7A404)
+  ALI_SETUP   = 0x00002efd;
+  ALI_CONTROL = 0x00000003;
+  ALI_TIMING1 = 0x0000087d;
+  ALI_TIMING2 = 0x00009ad0;
+# endif
 
 #endif
 
@@ -219,7 +230,14 @@ static void clcdc_release (void)
   msleep (20);			/* Wait 20ms */
   CLCDC_CTRL &= ~(1<<0); /* Disable CLCDC controller */
 
+#if defined (CONFIG_ARCH_LH7A400)
   HRTFTC_SETUP &= ~(1<<13); /* Disable HRTFT controller */
+#endif
+
+#if defined (CONFIG_ARCH_LH7A400)
+  ALI_SETUP &= ~(1<<13); /* Disable ALI */
+#endif
+
 
 //  printf ("clcdc %x %x\n", 
 //	  __REG(CLCDC_PHYS + CLCDC_CTRL), __REG(HRTFTC_PHYS + HRTFTC_SETUP));

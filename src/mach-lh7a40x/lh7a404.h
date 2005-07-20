@@ -36,6 +36,13 @@
 
 /* ----- Types */
 
+#define ALI_PHYS	(0x80001000)	/* Advanced LCD Interface */
+
+#define ALI_SETUP	__REG (ALI_PHYS + 0x00)
+#define ALI_CONTROL	__REG (ALI_PHYS + 0x04)
+#define ALI_TIMING1	__REG (ALI_PHYS + 0x08)
+#define ALI_TIMING2	__REG (ALI_PHYS + 0x0c)
+
 #define ADC_PHYS	(0x80001300)
 #define ADC_HW		__REG(ADC_PHYS + 0x00)	/* High Word (RO) */
 #define ADC_LW		__REG(ADC_PHYS + 0x04)	/* Low Word (RO) */
