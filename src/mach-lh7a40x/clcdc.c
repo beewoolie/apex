@@ -234,7 +234,7 @@ static void clcdc_release (void)
   HRTFTC_SETUP &= ~(1<<13); /* Disable HRTFT controller */
 #endif
 
-#if defined (CONFIG_ARCH_LH7A400)
+#if defined (CONFIG_ARCH_LH7A404)
   ALI_SETUP &= ~(1<<13); /* Disable ALI */
 #endif
 
