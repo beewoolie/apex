@@ -58,12 +58,62 @@
 #define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(61)
 #define VSYNC_WIDTH	(1)
+#define INVERT_HSYNC
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 	/* Sharp PN LQ057Q3DC02, QVGA mode */
 #define PANEL_NAME	"LCD 5.7\" QVGA"
 #define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
+#define PEL_WIDTH	(320)
+#define PEL_HEIGHT	(240)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(21)
+#define RIGHT_MARGIN	(15)
+#define TOP_MARGIN	(7)	/* 7 */
+#define BOTTOM_MARGIN	(5)
+#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
+#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define INVERT_HSYNC
+#endif
+
+#if defined (CONFIG_LCD_6_4_VGA_10)
+	/* Sharp PN LQ64D343 */
+/* negative sync pulses for 480 lines */
+#define PANEL_NAME	"LCD 6.4\" VGA"
+#define PEL_CLOCK   	(28330000)     /* ?-25.18MHz-28.33MHz */
+#define PEL_WIDTH	(640)
+#define PEL_HEIGHT	(480)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(21)
+#define RIGHT_MARGIN	(15)
+#define TOP_MARGIN	(34)	/* 34 */
+#define BOTTOM_MARGIN	(5)
+#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
+#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define INVERT_HSYNC
+#define INVERT_VSYNC
+#endif
+
+#if defined (CONFIG_LCD_10_4_VGA_10)
+	/* Sharp PN LQ10D368 */
+#define PANEL_NAME	"LCD 10.4\" VGA"
+//#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
+#define PEL_WIDTH	(320)
+#define PEL_HEIGHT	(240)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(21)
+#define RIGHT_MARGIN	(15)
+#define TOP_MARGIN	(7)	/* 7 */
+#define BOTTOM_MARGIN	(5)
+#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
+#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#endif
+
+#if defined (CONFIG_LCD_12_1_SVGA_10)
+	/* Sharp PN LQ121S1DG41, was LQ121S1DG31 */
+#define PANEL_NAME	"LCD 12.1\" SVGA"
+//#define PEL_CLOCK   	(7000000)     /* ?-6.3MHz-7MHz */
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
 #define BITS_PER_PEL_2	BPP16
@@ -90,6 +140,7 @@
 #define IOE	(1<<14)
 #define IPC	(1<<13)
 #define IHS	(1<<12)
+#define IVS	(1<<11)
 #define PCD(v)	(((v) - 2) & 0x1f)
 #define WATERMARK (1<<16)
 #define PWR	(1<<11)
@@ -181,7 +232,14 @@ static void clcdc_init (void)
     | PPL (PEL_WIDTH);
   CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH) 
     | LPP (PEL_HEIGHT);
-  CLCDC_TIMING2   = CPL | IPC | IHS | PCD (HCLK/PEL_CLOCK);
+  CLCDC_TIMING2   = CPL | IPC
+#if defined (INVERT_HSYNC)
+    | IHS
+#endif
+#if defined (INVERT_VSYNC)
+    | IVS
+#endif
+    | PCD (HCLK/PEL_CLOCK);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
