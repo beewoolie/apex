@@ -25,6 +25,38 @@
    DESCRIPTION
    -----------
 
+   The tftp descriptor looks like this:
+
+     tftp://host/path
+   or
+     tftp:/path using a default host of $server, perhaps.
+   
+
+  NOTES
+  -----
+
+   o The meshing o the tftp protocol and data handling within APEX is
+     a bit more complex that would be idea.  tftp only considers
+     streams of bytes to be accessible linearly from the start to the
+     end.  There is no seeking.  There is a timeout on each block, so
+     APEX cannot hold off indefinitely with continuing the stream
+     transfer.  The only flow control that APEX can assert when
+     reading files is to throttle the acknowlegements.  So, what it
+     shall do is request the first block.  Let the next layer read
+     data from the buffered data and wait for the whole block to be
+     consumed before acknowledging that the block was received.
+   o Performance may be improved by caching one or more data blocks
+     and allowing there to be a sliding window of available data.
+     This could, potentially, allow for a reasonable overlap of
+     requests and processing.  Especially if APEX is performing some
+     sort of transformation on the data, e.g. checksum or writing to
+     flash.  For transfers to memory, there is probably little to be
+     gained with a sliding window.  However, this driver doesn't know
+     how the data will be used. 
+   o We need to select a random port number.  We need to see if there
+     is some place where we can sample semi-random data.  At least so
+     that we have a chance to detect out-dated connections.
+
 */
 
 #include <config.h>
@@ -50,7 +82,30 @@
 # define DBG(l,f...)		do {} while (0)
 #endif
 
+#define DRIVER_NAME	"tftp"
+
 #define MS_TIMEOUT	(5*1000)
+
+#define BLOCK_LENGTH	(512)
+#define BLOCKS_CACHED	(4)	/* Number of blocks in the cache */
+
+enum {
+  stateIdle = 0,
+  stateReading,
+};
+
+struct tftp_info {
+  int state;
+  int source_port;
+  int destination_port;
+  int mode;			/* reading or writing, uses an opcode */
+  int block;			/* block number of last received block */
+
+  unsigned char rgb[BLOCK_LENGTH*BLOCKS_CACHED];
+  struct ethernet_frame* frame;
+};
+
+struct tftp_info tftp;
 
 int cmd_tftp (int argc, const char** argv)
 {
@@ -121,3 +176,76 @@ static __command struct command_d c_tftp = {
 "  Transfers the file, PATH, from the tftp SERVER to REGION via tftp.\n"
   )
 };
+
+static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  
+  switch (tftp.state) {
+  case stateIdle:		/* Need to open the connection */
+    
+    if (!tftp.source_port)
+      /* *** need a function to allocate port numbers */
+      tftp.source_port = 23000;
+    else
+      ++tftp.source_port;
+    tftp.destination_port = 69;
+    tftp.mode = TFTP_RRQ;
+    tftp.block = 0;
+    tftp.frame = ethernet_frame_allocate ();
+
+    TFTP_F(frame)->opcode = tftp.mode;
+    {
+      char* pch = TFTP_F(frame)->data;
+      size_t cb = strlcpy (pch, d->pb[iRoot], 400);
+      strcpy (pch + cb, "octet");
+    }      
+    /* Finish headers */
+    /* Register port listener */
+    /* Transmit packet */
+    /* Handle state machine? */
+    break;
+
+  return 0;
+
+
+}
+
+
+/* tftp_open
+
+   the only thing this can do is verify whether or not it is
+   reasonable to open the file.  We could do some vetting of the
+   addresses, perhaps check the host IP address.  Maybe we could ARP
+   for the server to make sure it is accessible.
+
+*/
+
+static int tftp_open (struct descriptor_d* d)
+{
+  return 0;
+}
+
+
+  
+#if 0
+static ssize_t tftp_write (struct descriptor_d* d, void*, size_t cb)
+{
+  return 0;
+}
+#endif
+
+static __driver_6 struct driver_d tftp_driver = {
+  .name = DRIVER_NAME,
+  .description = "trivial FTP driver",
+  .flags = DRIVER_DESCRIP_FS,
+  .open = tftp_open,
+  .close = tftp_close,
+  .read = tftp_read,
+//  .write = tftp_write,
+//  .erase = cf_erase,
+  .seek = tftp_seek,
+#if defined CONFIG_CMD_INFO
+//  .info = tftp_info,
+#endif
+};
+
