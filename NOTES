@@ -27,6 +27,19 @@ TODO:
     o The receivers must agree to be efficient.
     o We may want to engineer the drivers to be able to cache a couple
       of packets.
+    o Here's what we need to do.  Ethernet receive should do some
+      cursory checks, verify that the MAC address is interesting and
+      the IP address is relevent when there is an IP header.  After
+      that, the receivers can be used to handle the rest of the
+      verification.
+    o We need a port allocator with a somewhat random initial value.
+      If that isn't possible, we should at least be able to count up.
+
+  o Note that none of this really helps with multiple consoles.  We
+    still need to eliminate statics and there must be a want to
+    efficiently execute more than one thread.  Remember that the
+    SSEM did this, but it has select.  Perhaps we should do the
+    same.  Hmm.
 
   o Network traffic state machine
     o We've been able to keep this application simple since there has
