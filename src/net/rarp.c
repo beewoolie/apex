@@ -55,12 +55,36 @@
 #define TRIES_MAX	4
 #define MS_TIMEOUT	(1*1000)
 
+/* autoconf_terminate
+
+   is the function used by ethernet_service() to deterine when to
+   terminate the loop.  It return zero when the loop can continue, -1
+   on timeout, and 1 when the configuration is complete.
+
+*/
+
+static int autoconf_terminate (void* pv)
+{
+  struct ethernet_timeout_context* context
+    = (struct ethernet_timeout_context*) pv;
+
+  if (!context->time_start)
+    context->time_start = timer_read ();
+
+  SPINNER_STEP;
+
+  if (!UNCONFIGURED_IP)
+    return 1;
+
+  return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
+    ? 0 : -1;
+}
+
 int cmd_rarp (int argc, const char** argv)
 {
   struct descriptor_d d;
   int result;
   struct ethernet_frame* frame;
-  unsigned long timeStart;
   int tries = 0;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
@@ -95,25 +119,20 @@ int cmd_rarp (int argc, const char** argv)
 //  dump (frame->rgb, frame->cb, 0);
 
   do {
+    struct ethernet_timeout_context timeout;
+
     DBG (1,"%s: send frame\n", __FUNCTION__);
     d.driver->write (&d, frame->rgb, 
 		     sizeof (struct header_ethernet)
 		     + sizeof (struct header_arp));
     ++tries;
-    timeStart = timer_read ();
 
-    do {
-      SPINNER_STEP;
+    memset (&timeout, 0, sizeof (timeout));
+    timeout.ms_timeout = MS_TIMEOUT;
+    result = ethernet_service (&d, autoconf_terminate, &timeout);
 
-      frame->cb = d.driver->read (&d, frame->rgb, FRAME_LENGTH_MAX);
-      if (frame->cb > 0) {
-	DBG (1,"%s: received frame\n", __FUNCTION__);
-	ethernet_receive (&d, frame);
-	frame->cb = 0;
-      }
-    } while (UNCONFIGURED_IP
-	     && timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
-  } while (UNCONFIGURED_IP && tries < TRIES_MAX);
+    /* result == 1 on success, -1 on timeout  */
+  } while (result <= 0 && tries < TRIES_MAX);
 
   if (UNCONFIGURED_IP)
     printf ("\rRARP failed\n");

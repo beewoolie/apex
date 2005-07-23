@@ -5,6 +5,59 @@ APEX Boot Loader
 
 TODO:
 
+  o Network traffic state machine
+    o We've been able to keep this application simple since there has
+      been only one thread of execution and one task
+    o Network changes all of that
+    o telnet sessions will also make it necessary to be more flexible
+    o Need to have threads of execution
+    o Network packets can be queued to a thread
+    o I think we can have a function that handles network traffic in a
+      polled fashion, dispatching ICMP and ARP, if we choose, and has
+      a couple of terminating conditions: receipt of a relevent packet
+      or a timeout.
+    o Trouble is that we may receive a packet and be busy elsewhere.
+    o We can service the network connection in some fashion while we
+      do other work, but we may need to queue packets for processing
+      since the network interface has limited capability for buffering.
+    o Perhaps this packet queue can be limited to the network, for
+      now.
+    o It would be good to think ahead here.  Can we add logic to the
+      network layer so that we can queue packets intelligently and
+      process them when the time comes.  For instance, we register
+      discriminator functions for each task that can deal with network
+      traffic.  Discriminators perform the queuing themselves.  There
+      comes a time, later, when the discriminator can do what it likes
+      with the packets.  It may even be the case that we do the
+      network logic immediately.  For example, the tftp driver
+      registers a discriminator that can receive data packets, but it
+      will automatically stop when its queue is filled.  The core
+      routine that is using the data will call the service function
+      when it can.  If the tftp_read call is entered and there is no
+      data available, it will block until there is some.  Essentially,
+      it will enter a special form of the service loop that terminates
+      on a timer instead of returning immediately when there is
+      nothing to do.
+    o *** How can this be generalized to handle multiple console
+      streams?  Can it be?  Can we do a round-robin for console
+      streams such that the separate threads of execution each get a
+      chance to handle command, process input, and so on?  This seems
+      like it may be overkill for a simple monitor, but we will need
+      something if we start to be able to handle telnet sessions as
+      well as a USB console.
+
+  o tftp requires that we know if a descriptor is for reading for for
+    writing.  There is nothing in the interfaces to support this at
+    the moment.  Either we cache the file-open data, or we let it all
+    be lazy and perform the open when the first read or write call is
+    made.
+
+  o descriptors really need to allow drivers to define a
+    context.  tftp is probably the most compelling case for
+    this...especially once we've opened the connection and we need to
+    keep track of the open file.  Alternatively, we can continue to do
+    as we've pleased which is to use a driver global.  Ho hum.
+
   o The filesystem drivers don't say enough about where they get their
     source devices.  Perhaps it would be best to use aliases so that
     we can control it at runtime.

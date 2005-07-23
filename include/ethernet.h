@@ -10,6 +10,17 @@
    DESCRIPTION
    -----------
 
+
+   NOTES
+   =====
+
+   ethernet_service() termination functions
+   ----------------------------------------
+
+     These functions must return 0 when the is no reason to terminate
+     ethernet_service().  By convention, results <0 are errors or
+     failures, results >0 are successes.
+
 */
 
 #if !defined (__ETHERNET_H__)
@@ -29,6 +40,11 @@ struct ethernet_frame {
   char rgb[FRAME_LENGTH_MAX];
 };
 
+struct ethernet_timeout_context {
+  unsigned long time_start;
+  long ms_timeout;
+};
+
 /* ----- Globals */
 
 /* ----- Prototypes */
@@ -36,8 +52,11 @@ struct ethernet_frame {
 struct ethernet_frame* ethernet_frame_allocate (void);
 void ethernet_frame_release (struct ethernet_frame*);
 void ethernet_receive (struct descriptor_d*, struct ethernet_frame*);
+int ethernet_service (struct descriptor_d*, int (*) (void*), void*);
 
 void udp_setup (struct ethernet_frame*, const char*, u16, u16, size_t);
+
+int ethernet_timeout (void*);
 
 
 #endif  /* __ETHERNET_H__ */

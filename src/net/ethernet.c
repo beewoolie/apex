@@ -317,6 +317,7 @@ void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   }
 }
 
+
 /* ethernet_receive
 
    accepts packets into the network stack.
@@ -389,3 +390,53 @@ void udp_setup (struct ethernet_frame* frame,
     = checksum (IPV4_F (frame), sizeof (struct header_ipv4));
 }
 		
+
+/* ethernet_service
+
+   is the template function for processing network traffic.  It reads
+   packets on the ethernet device given and receives them until the
+   termination function returns a non-zero result.  The context value
+   passed to this function is passed along to the termination
+   function.  The return value is the non-zero result from the
+   termination function.
+
+*/
+
+int ethernet_service (struct descriptor_d* d, 
+		      int (*terminate) (void*), void* context) 
+{
+  struct ethernet_frame* frame = ethernet_frame_allocate ();
+  int result;
+
+  do {
+    frame->cb = d->driver->read (d, frame->rgb, FRAME_LENGTH_MAX);
+    if (frame->cb > 0) {
+      ethernet_receive (d, frame);
+      frame->cb = 0;
+    }
+    result = terminate (context);
+  } while (result == 0);
+
+  return result;
+}
+
+/* ethernet_timeout
+
+   is a termination function for ethernet_service that terminates
+   after a timeout is exceeded.  The context pointer is a
+   ethernet_timeout_context structure.  It may zeroed and just the
+   timeout set, or the time_start may also be set.
+
+*/
+
+int ethernet_timeout (void* pv)
+{
+  struct ethernet_timeout_context* context
+    = (struct ethernet_timeout_context*) pv;
+
+  if (!context->time_start)
+    context->time_start = timer_read ();
+
+  return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
+    ? 0 : -1;
+}

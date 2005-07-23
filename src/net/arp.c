@@ -51,13 +51,22 @@
 # define DBG(l,f...)		do {} while (0)
 #endif
 
-int cmd_arp (int argc, const char** argv)
+int console_terminate (void* pv)
 {
   extern struct driver_d* console_driver;
+  char ch;
+
+  if (console_driver->poll (0, 1)) {
+    console_driver->read (0, &ch, 1);
+    return 1;
+  }
+  return 0;
+}
+
+int cmd_arp (int argc, const char** argv)
+{
   struct descriptor_d d;
   int result;
-  struct ethernet_frame* frame;
-  char ch;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
       || (result = open_descriptor (&d))) 
@@ -65,19 +74,7 @@ int cmd_arp (int argc, const char** argv)
 
   DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
 
-  frame = ethernet_frame_allocate ();
-
-  do {
-    frame->cb = d.driver->read (&d, frame->rgb, FRAME_LENGTH_MAX);
-    if (frame->cb > 0) {
-      ethernet_receive (&d, frame);
-      frame->cb = 0;
-    }
-  } while (!console_driver->poll (0, 1));
-
-  console_driver->read (0, &ch, 1);
-
-  ethernet_frame_release (frame);
+  ethernet_service (&d, console_terminate, NULL);
 
   close_descriptor (&d);  
   return 0;

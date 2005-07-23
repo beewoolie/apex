@@ -72,6 +72,7 @@ struct descriptor_d {
 #define DRIVER_DESCRIP_FS	(1<<10) 	/* Uses filesystem descript. */
 #define DRIVER_DESCRIP_STREAM	(1<<11) 	/* Uses stresam descriptors */
 #define DRIVER_DESCRIP_NET	(1<<12) 	/* Uses network descriptors */
+#define DRIVER_DESCRIP_SIMPLEPATH (1<<13)	/* Uses unparsed paths */
 #define DRIVER_WRITEPROGRESS_MASK (0xf)
 #define DRIVER_WRITEPROGRESS_SHIFT (24)
 #define DRIVER_WRITEPROGRESS(n) (((n)&0xf)<<24)	/* 2^(N+10) bytes per spin */
