@@ -5,6 +5,29 @@ APEX Boot Loader
 
 TODO:
 
+  o Network traffic, continued
+    o I've created an ethernet_service function with a user supplied
+      termination function. 
+    o The user can let the receives continue until an arbtrary set of
+      conditions are met.
+    o The only pieces missing is a way to hook the receive so that the
+      user's function can gain access to inbound packets.
+    o Simplicity.  Needs to work for internal features as well as
+      external ones.  For example, rarp packats should not be in the
+      core since the user may never care about them.
+    o We can simplify by eliminating the interface, for now.
+    o register_ethernet_frame_receiver(receiver, priority) Either a
+      static array (which I like) of limited length, or a linked list.
+      Latter requires some sort of memory management, ew.
+    o int frame_receiver (frame), returns zero if the packet should
+      continue to be checked, non-zero if the packet has been
+      received and there is no reason to continue processing.
+    o There can be receivers for icmp, rarp, and arp built in.  We can
+      hook dhcp.
+    o The receivers must agree to be efficient.
+    o We may want to engineer the drivers to be able to cache a couple
+      of packets.
+
   o Network traffic state machine
     o We've been able to keep this application simple since there has
       been only one thread of execution and one task

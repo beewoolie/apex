@@ -92,6 +92,16 @@ enum {
 struct arp_entry arp_table[ARP_TABLE_LENGTH];
 struct ethernet_frame frame_table[FRAME_TABLE_LENGTH];
 
+struct ethernet_receiver {
+  int priority;
+  pfn_ethernet_receiver pfn;
+  void* context;
+};
+  
+#define MAX_RECEIVERS	32
+static struct ethernet_receiver receivers[MAX_RECEIVERS];
+static int cReceivers;		/* Number of receivers */
+
 static u16 checksum (void* pv, int cb)
 {
   u16* p = (u16*) pv;
@@ -420,6 +430,7 @@ int ethernet_service (struct descriptor_d* d,
   return result;
 }
 
+
 /* ethernet_timeout
 
    is a termination function for ethernet_service that terminates
@@ -439,4 +450,66 @@ int ethernet_timeout (void* pv)
 
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
     ? 0 : -1;
+}
+
+
+/* register_ethernet_receive
+
+   adds a frame receiving function to the list of active receivers.
+   The function pointer will be called with the received frame as well
+   as the context pointer when a frame is received.  The priority
+   value is used to sort the receivers.  The higher the priority, the
+   earlier the receiver will appear in the list.
+
+   It returns zero on success, non-zero if the receiver cannot be
+   added to the active receiver list.
+   
+*/
+
+int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn, 
+				void* context)
+{
+  if (cReceivers >= MAX_RECEIVERS)
+    return -1;
+
+  receivers[cReceivers].priority = priority;
+  receivers[cReceivers].pfn	 = pfn;
+  receivers[cReceivers].context	 = context;
+  ++cReceivers;
+
+  /* *** FIXME: we should perform a sort at this point. */
+
+  return 0;
+}
+
+
+/* unregister_ethernet_receive
+
+   removes a frame receiver from the list of active receivers.  Note
+   that it doesn't use the original priority when removing a receiver.
+
+   It returns zero on success, non-zero if the requested receiver
+   isn't found.
+   
+*/
+
+int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
+{
+  int i;
+
+  for (i = 0; i < cReceivers; ++i) {
+    if (receivers[i].pfn == pfn && receivers[i].context == context) {
+      memset (&receivers[i], 0, sizeof (receivers[i]));
+      break;
+    }
+  }
+
+  if (i < cReceivers) {
+    /* *** FIXME: we should perform a sort at this point. */
+    /* Note that we don't decrement the count unless we can resort
+       the list.  */
+    return 0;
+  }
+
+  return -1;
 }

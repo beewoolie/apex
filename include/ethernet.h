@@ -45,18 +45,25 @@ struct ethernet_timeout_context {
   long ms_timeout;
 };
 
+typedef int (*pfn_ethernet_receiver) (struct ethernet_frame*, void*);
+
 /* ----- Globals */
 
 /* ----- Prototypes */
 
 struct ethernet_frame* ethernet_frame_allocate (void);
 void ethernet_frame_release (struct ethernet_frame*);
-void ethernet_receive (struct descriptor_d*, struct ethernet_frame*);
+//void ethernet_receive (struct descriptor_d*, struct ethernet_frame*);
 int ethernet_service (struct descriptor_d*, int (*) (void*), void*);
 
 void udp_setup (struct ethernet_frame*, const char*, u16, u16, size_t);
 
 int ethernet_timeout (void*);
+
+int register_ethernet_receiver (int priority, 
+				pfn_ethernet_receiver pfn, 
+				void* context);
+int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context);
 
 
 #endif  /* __ETHERNET_H__ */
