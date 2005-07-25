@@ -41,3 +41,6 @@ config CMD_TFTP
 	  This protocol transfers files over the network.
 
 endmenu
+
+config MAC_FILTER
+	bool

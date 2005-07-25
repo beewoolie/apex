@@ -59,6 +59,7 @@
 #include <network.h>
 #include <ethernet.h>
 #include <alias.h>
+#include <sort.h>
 
 //#define TALK 2
 
@@ -267,72 +268,8 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 		      0);
     break;
 
-#if 0
-  case HTONS (ARP_REVERSEREPLY):
-    if (memcmp (ARP_F (frame)->target_hardware_address,
-		host_mac_address, 6))
-      break;
-    memcpy (host_ip_address, ARP_F (frame)->target_protocol_address, 4);
-		/* Add ARP entry for the server */
-    arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address, 
-		      1);
-    {
-      char sz[80];
-      unsigned char* p = ARP_F (frame)->sender_protocol_address;
-      sprintf (sz, "%d.%d.%d.%d", 
-	       host_ip_address[0], host_ip_address[1], 
-	       host_ip_address[2], host_ip_address[3]);
-      alias_set ("hostip", sz);
-      sprintf (sz, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-      alias_set ("serverip", sz);
-    }
-    break;
-  }
-#endif
-  
 }
 #endif
-
-#if 0
-
-void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
-{
-  int l;
-
-  DBG (1,"%s\n", __FUNCTION__);
-
-  DBG (2,"%s: checking length\n", __FUNCTION__);
-  if (frame->cb < (sizeof (struct header_ethernet)
-		   + sizeof (struct header_ipv4)
-		   + sizeof (struct header_icmp)))
-    return;			/* runt */
-
-  DBG (2,"%s: icmp %d received\n", __FUNCTION__, ICMP_F (frame)->type);
-
-  l = htons (IPV4_F (frame)->length) - sizeof (struct header_ipv4);
-  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__, 
-	  ICMP_F (frame)->checksum,
-	  checksum (ICMP_F (frame), l), l);
-
-  if (checksum (ICMP_F (frame), l) != 0) {
-    DBG (1,"%s: icmp discarded, header checksum incorrect\n", __FUNCTION__);
-    return;
-  }
-  
-  switch (ICMP_F (frame)->type) {
-  case ICMP_TYPE_ECHO:
-    ethernet_frame_reply (frame); /* This isn't really valid, is it? */
-    ipv4_frame_reply (frame);
-    ICMP_F (frame)->type = ICMP_TYPE_ECHO_REPLY;
-    ICMP_F (frame)->checksum = 0;
-    ICMP_F (frame)->checksum = htons (checksum (ICMP_F (frame), l));
-    d->driver->write (d, frame->rgb, frame->cb);
-    break;
-  }
-}
-#endif
-
 
 #if defined (CONFIG_PROTO_ICMP_ECHO)
 
@@ -400,11 +337,16 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
      Alternatively, some drivers may use a hash table to determine
      when to receive a frame.  Such devices will require frame
      filtering by address. */
-#if defined (CONFIG_MAC_FILTER) || 1
+#if defined (CONFIG_MAC_FILTER)
   if (   memcmp (ETH_F (frame)->destination_address, host_mac_address, 6)
       && memcmp (ETH_F (frame)->destination_address, broadcast_mac_address, 6))
     return;			/* Not for us. */
 #endif
+
+  /* Check for a valid IP address.  At present, this isn't strictly
+     correct since we don't check for broadcast addresses.  Adding
+     support for such shouldn't be difficult.  It just requires some
+     bookkeeping. */
 
   if (ETH_F (frame)->protocol == HTONS (ETH_PROTO_IP)
       && memcmp (IPV4_F (frame)->destination_ip, host_ip_address, 4))
@@ -418,25 +360,6 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 	  && receivers[i].pfn (d, frame, receivers[i].context))
 	break;
   }
-   
-#if 0
-  switch (ETH_F (frame)->protocol) {
-  case HTONS (ETH_PROTO_IP):
-    /* *** FIXME: verify that the destination IP address is ours */
-    switch (IPV4_F (frame)->protocol) {
-    case IP_PROTO_ICMP:
-      icmp_receive (d, frame);
-      break;
-    case IP_PROTO_UDP:
-      break;
-    }
-    break;
-  case HTONS (ETH_PROTO_ARP):
-  case HTONS (ETH_PROTO_RARP):
-    arp_receive (d, frame);
-    break;
-  }
-#endif
 }
 
 
@@ -533,6 +456,34 @@ int ethernet_timeout (void* pv)
 }
 
 
+int compare_receivers (const void* _a, const void* _b)
+{
+  struct ethernet_receiver* a = (struct ethernet_receiver*) _a;
+  struct ethernet_receiver* b = (struct ethernet_receiver*) _b;
+
+  if (a->pfn == b->pfn)		/* Probably NULLs */
+    return 0;
+
+  if (a->pfn == NULL)
+    return 1;
+  if (b->pfn == NULL)
+    return -1;
+
+  if (a->priority != b->priority)
+    return b->priority - a->priority;
+  else
+    return (unsigned long) a->pfn - (unsigned long) b->pfn;
+}
+
+
+static void dump_receivers (void)
+{
+  int i;
+  for (i = 0; i < cReceivers; ++i)
+    printf ("receiver %d: %4d %p %p\n", 
+	    i, receivers[i].priority, receivers[i].pfn, receivers[i].context);
+}
+
 /* register_ethernet_receive
 
    adds a frame receiving function to the list of active receivers.
@@ -555,9 +506,11 @@ int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
   receivers[cReceivers].priority = priority;
   receivers[cReceivers].pfn	 = pfn;
   receivers[cReceivers].context	 = context;
-  ++cReceivers;
 
-  /* *** FIXME: we should perform a sort at this point. */
+  sort (receivers, ++cReceivers, sizeof (*receivers), 
+	compare_receivers, NULL);
+
+  dump_receivers ();
 
   return 0;
 }
@@ -585,9 +538,9 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
   }
 
   if (i < cReceivers) {
-    /* *** FIXME: we should perform a sort at this point. */
-    /* Note that we don't decrement the count unless we can resort
-       the list.  */
+    sort (receivers, cReceivers--, sizeof (*receivers), 
+	  compare_receivers, NULL);
+    dump_receivers ();
     return 0;
   }
 

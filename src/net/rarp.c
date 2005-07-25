@@ -175,7 +175,7 @@ int cmd_rarp (int argc, const char** argv)
   frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
 //  dump (frame->rgb, frame->cb, 0);
 
-  register_ethernet_receiver (0, rarp_receiver, NULL);
+  register_ethernet_receiver (100, rarp_receiver, NULL);
 
 
   do {
