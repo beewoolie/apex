@@ -476,6 +476,7 @@ int compare_receivers (const void* _a, const void* _b)
 }
 
 
+#if 0
 static void dump_receivers (void)
 {
   int i;
@@ -483,6 +484,7 @@ static void dump_receivers (void)
     printf ("receiver %d: %4d %p %p\n", 
 	    i, receivers[i].priority, receivers[i].pfn, receivers[i].context);
 }
+#endif
 
 /* register_ethernet_receive
 
@@ -510,7 +512,7 @@ int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
   sort (receivers, ++cReceivers, sizeof (*receivers), 
 	compare_receivers, NULL);
 
-  dump_receivers ();
+//  dump_receivers ();
 
   return 0;
 }
@@ -540,7 +542,7 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
   if (i < cReceivers) {
     sort (receivers, cReceivers--, sizeof (*receivers), 
 	  compare_receivers, NULL);
-    dump_receivers ();
+//    dump_receivers ();
     return 0;
   }
 
