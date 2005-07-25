@@ -267,14 +267,65 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 		      ARP_F (frame)->sender_protocol_address, 
 		      0);
     break;
+  }
 
 }
 #endif
 
+int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
+		  void* context)
+{
+  DBG (1,"%s\n", __FUNCTION__);
+
+  if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
+	    + 6*2 + 4*2))
+    return 0;			/* runt */
+
+  if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_ARP))
+    return 0;
+  
+  if (   ARP_F (frame)->hardware_address_length != 6
+      || ARP_F (frame)->protocol_address_length != 4)
+    return -1;			/* unrecognized form */
+
+  DBG (2,"%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
+
+  switch (ARP_F (frame)->opcode) {
+  case HTONS (ARP_REQUEST):
+    if (memcmp (host_ip_address, ARP_F (frame)->target_protocol_address, 4))
+      return -1;		/* Not a match */
+
+	/* Send reply to request for our address */
+    ethernet_frame_reply (frame);
+    ARP_F (frame)->opcode = HTONS (ARP_REPLY);
+
+    memcpy (ARP_F (frame)->target_hardware_address,
+	    ARP_F (frame)->sender_hardware_address,
+	    10);		/* Move both the HW and protocol address */
+    memcpy (ARP_F (frame)->sender_hardware_address,
+	    host_mac_address,
+	    6);
+    memcpy (ARP_F (frame)->sender_protocol_address,
+	    host_ip_address,
+	    4);
+    frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
+    d->driver->write (d, frame->rgb, frame->cb);
+    break;
+
+  case HTONS (ARP_REPLY):
+    arp_cache_update (ARP_F (frame)->sender_hardware_address,
+		      ARP_F (frame)->sender_protocol_address, 
+		      0);
+    break;
+  }
+
+  return 0;
+}
+
 #if defined (CONFIG_PROTO_ICMP_ECHO)
 
 int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
-			void* pv)
+			void* context)
 {
   int l;
 
@@ -554,6 +605,7 @@ void ethernet_init (void)
 #if defined (CONFIG_PROTO_ICMP_ECHO)
   register_ethernet_receiver (0, icmp_echo_receiver, NULL);
 #endif
+  register_ethernet_receiver (10, arp_receiver, NULL);
 }
 
 static __service_6 struct service_d ethernet_receiver_service = {

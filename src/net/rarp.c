@@ -55,6 +55,7 @@
 #define TRIES_MAX	4
 #define MS_TIMEOUT	(1*1000)
 
+
 /* autoconf_terminate
 
    is the function used by ethernet_service() to deterine when to
@@ -79,6 +80,7 @@ static int autoconf_terminate (void* pv)
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
     ? 0 : -1;
 }
+
 
 /* rarp_receiver
 
