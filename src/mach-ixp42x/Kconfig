@@ -9,7 +9,6 @@ config MACH_NSLU2
 	select ARCH_IXP420
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
-	select BIGENDIAN
 
 config MACH_AVILA2347
 	bool "Gateworks Avila 2347"
@@ -17,9 +16,29 @@ config MACH_AVILA2347
 	select MACH_AVILA
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
-	select BIGENDIAN
 
 endchoice
+
+config USER_BIGENDIAN
+	bool "Big-Endian Mode"
+	default y
+	select BIGENDIAN
+	help
+	  The endian-ness of the CPU is selectable at runtime.  Intel
+	  has traditionally configured their XScale CPUs to use
+	  big-ending byte ordering.  However, the real determinant of
+	  the endian-ness is the runtime libraries and operating
+	  system components.
+
+	  Until version 1.5 of the Intel Access Library, only
+	  big-endian mode was supported for the NPE (Network
+	  Processing Element).  If you depend on the built-in MAC,
+	  you'll probably continue to use big-endian mode.  If you use
+	  an external ethernet device, e.g. USB, or if someone
+	  successfully integrates the version 1.5 library into the
+	  Linux kernel, you may be able to use little-endian mode.
+
+	  If you are in doubt, choose Y.
 
 menu "Platform Setup"
 
