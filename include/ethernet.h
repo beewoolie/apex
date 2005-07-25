@@ -45,7 +45,8 @@ struct ethernet_timeout_context {
   long ms_timeout;
 };
 
-typedef int (*pfn_ethernet_receiver) (struct ethernet_frame*, void*);
+typedef int (*pfn_ethernet_receiver) (struct descriptor_d*, 
+				      struct ethernet_frame*, void*);
 
 /* ----- Globals */
 

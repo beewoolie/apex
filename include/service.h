@@ -50,7 +50,7 @@ struct service_d {
 #define __service_3 __used __section(.service.3) /* serial */
 #define __service_4 __used __section(.service.4) /* drv-mem */
 #define __service_5 __used __section(.service.5)
-#define __service_6 __used __section(.service.6) /* drv-* */
+#define __service_6 __used __section(.service.6) /* drv-*, ethernet */
 #define __service_7 __used __section(.service.7) /* env */
 
 /* ----- Globals */

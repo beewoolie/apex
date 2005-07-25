@@ -55,6 +55,7 @@
 #include <linux/kernel.h>
 #include <apex.h>	/* printf */
 #include <driver.h>
+#include <service.h>
 #include <network.h>
 #include <ethernet.h>
 #include <alias.h>
@@ -82,6 +83,8 @@ char host_ip_address[4];
 char gw_ip_address[4];
 char host_mac_address[6] = { 0x00, 0x08, 0xee, 0x00, 0x77, 0x9c };
 const char szNetDriver[] = "eth:";
+static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff, 
+					       0xff, 0xff, 0xff };
 
 enum {
   state_free      = 0,
@@ -112,10 +115,6 @@ static u16 checksum (void* pv, int cb)
   }
 
   return ~ ((sum & 0xffff) + (sum >> 16));
-}
-
-void ethernet_init (void)
-{
 }
 
 
@@ -291,6 +290,8 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   
 }
 
+#if 0
+
 void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 {
   int l;
@@ -326,6 +327,54 @@ void icmp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     break;
   }
 }
+#endif
+
+
+#if defined (CONFIG_PROTO_ICMP_ECHO)
+
+int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
+			void* pv)
+{
+  int l;
+
+//  DBG (2,"%s: checking length\n", __FUNCTION__);
+
+	/* Vet the frame */
+  if (frame->cb < (sizeof (struct header_ethernet)
+		   + sizeof (struct header_ipv4)
+		   + sizeof (struct header_icmp)))
+    return 0;			/* runt */
+  if (   ETH_F (frame)->protocol != HTONS (ETH_PROTO_IP)
+      || IPV4_F (frame)->protocol != htons (IP_PROTO_ICMP))
+    return 0;
+
+  DBG (2,"%s: icmp %d received\n", __FUNCTION__, ICMP_F (frame)->type);
+
+  l = htons (IPV4_F (frame)->length) - sizeof (struct header_ipv4);
+  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__, 
+	  ICMP_F (frame)->checksum,
+	  checksum (ICMP_F (frame), l), l);
+
+  if (checksum (ICMP_F (frame), l) != 0) {
+    DBG (1,"%s: icmp discarded, header checksum incorrect\n", __FUNCTION__);
+    return -1;
+  }
+  
+  switch (ICMP_F (frame)->type) {
+  case ICMP_TYPE_ECHO:
+    ethernet_frame_reply (frame); /* This isn't really valid, is it? */
+    ipv4_frame_reply (frame);
+    ICMP_F (frame)->type = ICMP_TYPE_ECHO_REPLY;
+    ICMP_F (frame)->checksum = 0;
+    ICMP_F (frame)->checksum = htons (checksum (ICMP_F (frame), l));
+    d->driver->write (d, frame->rgb, frame->cb);
+    break;
+  }
+
+  return 1;
+}
+
+#endif
 
 
 /* ethernet_receive
@@ -341,6 +390,31 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   if (frame->cb < sizeof (struct header_ethernet))
     return;			/* runt */
 
+  /* Check for a valid MAC address.  This is configurable since most
+     drivers have exact match logic for MAC addresses.  Broadcast and
+     exact matches get through.  Others will not be received.
+     Alternatively, some drivers may use a hash table to determine
+     when to receive a frame.  Such devices will require frame
+     filtering by address. */
+#if defined (CONFIG_MAC_FILTER) || 1
+  if (   memcmp (ETH_F (frame)->destination_address, host_mac_address, 6)
+      && memcmp (ETH_F (frame)->destination_address, broadcast_mac_address, 6))
+    return;			/* Not for us. */
+#endif
+
+  if (ETH_F (frame)->protocol == HTONS (ETH_PROTO_IP)
+      && memcmp (IPV4_F (frame)->destination_ip, host_ip_address, 4))
+    return;			/* Not for us */
+
+	/* Invoke receivers */
+  {
+    int i;
+    for (i = 0; i < cReceivers; ++i)
+      if (receivers[i].pfn (d, frame, receivers[i].context))
+	break;
+  }
+   
+#if 0
   switch (ETH_F (frame)->protocol) {
   case HTONS (ETH_PROTO_IP):
     /* *** FIXME: verify that the destination IP address is ours */
@@ -357,6 +431,7 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     arp_receive (d, frame);
     break;
   }
+#endif
 }
 
 
@@ -375,7 +450,7 @@ void udp_setup (struct ethernet_frame* frame,
   if (addr)
     memcpy (ETH_F (frame)->destination_address, addr, 6);
   else
-    memset (ETH_F (frame)->destination_address, 0xff, 6);
+    memcmp (ETH_F (frame)->destination_address, broadcast_mac_address, 6);
   memcpy (ETH_F (frame)->source_address, host_mac_address, 6);
   ETH_F (frame)->protocol = HTONS (ETH_PROTO_IP);
 
@@ -513,3 +588,17 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
 
   return -1;
 }
+
+void ethernet_init (void)
+{
+#if defined (CONFIG_PROTO_ICMP_ECHO)
+  register_ethernet_receiver (0, icmp_echo_receiver, NULL);
+#endif
+}
+
+static __service_6 struct service_d ethernet_receiver_service = {
+  .init = ethernet_init,
+#if !defined (CONFIG_SMALL) && 0
+  .report = ethernet_report,
+#endif
+};
