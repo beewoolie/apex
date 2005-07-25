@@ -66,5 +66,9 @@ int register_ethernet_receiver (int priority,
 				void* context);
 int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context);
 
+/* *** FIXME: perhaps this shouldn't be exported */
+void arp_cache_update (const char* hardware_address,
+		       const char* protocol_address,
+		       int force);
 
 #endif  /* __ETHERNET_H__ */

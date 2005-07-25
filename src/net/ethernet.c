@@ -60,7 +60,7 @@
 #include <ethernet.h>
 #include <alias.h>
 
-//#define TALK
+//#define TALK 2
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -212,6 +212,7 @@ const char* arp_cache_lookup (const char* protocol_address)
 }
 
 
+#if 0
 /* arp_receive
 
    accepts all ARP packets.  This code handles automatic ARP_REPLY
@@ -266,6 +267,7 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 		      0);
     break;
 
+#if 0
   case HTONS (ARP_REVERSEREPLY):
     if (memcmp (ARP_F (frame)->target_hardware_address,
 		host_mac_address, 6))
@@ -287,8 +289,10 @@ void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
     }
     break;
   }
+#endif
   
 }
+#endif
 
 #if 0
 
@@ -337,7 +341,7 @@ int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 {
   int l;
 
-//  DBG (2,"%s: checking length\n", __FUNCTION__);
+  DBG (2,"%s\n", __FUNCTION__);
 
 	/* Vet the frame */
   if (frame->cb < (sizeof (struct header_ethernet)
@@ -345,7 +349,7 @@ int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 		   + sizeof (struct header_icmp)))
     return 0;			/* runt */
   if (   ETH_F (frame)->protocol != HTONS (ETH_PROTO_IP)
-      || IPV4_F (frame)->protocol != htons (IP_PROTO_ICMP))
+      || IPV4_F (frame)->protocol != IP_PROTO_ICMP)
     return 0;
 
   DBG (2,"%s: icmp %d received\n", __FUNCTION__, ICMP_F (frame)->type);
@@ -410,7 +414,8 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   {
     int i;
     for (i = 0; i < cReceivers; ++i)
-      if (receivers[i].pfn (d, frame, receivers[i].context))
+      if (   receivers[i].pfn
+	  && receivers[i].pfn (d, frame, receivers[i].context))
 	break;
   }
    

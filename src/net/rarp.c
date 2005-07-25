@@ -80,6 +80,63 @@ static int autoconf_terminate (void* pv)
     ? 0 : -1;
 }
 
+/* rarp_receiver
+
+   accepts RARP packets from the ethernet receive layer.
+
+*/
+
+int rarp_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
+		   void* context)
+{
+  extern char host_ip_address[]; /* *** FIXME: please? */
+  extern char host_mac_address[];
+
+	/* Vet the frame */
+  if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
+	    + 6*2 + 4*2))
+    return 0;			/* runt */
+  if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_RARP))
+    return 0;
+  
+  if (   ARP_F (frame)->hardware_address_length != 6
+      || ARP_F (frame)->protocol_address_length != 4)
+    return -1;			/* unrecognized form, discard */
+
+  DBG (2,"%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
+
+  switch (ARP_F (frame)->opcode) {
+
+  case HTONS (ARP_REVERSEREPLY):
+    if (memcmp (ARP_F (frame)->target_hardware_address,
+		host_mac_address, 6))
+      break;
+    memcpy (host_ip_address, ARP_F (frame)->target_protocol_address, 4);
+		/* Add ARP entry for the server */
+    arp_cache_update (ARP_F (frame)->sender_hardware_address,
+		      ARP_F (frame)->sender_protocol_address, 
+		      1);
+    /* *** FIXME: this should be done in the ethernet code since we'll
+       *** be configuring in different ways */
+#if defined (CONFIG_CMD_ALIAS)
+    {
+      char sz[80];
+      unsigned char* p = ARP_F (frame)->sender_protocol_address;
+      sprintf (sz, "%d.%d.%d.%d", 
+	       host_ip_address[0], host_ip_address[1], 
+	       host_ip_address[2], host_ip_address[3]);
+      alias_set ("hostip", sz);
+      sprintf (sz, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+      alias_set ("serverip", sz);
+    }
+#endif
+    break;
+  }
+
+  return 1;
+}
+
+
 int cmd_rarp (int argc, const char** argv)
 {
   struct descriptor_d d;
@@ -118,6 +175,9 @@ int cmd_rarp (int argc, const char** argv)
   frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
 //  dump (frame->rgb, frame->cb, 0);
 
+  register_ethernet_receiver (0, rarp_receiver, NULL);
+
+
   do {
     struct ethernet_timeout_context timeout;
 
@@ -133,6 +193,8 @@ int cmd_rarp (int argc, const char** argv)
 
     /* result == 1 on success, -1 on timeout  */
   } while (result <= 0 && tries < TRIES_MAX);
+
+  unregister_ethernet_receiver (rarp_receiver, NULL);
 
   if (UNCONFIGURED_IP)
     printf ("\rRARP failed\n");
