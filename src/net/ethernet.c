@@ -116,6 +116,17 @@ struct ethernet_receiver {
 static struct ethernet_receiver receivers[MAX_RECEIVERS];
 static int cReceivers;		/* Number of receivers */
 
+u16 _checksum (u32* sum, void* pv, int cb)
+{
+  u16* p = (u16*) pv;
+  for (; cb > 0; cb -= 2) {
+    unsigned short s = *p++;
+    *sum += HTONS (s);
+  }
+
+  return ~ ((*sum & 0xffff) + (*sum >> 16));
+}
+
 u16 checksum (void* pv, int cb)
 {
   u16* p = (u16*) pv;
@@ -426,8 +437,12 @@ void udp_setup (struct ethernet_frame* frame,
 		u16 source_port, size_t cb)
 {
   const char* addr = arp_cache_lookup (destination_ip);
-  if (!addr)
-    addr = arp_cache_lookup (gw_ip_address);
+//  if (!addr)
+//    addr = arp_cache_lookup (gw_ip_address);
+  if (!addr)			/* *** FIXME: shouldn't be possible */
+    return;
+
+  cb = (cb + 1) & ~1;
 
   memset (IPV4_F (frame), 0, 
 	  sizeof (struct header_ipv4) + sizeof (struct header_udp));
@@ -448,17 +463,32 @@ void udp_setup (struct ethernet_frame* frame,
   IPV4_F (frame)->protocol = IP_PROTO_UDP;
   memcpy (IPV4_F (frame)->source_ip, host_ip_address, 4);
   memcpy (IPV4_F (frame)->destination_ip, destination_ip, 4);
+  IPV4_F (frame)->checksum = 0;
 
   /* UDP header */
   UDP_F (frame)->source_port = HTONS (source_port);
   UDP_F (frame)->destination_port = HTONS (destination_port);
-  UDP_F (frame)->length = sizeof (struct header_udp) + cb;
+  UDP_F (frame)->length = htons (sizeof (struct header_udp) + cb);
+  UDP_F (frame)->checksum = 0;
 
   /* Checksums, UDP and then TCP */
-  UDP_F (frame)->checksum
-    = checksum (UDP_F (frame), sizeof (struct header_udp) + cb);
+  {
+    u32 sum = 0;
+    u16 length = htons (sizeof (struct header_udp) + cb);
+    u8 rgb[2] = { 0, IPV4_F (frame)->protocol };
+    _checksum (&sum, IPV4_F (frame)->source_ip, 8);
+    _checksum (&sum, rgb, 2);
+    _checksum (&sum, &length, 2);
+    UDP_F (frame)->checksum
+      = htons (_checksum (&sum, UDP_F (frame), 
+			  sizeof (struct header_udp) + cb));
+  }
   IPV4_F (frame)->checksum
-    = checksum (IPV4_F (frame), sizeof (struct header_ipv4));
+    = htons (checksum (IPV4_F (frame), sizeof (struct header_ipv4)));
+
+  frame->cb = sizeof (struct header_ethernet)
+    + sizeof (struct header_ipv4)
+    + sizeof (struct header_udp) + cb;
 }
 		
 

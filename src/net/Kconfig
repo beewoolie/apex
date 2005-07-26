@@ -2,6 +2,7 @@ menu "Ethernet Networking"
 
 config ETHERNET
 	bool "Ethernet Network Stack"
+	select USES_PATHNAME_PARSER
 	default n
 	help
 	  This options enabled the Ethernet network stack, protocols

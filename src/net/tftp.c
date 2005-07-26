@@ -96,7 +96,9 @@ enum {
 };
 
 struct tftp_info {
+  struct descriptor_d d;	/* ethernet device */
   int state;
+  char server_ip[4];
   int source_port;
   int destination_port;
   int mode;			/* reading or writing, uses an opcode */
@@ -108,79 +110,57 @@ struct tftp_info {
 
 struct tftp_info tftp;
 
-int cmd_tftp (int argc, const char** argv)
+static int tftp_receiver (struct descriptor_d* d, 
+			  struct ethernet_frame* frame,
+			  void* context)
 {
-  struct descriptor_d d;
-  int result;
-  struct ethernet_frame* frame;
-  unsigned long timeStart;
-  char server_ip[] = { 192, 168, 8, 1 };
-  u16 port = 1169;
-  int cb;
+  struct tftp_info* info = (struct tftp_info*) context;
 
-  if (argc != 4)
-    return ERROR_PARAM;
+	/* Vet the frame */
+  if (frame->cb < (sizeof (struct header_ethernet)
+		   + sizeof (struct header_ipv4)
+		   + sizeof (struct header_udp)
+		   + sizeof (struct message_tftp)))
+    return 0;			/* runt */
+  if (   ETH_F (frame)->protocol != HTONS (ETH_PROTO_IP)
+      || IPV4_F (frame)->protocol != IP_PROTO_UDP
+      || UDP_F (frame)->destination_port != info->source_port)
+    return 0;
 
-  if (   (result = parse_descriptor (szNetDriver, &d))
-      || (result = open_descriptor (&d))) 
-    return result;
+  printf ("tftp response opcode %d\n", htons (TFTP_F (frame)->opcode));
 
-  DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
-
-  frame = ethernet_frame_allocate ();
-
-  DBG (2,"%s: setup ethernet header %p\n", __FUNCTION__, frame);
-
-  TFTP_F (frame)->opcode = TFTP_RRQ;
-  cb = sizeof (struct message_tftp) 
-    + sprintf (TFTP_F (frame)->data, "%s%coctet", argv[3], 0);
-  frame->cb = sizeof (struct header_ethernet)
-    + sizeof (struct header_ipv4)
-    + sizeof (struct header_udp)
-    + cb;
-
-  udp_setup (frame, server_ip, PORT_TFTP, port, cb);
-  
-  d.driver->write (&d, frame->rgb, frame->cb);
-  timeStart = timer_read ();
-  printf ("sending\n");
-  dump (frame->rgb, frame->cb, 0);
-
-  do {
-    SPINNER_STEP;
-
-    frame->cb = d.driver->read (&d, frame->rgb, FRAME_LENGTH_MAX);
-    if (frame->cb > 0) {
-      DBG (1,"%s: received frame\n", __FUNCTION__);
-      dump (frame->rgb, frame->cb, 0);
-      ethernet_receive (&d, frame);
-      frame->cb = 0;
-    }
-  } while (timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
-
-
-
-
-
-  ethernet_frame_release (frame);
-
-  close_descriptor (&d);  
-  return 0;
+  return 1;
 }
 
-static __command struct command_d c_tftp = {
-  .command = "tftp",
-  .description = "tftp transfer",
-  .func = cmd_tftp,
-  COMMAND_HELP(
-"tftp SERVER PATH REGION\n"
-"  Transfers the file, PATH, from the tftp SERVER to REGION via tftp.\n"
-  )
-};
+
+/* tftp_terminate
+
+   is the function used by ethernet_service() to deterine when to
+   terminate the loop.  It return zero when the loop can continue, -1
+   on timeout, and 1 when the configuration is complete.
+
+   *** FIXME: this is redundant
+
+*/
+
+static int ping_terminate (void* pv)
+{
+  struct ethernet_timeout_context* context
+    = (struct ethernet_timeout_context*) pv;
+
+  if (!context->time_start)
+    context->time_start = timer_read ();
+
+  return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
+    ? 0 : -1;
+}
+
 
 static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  
+  struct ethernet_timeout_context timeout;
+  int result;
+
   switch (tftp.state) {
   case stateIdle:		/* Need to open the connection */
     
@@ -194,20 +174,29 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
     tftp.block = 0;
     tftp.frame = ethernet_frame_allocate ();
 
-    TFTP_F(frame)->opcode = tftp.mode;
+    /* -- Begin Protocol -- */
+
+    TFTP_F (tftp.frame)->opcode = htons (tftp.mode);
     {
-      char* pch = TFTP_F(frame)->data;
-      size_t cb = strlcpy (pch, d->pb[iRoot], 400);
+      char* pch = TFTP_F(tftp.frame)->data;
+      size_t cb = strlcpy (pch, d->pb[d->iRoot], 400) + 1;
       strcpy (pch + cb, "octet");
-    }      
-    /* Finish headers */
-    /* Register port listener */
-    /* Transmit packet */
-    /* Handle state machine? */
+      cb += strlen (pch + cb) + 1;
+      udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port, 
+		 tftp.source_port, sizeof (struct message_tftp) + cb);
+    }
+
+    tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
+    tftp.state = stateReading;
+
+    memset (&timeout, 0, sizeof (timeout));
+    timeout.ms_timeout = MS_TIMEOUT;
+    result = ethernet_service (&tftp.d, ping_terminate, &timeout);
+
     break;
+  }
 
   return 0;
-
 
 }
 
@@ -223,11 +212,48 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 
 static int tftp_open (struct descriptor_d* d)
 {
+  int result;
+  extern const char szNetDriver[];
+
+  printf ("%s: d->c %d d->iRoot %d '%s' '%s'\n", 
+	  __FUNCTION__, d->c, d->iRoot, d->pb[0], d->pb[1]);
+
+  if (d->c != 2)
+    ERROR_RETURN (ERROR_FILENOTFOUND, "invalid path"); 
+  if (d->iRoot != 1)
+    ERROR_RETURN (ERROR_FILENOTFOUND, "server IP required"); 
+  
+  result = getaddr (d->pb[0], tftp.server_ip);
+  if (result)
+    return result;
+
+  if (!arp_resolve (&tftp.d, tftp.server_ip, 0))
+    ERROR_RETURN (ERROR_PARAM, "no route to host");
+
+  if (   (result = parse_descriptor (szNetDriver, &tftp.d))
+      || (result = open_descriptor (&tftp.d))) 
+    return result;
+
+  register_ethernet_receiver (100, tftp_receiver, &tftp);
+
   return 0;
 }
 
+ 
+static void tftp_close (struct descriptor_d* d)
+{
+  if (tftp.frame) {
+    ethernet_frame_release (tftp.frame);
+    tftp.frame = NULL;
+  }
 
-  
+  unregister_ethernet_receiver (tftp_receiver, &tftp);
+  close_descriptor (&tftp.d);
+
+  close_helper (d);
+}
+
+
 #if 0
 static ssize_t tftp_write (struct descriptor_d* d, void*, size_t cb)
 {
@@ -238,13 +264,13 @@ static ssize_t tftp_write (struct descriptor_d* d, void*, size_t cb)
 static __driver_6 struct driver_d tftp_driver = {
   .name = DRIVER_NAME,
   .description = "trivial FTP driver",
-  .flags = DRIVER_DESCRIP_FS,
+  .flags = DRIVER_DESCRIP_FS | DRIVER_DESCRIP_SIMPLEPATH,
   .open = tftp_open,
   .close = tftp_close,
   .read = tftp_read,
 //  .write = tftp_write,
 //  .erase = cf_erase,
-  .seek = tftp_seek,
+//  .seek = tftp_seek,
 #if defined CONFIG_CMD_INFO
 //  .info = tftp_info,
 #endif

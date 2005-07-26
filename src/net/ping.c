@@ -63,6 +63,8 @@
    terminate the loop.  It return zero when the loop can continue, -1
    on timeout, and 1 when the configuration is complete.
 
+   *** FIXME: this is redundant
+
 */
 
 static int ping_terminate (void* pv)
@@ -132,11 +134,10 @@ int cmd_ping (int argc, const char** argv)
     ERROR_RETURN (ERROR_PARAM, "target address required");
 
   result = getaddr (argv[1], ip_address);
-  printf ("result %d  %d.%d.%d.%d\n", result,
-	  ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
-
+//  printf ("result %d  %d.%d.%d.%d\n", result,
+//	  ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
   if (result)
-    ERROR_RETURN (ERROR_PARAM, "invalid address");
+    return result;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
       || (result = open_descriptor (&d))) 
@@ -146,9 +147,9 @@ int cmd_ping (int argc, const char** argv)
 
   if (!hardware_address)
     ERROR_RETURN (ERROR_PARAM, "no route to host");
-  printf ("hardware_address %02x:%02x:%02x:%02x:%02x:%02x\n",
-	  hardware_address[0], hardware_address[1], hardware_address[1],
-	  hardware_address[2], hardware_address[3], hardware_address[4]);
+//  printf ("hardware_address %02x:%02x:%02x:%02x:%02x:%02x\n",
+//	  hardware_address[0], hardware_address[1], hardware_address[1],
+//	  hardware_address[2], hardware_address[3], hardware_address[4]);
 
   frame = ethernet_frame_allocate ();
 
