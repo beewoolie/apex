@@ -36,7 +36,7 @@
   -----
 
    o The meshing o the tftp protocol and data handling within APEX is
-     a bit more complex that would be idea.  tftp only considers
+     a bit more complex that would be ideal.  tftp only considers
      streams of bytes to be accessible linearly from the start to the
      end.  There is no seeking.  There is a timeout on each block, so
      APEX cannot hold off indefinitely with continuing the stream
@@ -44,7 +44,7 @@
      reading files is to throttle the acknowlegements.  So, what it
      shall do is request the first block.  Let the next layer read
      data from the buffered data and wait for the whole block to be
-     consumed before acknowledging that the block was received.
+     consumed before acknowledging that the block was received.  
    o Performance may be improved by caching one or more data blocks
      and allowing there to be a sliding window of available data.
      This could, potentially, allow for a reasonable overlap of
@@ -52,10 +52,11 @@
      sort of transformation on the data, e.g. checksum or writing to
      flash.  For transfers to memory, there is probably little to be
      gained with a sliding window.  However, this driver doesn't know
-     how the data will be used. 
+     how the data will be used.
    o We need to select a random port number.  We need to see if there
      is some place where we can sample semi-random data.  At least so
-     that we have a chance to detect out-dated connections.
+     that we have a chance to detect out-dated connections.  Or, we
+     can let this be a problem for the udp layer.
 
 */
 
