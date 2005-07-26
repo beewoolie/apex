@@ -77,5 +77,6 @@ const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
 
 int getaddr (const char* address, char* ip_address);
 u16 checksum (void* pv, int cb);
+u16 port_allocate (void);
 
 #endif  /* __ETHERNET_H__ */

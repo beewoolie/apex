@@ -140,6 +140,15 @@ u16 checksum (void* pv, int cb)
 }
 
 
+u16 port_allocate (void)
+{
+  static u16 port;
+  if (port == 0)
+    return port = 23000;
+  else
+    return ++port;
+}
+
 /* ethernet_frame_allocate
 
 */

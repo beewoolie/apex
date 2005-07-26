@@ -75,7 +75,7 @@
 #include <network.h>
 #include <ethernet.h>
 
-#define TALK 2
+#define TALK 1
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -92,7 +92,10 @@
 
 enum {
   stateIdle = 0,
-  stateReading,
+  stateWaiting,
+  stateBlockAvailable,
+  stateAck,
+  stateBlockFinal,
 };
 
 struct tftp_info {
@@ -102,8 +105,9 @@ struct tftp_info {
   int source_port;
   int destination_port;
   int mode;			/* reading or writing, uses an opcode */
-  int block;			/* block number of last received block */
-
+  int block;			/* block number being read */
+  int blockRec;			/* block number of last received block */
+  size_t cbRec; 		/* count of bytes received */
   unsigned char rgb[BLOCK_LENGTH*BLOCKS_CACHED];
   struct ethernet_frame* frame;
 };
@@ -115,6 +119,11 @@ static int tftp_receiver (struct descriptor_d* d,
 			  void* context)
 {
   struct tftp_info* info = (struct tftp_info*) context;
+  u16 opcode;
+  size_t cb;
+  u16 block;
+
+  DBG (2,"tftp_receiver %d %d\n", info->blockRec, info->cbRec);
 
 	/* Vet the frame */
   if (frame->cb < (sizeof (struct header_ethernet)
@@ -122,12 +131,46 @@ static int tftp_receiver (struct descriptor_d* d,
 		   + sizeof (struct header_udp)
 		   + sizeof (struct message_tftp)))
     return 0;			/* runt */
+  if (ETH_F (frame)->protocol == HTONS (ETH_PROTO_IP) 
+      && IPV4_F (frame)->protocol == IP_PROTO_UDP) {
+    DBG (2,"  dp %d  sp %d\n", 
+	 htons (UDP_F (frame)->destination_port),
+	 htons (UDP_F (frame)->source_port));
+  }
+
   if (   ETH_F (frame)->protocol != HTONS (ETH_PROTO_IP)
       || IPV4_F (frame)->protocol != IP_PROTO_UDP
-      || UDP_F (frame)->destination_port != info->source_port)
+      || htons (UDP_F (frame)->destination_port) != info->source_port)
     return 0;
 
-  printf ("tftp response opcode %d\n", htons (TFTP_F (frame)->opcode));
+  opcode = htons (TFTP_F (frame)->opcode);
+
+  if (opcode == TFTP_DATA && info->blockRec == 0)
+    info->destination_port = htons (UDP_F (frame)->source_port);
+
+  switch (opcode) {
+  case TFTP_DATA:
+    block = htons (*(u16*) TFTP_F (frame)->data);
+    DBG (1,"tftp data (3) block %d\n", block);
+
+    if (block != info->blockRec + 1) { /* out-of-sync */
+      info->state = stateAck;
+      break;
+    }
+
+    cb = htons (UDP_F (frame)->length) - sizeof (struct header_udp) 
+      - sizeof (struct message_tftp) - 2;
+    DBG (1,"received %d bytes  block %d\n", cb, info->blockRec + 1);
+    memcpy (&info->rgb[info->cbRec % sizeof (info->rgb)], 
+	    TFTP_F (frame)->data + 2, cb);
+    ++info->blockRec;
+    info->cbRec += cb;
+    tftp.state = (cb == 512 ? stateBlockAvailable : stateBlockFinal);
+    break;
+  default:
+    DBG (1,"tftp response opcode %d\n", opcode);
+    break;
+  }
 
   return 1;
 }
@@ -139,14 +182,16 @@ static int tftp_receiver (struct descriptor_d* d,
    terminate the loop.  It return zero when the loop can continue, -1
    on timeout, and 1 when the configuration is complete.
 
-   *** FIXME: this is redundant
-
 */
 
 static int ping_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
+
+  /* *** FIXME: ouch */
+  if (tftp.state != stateWaiting)
+    return 1;
 
   if (!context->time_start)
     context->time_start = timer_read ();
@@ -158,46 +203,93 @@ static int ping_terminate (void* pv)
 
 static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  struct ethernet_timeout_context timeout;
   int result;
+  ssize_t cbRead = 0;
 
-  switch (tftp.state) {
-  case stateIdle:		/* Need to open the connection */
-    
-    if (!tftp.source_port)
-      /* *** need a function to allocate port numbers */
-      tftp.source_port = 23000;
-    else
-      ++tftp.source_port;
-    tftp.destination_port = 69;
-    tftp.mode = TFTP_RRQ;
-    tftp.block = 0;
-    tftp.frame = ethernet_frame_allocate ();
+  while (cb) {
+    int available = tftp.cbRec - (d->start + d->index);
 
-    /* -- Begin Protocol -- */
+    switch (tftp.state) {
+    case stateIdle:		/* Need to read data */
 
-    TFTP_F (tftp.frame)->opcode = htons (tftp.mode);
-    {
-      char* pch = TFTP_F(tftp.frame)->data;
-      size_t cb = strlcpy (pch, d->pb[d->iRoot], 400) + 1;
-      strcpy (pch + cb, "octet");
-      cb += strlen (pch + cb) + 1;
+      tftp.source_port = port_allocate ();
+      tftp.destination_port = 69;
+      tftp.mode = TFTP_RRQ;
+      tftp.frame = ethernet_frame_allocate ();
+
+	/* -- Initiate transfer -- */
+
+      TFTP_F (tftp.frame)->opcode = htons (tftp.mode);
+      {
+	char* pch = TFTP_F(tftp.frame)->data;
+	size_t cb = strlcpy (pch, d->pb[d->iRoot], 400) + 1;
+	strcpy (pch + cb, "octet");
+	cb += strlen (pch + cb) + 1;
+	udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port, 
+		   tftp.source_port, sizeof (struct message_tftp) + cb);
+      }
+
+      tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
+      tftp.state = stateWaiting;
+      break;
+
+    case stateWaiting:
+      {
+	struct ethernet_timeout_context timeout;
+
+	memset (&timeout, 0, sizeof (timeout));
+	timeout.ms_timeout = MS_TIMEOUT;
+	result = ethernet_service (&tftp.d, ping_terminate, &timeout);
+
+	/* *** need to check that we received a block, otherwise, the
+	   connection cannot be initiated */
+
+	if (tftp.state != stateBlockAvailable)
+	  goto quit;		/* Terminate, probably no such file */
+
+	if (result < 0) {		/* *** FIXME: more protocol here */
+	  tftp.state = stateAck;
+	  goto quit;
+	}
+      }
+      break;
+
+    case stateBlockFinal:
+      if (available == 0)
+	goto quit;
+      /* fall through */
+
+    case stateBlockAvailable:
+      if (available == 0) {
+	tftp.state = stateAck;
+	break;
+      }
+
+      if (available > cb)
+	available = cb;
+      memcpy (pv, tftp.rgb + (d->start + d->index)%sizeof (tftp.rgb), 
+	      available);
+      d->index += available;
+      cb -= available;
+      cbRead += available;
+      pv += available;
+      break;
+
+    case stateAck:
+      DBG (1, "acking %d\n", tftp.blockRec);
+      TFTP_F (tftp.frame)->opcode = htons (TFTP_ACK);
+      *(u16*) TFTP_F (tftp.frame)->data = htons (tftp.blockRec);
       udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port, 
-		 tftp.source_port, sizeof (struct message_tftp) + cb);
+		 tftp.source_port, sizeof (struct message_tftp) + 2);
+      usleep (1000);
+      tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
+      tftp.state = stateWaiting;
+      break;
     }
-
-    tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
-    tftp.state = stateReading;
-
-    memset (&timeout, 0, sizeof (timeout));
-    timeout.ms_timeout = MS_TIMEOUT;
-    result = ethernet_service (&tftp.d, ping_terminate, &timeout);
-
-    break;
   }
 
-  return 0;
-
+ quit:
+  return cbRead;
 }
 
 
@@ -215,7 +307,7 @@ static int tftp_open (struct descriptor_d* d)
   int result;
   extern const char szNetDriver[];
 
-  printf ("%s: d->c %d d->iRoot %d '%s' '%s'\n", 
+  DBG (2,"%s: d->c %d d->iRoot %d '%s' '%s'\n", 
 	  __FUNCTION__, d->c, d->iRoot, d->pb[0], d->pb[1]);
 
   if (d->c != 2)
@@ -223,6 +315,8 @@ static int tftp_open (struct descriptor_d* d)
   if (d->iRoot != 1)
     ERROR_RETURN (ERROR_FILENOTFOUND, "server IP required"); 
   
+  memset (&tftp, 0, sizeof (tftp)); /* clobber transfer state */
+
   result = getaddr (d->pb[0], tftp.server_ip);
   if (result)
     return result;
