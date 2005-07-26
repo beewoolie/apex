@@ -87,6 +87,7 @@ struct header_icmp {
 struct message_icmp_ping {
   u16 identifier;
   u16 sequence;
+  u8 data[];
 } __attribute__((packed));
 
 struct message_tftp {

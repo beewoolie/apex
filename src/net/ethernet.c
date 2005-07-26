@@ -62,6 +62,8 @@
 #include <sort.h>
 
 //#define TALK 2
+//#define DUMP_RECEIVERS
+
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -137,7 +139,7 @@ struct ethernet_frame* ethernet_frame_allocate (void)
   for (i = 0; i < FRAME_TABLE_LENGTH; ++i)
     if (frame_table[i].state == state_free) {
       frame_table[i].state = state_allocated;
-
+      DBG (1, "%s: %p\n", __FUNCTION__, &frame_table[i]);
       return &frame_table[i];
     }
   return NULL;
@@ -146,6 +148,7 @@ struct ethernet_frame* ethernet_frame_allocate (void)
 
 void ethernet_frame_release (struct ethernet_frame* frame)
 {
+  DBG (1, "%s: %p\n", __FUNCTION__, frame);
   frame->state = state_free;
 }
 
@@ -253,7 +256,7 @@ void arp_cache_update (const char* hardware_address,
 
 */
 
-const char* arp_cache_lookup (const char* protocol_address)
+static const char* arp_cache_lookup (const char* protocol_address)
 {
   int i;
   for (i = 0; i < ARP_TABLE_LENGTH; ++i)
@@ -279,12 +282,13 @@ const char* arp_cache_lookup (const char* protocol_address)
 int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 		  void* context)
 {
-  DBG (1,"%s\n", __FUNCTION__);
+  DBG (1,"%s (%d)\n", __FUNCTION__, frame->cb);
 
   if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
 	    + 6*2 + 4*2))
     return 0;			/* runt */
 
+  DBG (2, "%s: proto %x\n", __FUNCTION__, HTONS (ETH_PROTO_ARP));
   if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_ARP))
     return 0;
   
@@ -408,13 +412,14 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
 	/* Invoke receivers */
   {
     int i;
-    for (i = 0; i < cReceivers; ++i)
+    for (i = 0; i < cReceivers; ++i) {
+      DBG (1, "%s: checking %p %d\n", __FUNCTION__, frame, frame->cb);
       if (   receivers[i].pfn
 	  && receivers[i].pfn (d, frame, receivers[i].context))
 	break;
+    }
   }
 }
-
 
 void udp_setup (struct ethernet_frame* frame, 
 		const char* destination_ip, u16 destination_port,
@@ -477,11 +482,14 @@ int ethernet_service (struct descriptor_d* d,
   do {
     frame->cb = d->driver->read (d, frame->rgb, FRAME_LENGTH_MAX);
     if (frame->cb > 0) {
+      DBG (1, "%s: frame %p %d\n", __FUNCTION__, frame, frame->cb);
       ethernet_receive (d, frame);
       frame->cb = 0;
     }
     result = terminate (context);
   } while (result == 0);
+
+  ethernet_frame_release (frame);
 
   return result;
 }
@@ -508,7 +516,6 @@ int ethernet_timeout (void* pv)
     ? 0 : -1;
 }
 
-
 int compare_receivers (const void* _a, const void* _b)
 {
   struct ethernet_receiver* a = (struct ethernet_receiver*) _a;
@@ -529,7 +536,7 @@ int compare_receivers (const void* _a, const void* _b)
 }
 
 
-#if 0
+#if defined (DUMP_RECEIVERS)
 static void dump_receivers (void)
 {
   int i;
@@ -565,13 +572,15 @@ int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
   sort (receivers, ++cReceivers, sizeof (*receivers), 
 	compare_receivers, NULL);
 
-//  dump_receivers ();
+#if defined (DUMP_RECEIVERS)
+  dump_receivers ();
+#endif
 
   return 0;
 }
 
 
-/* unregister_ethernet_receive
+/* unregister_ethernet_receiver
 
    removes a frame receiver from the list of active receivers.  Note
    that it doesn't use the original priority when removing a receiver.
@@ -595,13 +604,14 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
   if (i < cReceivers) {
     sort (receivers, cReceivers--, sizeof (*receivers), 
 	  compare_receivers, NULL);
-//    dump_receivers ();
+#if defined (DUMP_RECEIVERS)
+    dump_receivers ();
+#endif
     return 0;
   }
 
   return -1;
 }
-
 
 int arp_terminate (void* pv)
 {
