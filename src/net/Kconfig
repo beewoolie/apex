@@ -17,6 +17,14 @@ config PROTO_ICMP_ECHO
 	  leave this option N as this feature is unnecessary for
 	  proper operation of the network stack.
 
+config CMD_PING
+	bool "Ping Command"
+	depends ETHERNET
+	default n
+	help
+	  This option add the ping command for testing network
+	  connectivity.
+
 config CMD_ARP
 	bool "ARP Command for Testing"
 	depends ETHERNET

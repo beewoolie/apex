@@ -66,9 +66,16 @@ int register_ethernet_receiver (int priority,
 				void* context);
 int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context);
 
+int getaddr (const char* address, char* ip_address);
+
 /* *** FIXME: perhaps this shouldn't be exported */
 void arp_cache_update (const char* hardware_address,
 		       const char* protocol_address,
 		       int force);
+const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
+			 int ms_timeout);
+
+int getaddr (const char* address, char* ip_address);
+u16 checksum (void* pv, int cb);
 
 #endif  /* __ETHERNET_H__ */

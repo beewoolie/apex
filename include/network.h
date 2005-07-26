@@ -101,6 +101,19 @@ struct header_udp {
   u16 checksum;
 } __attribute__((packed));
 
+#if 0
+struct addrinfo {
+  int ai_flags;
+  int ai_family;
+  int ai_socktype;
+  int ai_protocol;
+  size_t ai_addrlen;
+  char* ai_canonname;
+  struct sockaddr* ai_addr;
+  struct addrinfo* ai_next;
+};
+#endif
+
 /* ----- Globals */
 
 /* ----- Prototypes */

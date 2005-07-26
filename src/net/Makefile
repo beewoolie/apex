@@ -23,3 +23,4 @@ obj-$(CONFIG_ETHERNET) += ethernet.o
 obj-$(CONFIG_CMD_ARP)  += arp.o
 obj-$(CONFIG_CMD_RARP) += rarp.o
 obj-$(CONFIG_CMD_TFTP) += tftp.o
+obj-$(CONFIG_CMD_PING) += ping.o

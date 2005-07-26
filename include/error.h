@@ -32,20 +32,20 @@
 
 extern const char* error_description;
 
-#define ERROR_FALSE	(-1)
-#define ERROR_IMPORTANT (-1)	/* Errors less than this will be reported */
-#define ERROR_FAILURE	(-7)
-#define ERROR_NOCOMMAND (-8)
-#define ERROR_PARAM	(-9)
-#define ERROR_OPEN	(-10)
-#define ERROR_AMBIGUOUS (-11)
-#define ERROR_NODRIVER	(-12)
-#define ERROR_UNSUPPORTED (-13)
-#define ERROR_BADPARTITION (-14)
-#define ERROR_FILENOTFOUND (-15)
-#define ERROR_IOFAILURE	   (-16)
-#define ERROR_CRCFAILURE   (-17)
-#define ERROR_OUTOFMEMORY   (-18)
+#define ERROR_FALSE		(-1)
+#define ERROR_IMPORTANT		(-1)	/* Errors less than will be reported */
+#define ERROR_FAILURE		(-7)
+#define ERROR_NOCOMMAND		(-8)
+#define ERROR_PARAM		(-9)
+#define ERROR_OPEN		(-10)
+#define ERROR_AMBIGUOUS		(-11)
+#define ERROR_NODRIVER		(-12)
+#define ERROR_UNSUPPORTED	(-13)
+#define ERROR_BADPARTITION	(-14)
+#define ERROR_FILENOTFOUND	(-15)
+#define ERROR_IOFAILURE		(-16)
+#define ERROR_CRCFAILURE	(-17)
+#define ERROR_OUTOFMEMORY	(-18)
 
 #if defined (CONFIG_SMALL)
 # define ERROR_RETURN(v,m) return (v)

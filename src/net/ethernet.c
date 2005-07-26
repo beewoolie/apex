@@ -28,11 +28,9 @@
    NOTES
    -----
 
-   o We can assume that if the packet is received, we have a matching
-     MAC address or a broadcast address.  Later, we can get more
-     choosy.  Or, perhaps this should be an option since some drivers
-     will guarantee correctness.
- 
+   o There is support for MAC address filtering that must be enabled
+     by the ethernet driver.
+
    o We only save ARP mappings for addresses we've requested.  In
      other words, we need to request an address before the received
      ARP_REPLY packet will update the table.  This prevents the ARP
@@ -45,12 +43,14 @@
    o The ICMP echo reply is not properly turned around.  Though it
      works, it does so because we send the reply to the same MAC
      address as the sender.  Really, we should be finding our route to
-     the destination with ARP.
+     the destination with ARP.  That said, it is probably OK to leave
+     this as is.
 
 */
 
 #include <config.h>
 #include <linux/types.h>
+#include <linux/ctype.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <apex.h>	/* printf */
@@ -87,6 +87,14 @@ const char szNetDriver[] = "eth:";
 static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff, 
 					       0xff, 0xff, 0xff };
 
+#define ARP_TRIES_MAX	5
+#define MS_ARP_TIMEOUT	1000
+
+struct arp_terminate_context {
+  const char* ip_address;
+  struct ethernet_timeout_context timeout;
+};
+
 enum {
   state_free      = 0,
   state_allocated = 1,
@@ -106,7 +114,7 @@ struct ethernet_receiver {
 static struct ethernet_receiver receivers[MAX_RECEIVERS];
 static int cReceivers;		/* Number of receivers */
 
-static u16 checksum (void* pv, int cb)
+u16 checksum (void* pv, int cb)
 {
   u16* p = (u16*) pv;
   u32 sum = 0;
@@ -139,6 +147,47 @@ struct ethernet_frame* ethernet_frame_allocate (void)
 void ethernet_frame_release (struct ethernet_frame* frame)
 {
   frame->state = state_free;
+}
+
+
+/* getaddr
+   
+   returns a binary, four-byte IP address from a string representing
+   the address.  This function is *not* compliant with POSIX or RFCs.
+   It is intended to be a light-weight conversion function which is
+   useful without being bloated.  Should we need domain name
+   resolution or other services, this function should be replaced with
+   something more robust.
+
+   The caller is responsible for providing a null terminated address
+   string as well as a destination buffer of sufficient length.
+
+*/
+
+int getaddr (const char* address, char* ip_address)
+{
+  int octet = 0;
+  int len = 0;
+
+  for (; len < 4; ++address) {
+    if (isdigit (*address)) {
+      octet = octet*10 + *address - '0';
+      continue;
+    }
+    if (*address && *address != '.')
+      return -1;
+    if (octet > 255)
+      return -1;
+    *ip_address++ = octet;
+    ++len;
+    octet = 0;
+    if (!*address)
+      break;
+  }
+
+  if (*address)
+    return -2;
+  return len != 4 ? -3 : 0;
 }
 
 
@@ -183,14 +232,16 @@ void arp_cache_update (const char* hardware_address,
     if (iEmpty == -1 && memcmp (arp_table[i].address, "\0\0\0\0\0", 6) == 0)
       iEmpty = i;
     if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
-      memcpy (arp_table[i].address, hardware_address, 6);
+      memcpy (arp_table[i].address, 
+	      hardware_address ? hardware_address : broadcast_mac_address, 6);
       arp_table[i].seconds = ARP_SECONDS_LIVE;
       return;
     }
   }
   if (force && iEmpty != -1) {
-    memcpy (arp_table[iEmpty].address, hardware_address, 6);
-    memcpy (arp_table[iEmpty].ip,      protocol_address, 4);
+    memcpy (arp_table[iEmpty].address, 
+	    hardware_address ? hardware_address : broadcast_mac_address, 6);
+    memcpy (arp_table[iEmpty].ip, protocol_address, 4);
   }
 }
 
@@ -206,71 +257,24 @@ const char* arp_cache_lookup (const char* protocol_address)
 {
   int i;
   for (i = 0; i < ARP_TABLE_LENGTH; ++i)
-    if (memcmp (arp_table[i].ip, protocol_address, 4) == 0)
+    if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
+      if (memcmp (arp_table[i].address, broadcast_mac_address, 6) == 0)
+	return NULL;
       return arp_table[i].address;
+    }
 
   return NULL;
 }
 
 
-#if 0
-/* arp_receive
+/* arp_receiver
 
-   accepts all ARP packets.  This code handles automatic ARP_REPLY
-   generation for requests for our IP address.
+   handles arp reply frames.  It performs two tasks.  It updates the
+   ARP cache with interesting ARP reply frames.  It also responds to
+   ARP requests.  The latter is necessary for interoperating with
+   networked hosts.
 
 */
-
-void arp_receive (struct descriptor_d* d, struct ethernet_frame* frame)
-{
-  DBG (1,"%s\n", __FUNCTION__);
-
-  DBG (2,"%s: checking length\n", __FUNCTION__);
-  if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
-	    + 6*2 + 4*2))
-    return;			/* runt */
-
-  DBG (2,"%s: checking protocol lengths %d %d\n", __FUNCTION__,
-	  ARP_F (frame)->hardware_address_length,
-	  ARP_F (frame)->protocol_address_length);
-
-  if (   ARP_F (frame)->hardware_address_length != 6
-      || ARP_F (frame)->protocol_address_length != 4)
-    return;			/* unrecognized form */
-
-  DBG (2,"%s: opcode %d \n", __FUNCTION__, HTONS (ARP_F (frame)->opcode));
-
-  switch (ARP_F (frame)->opcode) {
-  case HTONS (ARP_REQUEST):
-    if (memcmp (host_ip_address, ARP_F (frame)->target_protocol_address, 4))
-      return;			/* Not a match */
-
-	/* Send reply to request for our address */
-    ethernet_frame_reply (frame);
-    ARP_F (frame)->opcode = HTONS (ARP_REPLY);
-
-    memcpy (ARP_F (frame)->target_hardware_address,
-	    ARP_F (frame)->sender_hardware_address,
-	    10);		/* Move both the HW and protocol address */
-    memcpy (ARP_F (frame)->sender_hardware_address,
-	    host_mac_address,
-	    6);
-    memcpy (ARP_F (frame)->sender_protocol_address,
-	    host_ip_address,
-	    4);
-    frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
-    d->driver->write (d, frame->rgb, frame->cb);
-    break;
-
-  case HTONS (ARP_REPLY):
-    arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address, 
-		      0);
-    break;
-  }
-
-}
-#endif
 
 int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 		  void* context)
@@ -352,18 +356,16 @@ int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
     return -1;
   }
   
-  switch (ICMP_F (frame)->type) {
-  case ICMP_TYPE_ECHO:
+  if (ICMP_F (frame)->type == ICMP_TYPE_ECHO) {
     ethernet_frame_reply (frame); /* This isn't really valid, is it? */
     ipv4_frame_reply (frame);
     ICMP_F (frame)->type = ICMP_TYPE_ECHO_REPLY;
     ICMP_F (frame)->checksum = 0;
     ICMP_F (frame)->checksum = htons (checksum (ICMP_F (frame), l));
     d->driver->write (d, frame->rgb, frame->cb);
-    break;
+    return 1;
   }
-
-  return 1;
+  return 0;
 }
 
 #endif
@@ -599,6 +601,83 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
 
   return -1;
 }
+
+
+int arp_terminate (void* pv)
+{
+  struct arp_terminate_context* context = (struct arp_terminate_context*) pv;
+
+  if (arp_cache_lookup (context->ip_address))
+    return 1;
+
+  return ethernet_timeout (&context->timeout);
+}
+
+
+/* arp_resolve
+
+   performs the essential protocol of querying the network for the
+   hardware address associated with an ip address.  This is a
+   self-contained protocol step that sends the arp request and waits
+   for the response.  It will terminate if there is no resolution
+   before the timeout.  It will return immediately if the mapping is
+   present in the cache.
+
+*/
+
+const char* arp_resolve (struct descriptor_d* d, const char* ip_address, 
+			 int ms_timeout)
+{
+  const char* hardware_address = arp_cache_lookup (ip_address);
+  struct ethernet_frame* frame;
+  int tries = 0;
+  int result;
+
+  if (hardware_address)
+    return hardware_address;
+
+  frame = ethernet_frame_allocate ();
+  memset (ETH_F (frame)->destination_address, 0xff, 6);
+  memcpy (ETH_F (frame)->source_address, host_mac_address, 6);
+  ETH_F (frame)->protocol = HTONS (ETH_PROTO_ARP);
+
+  ARP_F (frame)->hardware_type = HTONS (ARP_HARDW_ETHERNET);
+  ARP_F (frame)->protocol_type = HTONS (ARP_PROTO_IP);
+  ARP_F (frame)->hardware_address_length = 6;
+  ARP_F (frame)->protocol_address_length = 4;
+  ARP_F (frame)->opcode = HTONS (ARP_REQUEST);
+  
+  memcpy (ARP_F (frame)->sender_hardware_address, host_mac_address, 6);
+  memcpy (ARP_F (frame)->sender_protocol_address, host_ip_address, 4);
+  memset (ARP_F (frame)->target_hardware_address, 0, 6);
+  memcpy (ARP_F (frame)->target_protocol_address, ip_address, 4);
+  frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
+
+  arp_cache_update (NULL, ip_address, 1);
+
+  /* *** FIXME: need to check for the callers's timeout as well.  We
+     should cascade this timeout through thea arp_terminate_context
+     s.t. the user can perform the appropriate UI steps. */
+  do {
+    struct arp_terminate_context context;
+
+    DBG (2, "transmitting arp request, %d bytes\n", frame->cb);
+
+    d->driver->write (d, frame->rgb, frame->cb);
+    ++tries;
+
+    memset (&context, 0, sizeof (context));
+    context.ip_address = ip_address;
+    context.timeout.ms_timeout = MS_ARP_TIMEOUT;
+    result = ethernet_service (d, arp_terminate, &context);
+    /* result == 1 on success, -1 on timeout  */
+  } while (result <= 0 && tries < ARP_TRIES_MAX);
+
+  ethernet_frame_release (frame);
+
+  return arp_cache_lookup (ip_address);
+}
+
 
 void ethernet_init (void)
 {
