@@ -76,9 +76,19 @@ struct descriptor_d {
 #define DRIVER_WRITEPROGRESS_MASK (0xf)
 #define DRIVER_WRITEPROGRESS_SHIFT (24)
 #define DRIVER_WRITEPROGRESS(n) (((n)&0xf)<<24)	/* 2^(N+10) bytes per spin */
+#define DRIVER_READPROGRESS_MASK (0xf)
+#define DRIVER_READPROGRESS_SHIFT (28)
+#define DRIVER_READPROGRESS(n) (((n)&0xf)<<28)	/* 2^(N+10) bytes per spin */
 #define DRIVER_PRIVATE_SHIFT (16)
 #define DRIVER_PRIVATE_MASK  (0xff)
 #define DRIVER_PRIVATE(n) (((n)&0xff)<<16)
+
+#define DRIVER_PROGRESS(din,dou) ({\
+int i = ((din)->driver->flags >> DRIVER_READPROGRESS_SHIFT)\
+	 &DRIVER_READPROGRESS_MASK;\
+int o = ((dou)->driver->flags >> DRIVER_WRITEPROGRESS_SHIFT)\
+	 &DRIVER_WRITEPROGRESS_MASK;\
+(i > o) ? i : o; })
 
 #define driver_can_seek(p)  ((p)->seek != NULL)
 #define driver_can_read(p)  ((p)->read != NULL)

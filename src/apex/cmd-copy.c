@@ -98,8 +98,7 @@ int cmd_copy (int argc, const char** argv)
     char rgb[1024];
     ssize_t cb;
     int report_last = -1;
-    int step = (dout.driver->flags >> DRIVER_WRITEPROGRESS_SHIFT)
-      &DRIVER_WRITEPROGRESS_MASK;
+    int step = DRIVER_PROGRESS (&din, &dout);
     if (step)
       step += 10;
 

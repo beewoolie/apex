@@ -75,7 +75,7 @@
 #include <network.h>
 #include <ethernet.h>
 
-#define TALK 1
+//#define TALK 1
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -358,7 +358,8 @@ static ssize_t tftp_write (struct descriptor_d* d, void*, size_t cb)
 static __driver_6 struct driver_d tftp_driver = {
   .name = DRIVER_NAME,
   .description = "trivial FTP driver",
-  .flags = DRIVER_DESCRIP_FS | DRIVER_DESCRIP_SIMPLEPATH,
+  .flags = DRIVER_DESCRIP_FS | DRIVER_DESCRIP_SIMPLEPATH
+  | DRIVER_WRITEPROGRESS(6) | DRIVER_READPROGRESS(6),
   .open = tftp_open,
   .close = tftp_close,
   .read = tftp_read,

@@ -125,6 +125,7 @@
 # define USE_DIAG		/* Enables diagnostic code */
 # define TALK 0
 #endif
+//#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -1032,7 +1033,7 @@ ssize_t eth_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (available < 0 || (TXT1 () & TX1_USED) != 0)
     available += TX_QUEUE_LENGTH;
 
-  //  printf ("%s: %p %d %d/%d\n", __FUNCTION__, pv, cb, need, available);
+//  printf ("%s: %p %d %d/%d\n", __FUNCTION__, pv, cb, need, available);
 
   if (available < need)
     goto wait;			/* Loop until there is a free buffer */
