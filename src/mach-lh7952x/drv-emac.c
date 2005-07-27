@@ -25,8 +25,8 @@
    DESCRIPTION
    -----------
 
-   Support for initialization of the embedded lh79524 Ethernet MAC and
-   Altima AC101L PHY, if present.
+   Driver for the embedded lh79524 Ethernet MAC and Altima AC101L PHY,
+   if present.
 
 
    MAC EEPROM
