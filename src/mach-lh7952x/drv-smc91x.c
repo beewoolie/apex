@@ -450,9 +450,29 @@ static void smc91x_phy_detect (void)
   }
 }
 
+static void smc91x_phy_reset (void)
+{
+  smc91x_phy_write (phy_address, PHY_CONTROL, 
+		    smc91x_phy_read (phy_address, PHY_CONTROL) 
+		    | PHY_CONTROL_RESET);
+  /* Delay before accessing PHY again */
+  {
+    unsigned long l = timer_read ();
+    while (timer_delta (l, timer_read ()) < 52)
+      ;
+  }
+  /* Wait for reset to clear */
+  while (smc91x_phy_read (phy_address, PHY_CONTROL) & PHY_CONTROL_RESET)
+    ;
+}
+
 static void smc91x_phy_configure (void)
 {
-  int v = smc91x_phy_read (phy_address, PHY_CONTROL);
+  int v;
+
+  smc91x_phy_reset ();
+
+  v = smc91x_phy_read (phy_address, PHY_CONTROL);
   v &= ~PHY_CONTROL_MII_DISABLE;
   v |= PHY_CONTROL_ANEN_ENABLE;
   printf ("Writing PHY_CONTROL 0x%x\n", v);
@@ -460,47 +480,6 @@ static void smc91x_phy_configure (void)
   v = smc91x_phy_read (phy_address, PHY_CONTROL);
   printf ("Read back PHY_CONTROL 0x%x\n", v);
 }
-
-
-#if 0
-#if defined (USE_PHY_RESET)
-static void smc91x_phy_reset (int phy_address)
-{
-
-  PRINTF ("emac: phy_reset\n");
-  smc91x_phy_write (phy_address, 0,
-		  PHY_CONTROL_RESET
-		  | smc91x_phy_read (phy_address, 0));
-  while (smc91x_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
-    ;
-}
-#else
-# define smc91x_phy_reset(v) do { } while (0)
-#endif
-
-static void smc91x_phy_configure (int phy_address)
-{
-  PRINTF ("emac: phy_configure\n");
-
-#if defined USE_DISABLE_AUTOMDI_MDIX
-  if (phy_id == 0x00225521){
-    unsigned long l = smc91x_phy_read (phy_address, 23);
-    smc91x_phy_write (phy_address, 23,
-		    (l & ~((1<<7)|(1<<6)))|(1<<7)); /* Force MDI. */
-  }
-#endif
-
-#if defined USE_DISABLE_100MB
-  {
-    unsigned long l = smc91x_phy_read (phy_address, 0);
-    smc91x_phy_write (phy_address, 0, l & ~(1<<13));
-  }
-#endif
-}
-
-
-#endif
-
 
 static ssize_t smc91x_read (struct descriptor_d* d, void* pv, size_t cb)
 {
@@ -878,6 +857,24 @@ static int cmd_eth (int argc, const char** argv)
   else {
     if (strcmp (argv[1], "en") == 0) {
       smc91x_phy_configure ();
+    }
+    if (strcmp (argv[1], "an") == 0) {
+      int v;
+      smc91x_phy_write (phy_address, PHY_ANEG_ADV,
+			0
+			| (1<<8)
+			| (1<<7)
+			| (1<<6)
+			| (1<<5)
+			| (1<<0));
+      smc91x_phy_read (phy_address, PHY_ANEG_ADV);
+      v = smc91x_phy_read (phy_address, PHY_CONTROL);
+      printf ("restarting anen\n");
+      v |= PHY_CONTROL_ANEN_ENABLE | PHY_CONTROL_RESTART_ANEN;
+      printf ("Writing PHY_CONTROL 0x%x\n", v);
+      smc91x_phy_write (phy_address, PHY_CONTROL, v);
+      v = smc91x_phy_read (phy_address, PHY_CONTROL);
+      printf ("Read back PHY_CONTROL 0x%x\n", v);
     }
   }
 
