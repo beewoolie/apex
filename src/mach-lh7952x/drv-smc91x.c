@@ -41,9 +41,12 @@
        identitical to the hard reset in terms of functionality.
      o The PHY is ready for normal operation 50ms after a reset.
 
-   MII
+   MII Interface
 
      o Data is clocked into the PHY on the rising edge of MCLK.
+     o Autonegotiation depends both on the PHY being configured for
+       autonegotiation as well as the MAC.  IIRC, this isn't typical
+       of other MACs & PHYs.   
 
    SMC_TCR_PAD_EN
 
@@ -67,7 +70,7 @@
 
 #include <mach/drv-smc91x.h>
 
-#define TALK 1
+//#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -148,11 +151,7 @@
 #define PHY_INT_SPDDET		(1<<7)
 #define PHY_INT_DPLXDET		(1<<6)
 
-// PHY Interrupt/Status Mask Register
-// Uses the same bit definitions as PHY_INT_REG
-
-
-
+#define DRIVER_NAME		 "eth-smc91x"
 
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
@@ -293,6 +292,8 @@ static unsigned long phy_id;	/* ID read from PHY */
 #define SMC_MGMT_MCLK		(1<<2)	/* MII clock */
 #define SMC_MGMT_MDI		(1<<1)	/* MII input */
 #define SMC_MGMT_MDO		(1<<0)  /* MII output */
+#define SMC_MGMT_MDI_SHIFT	1
+#define SMC_MGMT_MDO_SHIFT	0
 
 #define SMC_ERCV_RCV_DISCRD	(1<<7)
 #define SMC_ERCV_THRESHOLD	(0x001F)
@@ -318,6 +319,8 @@ extern char host_mac_address[];
 #else
 static char host_mac_address[6];
 #endif
+
+static int initialized;
 
 static inline void select_bank (int bank)
 {
@@ -347,15 +350,9 @@ static void smc91x_mii_write (unsigned long value, int length)
 		     & ~(SMC_MGMT_MCLK | SMC_MGMT_MDO))
     | SMC_MGMT_MDOE;
 
-//  ENTRY;
-//  PRINTF (" writing 0x%lx for %d (%lx)\n", value, length, v);
-  
   for (c = 0; c < length; ++c) {
-//    PRINTF (".");
     v = v & ~SMC_MGMT_MDO;
-    /* *** FIXME: depends on MD0 being the lowest bit */
-    v |= (value >> (length - c - 1)) & 1;
-//    printf ("  0x%lx \n",  v);
+    v |= (value >> (length - c - 1 - SMC_MGMT_MDO_SHIFT)) & 1;
     write_reg (SMC_MGMT, v);
     usleep (US_MII_DELAY);
     write_reg (SMC_MGMT, v | SMC_MGMT_MCLK);
@@ -370,12 +367,9 @@ static unsigned int smc91x_mii_read (int length)
   int c = 0;
   unsigned long value = 0;
 
-//  ENTRY;
-
   write_reg (SMC_MGMT, v);
   for (c = 0; c < length; ++c) {
-    /* *** FIXME: depends on MDI being the second lowest bit */
-    value = (value << 1) | ((read_reg (SMC_MGMT) >> 1) & 1);
+    value = (value << 1) | ((read_reg (SMC_MGMT) >> SMC_MGMT_MDI_SHIFT) & 1);
     write_reg (SMC_MGMT, v);
     usleep (US_MII_DELAY);
     write_reg (SMC_MGMT, v | SMC_MGMT_MCLK);
@@ -393,8 +387,6 @@ static void smc91x_mii_disable (void)
 
 static void smc91x_phy_write (int phy_address, int phy_register, int phy_data)
 {
-  ENTRY;
-
   select_bank (3);
 
   /* Idle the channel */
@@ -445,14 +437,12 @@ static void smc91x_phy_detect (void)
     id1 = smc91x_phy_read (phy_address & 0x1f, PHY_ID1);
     id2 = smc91x_phy_read (phy_address & 0x1f, PHY_ID2);
 
-//    printf (" #%02d phy_id1=0x%x, phy_id2=0x%x\n", 
-//	    phy_address & 0x1f, id1, id2);
-
     if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
       phy_id = (id1 << 16) | id2;
       phy_address &= 0x1f;
-      printf ("smc91x: phy_detect 0x%x  0x%lx\n", phy_address, phy_id);
+      PRINTF ("%s: phy_detect 0x%x  0x%lx\n", 
+	      DRIVER_NAME, phy_address, phy_id);
       break;
     }
   }
@@ -483,10 +473,8 @@ static void smc91x_phy_configure (void)
   v = smc91x_phy_read (phy_address, PHY_CONTROL);
   v &= ~PHY_CONTROL_MII_DISABLE;
   v |= PHY_CONTROL_ANEN_ENABLE;
-  printf ("Writing PHY_CONTROL 0x%x\n", v);
   smc91x_phy_write (phy_address, PHY_CONTROL, v);
   v = smc91x_phy_read (phy_address, PHY_CONTROL);
-  printf ("Read back PHY_CONTROL 0x%x\n", v);
 }
 
 static ssize_t smc91x_read (struct descriptor_d* d, void* pv, size_t cb)
@@ -508,18 +496,17 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   pkt = read_reg (SMC_PNR) >> 8;
   if (pkt & SMC_ARR_FAILED) {
-    printf ("unable to send.  No packet buffers available\n");
+    printf ("%s: unable to send.  No packet buffers available\n",
+	    __FUNCTION__);
     return 0;
   }
-
-  printf ("packet #%d %d bytes\n", pkt, cb);
 
   write_reg (SMC_PNR, pkt);
   write_reg (SMC_PTR, SMC_PTR_AUTO_INCR);
 
   /* write packet header */
   write_reg (SMC_DATAL, 0);	/* status */
-  write_reg (SMC_DATAL, (cb + 6)&~1); /* packet length + control */
+  write_reg (SMC_DATAL, (cb + 6)&~1); /* status, length, packet, control */
   /* write data */
   SMC_outsw (SMC_IOBASE, SMC_DATAL, pv, cb >> 1);
   /* write control and last byte if the length was odd */
@@ -529,11 +516,9 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
   write_reg (SMC_MMUCR, SMC_MMUCR_ENQUEUE);
   clear_interrupt (SMC_INT_TX_EMPTY_INT);
 
-  printf ("waiting for transmit\n");
   while (!(read_reg (SMC_INTERRUPT) & SMC_INT_TX_EMPTY_INT))
     ;
   
-  printf ("transmit complete\n");
   return cb;
 }
 
@@ -590,29 +575,33 @@ void smc91x_init (void)
   DBG (1, "%s\n", __FUNCTION__);
 
 #if defined (CPLD_CONTROL_WLPEN)
- {
-   unsigned long l;
-   CPLD_CONTROL |= CPLD_CONTROL_WLPEN; /* Disable the SMC91x chip */
-   usleep (1);	/* Allow at least 100ns for reset pin to be recognized */
-   CPLD_CONTROL &= ~CPLD_CONTROL_WLPEN; /* Enable the SMC91x chip */
-   l = timer_read ();
-   while (timer_delta (l, timer_read ()) < 50) /* PHY requires 50ns */
-     ;
- }
+  {
+    unsigned long l;
+    CPLD_CONTROL |= CPLD_CONTROL_WLPEN; /* Disable the SMC91x chip */
+    usleep (1);	/* Allow at least 100ns for reset pin to be recognized */
+    CPLD_CONTROL &= ~CPLD_CONTROL_WLPEN; /* Enable the SMC91x chip */
+    l = timer_read ();
+    while (timer_delta (l, timer_read ()) < 52) /* PHY requires 50ns */
+      ;
+  }
 #endif
+
+  initialized = 0;
 
   v = read_reg (SMC_BANK);
   if ((v & 0xff00) != 0x3300) {
-    printf ("chip not detected\n");
+    PRINTF ("smc91x chip not detected\n");
     /* Chip not detected */
     return;
   }
+  initialized = 1;
+
   select_bank (0);
 
   /* Get revision */
   select_bank (3);
   v = read_reg (SMC_REV);
-  printf ("smc91x chip 0x%x rev 0x%x\n", (v >> 4) & 0xf, v & 0xf);
+  PRINTF ("smc91x chip 0x%x rev 0x%x\n", (v >> 4) & 0xf, v & 0xf);
 
   /* Get MAC address */
   select_bank (1);
@@ -649,9 +638,12 @@ void smc91x_init (void)
 #if !defined (CONFIG_SMALL)
 static void smc91x_report (void)
 {
-  printf ("  smc91x:" //   phy_addr %d  phy_id 0x%lx"
-	  " mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-//	  phy_address, phy_id,
+  if (!initialized)
+    return;
+
+  printf ("  smc91x: phy_addr %d  phy_id 0x%lx"
+	  "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	  phy_address, phy_id,
 	  host_mac_address[0], host_mac_address[1],
 	  host_mac_address[2], host_mac_address[3],
 	  host_mac_address[4], host_mac_address[5]);
@@ -659,7 +651,7 @@ static void smc91x_report (void)
 #endif
 
 static __driver_4 struct driver_d smc91x_driver = {
-  .name = "eth-smc91x",
+  .name = DRIVER_NAME,
   .description = "SMSC smc91x Ethernet driver",
   .flags = DRIVER_NET,
   .open = smc91x_open,
