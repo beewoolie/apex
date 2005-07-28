@@ -29,6 +29,18 @@
    Driver for the SMSC 91CX series of integrated Ethernet interfaces,
    MAC and PHY.
 
+   NOTES
+   =====
+
+   RESET
+
+     o The chip requires that the reset pin be held high for 100ns in
+       order to be recognized [7.8].
+     o There doesn't appear to be a timing constraint on the use of
+       the soft reset.  Moreover, the soft reset appears to be
+       identitical to the hard reset in terms of functionality.
+     o The PHY is ready for normal operation 50ms after a reset.
+
 */
 
 #include <apex.h>
