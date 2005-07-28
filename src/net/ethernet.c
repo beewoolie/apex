@@ -84,7 +84,7 @@ struct arp_entry {
 
 char host_ip_address[4];
 char gw_ip_address[4];
-char host_mac_address[6] = { 0x00, 0x08, 0xee, 0x00, 0x77, 0x9c };
+char host_mac_address[6];
 const char szNetDriver[] = "eth:";
 static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff, 
 					       0xff, 0xff, 0xff };

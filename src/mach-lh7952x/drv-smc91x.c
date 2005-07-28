@@ -79,15 +79,15 @@
 #define SMC_RPCR	SMC_REG(0,0xa) /*  */
 #define SMC_BANK	(0xe)
 
-#define SMC_CONFIG	SMC_REG(1,0x0) /*  */
-#define SMC_BASE	SMC_REG(1,0x2) /*  */
+#define SMC_CR		SMC_REG(1,0x0) /*  */
+#define SMC_BAR		SMC_REG(1,0x2) /*  */
 #define SMC_IA0_1	SMC_REG(1,0x4) /*  */
 #define SMC_IA2_3	SMC_REG(1,0x6) /*  */
 #define SMC_IA4_5	SMC_REG(1,0x8) /*  */
-#define SMC_GENERAL	SMC_REG(1,0xa) /*  */
-#define SMC_CONTROL	SMC_REG(1,0xc) /*  */
+#define SMC_GPR		SMC_REG(1,0xa) /*  */
+#define SMC_CTR		SMC_REG(1,0xc) /*  */
 
-#define SMC_MMU		SMC_REG(2,0x0) /*  */
+#define SMC_MMUCR	SMC_REG(2,0x0) /*  */
 #define SMC_PNR		SMC_REG(2,0x2) /*  */
 //#define SMC_ARR	SMC_REG(2,0x3) /* Allocation Result Register */
 #define SMC_FIFO	SMC_REG(2,0x4) /*  */
@@ -152,19 +152,29 @@
 #define SMC_RPC_LS_TX		(0x06)
 #define SMC_RPC_LS_RX		(0x07)
 
-#define SMC_CONFIG_EPH_POWER_EN (1<<15) /* Not EPH low-power mode */
-#define SMC_CONFIG_NO_WAIT	(1<<12)
-#define SMC_CONFIG_GPCNTRL	(1<<10)	/* GPIO control */
-#define SMC_CONFIG_EXT_PHY	(1<<9)	/* External PHY enable */
+#define SMC_CR_EPH_POWER_EN	(1<<15) /* Not EPH low-power mode */
+#define SMC_CR_NO_WAIT		(1<<12)
+#define SMC_CR_GPCNTRL		(1<<10)	/* GPIO control */
+#define SMC_CR_EXT_PHY		(1<<9)	/* External PHY enable */
 
-#define SMC_CTL_RCV_BAD		(1<<14) /* Receive packets with bad CRC */
-#define SMC_CTL_AUTO_RELEASE	(1<<11)	/* TX buffers automatically released */
-#define SMC_CTL_LE_ENABLE	(1<<7)	/* Link error detection enable */
-#define SMC_CTL_CR_ENABLE	(1<<6)	/* Counter rollover enable */
-#define SMC_CTL_TE_ENABLE	(1<<5)	/* Transmit error enable */
-#define SMC_CTL_EEPROM_SELECT	(1<<2)
-#define SMC_CTL_RELOAD		(1<<1)	/* Initiate reload from eeprom */
-#define SMC_CTL_STORE		(1<<0)	/* Initiate store to eeprom */
+#define SMC_CTR_RCV_BAD		(1<<14) /* Receive packets with bad CRC */
+#define SMC_CTR_AUTO_RELEASE	(1<<11)	/* TX buffers automatically released */
+#define SMC_CTR_LE_ENABLE	(1<<7)	/* Link error detection enable */
+#define SMC_CTR_CR_ENABLE	(1<<6)	/* Counter rollover enable */
+#define SMC_CTR_TE_ENABLE	(1<<5)	/* Transmit error enable */
+#define SMC_CTR_EEPROM_SELECT	(1<<2)
+#define SMC_CTR_RELOAD		(1<<1)	/* Initiate reload from eeprom */
+#define SMC_CTR_STORE		(1<<0)	/* Initiate store to eeprom */
+
+#define SMC_MMUCR_NOP		(0<<5)
+#define SMC_MMUCR_ALLOC		(1<<5)	/* Allocate for TX */
+#define SMC_MMUCR_RESET		(2<<5)	/* Reset MMU */
+#define SMC_MMUCR_REMOVE	(3<<5)	/* Remove top-most RX packet */
+#define SMC_MMUCR_REMOVERELEASE	(4<<5)	/* Remove & release top-most RX */
+#define SMC_MMUCR_RELEASE	(5<<5)	/* Release specific packet */
+#define SMC_MMUCR_ENQUEUE	(6<<5)	/* Queue packet for TX */
+#define SMC_MMUCR_RESETTX	(7<<5)	/* Reset TX FIFO */
+#define SMC_MMUCR_BUSY		(1<<0)	/* MMU is busy */
 
 #define SMC_ARR_FAILED		(1<<7)	/* Allocation failed */
 
@@ -195,29 +205,79 @@
 #define SMC_ERCV_RCV_DISCRD	(1<<7)
 #define SMC_ERCV_THRESHOLD	(0x001F)
 
+#define PRINT_REG ({\
+  printf ("regs 0 %04x 2 %04x 4 %04x 6 %04x\n",\
+	  read_reg (0), read_reg (2),\
+	  read_reg (4), read_reg (6));\
+  printf ("     8 %04x a %04x c %04x e %04x\n",\
+	  read_reg (8), read_reg (10),\
+	  read_reg (12), read_reg (14)); })
 
-#if 0
-  printf ("regs 0 %04x 2 %04x 4 %04x 6 %04x\n",
-	  SMC_inw (SMC_IOBASE, 0),
-	  SMC_inw (SMC_IOBASE, 2),
-	  SMC_inw (SMC_IOBASE, 4),
-	  SMC_inw (SMC_IOBASE, 6));
-  printf ("     8 %04x a %04x c %04x e %04x\n",
-	  SMC_inw (SMC_IOBASE, 8),
-	  SMC_inw (SMC_IOBASE, 10),
-	  SMC_inw (SMC_IOBASE, 12),
-	  SMC_inw (SMC_IOBASE, 14));
+
+
+#define write_reg(r,v) SMC_outw (SMC_IOBASE, (r), (v))
+#define read_reg(r)    SMC_inw  (SMC_IOBASE, (r))
+
+#if defined (CONFIG_ETHERNET)
+extern char host_mac_address[];
+#else
+static char host_mac_address[6];
 #endif
 
-
-static void select_bank (int bank)
+static inline void select_bank (int bank)
 {
-  SMC_outw (SMC_IOBASE, SMC_BANK, bank & 0xf);
+  write_reg (SMC_BANK, bank & 0xf);
 }
 
-static int current_bank (void)
+static inline int current_bank (void)
 {
-  return SMC_inw (SMC_IOBASE, SMC_BANK) & 0xf;
+  return read_reg (SMC_BANK) & 0xf;
+}
+
+static inline void wait_mmu (void)
+{
+  while (read_reg (SMC_MMUCR) & SMC_MMUCR_BUSY)
+    ;
+}
+
+static void smc91x_reset (void)
+{
+  u16 v;
+
+  DBG (1, "%s\n", __FUNCTION__);
+
+  select_bank (2);
+  write_reg (SMC_INTERRUPT, 0);	/* Mask all interrupts  */
+
+  /* Perform a soft reset.  Nico thinks this is unnecessary and probably is. */
+  select_bank (0);
+  write_reg (SMC_RCR, SMC_RCR_SOFTRST);
+
+  /* The reason for this delay isn't well documented.  The kernel
+     driver waits here for 1us by RMKs hand. */
+  usleep (1);
+
+  /* Disable reset as well as both the receiver and the transmitter */
+  select_bank (0);
+  write_reg (SMC_RCR, 0);
+  write_reg (SMC_TCR, 0);
+
+  /* Configure */
+  select_bank (1);
+  v = SMC_CR_EPH_POWER_EN;
+  v |= SMC_CR_NO_WAIT;	/* Optional */
+  write_reg (SMC_CR, v);
+
+  /* Control  */
+  select_bank (1);
+  v = read_reg (SMC_CTR); // | SMC_CTR_LE_ENABLE;
+  v |= SMC_CTR_AUTO_RELEASE;	/* Helps limit interrupts...er yeah */
+  write_reg (SMC_CTR, v);
+
+  /* Reset MMU */
+  select_bank (2);
+  write_reg (SMC_MMUCR, SMC_MMUCR_RESET);
+  wait_mmu ();
 }
 
 void smc91x_init (void)
@@ -227,21 +287,53 @@ void smc91x_init (void)
   DBG (1, "%s\n", __FUNCTION__);
 
 #if defined (CPLD_CONTROL_WLPEN)
+//  CPLD_CONTROL |= CPLD_CONTROL_WLPEN; /* Disable the SMC91x chip */
+//  usleep (100);
   CPLD_CONTROL &= CPLD_CONTROL_WLPEN; /* Enable the SMC91x chip */
+  /* *** We should make this work.  We need to be able to really turn
+     *** the device on this way. */
+  //  usleep (10000);
 #endif
 
-  v = SMC_inw (SMC_IOBASE, SMC_BANK);
+  v = read_reg (SMC_BANK);
   if ((v & 0xff00) != 0x3300) {
+    printf ("chip not detected\n");
     /* Chip not detected */
     return;
   }
+  select_bank (0);
 
+  /* Get revision */
   select_bank (3);
-  v = SMC_inw (SMC_IOBASE, SMC_REV);
+  v = read_reg (SMC_REV);
   printf ("smc91x chip 0x%x rev 0x%x\n", (v >> 4) & 0xf, v & 0xf);
+
+  /* Get MAC address */
+  select_bank (1);
+  v = read_reg (SMC_IA0_1);
+  host_mac_address[0] = v & 0xff;
+  host_mac_address[1] = (v >> 8) & 0xff;
+  v = read_reg (SMC_IA2_3);
+  host_mac_address[2] = v & 0xff;
+  host_mac_address[3] = (v >> 8) & 0xff;
+  v = read_reg (SMC_IA4_5);
+  host_mac_address[4] = v & 0xff;
+  host_mac_address[5] = (v >> 8) & 0xff;
+
+  smc91x_reset ();
 }
 
-
+#if !defined (CONFIG_SMALL)
+static void smc91x_report (void)
+{
+  printf ("  smc91x:" //   phy_addr %d  phy_id 0x%lx"
+	  " mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+//	  phy_address, phy_id,
+	  host_mac_address[0], host_mac_address[1],
+	  host_mac_address[2], host_mac_address[3],
+	  host_mac_address[4], host_mac_address[5]);
+}
+#endif
 
 static __driver_4 struct driver_d smc91x_driver = {
   .name = "eth-smc91x",
@@ -256,6 +348,6 @@ static __driver_4 struct driver_d smc91x_driver = {
 static __service_6 struct service_d smc91x_service = {
   .init = smc91x_init,
 #if !defined (CONFIG_SMALL)
-//  .report = smc91x_report,
+  .report = smc91x_report,
 #endif
 };

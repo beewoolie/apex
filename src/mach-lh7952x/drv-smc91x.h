@@ -19,11 +19,13 @@
 
 #define SMC_IOBASE		(0x54000000) /* LPD79520 */
 
-#define SMC_IOBARRIER		(*(volatile unsigned char*) 0x20000000)
+#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0x20000000)
 
 static inline u16 SMC_inw (unsigned long base, int r)
 {
-  return *(u16*) (base + r);
+  u16 v;
+  v = *(volatile u16*) (base + r);
+  return v;
 }
 
 static inline void SMC_insw (unsigned long base, int r, 
@@ -31,12 +33,12 @@ static inline void SMC_insw (unsigned long base, int r,
 {
   u16* ps = (u16*) pv;
   while (l-- > 0)
-    *ps++ = *(u16*) (base + r);
+    *ps++ = *(volatile u16*) (base + r);
 }
 
 static inline void SMC_outw (unsigned long base, int r, u16 v)
 {
-  *(u16*) (base + r) = v;
+  *(volatile u16*) (base + r) = v;
   SMC_IOBARRIER;
 }
 
@@ -45,7 +47,7 @@ static inline void SMC_outsw (unsigned long base, int r,
 {
   unsigned short* ps = (unsigned short*) p;
   while (l-- > 0) {
-    *(u16*) (base + r) = *ps++;
+    *(volatile u16*) (base + r) = *ps++;
     SMC_IOBARRIER;
   }
 }

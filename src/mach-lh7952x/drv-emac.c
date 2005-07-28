@@ -223,6 +223,12 @@ static int tail_tx;		/* Index of next available transmit buffer */
 #define RX1_BROADCAST	(1<<31)
 #define RX1_SPEC1	(1<<26)
 
+#if defined (CONFIG_ETHERNET)
+extern char host_mac_address[];
+#else
+static char host_mac_address[6];
+#endif
+
 #if defined (USE_DIAG)
 
 struct ethernet_header {
@@ -460,18 +466,15 @@ void emac_init (void)
   RCPC_AHBCLKCTRL &= ~(1<<2);
   RCPC_CTRL	  &= ~RCPC_CTRL_UNLOCK;
 
-  {
-    unsigned char rgb[6];
-    if (!emac_read_mac (rgb)) {
-      EMAC_SPECAD1BOT 
-	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
-      EMAC_SPECAD1TOP 
-	= (rgb[5]<<8)|(rgb[4]<<0);
+  if (!emac_read_mac (host_mac_address)) {
+    EMAC_SPECAD1BOT 
+      = (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
+    EMAC_SPECAD1TOP 
+      = (rgb[5]<<8)|(rgb[4]<<0);
 #if defined (TALK)
-      PRINTF ("emac: mac address\n"); 
-      dump (rgb, 6, 0);
+    PRINTF ("emac: mac address\n"); 
+    dump (host_mac_address, 6, 0);
 #endif
-    }
   }
 
 #if defined (CPLD_CONTROL_WRLAN_ENABLE)
