@@ -34,6 +34,7 @@ obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o
 obj-$(CONFIG_CODEC)		+= codec.o
 obj-$(CONFIG_ADC)		+= adc.o
+obj-$(CONFIG_DRIVER_SMC91X)	+= drv-smc91x.o
 obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)

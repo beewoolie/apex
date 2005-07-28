@@ -40,11 +40,11 @@
 
 #define CPLD_FLASH		__REG16 (0x55000000)
 #define CPLD_REVISION		__REG16 (0x55400000)
+#define CPLD_CONTROL		__REG16 (0x54200000)
+
 #define CPLD_FLASH_VPEN		(1<<0)
 #define CPLD_FLASH_FL_VPEN	CPLD_FLASH_VPEN
 
-//#define NOR_0_PHYS	(0x40000000)
-//#define NOR_0_LENGTH	(8*1024*1024)
-//#define WIDTH		(16)	/* Device width in bits */
+#define CPLD_CONTROL_WLPEN	(1<<0)
 
 #endif  /* __LPD79520_H__ */
