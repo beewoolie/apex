@@ -632,6 +632,7 @@ void smc91x_init (void)
 	   | (SMC_RPCR_MASK << SMC_RPCR_LSB_SHIFT));
     v |= SMC_RPCR_LS_ACT    << SMC_RPCR_LSA_SHIFT;
     v |= SMC_RPCR_LS_LINK   << SMC_RPCR_LSB_SHIFT;
+    v |= SMC_RPCR_ANEG;
     write_reg (SMC_RPCR, v);
   }
   
