@@ -304,8 +304,8 @@ int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 {
   DBG (1,"%s (%d)\n", __FUNCTION__, frame->cb);
 
-  if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
-	    + 6*2 + 4*2))
+  if (frame->cb
+      < (sizeof (struct header_ethernet) + sizeof (struct header_arp)))
     return 0;			/* runt */
 
   DBG (2, "%s: proto %x\n", __FUNCTION__, HTONS (ETH_PROTO_ARP));

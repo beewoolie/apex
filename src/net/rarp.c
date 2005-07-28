@@ -44,7 +44,7 @@
 #include <network.h>
 #include <ethernet.h>
 
-#define TALK 2
+//#define TALK 2
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -94,10 +94,20 @@ int rarp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
   extern char host_ip_address[]; /* *** FIXME: please? */
   extern char host_mac_address[];
 
+#if 0
+  printf ("%s len %d %d proto %x %x (%d %d)\n", __FUNCTION__, frame->cb, 
+	  sizeof (struct header_ethernet) + sizeof (struct header_arp),
+	  ETH_F (frame)->protocol,
+	  HTONS (ETH_PROTO_RARP),
+	  ARP_F (frame)->hardware_address_length,
+	  ARP_F (frame)->protocol_address_length);
+#endif
+
 	/* Vet the frame */
-  if (frame->cb < (sizeof (struct header_ethernet) + sizeof (struct header_arp)
-	    + 6*2 + 4*2))
+  if (frame->cb
+      < (sizeof (struct header_ethernet) + sizeof (struct header_arp)))
     return 0;			/* runt */
+
   if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_RARP))
     return 0;
   

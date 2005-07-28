@@ -70,7 +70,7 @@
 
 #include <mach/drv-smc91x.h>
 
-//#define TALK 1
+#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -153,8 +153,16 @@
 
 #define DRIVER_NAME		 "eth-smc91x"
 
+#define  C_RX_BUFFER		 4
+#define CB_RX_BUFFER		 (1536 + 6)
+#define ETH_BSS		__attribute__((section(".ethernet.bss"))) 
+
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
+
+static int head_rx;		/* Next buffer to accept a receive packet */
+static int count_rx;		/* Number of received packets buffered */
+static char ETH_BSS rgbRxBuffer[C_RX_BUFFER*CB_RX_BUFFER];
 
 #define SMC_REG(b,r)	(r)		
 
@@ -300,6 +308,14 @@ static unsigned long phy_id;	/* ID read from PHY */
 
 #define SMC_PKTCONTROL_ODD	(1<<13)	/* Last byte of packet in control */
 #define SMC_PKTCONTROL_CRC	(1<<12)	/* Generate CRC on transmit */
+
+#define SMC_PKTSTATUS_ALIGNERR	(1<<15)
+#define SMC_PKTSTATUS_BROADCAST	(1<<14)	/* Packet is multicast */
+#define SMC_PKTSTATUS_BADCRC	(1<<13)	/* Bad CRC on receive */
+#define SMC_PKTSTATUS_ODDFRM	(1<<12)	/* Odd number of bytes in frame */
+#define SMC_PKTSTATUS_TOOLNG	(1<<11)	/* Packet is too long */
+#define SMC_PKTSTATUS_TOOSHORT	(1<<10)	/* Packet is too short */
+#define SMC_PKGSTATUS_MULTICAST	(1<<0)	/* Packet is multicast */
 
 #define PRINT_REG ({\
   printf ("regs 0 %04x 2 %04x 4 %04x 6 %04x\n",\
@@ -477,26 +493,108 @@ static void smc91x_phy_configure (void)
   v = smc91x_phy_read (phy_address, PHY_CONTROL);
 }
 
+/* smc91x_receive
+
+   pulls packets from the SMC chip buffers into memory.  This can be
+   called at any time and is probably a good thing to do before a
+   transmit so that we are guaranteed to have free transmit buffers.
+
+*/
+
+static void smc91x_receive (void)
+{
+  u16 v;
+  u16 status;
+  u16 length;
+  int save;
+
+//  ENTRY;
+
+  select_bank (2);
+  while (((v = read_reg (SMC_FIFO)) & SMC_FIFO_REMPTY) != 0) {
+    write_reg (SMC_PTR, SMC_PTR_READ | SMC_PTR_AUTO_INCR | SMC_PTR_RCV);
+    
+    status = read_reg (SMC_DATAL);
+    length = (read_reg (SMC_DATAL) & 0x07ff) - 4;
+
+    save = (count_rx < C_RX_BUFFER) 
+      && (status & (  SMC_PKTSTATUS_ALIGNERR
+		    | SMC_PKTSTATUS_BADCRC
+		    | SMC_PKTSTATUS_TOOLNG
+		    | SMC_PKTSTATUS_TOOSHORT)) == 0;
+
+//    printf ("receiving 0x%04x 0x%04x  save %d  head %d count %d\n", 
+//	    status, length, save, head_rx, count_rx);
+
+    if (save) {
+      SMC_insw (SMC_IOBASE, SMC_DATAL, 
+		rgbRxBuffer + head_rx*CB_RX_BUFFER + 2, length/2);
+      *(u16*) &rgbRxBuffer[head_rx*CB_RX_BUFFER]
+	= length - 2 + ((status & SMC_PKTSTATUS_ODDFRM ? 1 : 0));
+      head_rx = (head_rx + 1)%C_RX_BUFFER;
+      ++count_rx;
+    }
+    else {
+      DBG (1, "dropping receive packet\n");
+      length /= 2;
+      while (length--)
+	read_reg (SMC_DATAL);
+    }
+    write_reg (SMC_MMUCR, SMC_MMUCR_REMOVERELEASE);
+  }
+}
+
 static ssize_t smc91x_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  return 0; 
+  u16 length;
+  int buffer;
+
+  smc91x_receive ();
+
+  if (count_rx == 0)
+    return 0;
+
+  buffer = (head_rx + C_RX_BUFFER - count_rx)%C_RX_BUFFER;
+
+//  printf (" head_rx %d  count_rx %d  buffer %d\n", 
+//	  head_rx, count_rx, buffer);
+
+  length = *(u16*) &rgbRxBuffer[buffer*CB_RX_BUFFER];
+  if (length > cb)
+    length = cb;
+  memcpy (pv, &rgbRxBuffer[buffer*CB_RX_BUFFER + 2], length);
+
+//  dump (pv, length, 0);
+
+  --count_rx;
+  return length;
 }
 
 static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int pkt;
+  unsigned long l;
+
+  smc91x_receive ();		/* Receive when we can */
 
   select_bank (2);
   write_reg (SMC_MMUCR, SMC_MMUCR_ALLOC);
 
-  while (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT))
+  l = timer_read ();
+  while (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT)
+	 && timer_delta (l, timer_read ()) < 100)
     ;
   
+  if (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT)) {
+    DBG (1, "transmit allocation failed\n");
+    return 0;
+  }
+    
   clear_interrupt (SMC_INT_ALLOC_INT);
 
   pkt = read_reg (SMC_PNR) >> 8;
   if (pkt & SMC_ARR_FAILED) {
-    printf ("%s: unable to send.  No packet buffers available\n",
+    DBG (1, "%s: unable to send.  No packet buffers available\n",
 	    __FUNCTION__);
     return 0;
   }
@@ -623,6 +721,7 @@ void smc91x_init (void)
 
   select_bank (0);
   write_reg (SMC_TCR, SMC_TCR_TXENA | SMC_TCR_PAD_EN); /* Enable transmitter */
+  write_reg (SMC_RCR, SMC_RCR_RXEN  | SMC_RCR_STRIP_CRC); /* Enable receiver */
   {
     int v = read_reg (SMC_RPCR);
     v &= ~(  (SMC_RPCR_MASK << SMC_RPCR_LSA_SHIFT) 
@@ -632,7 +731,6 @@ void smc91x_init (void)
     v |= SMC_RPCR_ANEG;
     write_reg (SMC_RPCR, v);
   }
-  
 }
 
 #if !defined (CONFIG_SMALL)
