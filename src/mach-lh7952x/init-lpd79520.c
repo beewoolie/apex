@@ -70,6 +70,8 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
+//#define USE_LONG_USLEEP
+
 //#define USE_SLOW
 
 #if defined (USE_SLOW)
@@ -98,8 +100,15 @@
 /* usleep
 
    this function accepts a count of microseconds and will wait at
-   least that long before returning.  The timer clock must be
-   activated by the initialization code before using usleep.
+   least that long (though probably longer) before returning.  The
+   timer clock must be activated by the initialization code before
+   using usleep.  
+
+   Even though the timer is limited in range, the function can loop
+   until the full count has been exhausted making the longest sleep is
+   2^31.  The USE_LONG_USLEEP macro must be defined for this
+   functionality as it's unecessary for the core operation of the
+   timer.
 
    Note that this function not static.  It is available to the rest of
    the application as is.
@@ -108,26 +117,45 @@
    approximate this by dividing by four which means we are about 5%
    longer than requested.
 
- */
+   CPU timers count down toward zero.
+
+*/
+
+#define US_LOOP_MAX	131000
 
 void __naked __section (.bootstrap) usleep (unsigned long us)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-  __asm ("str %1, [%0, #8]\n\t"	/* Stop timer */
-	 "str %2, [%0, #0]\n\t"
-	 "str %3, [%0, #8]\n\t"
-      "0: ldr %2, [%0, #4]\n\t"
-	 "tst %2, %4\n\t"
-	 "beq 0b\n\t"
-	 :
-	 : "r" (TIMER0_PHYS), 
-	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
-	   "r" (TIMER_ENABLE | TIMER_SCALE_256),
-	   "i" (0x8000)
-	 );
+#if defined (USE_LONG_USLEEP)
+ {
+   unsigned long us_total;
+   us_total = us;
+   while (us_total) {
+     if (us_total > US_LOOP_MAX)
+       us = US_LOOP_MAX;
+     else
+       us = us_total;
+     us_total -= us;
+#endif
+     __asm ("str %1, [%0, #8]\n\t"	/* Stop timer */
+	    "str %2, [%0, #0]\n\t"
+	    "str %3, [%0, #8]\n\t"
+	    "0: ldr %2, [%0, #4]\n\t"
+	    "tst %2, %4\n\t"
+	    "beq 0b\n\t"
+	    :
+	    : "r" (TIMER0_PHYS), 
+	    "r" (0),
+	    "r" ((unsigned long) ((us + 3)/4)),
+	    "r" (TIMER_ENABLE | TIMER_SCALE_256),
+	    "i" (0x8000)
+	    );
+#if defined (USE_LONG_USLEEP)
+   }
+ }
+#endif
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }

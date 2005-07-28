@@ -254,7 +254,7 @@ static unsigned long phy_id;	/* ID read from PHY */
 	  read_reg (12), read_reg (14)); })
 
 
-#define US_MII_DELAY	 (10)	/* Half-cycle time for MII clock */
+#define US_MII_DELAY	 (5)	/* Half-cycle time for MII clock */
 
 #define write_reg(r,v) SMC_outw (SMC_IOBASE, (r), (v))
 #define read_reg(r)    SMC_inw  (SMC_IOBASE, (r))
@@ -293,11 +293,11 @@ static void smc91x_mii_write (unsigned long value, int length)
     & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO);
   v |= SMC_MGMT_MDOE;
 
-  ENTRY;
-  PRINTF (" writing 0x%x for %d\n", value, length);
+//  ENTRY;
+//  PRINTF (" writing 0x%lx for %d\n", value, length);
   
   for (c = 0; c < length; ++c) {
-    PRINTF (".");
+//    PRINTF (".");
     v = v & ~SMC_MGMT_MDO;
     /* *** FIXME: depends on MD0 being the lowest bit */
     v |= (value >> (length - c - 1)) & 1;
@@ -315,7 +315,7 @@ static unsigned int smc91x_mii_read (int length)
   int c = 0;
   unsigned long value = 0;
 
-  ENTRY;
+//  ENTRY;
 
   write_reg (SMC_MGMT, v);
   for (c = 0; c < length; ++c) {
@@ -359,7 +359,7 @@ static int smc91x_phy_read (int phy_address, int phy_register)
 {
   unsigned long value;
 
-  ENTRY;
+//  ENTRY;
 
   /* Idle the channel */
   smc91x_mii_write (0xffffffff, 32);

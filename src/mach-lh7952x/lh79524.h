@@ -229,6 +229,18 @@
 #define TIMER_STATUS1	(0x08)
 #define TIMER_CNT1	(0xc)
 
+#define TIMER_CS	(1<<1)
+#define TIMER_PERIODIC	(1<<6)	// !FREERUNNING
+#define TIMER_CASCADE	(1<<4)
+#define TIMER_SCALE_MASK (3<<2)
+#define TIMER_SCALE_2	 (0<<2)
+#define TIMER_SCALE_4	 (1<<2)
+#define TIMER_SCALE_8	 (2<<2)
+#define TIMER_SCALE_16	 (3<<2)
+#define TIMER_SCALE_32	 (4<<2)
+#define TIMER_SCALE_64	 (5<<2)
+#define TIMER_SCALE_128	 (6<<2)
+
 #define RTC_PHYS	(0xfffe0000)
 #define RTC_DR		__REG (RTC_PHYS + 0x00)
 #define RTC_LR		__REG (RTC_PHYS + 0x08)

@@ -61,6 +61,7 @@ extern void __attribute__((noreturn)) exec_monitor (void);
 extern unsigned long timer_read (void);
 extern unsigned long timer_delta (unsigned long, unsigned long);
 extern void usleep (unsigned long); 
+#define udelay usleep		/* Just for convenience */
 
 #define dump(p,c,i) dumpw(p,c,i,0)
 extern void dumpw (const unsigned char* rgb, int cb, 

@@ -35,26 +35,31 @@
 #include <apex.h>
 #include <command.h>
 
+#define SEC_PAUSE 5
 
 int cmd_pause (int argc, const char** argv)
 {
-  printf ("pausing for 2 seconds\n");
+  printf ("pausing for %d seconds\n", SEC_PAUSE);
 
-#if 1
+#if 0
   {
     unsigned long time = timer_read ();
-    while (timer_delta (time, timer_read ()) < 2*1000)
+    while (timer_delta (time, timer_read ()) < SEC_PAUSE*1000)
       ;
   }
 #endif
 
-#if 0
+#if 1
   {
-    int i = 2*1000*1000;
+    int i = SEC_PAUSE*1000*1000;
     i /= 32*1000;
     while (i--)
       usleep (32*1000);
   }
+#endif
+
+#if 0
+  usleep (SEC_PAUSE*1000*1000);
 #endif
 
   printf ("done\n");

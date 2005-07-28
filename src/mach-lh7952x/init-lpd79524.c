@@ -92,8 +92,8 @@ void __section (.bootstrap) usleep (unsigned long us)
 	 :
 	 : "r" (TIMER1_PHYS), 
 	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us - (us>>4))), /* timer counts up */
-	   "r" ((1<<1)|(5<<2)),
+	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
+	   "r" (TIMER_CS | TIMER_SCALE_64),
 	   "i" (0x8000)
 	 );
 }
