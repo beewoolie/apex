@@ -45,6 +45,14 @@
 
      o Data is clocked into the PHY on the rising edge of MCLK.
 
+   SMC_TCR_PAD_EN
+
+     o It isn't clear why, but it seems that this bit is require for
+       the transmitter to work.  Either that, or other devices on the
+       wire won't receive frames unless it's set.
+     o It's really strange, though, because other devices transmit
+       frames <64 bytes long.
+
 */
 
 #include <apex.h>
