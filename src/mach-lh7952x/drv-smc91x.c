@@ -625,7 +625,7 @@ void smc91x_init (void)
   smc91x_phy_configure ();
 
   select_bank (0);
-  write_reg (SMC_TCR, SMC_TCR_TXENA); /* Enable transmitter */
+  write_reg (SMC_TCR, SMC_TCR_TXENA | SMC_TCR_PAD_EN); /* Enable transmitter */
   {
     int v = read_reg (SMC_RPCR);
     v &= ~(  (SMC_RPCR_MASK << SMC_RPCR_LSA_SHIFT) 
@@ -854,6 +854,14 @@ static int cmd_eth (int argc, const char** argv)
       //      PRINTF ("phy_last_crc 0x%lx\n", l);
 
     }
+    select_bank (0);
+    PRINT_REG;
+    select_bank (1);
+    PRINT_REG;
+    select_bank (2);
+    PRINT_REG;
+    select_bank (3);
+    PRINT_REG;
   }
   else {
     if (strcmp (argv[1], "en") == 0) {
