@@ -142,6 +142,11 @@ config DRIVER_SMC91X
 	  This driver initializes and activates the SMSC SMC91x
 	  Ethernet controller.
 
+config CMD_ETH_SMC91X
+	bool "SMC91x diagnostic commands"
+	depends on DRIVER_SMC91X
+	default y
+
 config CLCDC
 	bool "Color LCD"
 	depends on MACH_LPD79524

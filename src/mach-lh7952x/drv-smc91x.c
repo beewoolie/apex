@@ -41,6 +41,10 @@
        identitical to the hard reset in terms of functionality.
      o The PHY is ready for normal operation 50ms after a reset.
 
+   MII
+
+     o Data is clocked into the PHY on the rising edge of MCLK.
+
 */
 
 #include <apex.h>
@@ -87,18 +91,60 @@
 #define PHY_STATUS	1
 #define PHY_ID1		2
 #define PHY_ID2		3
+#define PHY_ANEG_ADV	4
+#define PHY_ANEG_CAP	5
 
 #define PHY_CONTROL_RESET		(1<<15)
 #define PHY_CONTROL_LOOPBACK		(1<<14)
 #define PHY_CONTROL_POWERDOWN		(1<<11)
 #define PHY_CONTROL_ANEN_ENABLE		(1<<12)
+#define PHY_CONTROL_MII_DISABLE		(1<<10)
 #define PHY_CONTROL_RESTART_ANEN	(1<<9)
 #define PHY_STATUS_ANEN_COMPLETE	(1<<5)
-#define PHY_STATUS_LINK			(1<<2)
 #define PHY_STATUS_100FULL		(1<<14)
 #define PHY_STATUS_100HALF		(1<<13)
 #define PHY_STATUS_10FULL		(1<<12)
 #define PHY_STATUS_10HALF		(1<<11)
+#define PHY_STATUS_LINK			(1<<2)
+
+#define PHY_CFG1_REG		16
+#define PHY_CFG1_LNKDIS		(1<<15)	/* Link detect disable (override) */
+#define PHY_CFG1_XMTDIS		(1<<14)	/* Transmitter disable */
+#define PHY_CFG1_XMTPDN		(1<<13) /* Transmitter power-down */
+#define PHY_CFG1_BYPSCR		(1<<10)	/* Scrambler bypass */
+#define PHY_CFG1_UNSCDS		(1<<9)	/* Autoneg. disable with unscr. idle */
+#define PHY_CFG1_EQLZR		(1<<8)	/* Receiver equalizer disable */
+#define PHY_CFG1_CABLE		(1<<7)	/* STP select (150 Ohm) */
+#define PHY_CFG1_RLVL0		(1<<6)	/* Receive level adjust (squelch) */
+#define PHY_CFG1_TLVL_SHIFT	2	/* Transmit level shift */
+#define PHY_CFG1_TLVL_MASK	0x3c	/*  and mask */
+#define PHY_CFG1_TRF_SHIFT	0	/* Transmit rise/fall time shift */
+#define PHY_CFG1_TRF_MASK	0x3	/*  and mask */
+
+#define PHY_CFG2_REG		17
+#define PHY_CFG2_APOLDIS	(1<<5) /* Auto MDI/MDIX disable */
+#define PHY_CFG2_JABDIS		(1<<4) /* Jabber disable */
+#define PHY_CFG2_MREG		(1<<3) /* Multiple register access enable */
+#define PHY_CFG2_INTMDIO	(1<<2) /* Interrupt signaled with MDIO */
+
+#define PHY_INT			18	/* Interrupt/status register */
+#define PHY_MASK		19	/* Interrupt mask register */
+#define PHY_INT_INT		(1<<15)	/* Status changed */
+#define PHY_INT_LNKFAIL		(1<<14)
+#define PHY_INT_LOSSSYNC	(1<<13)
+#define PHY_INT_CWRD		(1<<12)
+#define PHY_INT_SSD		(1<<11)
+#define PHY_INT_ESD		(1<<10)
+#define PHY_INT_RPOL		(1<<9)
+#define PHY_INT_JAB		(1<<8)
+#define PHY_INT_SPDDET		(1<<7)
+#define PHY_INT_DPLXDET		(1<<6)
+
+// PHY Interrupt/Status Mask Register
+// Uses the same bit definitions as PHY_INT_REG
+
+
+
 
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
@@ -176,18 +222,19 @@ static unsigned long phy_id;	/* ID read from PHY */
 #define SMC_RCR_PRMS		(1<<1)	/* Promiscuous receive mode */
 #define SMC_RCR_RX_ABORT	(1<<0)	/* Excessively long frame aborted rx */
 
-#define SMC_RPC_SPEED		(1<<13)	/* Speed select */
-#define SMC_RPC_DPLX		(1<<12)	/* Duplex select */
-#define SMC_RPC_ANEG		(1<<11)	/* Auto negotiation mode select */
-#define SMC_RPC_LSA_SHIFT	5
-#define SMC_RPC_LSB_SHIFT	2
-#define SMC_RPC_LS_LINK		(0x00)
-#define SMC_RPC_LS_10MB		(0x02)
-#define SMC_RPC_LS_DUPLEX	(0x03)
-#define SMC_RPC_LS_ACT		(0x04)
-#define SMC_RPC_LS_100MB	(0x05)
-#define SMC_RPC_LS_TX		(0x06)
-#define SMC_RPC_LS_RX		(0x07)
+#define SMC_RPCR_SPEED		(1<<13)	/* Speed select */
+#define SMC_RPCR_DPLX		(1<<12)	/* Duplex select */
+#define SMC_RPCR_ANEG		(1<<11)	/* Auto negotiation mode select */
+#define SMC_RPCR_LSA_SHIFT	5
+#define SMC_RPCR_LSB_SHIFT	2
+#define SMC_RPCR_MASK		(0x7)
+#define SMC_RPCR_LS_LINK	(0x00)
+#define SMC_RPCR_LS_10MB	(0x02)
+#define SMC_RPCR_LS_DUPLEX	(0x03)
+#define SMC_RPCR_LS_ACT		(0x04)
+#define SMC_RPCR_LS_100MB	(0x05)
+#define SMC_RPCR_LS_TX		(0x06)
+#define SMC_RPCR_LS_RX		(0x07)
 
 #define SMC_CR_EPH_POWER_EN	(1<<15) /* Not EPH low-power mode */
 #define SMC_CR_NO_WAIT		(1<<12)
@@ -253,7 +300,6 @@ static unsigned long phy_id;	/* ID read from PHY */
 	  read_reg (8), read_reg (10),\
 	  read_reg (12), read_reg (14)); })
 
-
 #define US_MII_DELAY	 (5)	/* Half-cycle time for MII clock */
 
 #define write_reg(r,v) SMC_outw (SMC_IOBASE, (r), (v))
@@ -289,18 +335,19 @@ static inline void wait_mmu (void)
 static void smc91x_mii_write (unsigned long value, int length)
 {
   int c;
-  unsigned long v = read_reg (SMC_MGMT)
-    & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO);
-  v |= SMC_MGMT_MDOE;
+  unsigned long v = (read_reg (SMC_MGMT)
+		     & ~(SMC_MGMT_MCLK | SMC_MGMT_MDO))
+    | SMC_MGMT_MDOE;
 
 //  ENTRY;
-//  PRINTF (" writing 0x%lx for %d\n", value, length);
+//  PRINTF (" writing 0x%lx for %d (%lx)\n", value, length, v);
   
   for (c = 0; c < length; ++c) {
 //    PRINTF (".");
     v = v & ~SMC_MGMT_MDO;
     /* *** FIXME: depends on MD0 being the lowest bit */
     v |= (value >> (length - c - 1)) & 1;
+//    printf ("  0x%lx \n",  v);
     write_reg (SMC_MGMT, v);
     usleep (US_MII_DELAY);
     write_reg (SMC_MGMT, v | SMC_MGMT_MCLK);
@@ -310,8 +357,8 @@ static void smc91x_mii_write (unsigned long value, int length)
 
 static unsigned int smc91x_mii_read (int length)
 {
-  unsigned long v = read_reg (SMC_MGMT)
-    & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO);
+  unsigned long v = (read_reg (SMC_MGMT)
+		     & ~(SMC_MGMT_MDOE | SMC_MGMT_MCLK | SMC_MGMT_MDO));
   int c = 0;
   unsigned long value = 0;
 
@@ -361,6 +408,8 @@ static int smc91x_phy_read (int phy_address, int phy_register)
 
 //  ENTRY;
 
+  select_bank (3);
+
   /* Idle the channel */
   smc91x_mii_write (0xffffffff, 32);
 
@@ -374,7 +423,7 @@ static int smc91x_phy_read (int phy_address, int phy_register)
 
   smc91x_mii_disable ();
 
-  return value;
+  return value & 0xffff;
 }
 
 static void smc91x_phy_detect (void)
@@ -386,10 +435,10 @@ static void smc91x_phy_detect (void)
     unsigned int id2;
 
     id1 = smc91x_phy_read (phy_address & 0x1f, PHY_ID1);
-    id2 = smc91x_phy_read (phy_address & 0x1f, PHY_ID1);
+    id2 = smc91x_phy_read (phy_address & 0x1f, PHY_ID2);
 
-    printf (" #%02d phy_id1=0x%x, phy_id2=0x%x\n", 
-	    phy_address & 0x1f, id1, id2);
+//    printf (" #%02d phy_id1=0x%x, phy_id2=0x%x\n", 
+//	    phy_address & 0x1f, id1, id2);
 
     if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
@@ -401,6 +450,16 @@ static void smc91x_phy_detect (void)
   }
 }
 
+static void smc91x_phy_configure (void)
+{
+  int v = smc91x_phy_read (phy_address, PHY_CONTROL);
+  v &= ~PHY_CONTROL_MII_DISABLE;
+  v |= PHY_CONTROL_ANEN_ENABLE;
+  printf ("Writing PHY_CONTROL 0x%x\n", v);
+  smc91x_phy_write (phy_address, PHY_CONTROL, v);
+  v = smc91x_phy_read (phy_address, PHY_CONTROL);
+  printf ("Read back PHY_CONTROL 0x%x\n", v);
+}
 
 
 #if 0
@@ -584,8 +643,19 @@ void smc91x_init (void)
 
   smc91x_reset ();
 
+  smc91x_phy_configure ();
+
   select_bank (0);
   write_reg (SMC_TCR, SMC_TCR_TXENA); /* Enable transmitter */
+  {
+    int v = read_reg (SMC_RPCR);
+    v &= ~(  (SMC_RPCR_MASK << SMC_RPCR_LSA_SHIFT) 
+	   | (SMC_RPCR_MASK << SMC_RPCR_LSB_SHIFT));
+    v |= SMC_RPCR_LS_ACT    << SMC_RPCR_LSA_SHIFT;
+    v |= SMC_RPCR_LS_LINK   << SMC_RPCR_LSB_SHIFT;
+    write_reg (SMC_RPCR, v);
+  }
+  
 }
 
 #if !defined (CONFIG_SMALL)
@@ -616,3 +686,229 @@ static __service_6 struct service_d smc91x_service = {
   .report = smc91x_report,
 #endif
 };
+
+
+#if defined (CONFIG_CMD_ETH_SMC91X)
+
+static int cmd_eth (int argc, const char** argv)
+{
+  int result = 0;
+
+  if (argc == 1) {
+    {
+      unsigned i;
+      struct regs {
+	int reg;
+	char label[5];
+      };
+      static struct regs rgRegs[] = {
+	{  0, "ctrl" },
+	{  1, "stat" },
+	{  2, "id1" },
+	{  3, "id2" },
+	{  4, "anadv" },
+	{  5, "anpar" },
+	{  6, "anexp" },
+	{  7, "anpag" },
+
+#if 1
+	{ 16, "cfg1" },
+	{ 17, "cfg2" },
+	{ 18, "int" },
+	{ 19, "mask" },
+#endif
+#if 0
+	/* Altima */
+	{ 16, "btic" },
+	{ 17, "intr" },
+	{ 18, "diag" },
+	{ 19, "loop" },
+	{ 20, "cable" },
+	{ 21, "rxer" },
+	{ 22, "power" },
+	{ 23, "oper" },
+	{ 24, "rxcrc" },
+	{ 28|(1<<8)|(0<<12), "mode" },
+	{ 29|(1<<8)|(0<<12), "test" },
+	{ 29|(1<<8)|(1<<12), "blnk" },
+	{ 30|(1<<8)|(1<<12), "l0s1" },
+	{ 31|(1<<8)|(1<<12), "l0s2" },
+	{ 29|(1<<8)|(2<<12), "l1s1" },
+	{ 30|(1<<8)|(2<<12), "l1s2" },
+	{ 31|(1<<8)|(2<<12), "l2s1" },
+	{ 29|(1<<8)|(3<<12), "l2s2" },
+	{ 30|(1<<8)|(3<<12), "l3s1" },
+	{ 31|(1<<8)|(3<<12), "l3s2" },
+#endif
+#if 0
+	/* NatSemi */
+	{ 16, "phsts" },
+	{ 20, "fcscr" },
+	{ 21, "recr" },
+	{ 22, "pcsr" },
+	{ 25, "phctl" },
+	{ 26, "100sr" },
+	{ 27, "cdtst" },
+#endif
+      };
+#if 1
+#define WIDE 5
+#define ROWS (sizeof (rgRegs)/sizeof (rgRegs[0]) + WIDE - 1)/WIDE
+#define COUNT ROWS*WIDE
+      for (i = 0; i < COUNT; ++i) {
+	int index = (i%WIDE)*ROWS + i/WIDE;
+	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
+	  continue;
+	if (i && (i % WIDE) == 0)
+	  printf ("\n");
+	if (rgRegs[index].reg & (1<<8))
+	  smc91x_phy_write (phy_address, 28, 
+			  (smc91x_phy_read (phy_address, 28) & 0x0fff)
+			  | (rgRegs[index].reg & 0xf000));
+	printf ("%5s-%-2d %04x  ", 
+		rgRegs[index].label, rgRegs[index].reg & 0xff, 
+		smc91x_phy_read (phy_address, rgRegs[index].reg & 0xff));
+      }	
+#else
+      for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
+	   ++i) {
+	unsigned index = (i & 7) | ((i >> 1) & ~7);
+	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
+	  continue;
+	//	printf ("i %d (%x) index %d (%x)\n", i, i, index, index);
+	if (i & (1<<3)) {
+	  if (i && (index & 0x7) == 0)
+	    printf ("\n");
+	  if (rgRegs[index].reg & (1<<8))
+	    smc91x_phy_write (phy_address, 28, 
+			    (smc91x_phy_read (phy_address, 28) & 0x0fff)
+			    | (rgRegs[index].reg & 0xf000));
+	  printf ("%04x    ", smc91x_phy_read (phy_address, 
+					     rgRegs[index].reg & 0xff));
+	}
+	else {
+	  if (i && (index & 0x7) == 0)
+	    printf ("\n\n");
+	  printf ("%s-%-2d ", rgRegs[index].label, rgRegs[index].reg & 0xff);
+	}
+      }
+#endif
+
+      printf ("\n");
+    }
+    {
+      unsigned long l;
+//      int i;
+      l = smc91x_phy_read (phy_address, 0);
+      PRINTF ("phy_control 0x%lx\n", l);
+      l = smc91x_phy_read (phy_address, 1);
+      PRINTF ("phy_status 0x%lx", l);
+      if (l&PHY_STATUS_ANEN_COMPLETE)
+	PRINTF (" anen_complete");
+      if (l&PHY_STATUS_LINK)
+	PRINTF (" link");
+      if (l&PHY_STATUS_100FULL)
+	PRINTF (" cap100F");
+      if (l&PHY_STATUS_100HALF)
+	PRINTF (" cap100H");
+      if (l&PHY_STATUS_10FULL)
+	PRINTF (" cap10F");
+      if (l&PHY_STATUS_10HALF)
+	PRINTF (" cap10H");
+      printf ("\n");
+      //      l = smc91x_phy_read (phy_address, 4);
+      //      PRINTF ("phy_advertisement 0x%lx\n", l);
+      l = smc91x_phy_read (phy_address, 5);
+      PRINTF ("phy_partner 0x%lx", l);
+      if (l & (1<<9))
+	PRINTF ("  100Base-T4");
+      if (l & (1<<8))
+	PRINTF ("  100Base-TX-full");
+      if (l & (1<<7))
+	PRINTF ("  100Base-TX");
+      if (l & (1<<6))
+	PRINTF ("  10Base-T-full");
+      if (l & (1<<5))
+	PRINTF ("  10Base-T");
+      PRINTF ("\n");
+      l = smc91x_phy_read (phy_address, 6);
+      PRINTF ("phy_autoneg_expansion 0x%lx", l);
+      if (l & (1<<4))
+	PRINTF (" parallel-fault");
+      if (l & (1<<1))
+	PRINTF (" page-received");
+      if (l & (1<<0))
+	PRINTF (" partner-ANEN-able");
+      PRINTF ("\n");
+      //      l = smc91x_phy_read (phy_address, 7);
+      //      PRINTF ("phy_autoneg_nextpage 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 16);
+      //      PRINTF ("phy_bt_interrupt_level 0x%lx\n", l);
+      l = smc91x_phy_read (phy_address, 17);
+      PRINTF ("phy_interrupt_control 0x%lx", l);
+      if (l & (1<<4))
+	PRINTF (" parallel_fault");
+      if (l & (1<<2))
+	PRINTF (" link_not_ok");
+      if (l & (1<<0))
+	PRINTF (" anen_complete");
+      PRINTF ("\n");
+      l = smc91x_phy_read (phy_address, 18);
+      PRINTF ("phy_diagnostic 0x%lx", l);
+      if (l & (1<<12))
+	PRINTF (" force 100TX");
+      if (l & (1<<13))
+	PRINTF (" force 10BT");
+      PRINTF ("\n");
+      //      l = smc91x_phy_read (phy_address, 19);
+      //      PRINTF ("phy_power_loopback 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 20);
+      //      PRINTF ("phy_cable 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 21);
+      //      PRINTF ("phy_rxerr 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 22);
+      //      PRINTF ("phy_power_mgmt 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 23);
+      //      PRINTF ("phy_op_mode 0x%lx\n", l);
+      //      l = smc91x_phy_read (phy_address, 24);
+      //      PRINTF ("phy_last_crc 0x%lx\n", l);
+
+    }
+  }
+  else {
+    if (strcmp (argv[1], "en") == 0) {
+      smc91x_phy_configure ();
+    }
+  }
+
+  return result;
+}
+
+static __command struct command_d c_eth = {
+  .command = "eth",
+  .description = "smc91x diagnostics",
+  .func = cmd_eth,
+  COMMAND_HELP(
+"emac [SUBCOMMAND [PARAMETER]]\n"
+"  Commands for the Ethernet MAC and PHY devices.\n"
+"  Without a SUBCOMMAND, it displays diagnostics about the EMAC\n"
+"    and PHY devices.  This information is for debugging the hardware.\n"
+//"  clear - reset the EMAC.\n"
+//"  anen  - restart auto negotiation.\n"
+//"  send  - send a test packet.\n"
+//"  loop  - enable loopback mode.\n"
+//"  force - force power-up and restart auto-negotiation.\n"
+//"  mac   - set the MAC address to PARAMETER.\n"
+//"    PARAMETER has the form XX:XX:XX:XX:XX:XX where each X is a\n"
+//"    hexadecimal digit.  Be aware that MAC addresses must be unique for\n"
+//"    proper operation of the network.  This command may be added to the\n"
+//"    startup commands to set the MAC address at boot-time.\n"
+//"  save  - saves the MAC address to the mac: EEPROM device.\n"
+//"    A saved MAC address will be used to automatically configure the MAC\n"
+//"    at startup.  For this feature to work, there must be a mac: driver.\n"
+//"  e.g.  emac mac 01:23:45:67:89:ab         # Never use this MAC address\n"
+//"        emac save\n"
+  )
+};
+
+#endif
