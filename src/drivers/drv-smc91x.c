@@ -65,12 +65,12 @@
 #include <command.h>
 #include <error.h>
 #include <linux/string.h>
-#include "hardware.h"
+#include <asm/reg.h>
 #include <linux/kernel.h>
 
 #include <mach/drv-smc91x.h>
 
-#define TALK 1
+//#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)

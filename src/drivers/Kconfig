@@ -28,7 +28,7 @@ config DRIVER_EXT2
 config DRIVER_EXT2_BLOCKDEVICE
 	string "Underlying driver region"
 	depends on DRIVER_EXT2
-	default ""
+	default "cf"
 	help
 	  The filesystem driver is staticly links to an underlying
 	  driver/region for access to the media.  Set that region
@@ -46,7 +46,7 @@ config DRIVER_JFFS2
 config DRIVER_JFFS2_BLOCKDEVICE
 	string "Underlying driver region"
 	depends on DRIVER_JFFS2
-	default "cf"
+	default ""
 	help
 	  The filesystem driver is staticly links to an underlying
 	  driver/region for access to the media.  Set that region
@@ -70,6 +70,15 @@ config DRIVER_COMPACTFLASH
 	  This driver implements a CompactFlash driver for the target
 	  platform.
 
+config DRIVER_SMC91X
+	bool "SMC91X Integrated Ethernet"
+	depends on USES_SMC91X
+	select USE_ETHERNET
+	default y
+	help
+	  This driver initializes and activates the SMSC SMC91x
+	  Ethernet controller.
+
 endmenu
 
 config USES_NOR_CFI
@@ -79,4 +88,7 @@ config USES_COMPACTFLASH
 	bool
 
 config USES_PATHNAME_PARSER
+	bool
+
+config USES_SMC91X
 	bool

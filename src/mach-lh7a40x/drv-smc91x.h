@@ -2,7 +2,7 @@
      $Id$
 
    written by Marc Singer
-   27 Jul 2005
+   28 Jul 2005
 
    Copyright (C) 2005 Marc Singer
 
@@ -17,9 +17,10 @@
 
 #include <mach/hardware.h>
 
-#define SMC_IOBASE		(0x54000000) /* LPD79520 */
+	 /* LPD7A400 and LPD7A404 use the same IO mapping */
+# define SMC_IOBASE		(0x70000000)
 
-#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0x20000000)
+#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0xc0000000)
 
 static inline u16 SMC_inw (unsigned long base, int r)
 {

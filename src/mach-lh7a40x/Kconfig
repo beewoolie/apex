@@ -2,7 +2,7 @@ if ARCH_LH7A40X
 
 choice
 	prompt "LH7A40X Implementations"
-	default MACH_LPD7A400
+	default MACH_LPD7A404
 
 config MACH_LPD7A400
 	bool "Logic Product Development LPD7A400"
@@ -11,6 +11,7 @@ config MACH_LPD7A400
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
+	select USES_SMC91X
 	select DRIVERS_LH
 
 config MACH_LPD7A404
@@ -21,6 +22,7 @@ config MACH_LPD7A404
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
 	select HAS_LH_ADC
+	select USES_SMC91X
 	select DRIVERS_LH
 
 endchoice

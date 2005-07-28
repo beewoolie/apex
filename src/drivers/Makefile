@@ -27,3 +27,4 @@ obj-$(CONFIG_DRIVER_EXT2)	+= drv-ext2.o
 obj-$(CONFIG_DRIVER_JFFS2)	+= drv-jffs2.o
 obj-$(CONFIG_DRIVER_NOR_CFI)	+= drv-nor-cfi.o
 obj-$(CONFIG_DRIVER_COMPACTFLASH) += drv-cf.o
+obj-$(CONFIG_DRIVER_SMC91X)	+= drv-smc91x.o

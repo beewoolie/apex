@@ -11,6 +11,7 @@ config MACH_LPD79520
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
+	select USES_SMC91X
 	select DRIVERS_LH
 
 config MACH_LPD79524
@@ -129,23 +130,11 @@ config DRIVER_EMAC_LH79524
 	bool "LH79524 EMAC"
 	depends on ARCH_LH79524
 	select DRIVER_CPLD_SPI if MACH_LPD79524
+	select USE_ETHERNET
 	default y
 	help
 	  This driver initializes the built-in Ethernet MAC of the
 	  Sharp lh79524. 
-
-config DRIVER_SMC91X
-	bool "SMC91X Integrated Ethernet"
-	depends on MACH_LPD79520
-	default y
-	help
-	  This driver initializes and activates the SMSC SMC91x
-	  Ethernet controller.
-
-config CMD_ETH_SMC91X
-	bool "SMC91x diagnostic commands"
-	depends on DRIVER_SMC91X
-	default y
 
 config CLCDC
 	bool "Color LCD"

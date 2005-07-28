@@ -121,4 +121,10 @@ config CMD_EMAC_LH79524_DIAG
 	  Enable this option to add diagnostic sub-commands to the
 	  emac command.  It adds a lot of code to APEX, so leave it
 	  out unless you are sure you need it.
+
+config CMD_ETH_SMC91X
+	bool "Define SMC91x diagnostic commands"
+	depends on DRIVER_SMC91X
+	default n
+
 endmenu
