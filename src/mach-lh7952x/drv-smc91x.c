@@ -81,6 +81,28 @@
 # define PRINT_PKT(p,l)		do {} while (0)
 #endif
 
+#define ENTRY	PRINTF("%s\n", __FUNCTION__)
+
+#define PHY_CONTROL	0
+#define PHY_STATUS	1
+#define PHY_ID1		2
+#define PHY_ID2		3
+
+#define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_LOOPBACK		(1<<14)
+#define PHY_CONTROL_POWERDOWN		(1<<11)
+#define PHY_CONTROL_ANEN_ENABLE		(1<<12)
+#define PHY_CONTROL_RESTART_ANEN	(1<<9)
+#define PHY_STATUS_ANEN_COMPLETE	(1<<5)
+#define PHY_STATUS_LINK			(1<<2)
+#define PHY_STATUS_100FULL		(1<<14)
+#define PHY_STATUS_100HALF		(1<<13)
+#define PHY_STATUS_10FULL		(1<<12)
+#define PHY_STATUS_10HALF		(1<<11)
+
+static int phy_address;
+static unsigned long phy_id;	/* ID read from PHY */
+
 #define SMC_REG(b,r)	(r)		
 
 #define SMC_TCR		SMC_REG(0,0x0) /* Transmit Control Register */
@@ -103,10 +125,13 @@
 #define SMC_PNR		SMC_REG(2,0x2) /*  */
 //#define SMC_ARR	SMC_REG(2,0x3) /* Allocation Result Register */
 #define SMC_FIFO	SMC_REG(2,0x4) /*  */
-#define SMC_POINTER	SMC_REG(2,0x6) /*  */
+#define SMC_PTR		SMC_REG(2,0x6) /*  */
 #define SMC_DATAL	SMC_REG(2,0x8) /*  */
 #define SMC_DATAH	SMC_REG(2,0xa) /*  */
 #define SMC_INTERRUPT	SMC_REG(2,0xc) /*  */
+//#define SMC_IST		SMC_REG(2,0xc) /*  */
+//#define SMC_ACK		SMC_REG(2,0xc) /*  */
+//#define SMC_MSK		SMC_REG(2,0xd) /*  */
 
 #define SMC_MT0_1	SMC_REG(3,0x0) /*  */
 #define SMC_MT2_3	SMC_REG(3,0x2) /*  */
@@ -194,28 +219,31 @@
 #define SMC_FIFO_REMPTY		(1<<15)	/* Receive FIFO empty */
 
 #define SMC_PTR_RCV		(1<<15)
-#define SMC_PTR_AUTOINC 	(1<<14)
+#define SMC_PTR_AUTO_INCR 	(1<<14)
 #define SMC_PTR_READ		(1<<13)
 #define SMC_PTR_ETEN		(1<<12)
 #define SMC_PTR_NOT_EMPTY	(1<<11)
 
-#define SMC_IM_MDINT		(1<<7)	/* PHY MI register 18 interrupt */
-#define SMC_IM_ERCV_INT		(1<<6)	/* Early receive interrupt */
-#define SMC_IM_EPH_INT		(1<<5)	/* Ethernet Protocol Handler int */
-#define SMC_IM_RX_OVRN_INT	(1<<4)	/* Receiver overrun interrupt */
-#define SMC_IM_ALLOC_INT	(1<<3)	/* Allocation interrupt */
-#define SMC_IM_TX_EMPTY_INT	(1<<2)	/* TX FIFO empty interrupt  */
-#define SMC_IM_TX_INT		(1<<1)	/* TX interrupt */
-#define SMC_IM_RCV_INT		(1<<0)	/* RX interrupt */
+#define SMC_INT_MDINT		(1<<7)	/* PHY MI register 18 interrupt */
+#define SMC_INT_ERCV_INT	(1<<6)	/* Early receive interrupt */
+#define SMC_INT_EPH_INT		(1<<5)	/* Ethernet Protocol Handler int */
+#define SMC_INT_RX_OVRN_INT	(1<<4)	/* Receiver overrun interrupt */
+#define SMC_INT_ALLOC_INT	(1<<3)	/* Allocation interrupt */
+#define SMC_INT_TX_EMPTY_INT	(1<<2)	/* TX FIFO empty interrupt  */
+#define SMC_INT_TX_INT		(1<<1)	/* TX interrupt */
+#define SMC_INT_RCV_INT		(1<<0)	/* RX interrupt */
 
-#define SMC_MII_MSK_CRS100	(1<<14)	/* Disable CRS100 detection */
-#define SMC_MII_MDOE		(1<<3)	/* MII output enable */
-#define SMC_MII_MCLK		(1<<2)	/* MII clock */
-#define SMC_MII_MDI		(1<<1)	/* MII input */
-#define SMC_MII_MDO		(1<<0)  /* MII output */
+#define SMC_MGMT_MSK_CRS100	(1<<14)	/* Disable CRS100 detection */
+#define SMC_MGMT_MDOE		(1<<3)	/* MII output enable */
+#define SMC_MGMT_MCLK		(1<<2)	/* MII clock */
+#define SMC_MGMT_MDI		(1<<1)	/* MII input */
+#define SMC_MGMT_MDO		(1<<0)  /* MII output */
 
 #define SMC_ERCV_RCV_DISCRD	(1<<7)
 #define SMC_ERCV_THRESHOLD	(0x001F)
+
+#define SMC_PKTCONTROL_ODD	(1<<13)	/* Last byte of packet in control */
+#define SMC_PKTCONTROL_CRC	(1<<12)	/* Generate CRC on transmit */
 
 #define PRINT_REG ({\
   printf ("regs 0 %04x 2 %04x 4 %04x 6 %04x\n",\
@@ -226,6 +254,7 @@
 	  read_reg (12), read_reg (14)); })
 
 
+#define US_MII_DELAY	 (10)	/* Half-cycle time for MII clock */
 
 #define write_reg(r,v) SMC_outw (SMC_IOBASE, (r), (v))
 #define read_reg(r)    SMC_inw  (SMC_IOBASE, (r))
@@ -246,10 +275,220 @@ static inline int current_bank (void)
   return read_reg (SMC_BANK) & 0xf;
 }
 
+static inline void clear_interrupt (int v)
+{
+  write_reg (SMC_INTERRUPT, (read_reg (SMC_INTERRUPT) & 0xff) | (v & 0xff));
+}
+
 static inline void wait_mmu (void)
 {
   while (read_reg (SMC_MMUCR) & SMC_MMUCR_BUSY)
     ;
+}
+
+static void smc91x_mii_write (unsigned long value, int length)
+{
+  int c;
+  unsigned long v = read_reg (SMC_MGMT)
+    & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO);
+  v |= SMC_MGMT_MDOE;
+
+  ENTRY;
+  PRINTF (" writing 0x%x for %d\n", value, length);
+  
+  for (c = 0; c < length; ++c) {
+    PRINTF (".");
+    v = v & ~SMC_MGMT_MDO;
+    /* *** FIXME: depends on MD0 being the lowest bit */
+    v |= (value >> (length - c - 1)) & 1;
+    write_reg (SMC_MGMT, v);
+    usleep (US_MII_DELAY);
+    write_reg (SMC_MGMT, v | SMC_MGMT_MCLK);
+    usleep (US_MII_DELAY);
+  }
+}
+
+static unsigned int smc91x_mii_read (int length)
+{
+  unsigned long v = read_reg (SMC_MGMT)
+    & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO);
+  int c = 0;
+  unsigned long value = 0;
+
+  ENTRY;
+
+  write_reg (SMC_MGMT, v);
+  for (c = 0; c < length; ++c) {
+    /* *** FIXME: depends on MDI being the second lowest bit */
+    value = (value << 1) | ((read_reg (SMC_MGMT) >> 1) & 1);
+    write_reg (SMC_MGMT, v);
+    usleep (US_MII_DELAY);
+    write_reg (SMC_MGMT, v | SMC_MGMT_MCLK);
+    usleep (US_MII_DELAY);
+  }
+
+  return value;
+}
+
+static void smc91x_mii_disable (void)
+{
+  write_reg (SMC_MGMT, read_reg (SMC_MGMT) 
+	     & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO));
+}
+
+static void smc91x_phy_write (int phy_address, int phy_register, int phy_data)
+{
+  ENTRY;
+
+  select_bank (3);
+
+  /* Idle the channel */
+  smc91x_mii_write (0xffffffff, 32);
+
+  /* Write the data */
+  smc91x_mii_write ((1<<30) | (1<<28)
+		    |((phy_address & 0x1f)<<23)
+		    |((phy_register & 0x1f)<<18)
+		    |(2<<16)
+		    |(phy_data & 0xffff), 32);
+
+  smc91x_mii_disable ();
+}
+
+static int smc91x_phy_read (int phy_address, int phy_register)
+{
+  unsigned long value;
+
+  ENTRY;
+
+  /* Idle the channel */
+  smc91x_mii_write (0xffffffff, 32);
+
+  /* Issue read request */
+  smc91x_mii_write ((1<<12)|(2<<10)
+		    | ((phy_address  & 0x1f)<<5)
+		    | ((phy_register & 0x1f)<<0), 14);
+
+  /* Read result include two high status bits */
+  value = smc91x_mii_read (18);
+
+  smc91x_mii_disable ();
+
+  return value;
+}
+
+static void smc91x_phy_detect (void)
+{
+  ENTRY;
+
+  for (phy_address = 1; phy_address < 33; ++phy_address) {
+    unsigned int id1;
+    unsigned int id2;
+
+    id1 = smc91x_phy_read (phy_address & 0x1f, PHY_ID1);
+    id2 = smc91x_phy_read (phy_address & 0x1f, PHY_ID1);
+
+    printf (" #%02d phy_id1=0x%x, phy_id2=0x%x\n", 
+	    phy_address & 0x1f, id1, id2);
+
+    if (   id1 != 0x0000 && id1 != 0xffff && id1 != 0x8000
+	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
+      phy_id = (id1 << 16) | id2;
+      phy_address &= 0x1f;
+      printf ("smc91x: phy_detect 0x%x  0x%lx\n", phy_address, phy_id);
+      break;
+    }
+  }
+}
+
+
+
+#if 0
+#if defined (USE_PHY_RESET)
+static void smc91x_phy_reset (int phy_address)
+{
+
+  PRINTF ("emac: phy_reset\n");
+  smc91x_phy_write (phy_address, 0,
+		  PHY_CONTROL_RESET
+		  | smc91x_phy_read (phy_address, 0));
+  while (smc91x_phy_read (phy_address, 0) & PHY_CONTROL_RESET)
+    ;
+}
+#else
+# define smc91x_phy_reset(v) do { } while (0)
+#endif
+
+static void smc91x_phy_configure (int phy_address)
+{
+  PRINTF ("emac: phy_configure\n");
+
+#if defined USE_DISABLE_AUTOMDI_MDIX
+  if (phy_id == 0x00225521){
+    unsigned long l = smc91x_phy_read (phy_address, 23);
+    smc91x_phy_write (phy_address, 23,
+		    (l & ~((1<<7)|(1<<6)))|(1<<7)); /* Force MDI. */
+  }
+#endif
+
+#if defined USE_DISABLE_100MB
+  {
+    unsigned long l = smc91x_phy_read (phy_address, 0);
+    smc91x_phy_write (phy_address, 0, l & ~(1<<13));
+  }
+#endif
+}
+
+
+#endif
+
+
+static ssize_t smc91x_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  return 0; 
+}
+
+static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  int pkt;
+
+  select_bank (2);
+  write_reg (SMC_MMUCR, SMC_MMUCR_ALLOC);
+
+  while (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT))
+    ;
+  
+  clear_interrupt (SMC_INT_ALLOC_INT);
+
+  pkt = read_reg (SMC_PNR) >> 8;
+  if (pkt & SMC_ARR_FAILED) {
+    printf ("unable to send.  No packet buffers available\n");
+    return 0;
+  }
+
+  printf ("packet #%d %d bytes\n", pkt, cb);
+
+  write_reg (SMC_PNR, pkt);
+  write_reg (SMC_PTR, SMC_PTR_AUTO_INCR);
+
+  /* write packet header */
+  write_reg (SMC_DATAL, 0);	/* status */
+  write_reg (SMC_DATAL, (cb + 6)&~1); /* packet length + control */
+  /* write data */
+  SMC_outsw (SMC_IOBASE, SMC_DATAL, pv, cb >> 1);
+  /* write control and last byte if the length was odd */
+  SMC_outw (SMC_IOBASE, SMC_DATAL, 
+	    (cb & 1) ? ((unsigned char*) pv)[cb - 1] | SMC_PKTCONTROL_ODD : 0);
+
+  write_reg (SMC_MMUCR, SMC_MMUCR_ENQUEUE);
+  clear_interrupt (SMC_INT_TX_EMPTY_INT);
+
+  printf ("waiting for transmit\n");
+  while (!(read_reg (SMC_INTERRUPT) & SMC_INT_TX_EMPTY_INT))
+    ;
+  
+  printf ("transmit complete\n");
+  return cb;
 }
 
 static void smc91x_reset (void)
@@ -260,6 +499,7 @@ static void smc91x_reset (void)
 
   select_bank (2);
   write_reg (SMC_INTERRUPT, 0);	/* Mask all interrupts  */
+  clear_interrupt (0xff);	/* Acknowledge all interrupts */
 
   /* Perform a soft reset.  Nico thinks this is unnecessary and probably is. */
   select_bank (0);
@@ -290,6 +530,11 @@ static void smc91x_reset (void)
   select_bank (2);
   write_reg (SMC_MMUCR, SMC_MMUCR_RESET);
   wait_mmu ();
+}
+
+static int smc91x_open (struct descriptor_d* d)
+{
+  return 0;			/* No problems */
 }
 
 void smc91x_init (void)
@@ -335,6 +580,8 @@ void smc91x_init (void)
   host_mac_address[4] = v & 0xff;
   host_mac_address[5] = (v >> 8) & 0xff;
 
+  smc91x_phy_detect ();
+
   smc91x_reset ();
 
   select_bank (0);
@@ -357,10 +604,10 @@ static __driver_4 struct driver_d smc91x_driver = {
   .name = "eth-smc91x",
   .description = "SMSC smc91x Ethernet driver",
   .flags = DRIVER_NET,
-//  .open = smc91x_open,
-//  .close = close_helper,
-//  .read = smc91x_read,
-//  .write = smc91x_write,
+  .open = smc91x_open,
+  .close = close_helper,
+  .read = smc91x_read,
+  .write = smc91x_write,
 };
 
 static __service_6 struct service_d smc91x_service = {

@@ -44,7 +44,7 @@
 #include <network.h>
 #include <ethernet.h>
 
-//#define TALK 2
+#define TALK 2
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
