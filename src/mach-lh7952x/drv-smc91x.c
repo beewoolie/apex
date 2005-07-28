@@ -287,12 +287,15 @@ void smc91x_init (void)
   DBG (1, "%s\n", __FUNCTION__);
 
 #if defined (CPLD_CONTROL_WLPEN)
-//  CPLD_CONTROL |= CPLD_CONTROL_WLPEN; /* Disable the SMC91x chip */
-//  usleep (100);
-  CPLD_CONTROL &= CPLD_CONTROL_WLPEN; /* Enable the SMC91x chip */
-  /* *** We should make this work.  We need to be able to really turn
-     *** the device on this way. */
-  //  usleep (10000);
+ {
+   unsigned long l;
+   CPLD_CONTROL |= CPLD_CONTROL_WLPEN; /* Disable the SMC91x chip */
+   usleep (1);	/* Allow at least 100ns for reset pin to be recognized */
+   CPLD_CONTROL &= ~CPLD_CONTROL_WLPEN; /* Enable the SMC91x chip */
+   l = timer_read ();
+   while (timer_delta (l, timer_read ()) < 50) /* PHY requires 50ns */
+     ;
+ }
 #endif
 
   v = read_reg (SMC_BANK);
@@ -321,6 +324,9 @@ void smc91x_init (void)
   host_mac_address[5] = (v >> 8) & 0xff;
 
   smc91x_reset ();
+
+  select_bank (0);
+  write_reg (SMC_TCR, SMC_TCR_TXENA); /* Enable transmitter */
 }
 
 #if !defined (CONFIG_SMALL)
