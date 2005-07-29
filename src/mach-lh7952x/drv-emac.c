@@ -468,9 +468,13 @@ void emac_init (void)
 
   if (!emac_read_mac (host_mac_address)) {
     EMAC_SPECAD1BOT 
-      = (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
+      = (host_mac_address[3]<<24)
+      | (host_mac_address[2]<<16)
+      | (host_mac_address[1]<<8)
+      | (host_mac_address[0]<<0);
     EMAC_SPECAD1TOP 
-      = (rgb[5]<<8)|(rgb[4]<<0);
+      = (host_mac_address[5]<<8)
+      | (host_mac_address[4]<<0);
 #if defined (TALK)
     PRINTF ("emac: mac address\n"); 
     dump (host_mac_address, 6, 0);
