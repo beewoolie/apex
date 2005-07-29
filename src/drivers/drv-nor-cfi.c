@@ -239,7 +239,7 @@ static unsigned long nor_unlock_page (unsigned long index)
   index &= ~ (nor_region (index)->size - 1);
 
   WRITE_ONE (index, CMD (ReadID));
-  PRINTF ("nor_unlock_page 0x%lx %lx\n", index, 
+  PRINTF ("nor_unlock_page 0x%lx %x\n", index, 
 	  REGA (index + (0x02 << WIDTH_SHIFT)));
   if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
     return STAT (Ready);

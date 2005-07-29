@@ -82,7 +82,8 @@
 
 #include <mach/drv-cf.h>
 
-//#define TALK
+#define TALK
+//#define TALK_ATTRIB
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -122,7 +123,7 @@
   */
 
 #if defined (CF_IOBARRIER_PHYS)
-# define IOBARRIER_READ	(*(volatile unsigned long*) CF_IOBARRIER_PHYS)
+# define IOBARRIER_READ	(*(volatile unsigned char*) CF_IOBARRIER_PHYS)
 #else
 # define IOBARRIER_READ	
 #endif
@@ -165,10 +166,12 @@ struct cf_info {
 };
 
 static struct cf_info cf_d; 
+u8 drive_select;
 
 static unsigned char read8 (int reg)
 {
   unsigned short v;
+  IOBARRIER_READ;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
   IOBARRIER_READ;
   return (reg & 1) ? (v >> 8) : (v & 0xff);
@@ -178,8 +181,11 @@ static void write8 (int reg, unsigned char value)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
+  printf ("write8 0x%x -> 0x%x  ", 
+	  CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT, v);
   IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
+  printf (" 0x%x\n", v);
   DELAY;
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = v;
   IOBARRIER_READ;
@@ -188,6 +194,7 @@ static void write8 (int reg, unsigned char value)
 static unsigned short read16 (int reg)
 {
   unsigned short value;
+  IOBARRIER_READ;
   value = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
   IOBARRIER_READ;
   return value;
@@ -195,6 +202,9 @@ static unsigned short read16 (int reg)
 
 static void write16 (int reg, unsigned short value)
 {
+  IOBARRIER_READ;
+  printf ("write16: 0x%x <- 0x%x\n", 
+	  CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT, value);
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = value;
   IOBARRIER_READ;
 }
@@ -246,14 +256,25 @@ static void seek (unsigned sector)
   PRINTF (" %d %d %d]\n", head, cylinder, sector);
 }
 
+static void talk_registers (void)
+{
+  printf ("ide: sec %04x cyl %04x stat %04x data %04x\n", 
+	  read16 (IDE_SECTORCOUNT),
+	  read16 (IDE_CYLINDER),
+	  read16 (IDE_SELECT),
+	  read16 (IDE_DATA));
+}
+
 static int cf_identify (void)
 {
   ENTRY (0);
 
+  drive_select = 0xe0;
+
   cf_d.type = REG (CF_PHYS);
   IOBARRIER_READ;
 
-#if 0
+#if defined (TALK_ATTRIB)
   {
     int index = 0;
     while (index < 1024) {
@@ -284,10 +305,13 @@ static int cf_identify (void)
   if (cf_d.type != typeMemory)
     ERROR_RETURN (ERROR_UNSUPPORTED, "unsupported CF device");
 
+  talk_registers ();
+
   select (0, 0);
   ready_wait ();
 
-  write8 (IDE_COMMAND, IDE_IDENTIFY);
+//  write8 (IDE_COMMAND, IDE_IDENTIFY);
+  write16 (IDE_SELECT, (IDE_IDENTIFY << 8) | drive_select);
   ready_wait ();
 
   {
@@ -295,6 +319,7 @@ static int cf_identify (void)
     int i;
     for (i = 0; i < 128; ++i)
       rgs[i] = read16 (IDE_DATA);
+//      rgs[i] = read16 (0);
 
 #if defined (TALK)
     dump ((void*) rgs, 256, 0);

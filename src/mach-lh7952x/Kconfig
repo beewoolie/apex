@@ -81,7 +81,8 @@ config NOR_BANK0
 
 config NOR_BANK0_START
 	hex "Physical address of NOR flash bank 0"
-	default "0x44000000"
+	default "0x40000000" if ARCH_LH79520
+	default "0x44000000" if ARCH_LH79524
 	depends on NOR_BANK0
 
 config NOR_BANK0_LENGTH
@@ -93,6 +94,7 @@ config NOR_BANK0_LENGTH
 config NOR_BANK1
 	bool "Enable NOR flash bank 1"
 	depends on NOR_BANK0
+	default n if MACH_LPD79520
 	default y if MACH_LPD79524
 
 config NOR_BANK1_START
@@ -107,6 +109,7 @@ config NOR_BANK1_LENGTH
 
 config NAND_LPD
 	bool "Enable LPD enhanced NAND flash access"
+	depends on MAC_LPD79524
 	default y if MACH_LPD79524
 	help
 	  This options enables a mode for accessing NAND flash that
