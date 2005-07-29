@@ -1,3 +1,11 @@
+2005-07-28  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-smc91x.c: Implemented smc91x driver which is
+	available to both the lpd79520 and the lpd7a40x boards.
+ 
+	* src/mach-lh7952x/init-lpd79520.c: Fixed the initialization of
+	the memory region where CF is found.  CF driver working again.
+ 
 2005-07-11  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-dump.c (cmd_dump): Added dump display width to make
