@@ -109,7 +109,7 @@ config NOR_BANK1_LENGTH
 
 config NAND_LPD
 	bool "Enable LPD enhanced NAND flash access"
-	depends on MAC_LPD79524
+	depends on MACH_LPD79524
 	default y if MACH_LPD79524
 	help
 	  This options enables a mode for accessing NAND flash that
