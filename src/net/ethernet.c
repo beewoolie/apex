@@ -46,6 +46,11 @@
      the destination with ARP.  That said, it is probably OK to leave
      this as is.
 
+   o UDP checksums.  There isn't a good reason to implement them as we
+     can depend on ethernet's CRC checksum.  The truth is that the
+     verification code didn't work the first time and I didn't want to
+     keep working on it.
+
 */
 
 #include <config.h>
@@ -480,6 +485,8 @@ void udp_setup (struct ethernet_frame* frame,
   UDP_F (frame)->length = htons (sizeof (struct header_udp) + cb);
   UDP_F (frame)->checksum = 0;
 
+#if defined (CONFIG_UDP_CHECKSUM)
+
   /* Checksums, UDP and then TCP */
   {
     u32 sum = 0;
@@ -492,6 +499,9 @@ void udp_setup (struct ethernet_frame* frame,
       = htons (_checksum (&sum, UDP_F (frame), 
 			  sizeof (struct header_udp) + cb));
   }
+
+#endif
+
   IPV4_F (frame)->checksum
     = htons (checksum (IPV4_F (frame), sizeof (struct header_ipv4)));
 
@@ -499,6 +509,35 @@ void udp_setup (struct ethernet_frame* frame,
     + sizeof (struct header_ipv4)
     + sizeof (struct header_udp) + cb;
 }
+		
+
+#if defined (CONFIG_UDP_CHECKSUM)
+
+int udp_checksum_verify (struct ethernet_frame* frame)
+{
+  size_t cb = frame->cb - sizeof (struct header_ethernet)
+    + sizeof (struct header_ipv4)
+    + sizeof (struct header_udp);
+  u32 sum = 0;
+  u16 length = htons (sizeof (struct header_udp) + cb);
+  u8 rgb[2] = { 0, IPV4_F (frame)->protocol };
+
+  if (UDP_F (frame)->checksum == 0)
+      return 0;
+
+  _checksum (&sum, IPV4_F (frame)->source_ip, 8);
+  _checksum (&sum, rgb, 2);
+  _checksum (&sum, &length, 2);
+  printf ("cb %d  %x %x", cb, 
+	  UDP_F (frame)->checksum,
+	  htons (_checksum (&sum, UDP_F (frame), 
+			    sizeof (struct header_udp) + cb)));
+  return UDP_F (frame)->checksum
+    != htons (_checksum (&sum, UDP_F (frame), 
+			 sizeof (struct header_udp) + cb));
+}
+
+#endif
 		
 
 /* ethernet_service

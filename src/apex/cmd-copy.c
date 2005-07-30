@@ -73,7 +73,7 @@ int cmd_copy (int argc, const char** argv)
   }
 
   if (   (result = parse_descriptor (argv[2], &dout))
-      || (result = open_descriptor (&din))) {
+      || (result = open_descriptor (&dout))) {
     printf ("Unable to open target %s\n", argv[2]);
     goto fail;
   }

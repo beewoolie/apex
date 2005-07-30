@@ -133,6 +133,9 @@ int cmd_ping (int argc, const char** argv)
   if (argc != 2)
     ERROR_RETURN (ERROR_PARAM, "target address required");
 
+  if (UNCONFIGURED_IP)
+    ERROR_RETURN (ERROR_FAILURE, "IP address not configured");
+
   result = getaddr (argv[1], ip_address);
 //  printf ("result %d  %d.%d.%d.%d\n", result,
 //	  ip_address[0], ip_address[1], ip_address[2], ip_address[3]);

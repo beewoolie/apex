@@ -45,18 +45,32 @@
      shall do is request the first block.  Let the next layer read
      data from the buffered data and wait for the whole block to be
      consumed before acknowledging that the block was received.  
-   o Performance may be improved by caching one or more data blocks
-     and allowing there to be a sliding window of available data.
-     This could, potentially, allow for a reasonable overlap of
-     requests and processing.  Especially if APEX is performing some
-     sort of transformation on the data, e.g. checksum or writing to
+
+   o Performance may be improved by caching  data blocks and allowing
+     there to be a sliding window of available data.  This could,
+     potentially, allow for a reasonable overlap of requests and
+     processing.  Especially if APEX is performing some sort of
+     transformation on the data, e.g. checksum or writing to 
      flash.  For transfers to memory, there is probably little to be
      gained with a sliding window.  However, this driver doesn't know
      how the data will be used.
+
+     The throughput on the 79520 target as compared to a fast x86
+     notbook is noticeable.  It is possible that we'll get something
+     from a faster turnaround and overlapped acks.  As this isn't a
+     serious proble, considering the way that tftp is used, I'll leave
+     it as is.
+
    o We need to select a random port number.  We need to see if there
      is some place where we can sample semi-random data.  At least so
      that we have a chance to detect out-dated connections.  Or, we
      can let this be a problem for the udp layer.
+
+   o Error packets.  We don't ever send or interpret error packets.
+     These are valid in several instances, but the timeouts make them
+     an optional.  Note that the protocol doesn't consider them
+     optional, but because error packets may be lost, there is no way
+     to know if this client is compliant.
 
 */
 
@@ -75,7 +89,7 @@
 #include <network.h>
 #include <ethernet.h>
 
-//#define TALK 1
+//#define TALK 2
 
 #if TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
@@ -85,17 +99,20 @@
 
 #define DRIVER_NAME	"tftp"
 
-#define MS_TIMEOUT	(5*1000)
+#define MS_TIMEOUT	(1*1000)
+#define RETRIES_MAX	10
 
 #define BLOCK_LENGTH	(512)
 #define BLOCKS_CACHED	(4)	/* Number of blocks in the cache */
 
 enum {
   stateIdle = 0,
-  stateWaiting,
+  stateOpenWaiting,
   stateBlockAvailable,
   stateAck,
+  stateWaiting,
   stateBlockFinal,
+  stateError,
 };
 
 struct tftp_info {
@@ -110,6 +127,7 @@ struct tftp_info {
   size_t cbRec; 		/* count of bytes received */
   unsigned char rgb[BLOCK_LENGTH*BLOCKS_CACHED];
   struct ethernet_frame* frame;
+  int cRetries;			/* Number of re-acks */
 };
 
 struct tftp_info tftp;
@@ -143,10 +161,29 @@ static int tftp_receiver (struct descriptor_d* d,
       || htons (UDP_F (frame)->destination_port) != info->source_port)
     return 0;
 
+#if defined (CONFIG_UDP_CHECKSUM)
+  if (udp_checksum_verify (frame)) {
+    printf ("checksum failed\n");
+    return 1;			/* Discard */
+  }
+#endif
+
   opcode = htons (TFTP_F (frame)->opcode);
 
   if (opcode == TFTP_DATA && info->blockRec == 0)
     info->destination_port = htons (UDP_F (frame)->source_port);
+
+#if 0
+  {
+    static int c;
+    /* Code to test dropping of packets */
+    if ((c++ % 25) == 0) {
+    /* Drop every 25th packet */
+    //    printf ("drop\n");
+      return 0;
+    }
+  }
+#endif
 
   switch (opcode) {
   case TFTP_DATA:
@@ -160,12 +197,13 @@ static int tftp_receiver (struct descriptor_d* d,
 
     cb = htons (UDP_F (frame)->length) - sizeof (struct header_udp) 
       - sizeof (struct message_tftp) - 2;
-    DBG (1,"received %d bytes  block %d\n", cb, info->blockRec + 1);
     memcpy (&info->rgb[info->cbRec % sizeof (info->rgb)], 
 	    TFTP_F (frame)->data + 2, cb);
     ++info->blockRec;
     info->cbRec += cb;
-    tftp.state = (cb == 512 ? stateBlockAvailable : stateBlockFinal);
+    info->state = (cb == 512 ? stateBlockAvailable : stateBlockFinal);
+    DBG (1,"received %d of %d bytes  block %d (%d)\n", 
+	 cb, info->cbRec, info->blockRec, info->state);
     break;
   default:
     DBG (1,"tftp response opcode %d\n", opcode);
@@ -190,7 +228,7 @@ static int ping_terminate (void* pv)
     = (struct ethernet_timeout_context*) pv;
 
   /* *** FIXME: ouch */
-  if (tftp.state != stateWaiting)
+  if (tftp.state != stateOpenWaiting && tftp.state != stateWaiting)
     return 1;
 
   if (!context->time_start)
@@ -230,9 +268,10 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
       }
 
       tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
-      tftp.state = stateWaiting;
+      tftp.state = stateOpenWaiting;
       break;
 
+    case stateOpenWaiting:
     case stateWaiting:
       {
 	struct ethernet_timeout_context timeout;
@@ -244,13 +283,22 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	/* *** need to check that we received a block, otherwise, the
 	   connection cannot be initiated */
 
-	if (tftp.state != stateBlockAvailable)
+	if (result < 0) {	/* Timeout */
+	  if (++tftp.cRetries >= RETRIES_MAX) {
+	    tftp.state = stateError;
+	    goto quit;
+	  }
+	  if (tftp.state == stateOpenWaiting)
+	    tftp.state = stateIdle;
+	  else
+	    tftp.state = stateAck;
+	  break;
+	}
+
+	if (   tftp.state != stateBlockAvailable 
+	    && tftp.state != stateBlockFinal)
 	  goto quit;		/* Terminate, probably no such file */
 
-	if (result < 0) {		/* *** FIXME: more protocol here */
-	  tftp.state = stateAck;
-	  goto quit;
-	}
       }
       break;
 
@@ -309,6 +357,9 @@ static int tftp_open (struct descriptor_d* d)
 
   DBG (2,"%s: d->c %d d->iRoot %d '%s' '%s'\n", 
 	  __FUNCTION__, d->c, d->iRoot, d->pb[0], d->pb[1]);
+
+  if (UNCONFIGURED_IP)
+    ERROR_RETURN (ERROR_FAILURE, "IP address not configured");
 
   if (d->c != 2)
     ERROR_RETURN (ERROR_FILENOTFOUND, "invalid path"); 

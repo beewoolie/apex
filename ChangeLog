@@ -1,3 +1,12 @@
+2005-07-29  Marc Singer  <elf@buici.com>
+
+	* src/net/tftp.c: fixed the tftp state machine and tested that
+	retries work correctly.   it seems to be stable and reliable in
+	light of packet losses.
+
+	* src/apex/cmd-copy.c (cmd_copy): Fixed a long-standing bug in the
+	copy command where the din descriptor was being opened twice.
+	
 2005-07-28  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-smc91x.c: Implemented smc91x driver which is

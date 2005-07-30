@@ -58,6 +58,7 @@ void ethernet_frame_release (struct ethernet_frame*);
 int ethernet_service (struct descriptor_d*, int (*) (void*), void*);
 
 void udp_setup (struct ethernet_frame*, const char*, u16, u16, size_t);
+int udp_checksum_verify (struct ethernet_frame* frame);
 
 int ethernet_timeout (void*);
 
