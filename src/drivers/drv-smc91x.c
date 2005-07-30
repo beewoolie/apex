@@ -155,7 +155,7 @@
 
 #define  C_RX_BUFFER		 4
 #define CB_RX_BUFFER		 (1536 + 6)
-#define ETH_BSS		__attribute__((section(".ethernet.bss"))) 
+#define ETH_BSS			__attribute__((section(".ethernet.bss"))) 
 
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
@@ -508,10 +508,8 @@ static void smc91x_receive (void)
   u16 length;
   int save;
 
-//  ENTRY;
-
   select_bank (2);
-  while (((v = read_reg (SMC_FIFO)) & SMC_FIFO_REMPTY) != 0) {
+  while (((v = read_reg (SMC_FIFO)) & SMC_FIFO_REMPTY) == 0) {
     write_reg (SMC_PTR, SMC_PTR_READ | SMC_PTR_AUTO_INCR | SMC_PTR_RCV);
     
     status = read_reg (SMC_DATAL);
@@ -614,7 +612,7 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
   write_reg (SMC_MMUCR, SMC_MMUCR_ENQUEUE);
   clear_interrupt (SMC_INT_TX_EMPTY_INT);
 
-  while (!(read_reg (SMC_INTERRUPT) & SMC_INT_TX_EMPTY_INT))
+  while (!(read_reg (SMC_FIFO) & SMC_FIFO_TEMPTY))
     ;
   
   return cb;
