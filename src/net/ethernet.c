@@ -88,6 +88,7 @@ struct arp_entry {
 };
 
 char host_ip_address[4];
+char server_ip_address[4];	/* Address of server that helped us along */
 char gw_ip_address[4];
 char host_mac_address[6];
 const char szNetDriver[] = "eth:";

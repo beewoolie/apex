@@ -1,8 +1,8 @@
-/* rarp.c
+/* ipconfig.c
      $Id$
 
    written by Marc Singer
-   7 Jul 2005
+   1 Aug 2005
 
    Copyright (C) 2005 Marc Singer
 
@@ -25,15 +25,14 @@
    DESCRIPTION
    -----------
 
-   Implementation of rarp autoconfiguration protocol.
-
+   IP configuration, either manual or by network protocol.
+   
 */
 
 #include <config.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-//#include <linux/ctype.h>
 #include <apex.h>
 #include <command.h>
 #include <driver.h>
@@ -52,22 +51,69 @@
 # define DBG(l,f...)		do {} while (0)
 #endif
 
+
+extern char host_ip_address[];
+extern char server_ip_address[];
+extern char gw_ip_address[];
+extern char host_mac_address[];
+
 #define TRIES_MAX	4
 #define MS_TIMEOUT	(1*1000)
 
 
-/* autoconf_terminate
+static void set_aliases (void)
+{
+#if defined (CONFIG_CMD_ALIAS)
+  char sz[80];
+  sprintf (sz, "%d.%d.%d.%d", 
+	   host_ip_address[0], host_ip_address[1], 
+	   host_ip_address[2], host_ip_address[3]);
+  alias_set ("hostip", sz);
+  sprintf (sz, "%d.%d.%d.%d", 
+	   server_ip_address[0], server_ip_address[1], 
+	   server_ip_address[2], server_ip_address[3]);
+  alias_set ("serverip", sz);
+  sprintf (sz, "%d.%d.%d.%d", 
+	   gw_ip_address[0], gw_ip_address[1], 
+	   gw_ip_address[2], gw_ip_address[3]);
+  alias_set ("gatewayip", sz);
+#endif
+}
+
+static void show_ip_config (void)
+{
+  if (UNCONFIGURED_IP)
+    printf ("IP unconfigured\n");
+  else {
+    printf ("hostip %d.%d.%d.%d\n",
+	    host_ip_address[0], host_ip_address[1], 
+	    host_ip_address[2], host_ip_address[3]);
+    if (server_ip_address[0])
+      printf ("serverip %d.%d.%d.%d\n",
+	      server_ip_address[0], server_ip_address[1], 
+	      server_ip_address[2], server_ip_address[3]);
+    if (gw_ip_address[0])
+      printf ("gatewayip %d.%d.%d.%d\n",
+	      gw_ip_address[0], gw_ip_address[1], 
+	      gw_ip_address[2], gw_ip_address[3]);
+  }
+}
+
+
+/* ipconfig_terminate
 
    is the function used by ethernet_service() to deterine when to
    terminate the loop.  It return zero when the loop can continue, -1
-   on timeout, and 1 when the configuration is complete.
+   on timeout, and 1 when the configuration is complete.  -2 on user
+   abort.
 
 */
 
-static int autoconf_terminate (void* pv)
+static int ipconfig_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
+  extern struct driver_d* console_driver;
 
   if (!context->time_start)
     context->time_start = timer_read ();
@@ -77,10 +123,18 @@ static int autoconf_terminate (void* pv)
   if (!UNCONFIGURED_IP)
     return 1;
 
+  if (console_driver->poll (0, 1)) {
+    char ch;
+    console_driver->read (0, &ch, 1);
+    return -2;
+  }
+
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
     ? 0 : -1;
 }
 
+
+#if defined CONFIG_CMD_IPCONFIG_RARP
 
 /* rarp_receiver
 
@@ -88,12 +142,10 @@ static int autoconf_terminate (void* pv)
 
 */
 
-int rarp_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
-		   void* context)
+static int rarp_receiver (struct descriptor_d* d, 
+			  struct ethernet_frame* frame, 
+			  void* context)
 {
-  extern char host_ip_address[]; /* *** FIXME: please? */
-  extern char host_mac_address[];
-
 #if 0
   printf ("%s len %d %d proto %x %x (%d %d)\n", __FUNCTION__, frame->cb, 
 	  sizeof (struct header_ethernet) + sizeof (struct header_arp),
@@ -128,20 +180,9 @@ int rarp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
     arp_cache_update (ARP_F (frame)->sender_hardware_address,
 		      ARP_F (frame)->sender_protocol_address, 
 		      1);
-    /* *** FIXME: this should be done in the ethernet code since we'll
-       *** be configuring in different ways */
-#if defined (CONFIG_CMD_ALIAS)
-    {
-      char sz[80];
-      unsigned char* p = ARP_F (frame)->sender_protocol_address;
-      sprintf (sz, "%d.%d.%d.%d", 
-	       host_ip_address[0], host_ip_address[1], 
-	       host_ip_address[2], host_ip_address[3]);
-      alias_set ("hostip", sz);
-      sprintf (sz, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-      alias_set ("serverip", sz);
-    }
-#endif
+    memcpy (server_ip_address, ARP_F (frame)->sender_protocol_address, 4);
+    memcpy (gw_ip_address, ARP_F (frame)->sender_protocol_address, 4);
+    set_aliases ();
     break;
   }
 
@@ -149,7 +190,7 @@ int rarp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 }
 
 
-int cmd_rarp (int argc, const char** argv)
+int cmd_ipconfig_rarp (int argc, const char** argv)
 {
   struct descriptor_d d;
   int result;
@@ -201,24 +242,18 @@ int cmd_rarp (int argc, const char** argv)
 
     memset (&timeout, 0, sizeof (timeout));
     timeout.ms_timeout = MS_TIMEOUT;
-    result = ethernet_service (&d, autoconf_terminate, &timeout);
+    result = ethernet_service (&d, ipconfig_terminate, &timeout);
 
-    /* result == 1 on success, -1 on timeout  */
+    /* result == 1 on success, -1 on timeout, -2 on user abort  */
   } while (result <= 0 && tries < TRIES_MAX);
 
   unregister_ethernet_receiver (rarp_receiver, NULL);
 
+  printf ("\r");
   if (UNCONFIGURED_IP)
-    printf ("\rRARP failed\n");
-
-#if defined (CONFIG_CMD_ALIAS)
-  else {
-    const char* sz = alias_lookup ("hostip");
-    printf ("\rhostip %s\n", sz);
-    sz = alias_lookup ("serverip");
-    printf("serverip %s\n", sz);
-  }
-#endif
+    printf ("RARP failed\n");
+  else
+    show_ip_config ();
 
   ethernet_frame_release (frame);
 
@@ -226,12 +261,98 @@ int cmd_rarp (int argc, const char** argv)
   return 0;
 }
 
-static __command struct command_d c_rarp = {
-  .command = "rarp",
-  .description = "rarp autoconfiguration protocol",
-  .func = cmd_rarp,
+#endif
+
+int cmd_ipconfig (int argc, const char** argv)
+{
+  int result;
+
+  if (argc == 1) {
+    goto show;
+  alreadyconfig:
+    printf ("IP already configured\n");
+  show:
+    show_ip_config ();
+    return 0;
+  }
+
+  if (argc >= 2) {
+    if (strcmp (argv[1], "clear") == 0) {
+      memset (host_ip_address, 0, 4);
+      memset (server_ip_address, 0, 4);
+      memset (gw_ip_address, 0, 4);
+#if defined (CONFIG_CMD_ALIAS)
+      alias_unset ("hostip");
+      alias_unset ("serverip");
+      alias_unset ("gatewayip");
+#endif      
+      goto done;
+    }
+
+#if defined (CONFIG_CMD_IPCONFIG_RARP) 
+    if (strcmp (argv[1], "rarp") == 0) {
+      if (!UNCONFIGURED_IP)
+	goto alreadyconfig;
+      return cmd_ipconfig_rarp (argc, argv);
+    }
+#endif
+#if defined (CONFIG_CMD_IPCONFIG_BOOTP) 
+    if (strcmp (argv[1], "bootp") == 0) {
+      if (!UNCONFIGURED_IP)
+	goto alreadyconfig;
+      return cmd_ipconfig_bootp (argc, argv);
+    }
+#endif
+#if defined (CONFIG_CMD_IPCONFIG_DHCP) 
+    if (strcmp (argv[1], "dhcp") == 0) {
+      if (!UNCONFIGURED_IP)
+	goto alreadyconfig;
+      return cmd_ipconfig_dhcp (argc, argv);
+    }
+#endif
+
+#if defined (CONFIG_CMD_IPCONFIG_STATIC)
+    result = getaddr (argv[1], host_ip_address);
+    if (!result) {
+      set_aliases ();
+      goto show;
+    }
+#endif
+
+    ERROR_RETURN (ERROR_PARAM, "unrecognized sub-command");
+  }
+
+ done:
+  return 0;
+}
+
+
+static __command struct command_d c_ipconfig = {
+  .command = "ipconfig",
+  .description = "IP configuration",
+  .func = cmd_ipconfig,
   COMMAND_HELP(
-"rarp\n"
-"  Configure the host IP address using RARP.\n"
+"ipconfig OPTIONS\n"
+"  Configure the host IP address.  With no arguments, it shows the\n"
+"  current IP configuration.\n"
+"    ipconfig clear\n"
+"      Reset the IP configuration.\n"
+#if defined CONFIG_CMD_IPCONFIG_STATIC
+"    ipconfig IPADDRESS\n"
+//"    ipconfig IPADDRESS/PREFIX GATEWAY\n"
+"      Manually configure the IP address.\n"
+#endif
+#if defined CONFIG_CMD_IPCONFIG_RARP
+"    ipconfig rarp\n"
+"      Configure using the RARP protocol.\n"
+#endif
+#if defined CONFIG_CMD_IPCONFIG_BOOTP
+"    ipconfig bootp\n"
+"      Configure using the BOOTP protocol.\n"
+#endif
+#if defined CONFIG_CMD_IPCONFIG_DHCP
+"    ipconfig dhcp\n"
+"      Configure using the DHCP protocol.\n"
+#endif
   )
 };

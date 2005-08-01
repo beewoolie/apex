@@ -10,6 +10,46 @@ config ETHERNET
 	  This options enabled the Ethernet network stack, protocols
 	  and commands. 
 
+config CMD_IPCONFIG
+	bool "IP configuration command"
+	depends ETHERNET
+	default y
+	help
+	  This command provides a user interface to the IP address
+	  configuration methods.
+
+config CMD_IPCONFIG_STATIC
+	bool "Static method"
+	depends CMD_IPCONFIG
+	default y
+	help
+	  This method allows for manual configuration of the IP
+	  address and gateway.
+
+config CMD_IPCONFIG_RARP
+	bool "RARP method"
+	depends CMD_IPCONFIG
+	default y
+	help
+	  This method configures the IP address using the RARP
+	  protocol.
+
+config CMD_IPCONFIG_BOOTP
+	bool "BOOTP method"
+	depends CMD_IPCONFIG
+	default n
+	help
+	  This method configures the IP address using the BOOTP
+	  protocol.
+
+config CMD_IPCONFIG_DHCP
+	bool "DHCP method"
+	depends CMD_IPCONFIG
+	default n
+	help
+	  This method configures the IP address using the DHCP
+	  protocol.
+
 config PROTO_ICMP_ECHO
 	bool "ICMP Echo (Ping) Handler"
 	depends ETHERNET
@@ -35,14 +75,6 @@ config CMD_ARP
 	help
 	  This option adds an arp command for testing the ethernet
 	  interface.
-
-config CMD_RARP
-	bool "RARP Autoconfiguration Command"
-	depends ETHERNET
-	default y
-	help
-	  This protocol may be used to configure the Ethernet
-	  interface IP parameters.
 
 config CMD_TFTP
 	bool "TFTP File Transfer Command"

@@ -1,5 +1,8 @@
 2005-08-01  Marc Singer  <elf@buici.com>
 
+	* src/net/ipconfig.c (cmd_ipconfig): IP configuration via RARP or
+	manual configuration.
+
 	* src/mach-lh7952x/drv-emac.c (cmd_emac): Some grooming of the
 	diagnostic outputs.
 
