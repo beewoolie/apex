@@ -1103,6 +1103,7 @@ complete_release: tgz FORCE
 	svn cp -m "$(APEXRELEASE)" \
 	  file:///svn/tools/trunk/apex \
 	  file:///svn/tools/tags/apex/$(APEXRELEASE)
+	-(cd ~ftp/pub/apex ; rm LATEST_IS* ; touch LATEST_IS_$(APEXRELEASE) )
 
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
