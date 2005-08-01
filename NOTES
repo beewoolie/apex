@@ -5,6 +5,31 @@ APEX Boot Loader
 
 TODO:
 
+  o Interrupt key
+
+    o There are places, especially in the network code, where console
+      activity will cancel the operation.  Trouble is that we don't
+      want it to be overly sensitive.  It would be good to have some
+      defined keystrokes for for break and cancel.  ESC isn't a good
+      choice because we're like to be able to use arrows at some
+      point.  ^C is better. 
+    o We can probably get away with a Kconfig option and no UI to
+      change it.
+
+  o emac-lh79524
+    o Looks like there is a problem transmitting when packets are
+      received.
+    o Need to get a better picture of the network traffic.  ethereal
+      shows that tftp is fine in a full-duplex switch situation. 
+    o In half-duplex as I have, there are lots of problems 
+      transmitting when there is traffic on the wire.  Need to
+      instrument.
+    o BTW, the SMC91x has no problem with this.  In fact, as far as I
+      can tell it always handles retransmits flawlessly.
+    o Actually, the problem appears to be that the emac is easily
+      overwhelmed by packets when in promiscuous mode.  By eliminating
+      the CPYFRM bit, it seems to be stable with tftp receives.
+
   o Network traffic, continued
     o I've created an ethernet_service function with a user supplied
       termination function. 

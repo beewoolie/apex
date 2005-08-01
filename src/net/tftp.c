@@ -113,6 +113,7 @@ enum {
   stateWaiting,
   stateBlockFinal,
   stateError,
+  stateAbort,
 };
 
 struct tftp_info {
@@ -226,6 +227,7 @@ static int ping_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
+  extern struct driver_d* console_driver;
 
   /* *** FIXME: ouch */
   if (tftp.state != stateOpenWaiting && tftp.state != stateWaiting)
@@ -234,10 +236,15 @@ static int ping_terminate (void* pv)
   if (!context->time_start)
     context->time_start = timer_read ();
 
+  if (console_driver->poll (0, 1)) {
+    char ch;
+    console_driver->read (0, &ch, 1);
+    return -2;			/* Not really a timeout */
+  }
+
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
     ? 0 : -1;
 }
-
 
 static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 {
@@ -277,13 +284,21 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	struct ethernet_timeout_context timeout;
 
 	memset (&timeout, 0, sizeof (timeout));
+	timeout.time_start = 0;
 	timeout.ms_timeout = MS_TIMEOUT;
 	result = ethernet_service (&tftp.d, ping_terminate, &timeout);
 
 	/* *** need to check that we received a block, otherwise, the
 	   connection cannot be initiated */
 
+	if (result == -2) {
+	  tftp.state = stateAbort;
+	  goto quit;
+	}
+
 	if (result < 0) {	/* Timeout */
+
+//	  printf ("tftp timeout\n");
 	  if (++tftp.cRetries >= RETRIES_MAX) {
 	    tftp.state = stateError;
 	    goto quit;
@@ -333,6 +348,9 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
       tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
       tftp.state = stateWaiting;
       break;
+
+    case stateAbort:
+      goto quit;
     }
   }
 

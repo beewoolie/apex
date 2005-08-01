@@ -1,3 +1,14 @@
+2005-08-01  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c (cmd_emac): Some grooming of the
+	diagnostic outputs.
+
+	* src/net/tftp.c (ping_terminate): Fixed abort of tftp by
+	keystroke.
+
+	* src/mach-lh7952x/drv-emac.c (eth_read): Check for buffer looping
+	on read.  This is untested.
+
 2005-07-29  Marc Singer  <elf@buici.com>
 
 	* src/net/tftp.c: fixed the tftp state machine and tested that

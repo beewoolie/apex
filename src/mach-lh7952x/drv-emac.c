@@ -104,6 +104,25 @@
   still be initialized and the MAC address read from EEPROM if it is
   already there.
 
+  EMAC_NETCONFIG_CPYFRM & Promiscuous Mode
+  ----------------------------------------
+  
+  The receive code is written to discard frames that don't have either
+  the broadcast or the specific address bits set.  By default, the
+  EMAC has the CPYFRM bit set which means that all frames will be
+  received.  It should all work OK, except for the fact that the CPU
+  isn't fast enough to receive all frames on the wire on an unswitched
+  segment.  So, what happens is the EMAC fails to receive anything
+  interesting, the buffer fill, and it spends most of it's time
+  discarding uninteresting frames.
+
+  The good thing is that once CPYFRM is cleared, the MAC appears to
+  work OK on the unswitched link.  TFTP works as does RARP.
+
+  One side effect of disabling the CPYFRM bit is that there seems to
+  be an unresolved error in the receiver code where the receiver can
+  lock up.
+
 */
 
 
@@ -396,7 +415,6 @@ static void emac_setup (void)
   int i;
 
   for (i = 0; i < C_RX_BUFFER; ++i) {
-    /* RX */
     rgl_rx_descriptor[i*2]    = ((unsigned long)(rgbRxBuffer + i*CB_RX_BUFFER) 
 			      & ~3)
       | ((i == C_RX_BUFFER - 1) ? (1<<1) : 0);
@@ -425,8 +443,14 @@ static void emac_setup (void)
   EMAC_NETCONFIG |= 0
     //    | EMAC_NETCONFIG_FULLDUPLEX
     //    | EMAC_NETCONFIG_100MB
-    | EMAC_NETCONFIG_CPYFRM
+//    | EMAC_NETCONFIG_CPYFRM
+    | EMAC_NETCONFIG_DISCARDFCS
+    | EMAC_NETCONFIG_RECBYTE
+    | EMAC_NETCONFIG_LENGTHCHK
     ;
+  EMAC_NETCONFIG &= ~(EMAC_NETCONFIG_CPYFRM);
+
+//  printf ("netconfig %x\n", EMAC_NETCONFIG);
 //  EMAC_NETCONFIG |= EMAC_NETCONFIG_RECBYTE;
   EMAC_NETCTL |= 0
     | EMAC_NETCTL_RXEN
@@ -734,26 +758,26 @@ static int cmd_emac (int argc, const char** argv)
       PRINTF ("emac_rxbqp 0x%lx\n", EMAC_RXBQP);
 
       for (i = 0; i < TX_QUEUE_LENGTH; ++i) {
-	printf ("emac:tx%02d & %p 0 0x%lx  1 0x%lx", 
+	printf ("emac:tx%02d & %p (0x%08lx 0x%08lx)", 
 		i, &rgl_tx_descriptor[i*2], 
 		rgl_tx_descriptor[i*2 + 0], 
 		rgl_tx_descriptor[i*2 + 1]);
 	show_tx_flags (rgl_tx_descriptor[i*2 + 1]);
 	if (i == head_tx)
-	  printf (" head");
+	  printf (" HEAD");
 	if (i == tail_tx)
-	  printf (" tail");
+	  printf (" TAIL");
 	if (i == ((void*)EMAC_TXBQP - (void*) rgl_tx_descriptor)/8)
 	  printf  (" *");
 	printf ("\n");
       }
       for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
-	printf ("emac:rx%02d & %p 0 0x%lx  1 0x%lx", 
+	printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
 		i, &rgl_rx_descriptor[i*2], 
 		rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	if (i == head_rx)
-	  printf (" head");
+	  printf (" HEAD");
 	if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
 	  printf  (" *");
 	printf ("\n");
@@ -877,22 +901,67 @@ static int eth_open (struct descriptor_d* d)
 
 static void eth_clean_rx_queue (void)
 {
-  int i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
+  int i;
+  //  int c = 0;
+  EMAC_NETCTL &= ~EMAC_NETCTL_RXEN;
+
+  i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
+  
+  //  printf ("!");
+
+#if 0
+  printf ("\n");
+  for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
+    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
+	    i, &rgl_rx_descriptor[i*2], 
+	    rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+    show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+    if (i == head_rx)
+      printf (" HEAD");
+    if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
+      printf  (" *");
+    printf ("\n");
+  }
+#endif
 
   if (RX0_ (-1) & RX0_USED)
-    DBG (1, "+++ receive queue full on clean\n");
+    DBG(0, "+++ receive queue full on clean\n");
 
   if (!(RX0__ (i) & RX0_USED)) {
-    DBG (1, "  *** used bit false alarm #%d\n", i);
-    return;
+    DBG(0, "  *** used bit false alarm #%d\n", i);
+    goto done;
   }
   do {
-    DBG (1, "  *** clean rx queue #%d %8lx %8lx\n",
+    DBG(0, "  *** clean rx queue #%d %8lx %8lx\n",
 	 i, RX0__ (i), RX1__ (i));
-//    rgl_rx_descriptor[i*2 + 1] = 0;
+    rgl_rx_descriptor[i*2 + 1] = 0;
     rgl_rx_descriptor[i*2]    &= ~RX0_USED;
+//    ++c;
     i = (i + 1) % RX_QUEUE_LENGTH;
   } while (i != head_rx && (rgl_rx_descriptor[i*2] & RX0_USED));
+
+ done:
+//  printf ("(%d)", c);
+
+#if 0
+  if (c == 0) {
+    printf ("\n");
+    for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
+      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
+	      i, &rgl_rx_descriptor[i*2], 
+	      rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+      show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+      if (i == head_rx)
+	printf (" HEAD");
+      if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
+	printf  (" *");
+      printf ("\n");
+    }
+  }
+#endif
+
+  EMAC_RXSTATUS = EMAC_RXSTATUS_BUFNOTAVAIL;
+  EMAC_NETCTL |= EMAC_NETCTL_RXEN;
 }
 
 static inline void eth_clean_tx_queue (void)
@@ -940,7 +1009,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
     eth_clean_rx_queue ();
 
  restart:
-  if (!(RX0 () & RX0_USED))	/* End of  receive */
+  if (!(RX0 () & RX0_USED))	/* End of receive */
     return 0;
 
   DBG (2,"%s: frame received (%d)\n", __FUNCTION__, head_rx);
@@ -973,7 +1042,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
     DBG (3, "  #%d(%d) %lx %lx\n", i, head_rx, 
 	 rgl_rx_descriptor[i*2], rgl_rx_descriptor[i*2 + 1]);
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_START) 
-	&& i != head_rx) 
+	&& (i != head_rx || c)) 
       goto cleanup;		/* incomplete frame */
     ++c;
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_END) == 0)
@@ -1021,8 +1090,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   /* *** FIXME: account errors? */
   EMAC_RXSTATUS
     = EMAC_RXSTATUS_RXCOVERRUN
-    | EMAC_RXSTATUS_FRMREC
-    | EMAC_RXSTATUS_BUFNOTAVAIL;
+    | EMAC_RXSTATUS_FRMREC;
 
   return frame_len;
 }
@@ -1087,3 +1155,40 @@ static __service_6 struct service_d lh7952x_emac_service = {
   .report = emac_report,
 #endif
 };
+
+#if 0
+void eth_diag (int mode)
+{
+  int i;
+//  long rgl[2*C_RX_BUFFER];
+
+  switch (mode) {
+  default:
+  case 0:
+    for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
+      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
+	      i, &rgl_rx_descriptor[i*2], 
+	      rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+      show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+      if (i == head_rx)
+	printf (" HEAD");
+      if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
+	printf  (" *");
+      printf ("\n");
+    }
+    break;
+  case 1:
+    i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
+    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
+	    i, &rgl_rx_descriptor[i*2], 
+	    rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+    show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
+    if (i == head_rx)
+      printf (" HEAD");
+    if (i == ((void*)EMAC_RXBQP - (void*) rgl_rx_descriptor)/8)
+      printf  (" *");
+    printf ("\n");
+    break;
+  }
+}
+#endif

@@ -397,6 +397,8 @@
 
 #define EMAC_NETCONFIG_IGNORE	(1<<19)
 #define EMAC_NETCONFIG_ENFRM	(1<<18)
+#define EMAC_NETCONFIG_DISCARDFCS (1<<17)
+#define EMAC_NETCONFIG_LENGTHCHK (1<<16)
 #define EMAC_NETCONFIG_RECBYTE	(1<<8) /* Large frames */
 #define EMAC_NETCONFIG_CPYFRM	(1<<4) /* Promiscuous mode */
 #define EMAC_NETCONFIG_FULLDUPLEX (1<<1) /* Force full-duplex */

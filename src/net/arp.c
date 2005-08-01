@@ -51,6 +51,8 @@
 # define DBG(l,f...)		do {} while (0)
 #endif
 
+//extern void eth_diag (int);
+
 int console_terminate (void* pv)
 {
   extern struct driver_d* console_driver;
@@ -58,6 +60,10 @@ int console_terminate (void* pv)
 
   if (console_driver->poll (0, 1)) {
     console_driver->read (0, &ch, 1);
+//    if (ch == '0') {
+//      eth_diag (0);
+//      return 0;
+//    }
     return 1;
   }
   return 0;
