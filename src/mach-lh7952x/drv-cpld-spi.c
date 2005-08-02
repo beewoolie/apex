@@ -25,8 +25,9 @@
    DESCRIPTION
    -----------
 
-   SPI driver for CPLD connected devices.  For the time being, this is
-   a pair of EEPROMS.
+   SPI driver for CPLD connected devices.  The LPD79524 has only a
+   pair of AT93C46 EEPROMS and the audio codec.  The LPD79520 has one
+   EEPROM, a touch screen controller, and the audio codec.
 
 */
 
@@ -34,6 +35,14 @@
 #include <apex.h>
 #include <driver.h>
 #include "hardware.h"
+
+#if defined (CONFIG_MACH_LPD79520)
+# define DRIVER_ARCH	"lpd79520"
+#endif
+
+#if defined (CONFIG_MACH_LPD79524)
+#define DRIVER_ARCH	"lpd79524"
+#endif
 
 /* *** FIXME: these timing values are substantially larger than the
    *** chip requires. We may implement an nsleep () function. */
@@ -202,7 +211,7 @@ static void spi_erase (struct descriptor_d* d, size_t cb)
 }
 
 static __driver_1 struct driver_d spi_eeprom_driver = {
-  .name = "eeprom-lpd79524",
+  .name = "eeprom-" DRIVER_ARCH,
   .description = "configuration EEPROM driver",
   .flags = DRIVER_PRIVATE (CPLD_SPI_CS_EEPROM),
   .open = spi_open,
@@ -213,8 +222,9 @@ static __driver_1 struct driver_d spi_eeprom_driver = {
   .seek = seek_helper,
 };
 
+#if defined (CONFIG_MACH_LPD79524)
 static __driver_1 struct driver_d spi_mac_driver = {
-  .name = "mac-lpd79524",
+  .name = "mac-" DRIVER_ARCH,
   .description = "mac EEPROM driver",
   .flags = DRIVER_PRIVATE (CPLD_SPI_CS_MAC),
   .open = spi_open,
@@ -224,5 +234,4 @@ static __driver_1 struct driver_d spi_mac_driver = {
   .erase = spi_erase,
   .seek = seek_helper,
 };
-
-
+#endif

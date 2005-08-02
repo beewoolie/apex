@@ -69,9 +69,11 @@
 #define PRINTF(f...)		do {} while (0)
 #endif
 
+#if defined (CONFIG_ARCH_LH79524)
+# define USE_CPU_MASTER
+# define USE_DMA
+#endif
 #define USE_I2S
-#define USE_CPU_MASTER
-#define USE_DMA
 //#define USE_DMA_CAP
 #define USE_16
 #define USE_STEREO
@@ -131,29 +133,31 @@
 #define SSP_SR_TNF	(1<<1)	/* Transmit FIFO not full */
 #define SSP_SR_TFE	(1<<0)	/* Transmit FIFO empty */
 
-#define I2S_CTRL	__REG(I2S_PHYS + 0x00)
-#define I2S_STAT	__REG(I2S_PHYS + 0x04)
-#define I2S_IMSC	__REG(I2S_PHYS + 0x08)
-#define I2S_RIS		__REG(I2S_PHYS + 0x0c)
-#define I2S_MIS		__REG(I2S_PHYS + 0x10)
-#define I2S_ICR		__REG(I2S_PHYS + 0x14)
+#if defined (CONFIG_ARCH_LH79524)
+# define I2S_CTRL	__REG(I2S_PHYS + 0x00)
+# define I2S_STAT	__REG(I2S_PHYS + 0x04)
+# define I2S_IMSC	__REG(I2S_PHYS + 0x08)
+# define I2S_RIS	__REG(I2S_PHYS + 0x0c)
+# define I2S_MIS	__REG(I2S_PHYS + 0x10)
+# define I2S_ICR	__REG(I2S_PHYS + 0x14)
 
-#define I2S_CTRL_LOOP	(1<<5)
-#define I2S_CTRL_MCLKINV (1<<4)
-#define I2S_CTRL_WSDEL	(1<<3)
-#define I2S_CTRL_WSINV	(1<<2)
-#define I2S_CTRL_I2SEN	(1<<1)
-#define I2S_CTRL_I2SEL	(1<<0)
+# define I2S_CTRL_LOOP	(1<<5)
+# define I2S_CTRL_MCLKINV (1<<4)
+# define I2S_CTRL_WSDEL	(1<<3)
+# define I2S_CTRL_WSINV	(1<<2)
+# define I2S_CTRL_I2SEN	(1<<1)
+# define I2S_CTRL_I2SEL	(1<<0)
 
-#define I2S_STAT_MS	(1<<8)
-#define I2S_STAT_RFF	(1<<7)
-#define I2S_STAT_RFE	(1<<6)	/* Receive FIFO not empty from SSP */
-#define I2S_STAT_TFF	(1<<5)
-#define I2S_STAT_TFE	(1<<4)	/* Transmit FIFO empty from SSP */
-#define I2S_STAT_TXWS	(1<<3)
-#define I2S_STAT_RXWS	(1<<2)
-#define I2S_STAT_WS	(1<<1)
-#define I2S_STAT_LBM	(1<<0)
+# define I2S_STAT_MS	(1<<8)
+# define I2S_STAT_RFF	(1<<7)
+# define I2S_STAT_RFE	(1<<6)	/* Receive FIFO not empty from SSP */
+# define I2S_STAT_TFF	(1<<5)
+# define I2S_STAT_TFE	(1<<4)	/* Transmit FIFO empty from SSP */
+# define I2S_STAT_TXWS	(1<<3)
+# define I2S_STAT_RXWS	(1<<2)
+# define I2S_STAT_WS	(1<<1)
+# define I2S_STAT_LBM	(1<<0)
+#endif
 
 #define CODEC_LIN_VOLUME	(0x0)
 #define CODEC_RIN_VOLUME	(0x1)
@@ -371,7 +375,7 @@ static void codec_init (void)
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
 
-#if defined (USE_I2S)
+#if defined (I2S_CTRL) && defined (USE_I2S)
   I2S_CTRL = 0;
 #endif
 
@@ -666,7 +670,7 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
   DMA1_CTRL |= (1<<0);		/* Enable TX DMA */
 
-#if defined (USE_I2S)
+#if defined (I2S_CTRL) && defined (USE_I2S)
   I2S_CTRL |= 0
     | I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
 #if defined (USE_LOOPBACK_I2S)

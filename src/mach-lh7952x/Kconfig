@@ -148,11 +148,19 @@ config CLCDC
 
 config CODEC
 	bool "Audio Codec"
-	depends on MACH_LPD79524
+	depends on MACH_LPD79520 || MACH_LPD79524
 	default n
 	help
 	  This driver includes commands to initialize and test the
 	  TI audio codec as well as the CPUs SSP module.
+
+config DRIVER_CPLD_SPI
+	bool "LPD7952x CPLD SPI devices"
+	depends on MACH_LPD79520 || MACH_LPD79524
+	default n
+	help
+	  This driver implemets EEPROM SPI driver for the LPD 7952x
+	  Card Engines.
 
 endmenu
 
@@ -167,9 +175,6 @@ config ARCH_LH79524
 	bool
 
 config MACH_LPD7952X
-	bool
-
-config DRIVER_CPLD_SPI
 	bool
 
 endif
