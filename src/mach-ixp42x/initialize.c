@@ -66,6 +66,12 @@
 #endif
 
 
+#if !defined (CONFIG_SMALL)
+int fSDRAMBoot;
+extern void target_report (void);
+#endif
+
+
 /* *** FIXME: sdram config constants should go here.  The Integrated
    Circuit Solution Inc IC42S16800 DRAM can do CAS2.  Later. */
 
@@ -250,6 +256,10 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     PUTC_LL ('n');
     _L(LED2);
 
+#if !defined (CONFIG_SMALL)
+    fSDRAMBoot = 1;
+#endif
+
     /* Non-boot mode */
     __asm volatile ("cmp %0, %1\n\t"
 		    "movls r0, #0\n\t"
@@ -407,4 +417,7 @@ static void target_release (void)
 static __service_0 struct service_d ixp42x_target_service = {
   .init    = target_init,
   .release = target_release,
+#if !defined (CONFIG_SMALL)
+  .report = target_report,
+#endif
 };

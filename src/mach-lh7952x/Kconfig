@@ -148,7 +148,15 @@ config CLCDC
 
 config CODEC
 	bool "Audio Codec"
-	depends on MACH_LPD79520 || MACH_LPD79524
+	depends on MACH_LPD79524
+	default n
+	help
+	  This driver includes commands to initialize and test the
+	  TI audio codec as well as the CPUs SSP module.
+
+config CODEC_LH79520
+	bool "Audio Codec"
+	depends on MACH_LPD79520
 	default n
 	help
 	  This driver includes commands to initialize and test the

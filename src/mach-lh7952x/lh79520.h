@@ -94,6 +94,7 @@
 
 #define IOCON_PHYS	0xfffe5000
 #define IOCON_MEMMUX	__REG (IOCON_PHYS + 0x00)
+#define IOCON_DMAMUX	__REG (IOCON_PHYS + 0x0c)
 #define IOCON_UARTMUX	__REG (IOCON_PHYS + 0x10)
 
 #define SMC_PHYS	0xffff1000
@@ -141,5 +142,51 @@
 #define UART1_PHYS	(UART_PHYS + 0x1000)
 #define UART2_PHYS	(UART_PHYS + 0x2000)
 #define UART		(UART1_PHYS)
+
+#define DMA_PHYS	(0xfffe1000)
+#define DMA0_PHYS	(0xfffe1000)
+#define DMA1_PHYS	(0xfffe1040)
+#define DMA2_PHYS	(0xfffe1080)
+#define DMA3_PHYS	(0xfffe10c0)
+
+#define DMA_SOURCELO(c)	__REG(DMA_PHYS + (c)*0x40 + 0x00)
+#define DMA_SOURCEHI(c)	__REG(DMA_PHYS + (c)*0x40 + 0x04)
+#define DMA_DESTLO(c)	__REG(DMA_PHYS + (c)*0x40 + 0x08)
+#define DMA_DESTHI(c)	__REG(DMA_PHYS + (c)*0x40 + 0x0c)
+#define DMA_MAX(c)	__REG(DMA_PHYS + (c)*0x40 + 0x10)
+#define DMA_CTRL(c)	__REG(DMA_PHYS + (c)*0x40 + 0x14)
+#define DMA_CURSLO(c)	__REG(DMA_PHYS + (c)*0x40 + 0x18)
+#define DMA_CURSHI(c)	__REG(DMA_PHYS + (c)*0x40 + 0x1c)
+#define DMA_CURDLO(c)	__REG(DMA_PHYS + (c)*0x40 + 0x20)
+#define DMA_CURDHI(c)	__REG(DMA_PHYS + (c)*0x40 + 0x24)
+#define DMA_TCNT(c)	__REG(DMA_PHYS + (c)*0x40 + 0x28)
+
+#define DMA0_SOURCELO	__REG(DMA0_PHYS + 0x00)
+#define DMA0_SOURCEHI	__REG(DMA0_PHYS + 0x04)
+#define DMA0_DESTLO	__REG(DMA0_PHYS + 0x08)
+#define DMA0_DESTHI	__REG(DMA0_PHYS + 0x0c)
+#define DMA0_MAX	__REG(DMA0_PHYS + 0x10)
+#define DMA0_CTRL	__REG(DMA0_PHYS + 0x14)
+#define DMA0_CURSLO	__REG(DMA0_PHYS + 0x18)
+#define DMA0_CURSHI	__REG(DMA0_PHYS + 0x1c)
+#define DMA0_CURDLO	__REG(DMA0_PHYS + 0x20)
+#define DMA0_CURDHI	__REG(DMA0_PHYS + 0x24)
+#define DMA0_TCNT	__REG(DMA0_PHYS + 0x28)
+
+#define DMA1_SOURCELO	__REG(DMA1_PHYS + 0x00)
+#define DMA1_SOURCEHI	__REG(DMA1_PHYS + 0x04)
+#define DMA1_DESTLO	__REG(DMA1_PHYS + 0x08)
+#define DMA1_DESTHI	__REG(DMA1_PHYS + 0x0c)
+#define DMA1_MAX	__REG(DMA1_PHYS + 0x10)
+#define DMA1_CTRL	__REG(DMA1_PHYS + 0x14)
+#define DMA1_CURSLO	__REG(DMA1_PHYS + 0x18)
+#define DMA1_CURSHI	__REG(DMA1_PHYS + 0x1c)
+#define DMA1_CURDLO	__REG(DMA1_PHYS + 0x20)
+#define DMA1_CURDHI	__REG(DMA1_PHYS + 0x24)
+#define DMA1_TCNT	__REG(DMA1_PHYS + 0x28)
+
+#define DMA_MASK	__REG(DMA_PHYS + 0xf0)
+#define DMA_CLR		__REG(DMA_PHYS + 0xf4)
+#define DMA_STATUS	__REG(DMA_PHYS + 0xf8)
 
 #endif  /* __LH79520_H__ */

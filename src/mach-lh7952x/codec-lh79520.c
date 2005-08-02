@@ -1,4 +1,4 @@
-/* codec.c
+/* codec-lh79520.c
      $Id$
 
    written by Marc Singer
@@ -24,6 +24,15 @@
    -----------
    DESCRIPTION
    -----------
+
+   *** This is a hacked version of the original codec for the lh79524.
+   *** As there is no I2S module in the CPU, the Logic PD designers
+   *** added an I2S module to the CPLD.  This means that the
+   *** configuration is somewhat more elaborate.  This implementation
+   *** exists so that I can get the code working before attempting to
+   *** integrate it.
+
+   ========================================
 
    Test code for the audio codec. 
 
@@ -74,7 +83,6 @@
 # define USE_DMA
 #endif
 #define USE_I2S
-//#define USE_DMA_CAP
 #define USE_16
 #define USE_STEREO
 //#define USE_LOOPBACK_I2S
@@ -89,6 +97,7 @@
 //#define USE_E5
 //#define USE_E5_RIGHT
 
+#define DMA_CHANNEL	2
 
 #if defined (USE_8KHZ)
 # include <audio/pcm8-8.h>
@@ -111,54 +120,6 @@
 #define T_CSS	1		/* Minimum chip select setup time (us)  */
 #define T_DIS	1		/* Data setup time (us) */
 
-#define SSP_CTRL0	__REG(SSP_PHYS + 0x00)
-#define SSP_CTRL1	__REG(SSP_PHYS + 0x04)
-#define SSP_DR_PHYS	(SSP_PHYS + 0x08)
-#define SSP_DR		__REG(SSP_PHYS + 0x08)
-#define SSP_SR		__REG(SSP_PHYS + 0x0c)
-#define SSP_CPSR	__REG(SSP_PHYS + 0x10)
-#define SSP_IMSC	__REG(SSP_PHYS + 0x14)
-#define SSP_RIS		__REG(SSP_PHYS + 0x18)
-#define SSP_MIS		__REG(SSP_PHYS + 0x1c)
-#define SSP_ICR		__REG(SSP_PHYS + 0x20)
-#define SSP_DCR		__REG(SSP_PHYS + 0x24)
-
-#define SSP_CTRL1_MS	(1<<2)
-#define SSP_CTRL1_LBM	(1<<0)
-#define SSP_CTRL1_SSE	(1<<1)
-
-#define SSP_SR_BSY	(1<<4)
-#define SSP_SR_REFI	(1<<3)
-#define SSP_SR_RNE	(1<<2)	/* Receive FIFO not empty */
-#define SSP_SR_TNF	(1<<1)	/* Transmit FIFO not full */
-#define SSP_SR_TFE	(1<<0)	/* Transmit FIFO empty */
-
-#if defined (CONFIG_ARCH_LH79524)
-# define I2S_CTRL	__REG(I2S_PHYS + 0x00)
-# define I2S_STAT	__REG(I2S_PHYS + 0x04)
-# define I2S_IMSC	__REG(I2S_PHYS + 0x08)
-# define I2S_RIS	__REG(I2S_PHYS + 0x0c)
-# define I2S_MIS	__REG(I2S_PHYS + 0x10)
-# define I2S_ICR	__REG(I2S_PHYS + 0x14)
-
-# define I2S_CTRL_LOOP	(1<<5)
-# define I2S_CTRL_MCLKINV (1<<4)
-# define I2S_CTRL_WSDEL	(1<<3)
-# define I2S_CTRL_WSINV	(1<<2)
-# define I2S_CTRL_I2SEN	(1<<1)
-# define I2S_CTRL_I2SEL	(1<<0)
-
-# define I2S_STAT_MS	(1<<8)
-# define I2S_STAT_RFF	(1<<7)
-# define I2S_STAT_RFE	(1<<6)	/* Receive FIFO not empty from SSP */
-# define I2S_STAT_TFF	(1<<5)
-# define I2S_STAT_TFE	(1<<4)	/* Transmit FIFO empty from SSP */
-# define I2S_STAT_TXWS	(1<<3)
-# define I2S_STAT_RXWS	(1<<2)
-# define I2S_STAT_WS	(1<<1)
-# define I2S_STAT_LBM	(1<<0)
-#endif
-
 #define CODEC_LIN_VOLUME	(0x0)
 #define CODEC_RIN_VOLUME	(0x1)
 #define CODEC_LOUT_VOLUME	(0x2)
@@ -175,8 +136,6 @@
 
 #define CMD(a,c)	((((a) & 0x7f)<<CODEC_ADDR_SHIFT)|((c) & 0x1ff))
 
-void ssp_set_speed (int speed);
-
 static void msleep (int ms)
 {
   unsigned long time = timer_read ();
@@ -184,39 +143,6 @@ static void msleep (int ms)
   do {
   } while (timer_delta (time, timer_read ()) < ms);
 }
-
-static void enable_cs (void)
-{
-#if defined (CONFIG_MACH_LPD79520)
-  CPLD_SPIC |= CPLD_SPIC_CODEC;
-#endif
-#if defined (CONFIG_MACH_LPD79524)
-  CPLD_SPI &= ~(1<<5);
-#endif
-  usleep (T_CSS);
-}
-
-static void disable_cs (void)
-{
-  usleep (T_CS);
-#if defined (CONFIG_MACH_LPD79520)
-  CPLD_SPIC &= ~CPLD_SPIC_CODEC;
-#endif
-#if defined (CONFIG_MACH_LPD79524)
-  CPLD_SPI |=  (1<<5);
-#endif
-  usleep (T_CS);
-}
-
-static void pulse_clock (void)
-{
-  unsigned char reg = CPLD_SPI & ~CPLD_SPI_SCLK;
-  CPLD_SPI = reg | CPLD_SPI_SCLK;
-  usleep (T_SKH);
-  CPLD_SPI = reg;
-  usleep (T_SKL);
-}
-
 
 /* execute_spi_command
 
@@ -231,20 +157,25 @@ static void pulse_clock (void)
 
 static void execute_spi_command (int v, int cwrite)
 {
-  unsigned char reg;
-
   PRINTF ("spi 0x%04x -> 0x%x\n", v & 0x1ff, (v >> CODEC_ADDR_SHIFT) & 0x7f);
-  enable_cs ();
 
-  reg = CPLD_SPI & ~CPLD_SPI_TX;
-  v <<= CPLD_SPI_TX_SHIFT; /* Correction for position of SPI_TX bit */
-  while (cwrite--) {
-    CPLD_SPI = reg | ((v >> cwrite) & CPLD_SPI_TX);
-    usleep (T_DIS);
-    pulse_clock ();
-  }
-  
-  disable_cs ();
+  CPLD_SPID = (v >> 8) & 0xff;
+  CPLD_SPIC = CPLD_SPIC_LOAD | CPLD_SPIC_CS_CODEC;
+  while (!(CPLD_SPIC & CPLD_SPIC_LOADED))
+    ;
+  CPLD_SPIC = CPLD_SPIC_CS_CODEC;
+  while (!(CPLD_SPIC & CPLD_SPIC_DONE))
+    ;
+
+  CPLD_SPID = v & 0xff;
+  CPLD_SPIC = CPLD_SPIC_LOAD | CPLD_SPIC_CS_CODEC;
+  while (!(CPLD_SPIC & CPLD_SPIC_LOADED))
+    ;
+  CPLD_SPIC = CPLD_SPIC_CS_CODEC;
+  while (!(CPLD_SPIC & CPLD_SPIC_DONE))
+    ;
+
+  CPLD_SPIC = 0;
 }
 
 static void codec_enable (void)
@@ -252,10 +183,12 @@ static void codec_enable (void)
   execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (1<<0)), 16);
 }
 
+#if 0
 static void codec_disable (void)
 {
   execute_spi_command (CMD (CODEC_DIGITAL_ACTIVATE, (0<<0)), 16);
 }
+#endif
 
 static void codec_unmute (void)
 {
@@ -278,182 +211,72 @@ static void codec_mute (void)
 			    ), 16);
 }
 
+
+/* codec_configure
+
+   configures the codec sampling rate.  On the LPD79520, the base
+   frequency is a crystal oscillator at 5.6448 MHz.  Unfortunately,
+   this means that the codec is only capable of 44.1KHz, 22.05 KHz,
+   and 4.011 KHz.
+
+*/
+
 static void codec_configure (int frequency, int sample_size)
 {
   unsigned short v = 0;
 
   switch (frequency) {
-  default:
   case 4000:			/* 4 kHz */
   case 4010:			/* 4 kHz */
-    v |= (0xb<<2) /* SR3-SR0 */
-      |  (0<<1); /* BOSR */
-    v |= (1<<7)|(1<<6);		/* MCLK/2 */
+    v |= (0xb<<2)	/* SR3-SR0 */
+      |  (0<<1)		/* BOSR (256) */
+      |  (0<<0);	/* Normal mode */
+    v |= (0<<7)|(0<<6);	/* !MCLK/2 */
     break;
-  case 8000:			/* 8 kHz */
-  case 8021:			/* 8 kHz */
-    v |= (0xb<<2) /* SR3-SR0 */
-      |  (0<<1); /* BOSR */
+  case 22050:			/* 22.05 KHz */
+    v |= (0x8<<2)	/* SR3-SR0 */
+      |  (0<<1)		/* BOSR (256) */
+      |  (0<<0);	/* Normal mode */
+    v |= (0<<7)|(0<<6);	/* !MCLK/2 */
     break;
-  case 32100:
-    break;
-  case 22050:
-    v |= (0x8<<2) /* SR3-SR0 */
-      |  (0<<1); /* BOSR */
-    v |= (1<<7)|(1<<6);		/* MCLK/2 */
-    break;
-  case 44100:
-    v |= (0x8<<2) /* SR3-SR0 */
-      |  (0<<1); /* BOSR */
-    break;
-  case 48000:
-    break;
-  case 88200:
-    v |= (0xf<<2) /* SR3-SR0 */
-      |  (0<<1); /* BOSR */
-    break;
-  case 96000:
+  default:
+  case 44100:			/* 44.1 KHz */
+    v |= (0xf<<2)	/* SR3-SR0 */
+      |  (0<<1)		/* BOSR (256) */
+      |  (0<<0);	/* Normal mode */
+    v |= (0<<7)|(0<<6);	/* !MCLK/2 */
+//    v |= (1<<7)|(1<<6);	/* MCLK/2 */
     break;
   }
 
   PRINTF ("configuring codec for %d Hz with 0x%x\n", frequency, v);
   execute_spi_command (CMD (CODEC_SAMPLE_RATE, v), 16);
 
-  MASK_AND_SET (SSP_CTRL0, 0xf, (sample_size - 1) & 0xf);
-
-#if defined (USE_CPU_MASTER)
-  ssp_set_speed (frequency);
-#else
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;
   MASK_AND_SET (RCPC_CTRL, 3<<5, 0<<5);	/* System osc. -> CLKOUT */
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
-#endif
 }
-
-void ssp_set_speed (int speed)
-{
-  int rcpc_prescale;
-  int ssp_dvsr;
-  int ssp_cpd;
-
-  switch (speed) {
-  default:
-  case 8012:
-    /* .08% error at HCLK 50MHz */
-    rcpc_prescale = 32;
-    ssp_dvsr = 2;
-    ssp_cpd = 99;
-    break;
-  case 22050:
-    /* No error at HCLK 50MHz */
-    rcpc_prescale = 32 ;
-    ssp_dvsr = 2;
-    ssp_cpd = 36;
-    break;
-  case 44100:
-    /* No error at HCLK 50MHz */
-    rcpc_prescale = 32 ;
-    ssp_dvsr = 2;
-    ssp_cpd = 18;
-    break;
-  }
-
-  if (ssp_cpd == 0)
-    ssp_cpd = 1;
-
-  rcpc_prescale /= 32;		/* Compensate for the frame size */
-
-  PRINTF ("ssp_set_speed  rcpc_ssppre %d  dvsr %d  cpd %d\n", 
-	  rcpc_prescale, ssp_dvsr, ssp_cpd);
-
-  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
-  RCPC_PCLKSEL1 &= ~(1<<1);	/* HCLK -> SSP clock */
-  RCPC_SSPPRE = rcpc_prescale>>1;
-  SSP_CPSR = ssp_dvsr;
-  MASK_AND_SET (SSP_CTRL0, (0xff<<8), (ssp_cpd - 1)<<8);
-  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
-}
-
 
 static void codec_init (void)
 {
-  SSP_CTRL0 = 0;
-  SSP_CTRL1 = 0;
-
-  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
-  RCPC_PCLKCTRL1 &= ~(1<<1); /* Enable SSP clock */
-  RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
-
-
-#if defined (I2S_CTRL) && defined (USE_I2S)
-  I2S_CTRL = 0;
-#endif
-
-  SSP_IMSC &= 0xff;		/* Mask everything */
-
-  MASK_AND_SET (IOCON_MUXCTL5,
-		(3<<6)|(3<<4)|(3<<2)|(3<<0),
-		(1<<6)|(1<<4)|(1<<2)|(1<<0));	/* SSP/I2S signals */
-//  IOCON_RESCTL5 &= ~((3<<6)|(3<<4)|(3<<2)|(3<<0));
-
-  MASK_AND_SET (SSP_CTRL0, (3<<4), (1<<4)); /* TI mode */
-#if defined (USE_CPU_MASTER)
-  SSP_CTRL1 &= ~(1<<2);	/* CPU as master */
-#else
-  SSP_CTRL1 |=  (1<<2);	/* CPU as slave */
-#endif
-
-#if defined (USE_LOOPBACK_SSP)
-  SSP_CTRL1 |= SSP_CTRL1_LBM;	/* Loopback */
-#endif
-
-#if defined (USE_16)
-  MASK_AND_SET (SSP_CTRL0, 0xf, ((16 - 1) & 0xf));
-#else
-  MASK_AND_SET (SSP_CTRL0, 0xf, ((8  - 1) & 0xf));
-#endif    
-
-#if defined (USE_DMA)
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;
   RCPC_AHBCLKCTRL &= ~(1<<0); /* Enable DMA AHB clock */
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
-  DMA0_CTRL
-    = (0<<13)			/* Peripheral source */
-    | (0<<9)			/* Load base addresses on start  */
-    | (1<<7)			/* Destination size 2 bytes */
-    | (1<<3)			/* Source size is 2 bytes */
-    | (0<<2)			/* Destination fixed */
-    | (0<<1);			/* Source fixed */
+  IOCON_DMAMUX |= (1<<2) | (1<<1) | (1<<0); /* Allow DREQ0, nDACK0, DEOT0 */
 
-  DMA1_CTRL
+  DMA_CTRL(DMA_CHANNEL)
     = (1<<13)			/* Peripheral destination */
-#if defined (USE_16)
-    | (1<<7)			/* Destination size 2 bytes */
-    | (1<<3)			/* Source size is 2 bytes */
-    | (1<<5)			/* Source burst 4 incrementing */
-#else
-    | (0<<7)			/* Destination size 1 bytes */
-    | (0<<3)			/* Source size is 1 byte */
-    | (1<<5)			/* Source burst 4 incrementing */
-#endif
+    | (2<<7)			/* Destination size 4 bytes */
+    | (2<<3)			/* Source size is 4 bytes */
+    | (2<<5)			/* Source burst 4 incrementing */
     | (0<<9)			/* Wrapping: Load base addresses on start  */
     | (0<<2)			/* Destination fixed */
     | (1<<1);			/* Source incremented */
 
   DMA_CLR   = 0xff;
-  DMA_MASK |= (1<<1);		/* Enable of DMA channel 1 */
-#endif
+  DMA_MASK |= (1<<DMA_CHANNEL); /* Enable of DMA channel */
   
-#if defined (USE_DMA)
-  SSP_DCR = 0
-    | (1<<1)			/* TX DMA enabled */
-    | (1<<0)			/* RX DMA enabled */
-    ;
-#else
-  SSP_DCR = 0;
-#endif
-
 //  codec_mute ();
 
   execute_spi_command (CMD (CODEC_RESET, 0), 16);
@@ -463,32 +286,19 @@ static void codec_init (void)
 			    ), 16);
   execute_spi_command (CMD (CODEC_DIGITAL_FORMAT,
 			    0
-#if defined (USE_CPU_MASTER)
-			    | (0<<6) /* Slave */
-#else
 			    | (1<<6) /* Master */
-#endif
 			    | (1<<4) /* LRP: right channel on LRC low */
 			    | (0<<2) /* 16 bit */
 //			    | (3<<2) /* 32 bit */
-#if defined (USE_I2S)
 			    | (2<<0) /* I2S format */
-#else
-			    | (3<<0) /* DSP format */
-#endif
 			    ), 16);
   codec_configure (SAMPLE_FREQUENCY, 16);
 
   codec_enable ();
-
-//  printf ("ssp: status 0x%lx\n", SSP_SR);
 }
 
 static void codec_release (void)
 {
-  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
-  RCPC_PCLKCTRL1 |= (1<<1);	/* Disable SSP clock */
-  RCPC_CTRL	 &= ~RCPC_CTRL_UNLOCK;
 }
 
 
@@ -644,17 +454,7 @@ static int cmd_codec_test (int argc, const char** argv)
 #endif
     ;
 
-#if defined (USE_DMA)
   codec_unmute ();
-
-#if defined (USE_DMA_CAP)
-  DMA0_CTRL    &= ~(1<<0); /* Disable */
-  DMA0_SOURCELO =  SSP_DR_PHYS        & 0xffff;
-  DMA0_SOURCEHI = (SSP_DR_PHYS >> 16) & 0xffff;
-  DMA0_DESTLO   =  ((unsigned long)&cap)        & 0xffff;
-  DMA0_DESTHI   = (((unsigned long)&cap) >> 16) & 0xffff;
-  DMA0_MAX	= 0xffff;
-#endif
 
  restart:
   index = 0;
@@ -666,29 +466,18 @@ static int cmd_codec_test (int argc, const char** argv)
   if (count > 65534)
     count = 65534;
 
-  DMA1_CTRL    &= ~(1<<0); /* Disable */
-  DMA1_SOURCELO =  ((unsigned long)(buffer + index))        & 0xffff;
-  DMA1_SOURCEHI = (((unsigned long)(buffer + index)) >> 16) & 0xffff;
-  DMA1_DESTLO   =  SSP_DR_PHYS        & 0xffff;
-  DMA1_DESTHI   = (SSP_DR_PHYS >> 16) & 0xffff;
-  DMA1_MAX	= count;
+  DMA_CTRL(DMA_CHANNEL) &= ~(1<<0); /* Disable */
+  DMA_SOURCELO(DMA_CHANNEL)
+    =  ((unsigned long)(buffer + index)) & 0xffff;
+  DMA_SOURCEHI(DMA_CHANNEL)
+    = (((unsigned long)(buffer + index)) >> 16) & 0xffff;
+  DMA_DESTLO(DMA_CHANNEL)   =  CPLD_I2S_PHYS & 0xffff;
+  DMA_DESTHI(DMA_CHANNEL)   = (CPLD_I2S_PHYS >> 16) & 0xffff;
+  DMA_MAX(DMA_CHANNEL)	= count;
 
   DMA_CLR = 0xff;
 
-#if defined (USE_DMA_CAP)
-  DMA0_CTRL |= (1<<0);		/* Enable RX DMA */
-#endif
-  DMA1_CTRL |= (1<<0);		/* Enable TX DMA */
-
-#if defined (I2S_CTRL) && defined (USE_I2S)
-  I2S_CTRL |= 0
-    | I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
-#if defined (USE_LOOPBACK_I2S)
-    | I2S_CTRL_LOOP
-#endif
-    ;
-#endif
-  SSP_CTRL1 |= SSP_CTRL1_SSE;		/* Enable SSP  */
+  DMA_CTRL(DMA_CHANNEL) |= (1<<0);		/* Enable TX DMA */
 
 				/* Wait for completion */
   while ((DMA_STATUS & (1<<1)) == 0)
@@ -702,40 +491,6 @@ static int cmd_codec_test (int argc, const char** argv)
     goto restart;
   }
 
-#else
-
-  codec_unmute ();
-
-  SSP_CTRL1 |= (1<<1);		/* Enable SSP */
-#if defined (USE_I2S)
-  I2S_CTRL
-    = I2S_CTRL_I2SEN | I2S_CTRL_I2SEL
-#if defined (USE_LOOPBACK_I2S)
-    | I2S_CTRL_LOOP
-#endif
-    ;
-#endif
-
-  {
-    int j = 
-#if defined USE_LOOPS
-      USE_LOOPS
-#else
-      1
-#endif
-      ;
-    while (j--) {
-      int i;
-      for (i = 0; i < samples; ++i) {
-	/* Wait for room in the FIFO */
-	while (!(SSP_SR & SSP_SR_TNF))
-	  ;
-	SSP_DR = buffer[i];
-      }
-    }
-  }
-
-#endif /* !USE_DMA */
 
   codec_mute ();
   return 0;

@@ -33,6 +33,7 @@ obj-$(CONFIG_DRIVER_EMAC_LH79524) += drv-emac.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o
 obj-$(CONFIG_CODEC)		+= codec.o
+obj-$(CONFIG_CODEC_LH79520)	+= codec-lh79520.o
 obj-$(CONFIG_ADC)		+= adc.o
 obj-y				+= cmd-reset.o
 
