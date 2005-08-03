@@ -431,11 +431,12 @@ static void codec_init (void)
 #if defined (USE_16)
     | (1<<7)			/* Destination size 2 bytes */
     | (1<<3)			/* Source size is 2 bytes */
-    | (1<<5)			/* Source burst 4 incrementing */
+/* These are removed because it seems that they break the DMA controller */
+//    | (1<<5)			/* Source burst 4 incrementing */
 #else
     | (0<<7)			/* Destination size 1 bytes */
     | (0<<3)			/* Source size is 1 byte */
-    | (1<<5)			/* Source burst 4 incrementing */
+//    | (1<<5)			/* Source burst 4 incrementing */
 #endif
     | (0<<9)			/* Wrapping: Load base addresses on start  */
     | (0<<2)			/* Destination fixed */
