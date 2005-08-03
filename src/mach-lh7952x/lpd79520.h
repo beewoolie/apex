@@ -67,4 +67,6 @@
 
 #define CPLD_CONTROL_WLPEN	(1<<0)
 
+#define CPLD_GPIO		__REG16 (0x55600000)
+
 #endif  /* __LPD79520_H__ */

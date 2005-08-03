@@ -230,7 +230,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 //  SMC_BCR5 = 0x100034c0; /* CPLD */
 
   SMC_BCR4 = (1<<28)|(1<<25)|(1<<24)|(10<<11)|(1<<10)|(4<<5)|(0<<0); /* CF */
-  SMC_BCR5 = (1<<28)|(1<<25)|(1<<24)|(4<<11)|(1<<10)|(4<<5)|(4<<0); /* CPLD */
+  SMC_BCR5 = (1<<28)|(1<<25)|(1<<24)|( 4<<11)|(1<<10)|(4<<5)|(4<<0); /* CPLD */
 
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"

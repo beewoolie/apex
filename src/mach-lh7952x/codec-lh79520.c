@@ -98,6 +98,7 @@
 //#define USE_E5_RIGHT
 
 #define DMA_CHANNEL	2
+#define DMA_COUNT_MAX	(0xfff0)
 
 #if defined (USE_8KHZ)
 # include <audio/pcm8-8.h>
@@ -228,10 +229,12 @@ static void codec_configure (int frequency, int sample_size)
   switch (frequency) {
   case 4000:			/* 4 kHz */
   case 4010:			/* 4 kHz */
+  case 8021:			/* 4 kHz */
     v |= (0xb<<2)	/* SR3-SR0 */
       |  (0<<1)		/* BOSR (256) */
       |  (0<<0);	/* Normal mode */
     v |= (0<<7)|(0<<6);	/* !MCLK/2 */
+//    v |= (1<<7)|(1<<6);	/* MCLK/2 */
     break;
   case 22050:			/* 22.05 KHz */
     v |= (0x8<<2)	/* SR3-SR0 */
@@ -239,13 +242,18 @@ static void codec_configure (int frequency, int sample_size)
       |  (0<<0);	/* Normal mode */
     v |= (0<<7)|(0<<6);	/* !MCLK/2 */
     break;
+  case 11025:			/* 11.25 KHz */
+    v |= (0x8<<2)	/* SR3-SR0 */
+      |  (0<<1)		/* BOSR (256) */
+      |  (0<<0);	/* Normal mode */
+    v |= (1<<7)|(1<<6);	/* MCLK/2 */
+    break;
   default:
   case 44100:			/* 44.1 KHz */
     v |= (0xf<<2)	/* SR3-SR0 */
       |  (0<<1)		/* BOSR (256) */
       |  (0<<0);	/* Normal mode */
     v |= (0<<7)|(0<<6);	/* !MCLK/2 */
-//    v |= (1<<7)|(1<<6);	/* MCLK/2 */
     break;
   }
 
@@ -269,13 +277,12 @@ static void codec_init (void)
     = (1<<13)			/* Peripheral destination */
     | (2<<7)			/* Destination size 4 bytes */
     | (2<<3)			/* Source size is 4 bytes */
-    | (2<<5)			/* Source burst 4 incrementing */
     | (0<<9)			/* Wrapping: Load base addresses on start  */
     | (0<<2)			/* Destination fixed */
     | (1<<1);			/* Source incremented */
 
   DMA_CLR   = 0xff;
-  DMA_MASK |= (1<<DMA_CHANNEL); /* Enable of DMA channel */
+  DMA_MASK |= (1 << DMA_CHANNEL); /* Enable of DMA channel */
   
 //  codec_mute ();
 
@@ -287,7 +294,7 @@ static void codec_init (void)
   execute_spi_command (CMD (CODEC_DIGITAL_FORMAT,
 			    0
 			    | (1<<6) /* Master */
-			    | (1<<4) /* LRP: right channel on LRC low */
+//			    | (1<<4) /* LRP: right channel on LRC low */
 			    | (0<<2) /* 16 bit */
 //			    | (3<<2) /* 32 bit */
 			    | (2<<0) /* I2S format */
@@ -456,31 +463,37 @@ static int cmd_codec_test (int argc, const char** argv)
 
   codec_unmute ();
 
+  samples /= 2;			/* We're DMA'ing  32 bits wide */
+  printf ("samples %d\n", samples);
+
  restart:
   index = 0;
 
+//  CPLD_GPIO ^= (1<<0);
+
+  DMA_DESTLO(DMA_CHANNEL)   =  CPLD_I2S_PHYS & 0xffff;
+  DMA_DESTHI(DMA_CHANNEL)   = (CPLD_I2S_PHYS >> 16) & 0xffff;
+
  play_more:
-  count = samples;
-  if (index + count > samples)
-    count = samples - index;
-  if (count > 65534)
-    count = 65534;
+  count = samples - index;
+  if (count > DMA_COUNT_MAX)
+    count = DMA_COUNT_MAX;
 
   DMA_CTRL(DMA_CHANNEL) &= ~(1<<0); /* Disable */
   DMA_SOURCELO(DMA_CHANNEL)
-    =  ((unsigned long)(buffer + index)) & 0xffff;
+    =  ((unsigned long)(buffer + (index*2))) & 0xffff;
   DMA_SOURCEHI(DMA_CHANNEL)
-    = (((unsigned long)(buffer + index)) >> 16) & 0xffff;
-  DMA_DESTLO(DMA_CHANNEL)   =  CPLD_I2S_PHYS & 0xffff;
-  DMA_DESTHI(DMA_CHANNEL)   = (CPLD_I2S_PHYS >> 16) & 0xffff;
+    = (((unsigned long)(buffer + (index*2))) >> 16) & 0xffff;
   DMA_MAX(DMA_CHANNEL)	= count;
+
+  //  printf ("source 0x%lx\n", (unsigned long)(buffer + index));
 
   DMA_CLR = 0xff;
 
   DMA_CTRL(DMA_CHANNEL) |= (1<<0);		/* Enable TX DMA */
 
 				/* Wait for completion */
-  while ((DMA_STATUS & (1<<1)) == 0)
+  while ((DMA_STATUS & (1 << DMA_CHANNEL)) == 0)
     ;
 
   index += count;
