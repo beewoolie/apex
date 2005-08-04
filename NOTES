@@ -5,6 +5,17 @@ APEX Boot Loader
 
 TODO:
 
+  o Improving network responsiveness
+
+    o Since there is a limited number of receive buffers, we may need
+      to change the structure of the network protocol drivers
+    o Need a flush function to flush receive buffers.
+    o RARP is a good example.  The response from the server is nearly
+      immediate.  If we don't clear the buffer, it may take a timeout
+      and retransmission to see the reply
+    o Still, need to inspect the network traffic to make sure this is
+      the reason for the delay on rarp.
+
   o Interrupt key
 
     o There are places, especially in the network code, where console

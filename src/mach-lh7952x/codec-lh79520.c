@@ -410,8 +410,10 @@ static int convert_source (void)
 # if defined (USE_16)
     if (is & 1)
       v = 0x80bb;
+      //      v = 0xaaaa;
     else
       v = 0x7f02;
+      //      v = 0xaaaa;
 # else
     if (is & 1)
       v = 0x8b;
