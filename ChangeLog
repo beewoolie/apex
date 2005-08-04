@@ -1,3 +1,7 @@
+2005-08-03  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/ads7843.c: ads7843 test command.
+
 2005-08-01  Marc Singer  <elf@buici.com>
 
 	* src/net/ipconfig.c (cmd_ipconfig): IP configuration via RARP or
