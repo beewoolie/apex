@@ -47,9 +47,11 @@
 #define CPLD_SPID		__REG16 (0x54600000)
 #define CPLD_SPIC		__REG16 (0x54800000)
 #define CPLD_SPI		__REG16 (0x54a00000)
+#define CPLD_INT		__REG16 (0x54c00000)
 
 #define CPLD_SPIC_LOADED	(1<<5)
 #define CPLD_SPIC_LOAD		(1<<4)
+#define CPLD_SPIC_START		(1<<4)
 #define CPLD_SPIC_DONE		(1<<3)
 #define CPLD_SPIC_READ		(1<<2)
 #define CPLD_SPIC_CS_TOUCH	(1<<1)
@@ -68,5 +70,8 @@
 #define CPLD_CONTROL_WLPEN	(1<<0)
 
 #define CPLD_GPIO		__REG16 (0x55600000)
+
+#define CPLD_INT_PIRQ		(1<<4)
+#define CPLD_INT_NTOUCH		(1<<1)
 
 #endif  /* __LPD79520_H__ */

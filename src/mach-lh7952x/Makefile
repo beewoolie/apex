@@ -34,7 +34,7 @@ obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o
 obj-$(CONFIG_CLCDC)		+= clcdc.o
 obj-$(CONFIG_CODEC)		+= codec.o
 obj-$(CONFIG_CODEC_LH79520)	+= codec-lh79520.o
-obj-$(CONFIG_ADC)		+= adc.o
+obj-$(CONFIG_ADS7843)		+= ads7843.o
 obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)

@@ -170,6 +170,14 @@ config DRIVER_CPLD_SPI
 	  This driver implemets EEPROM SPI driver for the LPD 7952x
 	  Card Engines.
 
+config ADS7843
+	bool "ADS7843 touchscreen test"
+	depends on MACH_LPD79520
+	default n
+	help
+	  This options implements a test routing for the ADS7843
+	  touchscreen controller. 
+
 endmenu
 
 config MACH
