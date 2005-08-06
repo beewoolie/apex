@@ -774,6 +774,12 @@ apex: $(apex-lds) $(apex-init) $(apex-main) $(kallsyms.o) FORCE
 # make sure no implicit rule kicks in
 $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 
+.PHONY: check_cc
+check_cc:
+	@if [ "`$(CC) -dumpversion`" = "3.4.4" ] ; \
+         then echo " *** $(CC)" ;\
+	      echo "     is an unsupported compiler version." ; exit 1 ; fi
+
 # Handle descending into subdirectories listed in $(apex-dirs)
 # Preset locale variables to speed up the build process. Limit locale
 # tweaks to this spot to avoid wrong language settings when running
@@ -827,7 +833,7 @@ ifneq ($(KBUILD_MODULES),)
 endif
 
 # All the preparing..
-prepare-all: prepare0 prepare
+prepare-all: prepare0 prepare check_cc
 
 include/linux/config.h:
 	@touch include/linux/config.h

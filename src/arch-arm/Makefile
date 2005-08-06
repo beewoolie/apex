@@ -30,8 +30,6 @@ quote:="
 # "
 CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
 
-CFLAGS += -Os
-
 init-y += src/arch-arm/entry/ 
 core-y += src/mach-$(CONFIG_MACH)/ 
 core-y += src/drivers/ src/net/ src/arch-arm/linux/
