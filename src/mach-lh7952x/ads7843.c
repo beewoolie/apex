@@ -92,7 +92,7 @@ static void inline msleep (int ms)
 
 static void inline request (int a)
 {
-  unsigned long timeStart;
+  //  unsigned long timeStart;
 	/* --- Request X */
   CPLD_SPID = ADS_CTRL_START | ADS_CTRL_AD(a);
   CPLD_SPIC = CPLD_SPIC_CS_TOUCH | CPLD_SPIC_LOAD;
@@ -101,7 +101,7 @@ static void inline request (int a)
   CPLD_SPIC = CPLD_SPIC_CS_TOUCH;
   while (!(CPLD_SPIC & CPLD_SPIC_DONE))
     ;
-  timeStart = timer_read ();
+//  timeStart = timer_read ();
   msleep (2);
 }
 
@@ -140,8 +140,7 @@ static int cmd_ads (int argc, const char** argv)
 {
   int x;
   int y;
-  extern struct driver_d* console_driver;
-
+  extern struct driver_d* console;
 
   do {
 
@@ -155,10 +154,10 @@ static int cmd_ads (int argc, const char** argv)
       disable ();
       printf ("(%d %d)\n", x, y);
     }
-  } while (!console_driver->poll (0, 1));
+  } while (!console->poll (0, 1));
   {
     char ch;
-    console_driver->read (0, &ch, 1);
+    console->read (0, &ch, 1);
   }      
 
   return 0;

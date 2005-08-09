@@ -227,7 +227,7 @@ static int ping_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
-  extern struct driver_d* console_driver;
+  extern struct driver_d* console;
 
   /* *** FIXME: ouch */
   if (tftp.state != stateOpenWaiting && tftp.state != stateWaiting)
@@ -236,11 +236,8 @@ static int ping_terminate (void* pv)
   if (!context->time_start)
     context->time_start = timer_read ();
 
-  if (console_driver->poll (0, 1)) {
-    char ch;
-    console_driver->read (0, &ch, 1);
+  if (console->poll (0, 0))
     return -2;			/* Not really a timeout */
-  }
 
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
     ? 0 : -1;
@@ -293,6 +290,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 
 	if (result == -2) {
 	  tftp.state = stateAbort;
+	  cbRead = ERROR_BREAK;
 	  goto quit;
 	}
 
@@ -350,6 +348,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
       break;
 
     case stateAbort:
+      cbRead = ERROR_BREAK;
       goto quit;
     }
   }

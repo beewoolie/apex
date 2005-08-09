@@ -36,7 +36,7 @@
 #include <spinner.h>
 #include <driver.h>
 
-extern struct driver_d* console_driver;
+extern struct driver_d* console;
 
 /* cmd_wait
 
@@ -69,11 +69,8 @@ int cmd_wait (int argc, const char** argv)
     unsigned long time = timer_read ();
     while (timer_delta (time, timer_read ()) < timeout) {
       SPINNER_STEP;
-      if (console_driver->poll (NULL, 1)) {
-	char ch;
-	console_driver->read (NULL, &ch, 1);
+      if (console->poll (0, 0)) /* ^C will terminate */
 	return 1;
-      }
     }
   }
 

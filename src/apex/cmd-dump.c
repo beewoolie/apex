@@ -98,11 +98,11 @@ int cmd_dump (int argc, const char** argv)
     index += cb;
 
     if (index >= more && index < d.start + d.length) {
-      extern struct driver_d* console_driver;
+      extern struct driver_d* console;
       char ch;
 
       printf (" --More-- ");
-      console_driver->read (0, &ch, 1);
+      console->read (0, &ch, 1);
       switch (ch) {
       default:
       case 'q':

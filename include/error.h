@@ -34,6 +34,7 @@ extern const char* error_description;
 
 #define ERROR_FALSE		(-1)
 #define ERROR_IMPORTANT		(-1)	/* Errors less than will be reported */
+#define ERROR_BREAK		(-2)	/* User requested break */
 #define ERROR_FAILURE		(-7)
 #define ERROR_NOCOMMAND		(-8)
 #define ERROR_PARAM		(-9)
@@ -46,6 +47,7 @@ extern const char* error_description;
 #define ERROR_IOFAILURE		(-16)
 #define ERROR_CRCFAILURE	(-17)
 #define ERROR_OUTOFMEMORY	(-18)
+#define ERROR_TIMEOUT		(-19)
 
 #if defined (CONFIG_SMALL)
 # define ERROR_RETURN(v,m) return (v)

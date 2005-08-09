@@ -113,7 +113,7 @@ static int ipconfig_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
-  extern struct driver_d* console_driver;
+  extern struct driver_d* console;
 
   if (!context->time_start)
     context->time_start = timer_read ();
@@ -123,14 +123,11 @@ static int ipconfig_terminate (void* pv)
   if (!UNCONFIGURED_IP)
     return 1;
 
-  if (console_driver->poll (0, 1)) {
-    char ch;
-    console_driver->read (0, &ch, 1);
-    return -2;
-  }
+  if (console->poll (0, 0))
+    return ERROR_BREAK;
 
   return timer_delta (context->time_start, timer_read ()) < context->ms_timeout
-    ? 0 : -1;
+    ? 0 : ERROR_TIMEOUT;
 }
 
 
@@ -230,7 +227,7 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
 
   register_ethernet_receiver (100, rarp_receiver, NULL);
 
-
+  goto flush;		/* Receive pending packets before first transmit  */
   do {
     struct ethernet_timeout_context timeout;
 
@@ -240,12 +237,13 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
 		     + sizeof (struct header_arp));
     ++tries;
 
+  flush:
     memset (&timeout, 0, sizeof (timeout));
     timeout.ms_timeout = MS_TIMEOUT;
     result = ethernet_service (&d, ipconfig_terminate, &timeout);
 
     /* result == 1 on success, -1 on timeout, -2 on user abort  */
-  } while (result <= 0 && tries < TRIES_MAX);
+  } while (result != ERROR_BREAK && result <= 0 && tries < TRIES_MAX);
 
   unregister_ethernet_receiver (rarp_receiver, NULL);
 
@@ -258,7 +256,8 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
   ethernet_frame_release (frame);
 
   close_descriptor (&d);  
-  return 0;
+
+  return result < 0 ? result : 0;
 }
 
 #endif

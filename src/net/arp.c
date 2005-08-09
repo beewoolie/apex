@@ -55,17 +55,11 @@
 
 int console_terminate (void* pv)
 {
-  extern struct driver_d* console_driver;
+  extern struct driver_d* console;
   char ch;
 
-  if (console_driver->poll (0, 1)) {
-    console_driver->read (0, &ch, 1);
-//    if (ch == '0') {
-//      eth_diag (0);
-//      return 0;
-//    }
+  if (console->poll (0, 0))
     return 1;
-  }
   return 0;
 }
 
@@ -80,10 +74,10 @@ int cmd_arp (int argc, const char** argv)
 
   DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
 
-  ethernet_service (&d, console_terminate, NULL);
+  result = ethernet_service (&d, console_terminate, NULL);
 
   close_descriptor (&d);  
-  return 0;
+  return result ? ERROR_BREAK : 0;
 }
 
 static __command struct command_d c_arp = {

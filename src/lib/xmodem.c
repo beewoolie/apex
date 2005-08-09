@@ -65,20 +65,20 @@ Cf:
 #define ERROR(...) do { } while (0)
 
 
-extern struct driver_d* console_driver;
+extern struct driver_d* console;
 
 static char rgbXmodem[1024];
 
 static inline void _send (char ch)
 { 
-  console_driver->write (NULL, &ch, 1);
+  console->write (NULL, &ch, 1);
 }
 
 static inline void _read_flush (void)
 {
-  while (console_driver->poll (NULL, 1)) {
+  while (console->poll (NULL, 1)) {
     char ch;
-    console_driver->read (NULL, &ch, 1);
+    console->read (NULL, &ch, 1);
   }
 }
   
@@ -87,9 +87,9 @@ static int _receive (unsigned int timeout)
   unsigned long timeStart = timer_read ();
 
   while (timer_delta (timeStart, timer_read ()) < timeout)
-    if (console_driver->poll (0, 1)) {
+    if (console->poll (0, 1)) {
       unsigned char ch;
-      console_driver->read (0, &ch, 1);
+      console->read (0, &ch, 1);
       return ch;
     }
 

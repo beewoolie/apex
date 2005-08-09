@@ -62,7 +62,7 @@ static void init_services (void)
     PUTC_LL ('|');
   }
   PUTC_LL ('s');
-  //  printf ("init complete\n");
+//  printf ("init complete\n");
 }
 
 void release_services (void)

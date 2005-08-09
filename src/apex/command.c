@@ -200,6 +200,8 @@ int call_command (int argc, const char** argv)
 	  error_description = "file not found"; break;
 	case ERROR_IOFAILURE:
 	  error_description = "i/o failure"; break;
+	case ERROR_BREAK:
+	  error_description = "break"; break;
 	}
       }
 #endif
@@ -226,14 +228,15 @@ void exec_monitor (void)
     const char** argv;
     strcpy (sz, szStartup);
     
-    while (*pch) {
+    while (pch && *pch) {
       char* pchEnd = strchr (pch, ';');
-      *pchEnd = 0;
+      if (pchEnd)
+	*pchEnd = 0;
       printf ("\r# %s\n", pch);
       parse_command (pch, &argc, &argv);
       if (call_command (argc, argv))
 	break;
-      pch = pchEnd + 1;
+      pch = (pchEnd ? pchEnd + 1 : 0);
     }
   }
 
@@ -242,7 +245,7 @@ void exec_monitor (void)
     int argc;
 
     SPINNER_CLEAR;
-    read_command ("\rapex> ", &argc, &argv);
+    read_command ("\r" "apex> ", &argc, &argv);
     call_command (argc, argv);
 
   } while (1);

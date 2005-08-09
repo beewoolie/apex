@@ -160,9 +160,15 @@ int cmd_copy (int argc, const char** argv)
 	report_last = report;
       }
     }
+
+    if (cb < 0) {
+      printf ("\rcopy error\n");
+      result = cb;
+    }
   }
 
-  printf ("\r%d bytes transferred\n", cbCopy);
+  if (result == 0)
+    printf ("\r%d bytes transferred\n", cbCopy);
 
  fail:
   close_descriptor (&din);

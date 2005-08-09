@@ -1,3 +1,18 @@
+2005-08-08  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-copy.c (cmd_copy): Detecting copy errors and
+	returning appropriate code.
+
+	* src/apex/command.c (exec_monitor): Fixed parser for startup
+	command so that semicolon no longer needed at the end of the
+	command.  Fixed a bug in the routine that writes to address zero
+	on startup.
+
+	* src/apex/console.c (console_poll): Improved methods for
+	detecting user break condition.  Injected a meta-driver between
+	the serial driver and the functions that communicate with the
+	user.
+
 2005-08-03  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/ads7843.c: ads7843 test command.

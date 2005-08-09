@@ -39,17 +39,19 @@
 
 #include <debug_ll.h>
 
-extern struct driver_d* console_driver;
+extern struct driver_d* console;
 
 int printf (const char* fmt, ...)
 {
   static char rgb[2*1024];
   ssize_t cb;
   va_list ap;
+  extern ssize_t console_write (struct descriptor_d* d, const void* pv, size_t cb);
 
-  //  PUTC_LL ('P');
 
-  if (console_driver == NULL)
+//  PUTC_LL ('P');
+
+  if (console == NULL)
     return 0;
 
   //  PUTC_LL ('P');
@@ -61,15 +63,18 @@ int printf (const char* fmt, ...)
   va_end (ap);
   rgb[cb] = 0;
   
-  //  PUTC_LL ('P');
+//  PUTC_LL ('P');
+
   {
     char* pb = rgb;
     for (; *pb; ++pb) {
       if (*pb == '\n')
-	console_driver->write (0, "\r", 1);
-      console_driver->write (0, pb, 1);
+	console->write (0, "\r", 1);
+      console->write (0, pb, 1);
     }
   }
+
+//  PUTC_LL ('_');
 
   return cb;
 }
