@@ -44,7 +44,7 @@ const unsigned char rgbPNG[] = {
 };
 #endif
 
-static unsigned short __attribute__((section(".clcdc.bss"))) 
+static unsigned short __attribute__((section(".clcdc.alignedbss"))) 
      buffer[320*240];
 
 /* msleep
@@ -118,7 +118,7 @@ fail:
 
 static void clcdc_init (void)
 {
-  printf ("%s\n", __FUNCTION__);
+//  PRINTF ("%s\n", __FUNCTION__);
 
 #if !defined (USE_PNG)
   /* Color bars */

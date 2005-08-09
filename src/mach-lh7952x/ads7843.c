@@ -20,7 +20,7 @@
 #include <command.h>
 #include <mach/hardware.h>
 
-//#define TALK 1
+#define TALK 1
 
 #define ADS_CTRL_START	(1<<7)
 #define ADS_CTRL_AD(a)	(((a) & 0x7)<<4)
@@ -62,24 +62,6 @@ static void execute_spi_command (int v, int cwrite)
   CPLD_SPIC = 0;
 }
 #endif
-
-
-static void ads_setup (void)
-{
-//  int i;
-
-  ENTRY (0);
-
-}
-
-static void ads_init (void)
-{
-  //  int i;
-
-  ENTRY (0);
-
-  ads_setup ();
-}
 
 #define MS_TIMEOUT 2*1000
 
@@ -171,7 +153,7 @@ static __command struct command_d c_ads = {
 };
 
 static __service_7 struct service_d ads7843_service = {
-  .init = ads_init,
+//  .init = ads_init,
 //  .release = ads_release,
 };
 

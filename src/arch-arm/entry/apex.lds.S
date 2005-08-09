@@ -99,9 +99,10 @@ SECTIONS
 		APEX_VMA_BSS_END = .;
 		. = ALIGN (4);
 /*		*(.ethernet.bss) */
-/*		*(.clcdc.bss) */
 /*		*(.jffs2.bss) */
 		*(.*.bss)	/* All other bss sections */
+		. = ALIGN (128);
+		*(.clcdc.alignedbss)
 	}
 	. += 8192;
 	APEX_VMA_STACK_START = .;
