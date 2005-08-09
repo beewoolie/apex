@@ -168,7 +168,7 @@ static void clcdc_init (void)
   MASK_AND_SET (IOCON_LCDMUX, 3<<6,  2<<6);
   MASK_AND_SET (IOCON_LCDMUX, 3<<4,  0<<4);
   MASK_AND_SET (IOCON_LCDMUX, 3<<0,  2<<0);
-  //  IOCON_LCDMUX = 0x1fbeda9e;
+//  IOCON_LCDMUX = 0x1fbeda9e;
 #endif
 
 #if defined (CONFIG_ARCH_LH79524)
