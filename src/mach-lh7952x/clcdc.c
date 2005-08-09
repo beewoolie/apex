@@ -118,6 +118,8 @@ fail:
 
 static void clcdc_init (void)
 {
+  printf ("%s\n", __FUNCTION__);
+
 #if !defined (USE_PNG)
   /* Color bars */
   {
@@ -138,13 +140,38 @@ static void clcdc_init (void)
   draw_splash ();
 
   RCPC_CTRL |= (1<<9); /* Unlock */
+
+#if defined (CONFIG_ARCH_LH79520)
+  RCPC_PERIPHCLKCTRL2 &= ~(1<<0);
+  RCPC_PERIPHCLKSEL2 &= ~(1<<0); /* Use HCLK */
+  RCPC_LCDCLKPRESCALE = (1>>1);	/* HCLK/1 */
+#endif
+
+#if defined (CONFIG_ARCH_LH79524)
   RCPC_PCLKCTRL1 &= ~(1<<0);
   RCPC_AHBCLKCTRL &= ~(1<<4);
-  //  RCPC_LCDPRE = (8>>1); 
-  RCPC_LCDPRE = (1>>1); 
+//  RCPC_LCDPRE = (8>>1); 	/* HCLK divisor 8 */
+  RCPC_LCDPRE = (1>>1); 	/* HCLK divisor 1 */
+#endif
+
   RCPC_CTRL &= ~(1<<9); /* Lock */
 
 
+#if defined (CONFIG_ARCH_LH79520)
+  IOCON_LCDMUX |= (1<<28) | (1<<27) | (1<<26) | (1<<25) | (1<<24)
+    | (1<<21) | (1<<20) | (1<<19) | (1<<18) | (1<<15) | (1<<12) | (1<<11)
+    | (1<<10) | (1<<3) | (1<<2);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<22, 2<<22); /* All for HR-TFT */
+  MASK_AND_SET (IOCON_LCDMUX, 3<<16, 2<<16);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<13, 2<<13);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<8,  2<<8);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<6,  2<<6);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<4,  0<<4);
+  MASK_AND_SET (IOCON_LCDMUX, 3<<0,  2<<0);
+  //  IOCON_LCDMUX = 0x1fbeda9e;
+#endif
+
+#if defined (CONFIG_ARCH_LH79524)
   MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<2)|(3<<0),
 		(1<<2)|(1<<0));
@@ -181,6 +208,7 @@ static void clcdc_init (void)
   MASK_AND_SET (IOCON_RESCTL22, 
 		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
 		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0)); 
+#endif
 
   CLCDC_TIMING0   = 0x0e143c38;
   CLCDC_TIMING1   = 0x075f013f;
@@ -188,7 +216,12 @@ static void clcdc_init (void)
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = 0x00010028;
   ALI_SETUP	  = 0x00000efd;
-  ALI_CTRL	  = 0x00000013;
+#if defined (CONFIG_ARCH_LH79520)
+  ALI_CTRL	  = 0x00000003; /* SPS & CLS */
+#endif
+#if defined (CONFIG_ARCH_LH79524)
+  ALI_CTRL	  = 0x00000013;	/* VEEEN & SPS & CLS*/
+#endif
   ALI_TIMING1     = 0x0000087d;
   ALI_TIMING2     = 0x00009ad0;
 
@@ -221,8 +254,16 @@ static void clcdc_release (void)
 
 				/*  Shutdown all the clocks */
   RCPC_CTRL	  |=  (1<<9); /* Unlock */
+
+#if defined (CONFIG_ARCH_LH79520)
+  RCPC_PERIPHCLKCTRL2 |= (1<<0);
+#endif
+
+#if defined (CONFIG_ARCH_LH79524)
   RCPC_PCLKCTRL1  |=   1<<0;
   RCPC_AHBCLKCTRL |=   1<<4;
+#endif
+
   RCPC_CTRL	  &= ~(1<<9); /* Lock */
 }
 

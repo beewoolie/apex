@@ -1,7 +1,7 @@
 2005-08-08  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-copy.c (cmd_copy): Detecting copy errors and
-	returning appropriate code.
+	returning appropriate error code.
 
 	* src/apex/command.c (exec_monitor): Fixed parser for startup
 	command so that semicolon no longer needed at the end of the

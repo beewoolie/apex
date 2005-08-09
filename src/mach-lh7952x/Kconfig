@@ -140,8 +140,8 @@ config DRIVER_EMAC_LH79524
 	  Sharp lh79524. 
 
 config CLCDC
-	bool "Color LCD"
-	depends on MACH_LPD79524
+	bool "Color LCD Test"
+	depends on MACH_LPD79520 || MACH_LPD79524
 	default n
 	help
 	  This driver initializes and tests the CLCD controller.
