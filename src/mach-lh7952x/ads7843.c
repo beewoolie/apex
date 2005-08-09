@@ -24,7 +24,11 @@
 
 #define ADS_CTRL_START	(1<<7)
 #define ADS_CTRL_AD(a)	(((a) & 0x7)<<4)
+#define ADS_CTRL_PD(p)	((p) & 0x3)
 
+#define ADS_CTRL_PD_IRQ	     0
+#define ADS_CTRL_PD_NOIRQ    1
+#define ADS_CTRL_PD_PON	     3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -72,19 +76,22 @@ static void inline msleep (int ms)
     ;
 }
 
-static void inline request (int a)
+static void reset_irq (void)
 {
-  //  unsigned long timeStart;
-	/* --- Request X */
-  CPLD_SPID = ADS_CTRL_START | ADS_CTRL_AD(a);
+  CPLD_INT |= CPLD_INT_PIRQ;
+  msleep (3);
+  CPLD_INT &= ~CPLD_INT_PIRQ;
+}
+
+static void inline request (int a, int pd)
+{
+  CPLD_SPID = ADS_CTRL_START | ADS_CTRL_AD(a) | ADS_CTRL_PD(pd);
   CPLD_SPIC = CPLD_SPIC_CS_TOUCH | CPLD_SPIC_LOAD;
   while (!(CPLD_SPIC & CPLD_SPIC_LOADED))
     ;
   CPLD_SPIC = CPLD_SPIC_CS_TOUCH;
   while (!(CPLD_SPIC & CPLD_SPIC_DONE))
     ;
-//  timeStart = timer_read ();
-  msleep (2);
 }
 
 static int inline read (void)
@@ -122,19 +129,48 @@ static int cmd_ads (int argc, const char** argv)
 {
   int x;
   int y;
+  int i;
+  int j;
+  int v;
   extern struct driver_d* console;
 
-  do {
+  request (1, ADS_CTRL_PD_IRQ);
+  read ();
+  reset_irq ();
 
+  do {
     if (!(CPLD_INT & CPLD_INT_NTOUCH)) {
-      request (5);
-      x = read ();
+      x = 0;
+      y = 0;
+
+      for (j = 2; j--; ) {
+	request (1, ADS_CTRL_PD_PON);
+	read ();
+      }
+
+      request (1, ADS_CTRL_PD_PON);
+      x += read ();
+
+      request (1, ADS_CTRL_PD_PON);
+      x += read ();
+
+      for (j = 2; j--; ) {
+	request (5, ADS_CTRL_PD_PON);
+	read ();
+      }
+
+      request (5, ADS_CTRL_PD_PON);
+      y += read ();
+
+      request (5, ADS_CTRL_PD_IRQ);
+      y += read ();
+
       disable ();
-      msleep (4);
-      request (1);
-      y = read ();
-      disable ();
-      printf ("(%d %d)\n", x, y);
+
+      x /= 2;
+      y /= 2;
+      printf ("(%04x %04x)\n", x, y);
+      reset_irq ();
     }
   } while (!console->poll (0, 1));
   {
