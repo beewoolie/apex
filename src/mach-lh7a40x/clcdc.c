@@ -171,7 +171,7 @@
 #define LCDEN	(1<<0)
 
 
-static unsigned short __attribute__((section(".clcdc.bss"))) 
+static unsigned short __attribute__((section(".clcdc.alignedbss"))) 
      buffer[PEL_WIDTH*PEL_HEIGHT];
 
 /* msleep
