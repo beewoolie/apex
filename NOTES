@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o There is an error in the dump code.  It doesn't dump the CLCD
+    registers correctly.  This is not excusable. 
+
   o Improving network responsiveness
 
     o Since there is a limited number of receive buffers, we may need
@@ -15,6 +18,11 @@ TODO:
       and retransmission to see the reply
     o Still, need to inspect the network traffic to make sure this is
       the reason for the delay on rarp.
+
+    o May need to wait for the link to come up before sending the
+      network configuration packets.  Don't know, but we've added the
+      flush before sending the rarp packets and it still takes a while
+      for rarp to respond.
 
   o Interrupt key
 
