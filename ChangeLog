@@ -1,5 +1,8 @@
 2005-08-10  Marc Singer  <elf@buici.com>
 
+	* src/drivers/drv-mem.c (memory_report): Groomed the memory report
+	to eliminate first blank line.
+
 	* src/apex/command.c (exec_monitor): Removed leading whitespace in
 	startup command reports.
 

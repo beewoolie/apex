@@ -147,13 +147,16 @@ static void memory_report (void)
 {
   int i;
 
-  printf ("  memory:\n");
+  printf ("  memory:");
 
   for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i)
-    if (regions[i].length)
-      printf ("          0x%lx 0x%08x (%d MiB)\n", 
+    if (regions[i].length) {
+      if (i)
+	printf ("         ");
+      printf (" 0x%lx 0x%08x (%d MiB)\n", 
 	      regions[i].start, regions[i].length, 
 	      regions[i].length/(1024*1024));
+    }
 }
 #endif
 
