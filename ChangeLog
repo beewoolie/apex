@@ -1,3 +1,8 @@
+2005-08-10  Marc Singer  <elf@buici.com>
+
+	* src/apex/command.c (exec_monitor): Removed leading whitespace in
+	startup command reports.
+
 2005-08-08  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-copy.c (cmd_copy): Detecting copy errors and

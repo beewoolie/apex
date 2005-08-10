@@ -232,6 +232,8 @@ void exec_monitor (void)
       char* pchEnd = strchr (pch, ';');
       if (pchEnd)
 	*pchEnd = 0;
+      while (*pch == ' ')
+	++pch;
       printf ("\r# %s\n", pch);
       parse_command (pch, &argc, &argv);
       if (call_command (argc, argv))
