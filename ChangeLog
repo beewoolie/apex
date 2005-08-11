@@ -1,5 +1,8 @@
 2005-08-11  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/lpd7a40x.h (CPLD_CONTROL_WLPEN): Changed
+	constant name to match that used by the driver and the LPD79520.
+
 	* src/mach-lh7a40x/timer.c (timer_delta): The interval timer was
 	wrong, too.
 

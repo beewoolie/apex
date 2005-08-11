@@ -657,15 +657,18 @@ static void fat_report (void)
 
 //  if (   fat.bootsector[SECTOR_SIZE - 2] == 0x55 
 //      && fat.bootsector[SECTOR_SIZE - 1] == 0xaa) {
-  printf ("  fat:\n"); 
+  printf ("  fat:"); 
 
   for (i = 0; i < 4; ++i)
-    if (fat.partition[i].type)
-      printf ("          partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+    if (fat.partition[i].type || i == 0) {
+      if (i != 0)
+	printf ("      ");
+      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
 	      fat.partition[i].boot ? '*' : ' ',
 	      fat.partition[i].type,
 	      fat.partition[i].start,
 	      fat.partition[i].length);
+    }
 
   printf ("          bps %d spc %d res %d fats %d re %d sec %d\n", 
 	  read_short (&fat.parameter.bytes_per_sector),

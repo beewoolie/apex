@@ -984,15 +984,17 @@ static void ext2_report (void)
     ext2.fOK = 1;
   }
 
-  printf ("  ext2:\n"); 
+  printf ("  ext2:"); 
   for (i = 0; i < 4; ++i)
-    if (ext2.partition[i].type)
-      printf ("          partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+    if (ext2.partition[i].type || i == 0) {
+      if (i != 0)
+	printf ("       ");
+      printf ("   partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
 	      ext2.partition[i].boot ? '*' : ' ',
 	      ext2.partition[i].type,
 	      ext2.partition[i].start,
 	      ext2.partition[i].length);
-
+    }
   if (ext2.block_size) {
     printf ("          total (i/b) %d/%d  free %d/%d  group %d/%d\n", 
 	    ext2.superblock.s_inodes_count,
