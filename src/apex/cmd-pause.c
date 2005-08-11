@@ -29,6 +29,13 @@
    available for testing timers.  A general purpose pause command
    would be welcome, one that accepts a timeout parameter.
 
+
+   NOTES
+   -----
+
+   o Should modify this to allow for a parameter to control which
+     timer and the interval.
+
 */
 
 #include <linux/types.h>

@@ -267,14 +267,14 @@ static void codec_configure (int frequency, int sample_size)
 
 static void codec_init (void)
 {
-  RCPC_CTRL |= RCPC_CTRL_UNLOCK;
+  RCPC_CTRL |=  RCPC_CTRL_UNLOCK;
   RCPC_AHBCLKCTRL &= ~(1<<0); /* Enable DMA AHB clock */
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   IOCON_DMAMUX |= (1<<2) | (1<<1) | (1<<0); /* Allow DREQ0, nDACK0, DEOT0 */
 
-  DMA_CTRL(DMA_CHANNEL)
-    = (1<<13)			/* Peripheral destination */
+  DMA_CTRL(DMA_CHANNEL) = 0
+    | (1<<13)			/* Peripheral destination */
     | (2<<7)			/* Destination size 4 bytes */
     | (2<<3)			/* Source size is 4 bytes */
     | (0<<9)			/* Wrapping: Load base addresses on start  */

@@ -117,9 +117,13 @@
 #endif
 
 // SRAM devices
-#define SMC_BCR0_V		(0x200039af)	// Bootflash
-#define SMC_BCR6_V		(0x1000fbe0)	// CompactFlash
-#define SMC_BCR7_V		(0x1000b2c2)	// CPLD & Ethernet
+//#define SMC_BCR0_V		(0x200039af)	// Bootflash
+//#define SMC_BCR6_V		(0x1000fbe0)	// CompactFlash
+//#define SMC_BCR7_V		(0x1000b2c2)	// CPLD & Ethernet
+
+#define SMC_BCR0_V		(0x20000200)	// Bootflash
+#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
+#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 
 #if defined (CONFIG_SDRAM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
@@ -168,10 +172,10 @@ void __section (.bootstrap) usleep (unsigned long us)
 		  "beq 0b\n\t"
 		  "mov pc, lr\n\t"
 		  :
-		  : "r" (TIMER1_PHYS),
+		  : "r" (TIMER2_PHYS),
 		    "r" (0),
 		    "r" (us - us/2),
-		    "r" ((1<<7)|(1<<1)), /* Enable, Free, 508 KHz */
+		    "r" ((1<<7)|(1<<3)), /* Enable, Free, 508 KHz */
 		    "r" (0x8000));
 }
 

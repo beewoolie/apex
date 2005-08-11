@@ -1,3 +1,12 @@
+2005-08-11  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7a40x/timer.c (timer_delta): The interval timer was
+	wrong, too.
+
+	* src/mach-lh7a40x/initialize.c: The usleep timer setup was wrong.
+	Don't know how this ever worked.  ;-) Had to move it to timer2 so
+	that it didn't conflict with the interval timer.
+
 2005-08-10  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-mem.c (memory_report): Groomed the memory report
