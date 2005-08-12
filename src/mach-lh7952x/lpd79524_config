@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Aug  1 14:13:19 2005
+# Thu Aug 11 18:25:40 2005
 #
 CONFIG_ARM=y
 CONFIG_ARCH_LH7952X=y
@@ -13,6 +13,7 @@ CONFIG_ARCH_LH7952X=y
 # General Setup
 #
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-"
+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_SMALL is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
@@ -47,10 +48,10 @@ CONFIG_ENV_STARTUP=""
 CONFIG_DRIVER_EMAC_LH79524=y
 # CONFIG_CLCDC is not set
 # CONFIG_CODEC is not set
+CONFIG_DRIVER_CPLD_SPI=y
 CONFIG_MACH="lh7952x"
 CONFIG_ARCH_LH79524=y
 CONFIG_MACH_LPD7952X=y
-CONFIG_DRIVER_CPLD_SPI=y
 
 #
 # Commands
