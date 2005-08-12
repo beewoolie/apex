@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Jul 20 16:24:12 2005
+# Thu Aug 11 19:54:47 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -13,6 +13,7 @@ CONFIG_ARCH_LH7A40X=y
 # General Setup
 #
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-"
+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_SMALL is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
@@ -66,6 +67,7 @@ CONFIG_CMD_INFO=y
 # CONFIG_CMD_PAUSE is not set
 CONFIG_CMD_WAIT=y
 CONFIG_CMD_XRECEIVE=y
+# CONFIG_CMD_ETH_SMC91X is not set
 
 #
 # Generic Drivers
@@ -77,9 +79,11 @@ CONFIG_DRIVER_EXT2_BLOCKDEVICE="cf"
 # CONFIG_DRIVER_JFFS2 is not set
 CONFIG_DRIVER_NOR_CFI=y
 CONFIG_DRIVER_COMPACTFLASH=y
+CONFIG_DRIVER_SMC91X=y
 CONFIG_USES_NOR_CFI=y
 CONFIG_USES_COMPACTFLASH=y
 CONFIG_USES_PATHNAME_PARSER=y
+CONFIG_USES_SMC91X=y
 
 #
 # Sharp-LH Drivers
@@ -92,9 +96,7 @@ CONFIG_DRIVERS_LH=y
 # Ethernet Networking
 #
 # CONFIG_ETHERNET is not set
-# CONFIG_CMD_ARP is not set
-# CONFIG_CMD_RARP is not set
-# CONFIG_CMD_TFTP is not set
+CONFIG_USE_ETHERNET=y
 
 #
 # Environment
