@@ -121,9 +121,14 @@
 //#define SMC_BCR6_V		(0x1000fbe0)	// CompactFlash
 //#define SMC_BCR7_V		(0x1000b2c2)	// CPLD & Ethernet
 
-#define SMC_BCR0_V		(0x20000200)	// Bootflash
-#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
-#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+#define SMC_BCR0_V		(0x200002a0)	// Bootflash
+#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
+#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
+
+// Alternative timings.
+//#define SMC_BCR0_V		(0x20000200)	// Bootflash
+//#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
+//#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 
 #if defined (CONFIG_SDRAM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
@@ -276,9 +281,15 @@ void __naked target_init (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-	/* Drive PE4 high to prevent CPLD crash */
-  //  GPIO_PEDD |= (1<<4);
-  GPIO_PED |= (1<<4);
+#if defined (CONFIG_MACH_LPD7A404)
+  /* PE4 must be driven high to disable the CPLD JTAG & prevent CPLD crash */
+  GPIO_PEDD |= (1<<4);
+  GPIO_PED  |= (1<<4);
+
+  /* PC6 must be driven high to disable the NAND_nCE PCN-285 */
+  GPIO_PCDD |= (1<<6);
+  GPIO_PCD  |= (1<<6);
+#endif
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
