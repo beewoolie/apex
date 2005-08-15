@@ -1,3 +1,9 @@
+2005-08-15  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7a40x/initialize.c (target_init): Modified the target
+	init for lpd7a404 so that the SMC91x controller works properly on
+	the latest lpd7a404 CardEngines; PCN-285 2005.5.4.
+
 2005-08-11  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/lpd7a40x.h (CPLD_CONTROL_WLPEN): Changed
