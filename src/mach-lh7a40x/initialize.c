@@ -283,12 +283,12 @@ void __naked target_init (void)
 
 #if defined (CONFIG_MACH_LPD7A404)
   /* PE4 must be driven high to disable the CPLD JTAG & prevent CPLD crash */
-  GPIO_PEDD |= (1<<4);
-  GPIO_PED  |= (1<<4);
+  GPIO_PEDD &= ~(1<<4);
+  GPIO_PED  |=  (1<<4);
 
   /* PC6 must be driven high to disable the NAND_nCE PCN-285 */
-  GPIO_PCDD |= (1<<6);
-  GPIO_PCD  |= (1<<6);
+  GPIO_PCDD &= ~(1<<6);
+  GPIO_PCD  |=  (1<<6);
 #endif
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
