@@ -63,7 +63,7 @@ static struct mem_region regions[32];
 static int memory_scan (int i, unsigned long start, unsigned long length)
 {
   extern char APEX_VMA_START;
-  extern char APEX_VMA_END;
+  extern char APEX_VMA_PROTECT_END;
   unsigned long* pl;
 
   PUTC_LL ('k');
@@ -71,7 +71,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 
 	/* Mark */
   for (pl = (unsigned long*) (start + length - CB_BLOCK
-			      + (&APEX_VMA_END - &APEX_VMA_START));
+			      + (&APEX_VMA_PROTECT_END - &APEX_VMA_START));
        1;
        pl -= CB_BLOCK/sizeof (*pl)) {
 //    PRINTF ("   %p\n", pl);
@@ -87,7 +87,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 
 	/* Identify */
   for (pl = (unsigned long*) (start 
-			      + (&APEX_VMA_END - &APEX_VMA_START));
+			      + (&APEX_VMA_PROTECT_END - &APEX_VMA_START));
        pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
        pl += CB_BLOCK/sizeof (*pl)) {
@@ -97,7 +97,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
     if (*pl == (unsigned long) pl) {
       if (regions[i].length == 0)
 	regions[i].start
-	  = (unsigned long) pl - (&APEX_VMA_END - &APEX_VMA_START);
+	  = (unsigned long) pl - (&APEX_VMA_PROTECT_END - &APEX_VMA_START);
       regions[i].length += CB_BLOCK;
     }
     else

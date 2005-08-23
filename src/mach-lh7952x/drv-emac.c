@@ -201,7 +201,7 @@ static unsigned long phy_id;	/* ID read from PHY */
 #define TX_QUEUE_LENGTH	 C_TX_BUFFER
 #define TX_BUFFER_SIZE	 CB_TX_BUFFER
 
-#define ETH_BSS		__attribute__((section(".ethernet.bss"))) 
+#define ETH_BSS		__attribute__((section(".ethernet.xbss"))) 
 
 static long ETH_BSS rgl_rx_descriptor[2*C_RX_BUFFER];
 static long ETH_BSS rgl_tx_descriptor[2*C_TX_BUFFER];

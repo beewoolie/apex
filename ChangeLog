@@ -1,3 +1,10 @@
+2005-08-22  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Reorganized the BSS sections.
+	Needed to put the BSS outside of the protected region so that the
+	memory scan finds all of memory correctly.  This change also
+	prevents some of the BSS memory from being zeroed. 
+
 2005-08-15  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/initialize.c (target_init): Modified the target

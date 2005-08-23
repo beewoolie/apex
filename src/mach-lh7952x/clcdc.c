@@ -44,7 +44,7 @@ const unsigned char rgbPNG[] = {
 };
 #endif
 
-static unsigned short __attribute__((section(".clcdc.alignedbss"))) 
+static unsigned short __attribute__((section(".clcdc.xbss"))) 
      buffer[320*240];
 
 /* msleep

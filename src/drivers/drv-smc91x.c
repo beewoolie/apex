@@ -155,7 +155,7 @@
 
 #define  C_RX_BUFFER		 4
 #define CB_RX_BUFFER		 (1536 + 6)
-#define ETH_BSS			__attribute__((section(".ethernet.bss"))) 
+#define ETH_BSS			__attribute__((section(".ethernet.xbss"))) 
 
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */

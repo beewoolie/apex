@@ -261,9 +261,9 @@ struct jffs2_info {
 
 static struct jffs2_info jffs2;
 
-static struct dirent_cache __attribute__((section(".jffs2.bss")))
+static struct dirent_cache __attribute__((section(".jffs2.xbss")))
      dirent_cache[DIRENT_CACHE_MAX];
-static struct inode_cache __attribute__((section(".jffs2.bss")))
+static struct inode_cache __attribute__((section(".jffs2.xbss")))
      inode_cache[INODE_CACHE_MAX];
 int cDirentCache;
 int cInodeCache;
@@ -460,18 +460,22 @@ void summarize_inode (u32 inode, union node* node)
 
 */
 
-void jffs2_load_cache (void)
+static int jffs2_load_cache (void)
 {
   size_t ib;
   size_t cbNode;
   union node node;
   int cEmpties = 0;		/* Count of consecutive empties */
+  extern struct driver_d* console;
 
   ENTRY (0);
 
   printf ("caching jffs2 filesystem: "); 
 
   for (ib = 0; ib < jffs2.d.length; ib = (ib + cbNode + 3) & ~3) {
+
+    if (console->poll (0, 0))	/* Check for ^C */
+      return ERROR_BREAK;
 
 //    PRINTF ("reading node @0x%x\n", ib);
 
@@ -539,6 +543,8 @@ void jffs2_load_cache (void)
 
   printf ("%d directory nodes %d inodes nodes\n",
 	  cDirentCache, cInodeCache);
+
+  return 0;
 }
 
 
@@ -765,7 +771,10 @@ static int jffs2_identify (void)
     return result;
   
   jffs2.d = d;
-  jffs2_load_cache ();
+  result = jffs2_load_cache ();
+  if (result)
+    return result;
+
   jffs2.fCached = 1;
   return 0;
 }

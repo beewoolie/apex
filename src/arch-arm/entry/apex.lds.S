@@ -93,22 +93,30 @@ SECTIONS
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (4);
-	.bss . : {
-		APEX_VMA_BSS_START = .;
-		*(.bss)
-		APEX_VMA_BSS_END = .;
-		. = ALIGN (4);
-/*		*(.ethernet.bss) */
-/*		*(.jffs2.bss) */
-		*(.*.bss)	/* All other bss sections */
-		. = ALIGN (128);
-		*(.clcdc.alignedbss)
-	}
 	. += 8192;
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
 	. += 8192;
 	APEX_VMA_IRQSTACK_START = .;
 	. = ALIGN (4);
+	APEX_VMA_PROTECT_END = .;
+	/* Before this point, all of the data is protected from memory
+	   sizing probes. */
+	.bss . : {		/* Normal, zeroed BSS */
+		APEX_VMA_BSS_START = .;
+		*(.bss)
+		APEX_VMA_BSS_END = .;
+		. = ALIGN (4);
+		*(.*.bss)	/* All other bss sections */
+	}
+	.xbss : {		/* Special BSS, non-zeroed */
+		*(.ethernet.xbss)
+		. = ALIGN (128);
+		*(.clcdc.xbss)
+		. = ALIGN (4);
+		*(.jffs2.xbss)
+		. = ALIGN (4);
+		*(.pcm.xbss)
+	}
 	APEX_VMA_END = .;
 }
