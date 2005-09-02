@@ -109,7 +109,7 @@ SECTIONS
 		. = ALIGN (4);
 		*(.*.bss)	/* All other bss sections */
 	}
-	.xbss : {		/* Special BSS, non-zeroed */
+	.xbss (NOLOAD) : {	/* Special BSS, non-zeroed */
 		*(.ethernet.xbss)
 		. = ALIGN (128);
 		*(.clcdc.xbss)
