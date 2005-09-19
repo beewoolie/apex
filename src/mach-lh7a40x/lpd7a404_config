@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Aug 11 19:54:47 2005
+# Sun Sep 18 17:32:20 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -24,7 +24,7 @@ CONFIG_APEX_VMA=0xc0200000
 CONFIG_KERNEL_LMA=0xc0008000
 CONFIG_SDRAM_BANK0=y
 # CONFIG_SDRAM_BANK1 is not set
-CONFIG_CLCDC=y
+# CONFIG_CLCDC is not set
 # CONFIG_CODEC is not set
 CONFIG_MACH="lh7a40x"
 # CONFIG_MACH_LPD7A400 is not set
@@ -42,7 +42,7 @@ CONFIG_ARCH_NUMBER_FUNCTION="determine_arch_number"
 # CONFIG_LCD_3_5_QVGA_20 is not set
 # CONFIG_LCD_5_7_QVGA_10 is not set
 # CONFIG_LCD_6_4_VGA_10 is not set
-CONFIG_LCD_12_1_SVGA_10=y
+# CONFIG_LCD_12_1_SVGA_10 is not set
 CONFIG_ARCH_LH7A404=y
 CONFIG_MACH_LPD7A40X=y
 
@@ -88,7 +88,7 @@ CONFIG_USES_SMC91X=y
 #
 # Sharp-LH Drivers
 #
-CONFIG_DRIVER_LH_ADC=y
+# CONFIG_DRIVER_LH_ADC is not set
 CONFIG_HAS_LH_ADC=y
 CONFIG_DRIVERS_LH=y
 
