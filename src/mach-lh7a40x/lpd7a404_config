@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Sep 18 17:32:20 2005
+# Sun Sep 18 17:35:06 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -39,10 +39,6 @@ CONFIG_ARCH_NUMBER_FUNCTION="determine_arch_number"
 #
 # Platform Drivers
 #
-# CONFIG_LCD_3_5_QVGA_20 is not set
-# CONFIG_LCD_5_7_QVGA_10 is not set
-# CONFIG_LCD_6_4_VGA_10 is not set
-# CONFIG_LCD_12_1_SVGA_10 is not set
 CONFIG_ARCH_LH7A404=y
 CONFIG_MACH_LPD7A40X=y
 
@@ -95,7 +91,16 @@ CONFIG_DRIVERS_LH=y
 #
 # Ethernet Networking
 #
-# CONFIG_ETHERNET is not set
+CONFIG_ETHERNET=y
+CONFIG_CMD_IPCONFIG=y
+CONFIG_CMD_IPCONFIG_STATIC=y
+CONFIG_CMD_IPCONFIG_RARP=y
+# CONFIG_CMD_IPCONFIG_BOOTP is not set
+# CONFIG_CMD_IPCONFIG_DHCP is not set
+CONFIG_PROTO_ICMP_ECHO=y
+# CONFIG_CMD_PING is not set
+# CONFIG_CMD_ARP is not set
+CONFIG_CMD_TFTP=y
 CONFIG_USE_ETHERNET=y
 
 #
