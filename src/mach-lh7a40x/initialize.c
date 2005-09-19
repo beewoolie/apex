@@ -150,7 +150,6 @@
 #define SDRAM_MODE		_SDRAM_MODE	  | SDRAM_MODE_SROMLL
 
 
-
 /* usleep
 
    this function accepts a count of microseconds and will wait at
