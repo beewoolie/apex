@@ -38,7 +38,7 @@
 struct driver_d* console_driver;
 
 /* Ring buffer for polled bytes */
-static char rgbBuffer[128];
+static char __xbss(console) rgbBuffer[128];
 static size_t cbBuffer;
 
 ssize_t console_read (struct descriptor_d* d, void* pv, size_t cb)
@@ -129,7 +129,7 @@ int putchar (int ch)
 
 int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 {
-  static char rgb[1024];	/* Command line buffer */
+  static char __xbss(console) rgb[1024];	/* Command line buffer */
   int cb;
 
   puts (szPrompt);

@@ -45,7 +45,7 @@ const char* error_description;
 static char* expand_variables (const char* rgbSrc)
 {
   const char* pchSrc;
-  static char rgb[1024];
+  static char __xbss(command) rgb[1024];
   char* pch = rgb;
   char* pchKey = NULL;
   int state = 0;
@@ -100,7 +100,7 @@ static char* expand_variables (const char* rgbSrc)
 
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
-  static const char* argv[64];	/* Command words */
+  static const char* __xbss(command) argv[64];	/* Command words */
   char* pb;
   int cb;
 

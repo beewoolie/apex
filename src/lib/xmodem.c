@@ -67,7 +67,7 @@ Cf:
 
 extern struct driver_d* console;
 
-static char rgbXmodem[1024];
+static char __xbss(xmodem) rgbXmodem[1024];
 
 static inline void _send (char ch)
 { 

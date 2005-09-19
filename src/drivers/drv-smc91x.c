@@ -155,14 +155,13 @@
 
 #define  C_RX_BUFFER		 4
 #define CB_RX_BUFFER		 (1536 + 6)
-#define ETH_BSS			__attribute__((section(".ethernet.xbss"))) 
 
 static int phy_address;
 static unsigned long phy_id;	/* ID read from PHY */
 
 static int head_rx;		/* Next buffer to accept a receive packet */
 static int count_rx;		/* Number of received packets buffered */
-static char ETH_BSS rgbRxBuffer[C_RX_BUFFER*CB_RX_BUFFER];
+static char __xbss(ethernet) rgbRxBuffer[C_RX_BUFFER*CB_RX_BUFFER];
 
 #define SMC_REG(b,r)	(r)		
 

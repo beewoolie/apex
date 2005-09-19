@@ -121,7 +121,7 @@ static int cmd_setenv (int argc, const char** argv)
   int i;
   int ib = 0;
   int cb;
-  static char sz[ENV_CB_MAX];
+  static char __xbss(env) sz[ENV_CB_MAX];
 
   if (!is_descriptor_open (&env_d))
     ERROR_RETURN (ERROR_UNSUPPORTED, "environment descriptor not open");

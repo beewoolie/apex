@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 3
-SUBLEVEL = 2
+SUBLEVEL = 3
 EXTRAVERSION =
 #NAME=Zonked Quokka
 
@@ -512,9 +512,6 @@ endif
 ifeq ($(dot-config),1)
 # In this section, we need .config
 
-# Preserve environment for the cross-compiler
-#ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
-
 # Read in dependencies to all Kconfig* files, make sure to run
 # oldconfig if changes are detected.
 -include .config.cmd
@@ -776,7 +773,7 @@ $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 
 .PHONY: check_cc
 check_cc:
-	@if [ "`$(CC) -dumpversion`" = "3.4.4" ] ; \
+	@if [ "`$(CC) -dumpversion`" = "3.4.4ok" ] ; \
          then echo " *** $(CC)" ;\
 	      echo "     is an unsupported compiler version." ; exit 1 ; fi
 

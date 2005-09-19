@@ -292,6 +292,7 @@ struct ext2_info {
   int inode_number;		/* Number of current inode */
   int blockCache;		/* Number of first block in cache */
   int cCache;			/* Count of cached block numbers */
+  /* *** FIXME: buffer should be in .xbss section */
   char rgbCache[BLOCK_SIZE_MAX]; /* Cache of block numbers from inode */
 };
 
@@ -542,7 +543,7 @@ static int ext2_identify (void)
 static void* ext2_enum_directory (void* h, struct directory** pdir)
 {
   static int block_number;
-  static char rgb[BLOCK_SIZE_MAX];
+  static char __xbss(ext2) rgb[BLOCK_SIZE_MAX];
   size_t ib = (size_t) h;
   int block_index;
   struct directory* dir;

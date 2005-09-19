@@ -201,12 +201,10 @@ static unsigned long phy_id;	/* ID read from PHY */
 #define TX_QUEUE_LENGTH	 C_TX_BUFFER
 #define TX_BUFFER_SIZE	 CB_TX_BUFFER
 
-#define ETH_BSS		__attribute__((section(".ethernet.xbss"))) 
-
-static long ETH_BSS rgl_rx_descriptor[2*C_RX_BUFFER];
-static long ETH_BSS rgl_tx_descriptor[2*C_TX_BUFFER];
-static char ETH_BSS rgbRxBuffer[CB_RX_BUFFER*C_RX_BUFFER];
-static char ETH_BSS rgbTxBuffer[CB_TX_BUFFER*C_RX_BUFFER];
+static long __xbss(ethernet) rgl_rx_descriptor[2*C_RX_BUFFER];
+static long __xbss(ethernet) rgl_tx_descriptor[2*C_TX_BUFFER];
+static char __xbss(ethernet) rgbRxBuffer[CB_RX_BUFFER*C_RX_BUFFER];
+static char __xbss(ethernet) rgbTxBuffer[CB_TX_BUFFER*C_RX_BUFFER];
 
 static int head_rx;		/* Index of next receive buffer */
 static int head_tx;

@@ -43,10 +43,11 @@ extern struct driver_d* console;
 
 int printf (const char* fmt, ...)
 {
-  static char rgb[2*1024];
+  static char __xbss(console) rgb[2*1024];
   ssize_t cb;
   va_list ap;
-  extern ssize_t console_write (struct descriptor_d* d, const void* pv, size_t cb);
+  extern ssize_t console_write (struct descriptor_d* d, 
+				const void* pv, size_t cb);
 
 
 //  PUTC_LL ('P');

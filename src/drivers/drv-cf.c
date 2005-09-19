@@ -161,6 +161,7 @@ struct cf_info {
   int sectors_per_track;
   int total_sectors;
 
+  /* *** FIXME: buffer should be in .xbss section */
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
 };

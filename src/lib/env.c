@@ -68,6 +68,7 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
+#define ENV_CHECK	(1024)	/* Comment out to check only one short */
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
 #define ENV_VAL_DELETED	 (0x00)
@@ -125,7 +126,13 @@ static char _env_locate (int i)
    presence of the environment magic number at the start of the
    region.  It returns 0 if the magic number is present.  If the
    region is uninitialized, it returns 1.  The return value is -1 if
-   there is data in the environment that cannot be recognized.n
+   there is data in the environment that cannot be recognized.
+
+   The original version of this function only checked for a single
+   0xffff.  We're modifying this code, conditionally, to check for at
+   least 1K of 0xff's.  An ideal implementation would check all of the
+   environment space, just before a write, just to make sure it is
+   clear. 
 
 */
 
@@ -139,9 +146,24 @@ static int _env_check_magic (void)
   _env_read (&s, 2);
   if (s == ENV_MAGIC)
     return 0;
-  if (s == 0xffff)
-    return 1;
-  return -1;
+
+  if (s != 0xffff)
+    return -1;
+
+#if defined (ENV_CHECK) 
+  {
+    int c = ENV_CHECK/2;
+    while (--c) {
+      _env_read (&s, 2);
+      if (s != 0xffff)
+	return -1;
+    }
+    _env_rewind ();
+    _env_read (&s, 2);
+  }
+#endif
+
+  return 1;
 } 
 
 

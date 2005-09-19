@@ -45,6 +45,7 @@
 #define __naked __attribute__((naked))
 # define __used __attribute_used__
 #define __section(s) __attribute__((section(#s)))
+#define __xbss(s)     __attribute__((section("." #s ".xbss")))
 #define __irq_handler __attribute__((interrupt ("IRQ")))
 #define __fiq_handler __attribute__((interrupt ("FIQ")))
 #define __swi_handler __attribute__((interrupt ("SWI")))

@@ -105,18 +105,18 @@ SECTIONS
 	.bss . : {		/* Normal, zeroed BSS */
 		APEX_VMA_BSS_START = .;
 		*(.bss)
-		APEX_VMA_BSS_END = .;
 		. = ALIGN (4);
 		*(.*.bss)	/* All other bss sections */
+		APEX_VMA_BSS_END = .;
 	}
 	.xbss (NOLOAD) : {	/* Special BSS, non-zeroed */
 		*(.ethernet.xbss)
 		. = ALIGN (128);
 		*(.clcdc.xbss)
 		. = ALIGN (4);
-		*(.jffs2.xbss)
-		. = ALIGN (4);
 		*(.pcm.xbss)
+		. = ALIGN (4);
+		*(.*.xbss)	/* All other xbss sections */
 	}
 	APEX_VMA_END = .;
 }

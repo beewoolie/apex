@@ -32,6 +32,7 @@
 
 #include <config.h>
 //#include <apex.h>		/* printf */
+#include <attributes.h>
 #include <linux/types.h>
 //#include <environment.h>
 #include <linux/string.h>
@@ -39,10 +40,9 @@
 //#include <driver.h>
 #include <error.h>
 
-#define SIZE_ALIAS_HEAP_MAX	(16*1024)
+#define SIZE_ALIAS_HEAP_MAX	(4*1024)
 
-static unsigned char __attribute__((section(".alias.bss")))
-     rgbAlias[SIZE_ALIAS_HEAP_MAX];
+static unsigned char __xbss(alias) rgbAlias[SIZE_ALIAS_HEAP_MAX];
 
 size_t ibAlias;
 

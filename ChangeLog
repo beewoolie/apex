@@ -1,3 +1,19 @@
+2005-09-18  Marc Singer  <elf@buici.com>
+
+	* include/attributes.h (__xbss): New attribute macro for easy xbss
+	spec.
+
+2005-09-15  Marc Singer  <elf@buici.com>
+
+	* src/lib/env.c (_env_check_magic): Modified the environment check
+	before writing to look for a large block of 0xff's before
+	declaring the area blank.
+
+2005-09-02  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Needed to set the xbss section to
+	NOLOAD so that the loader image wouldn't bloat with BSS areas
+
 2005-08-22  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/apex.lds.S: Reorganized the BSS sections.

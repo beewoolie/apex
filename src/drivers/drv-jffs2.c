@@ -255,6 +255,7 @@ struct jffs2_info {
   u32 inode;			/* Open inode */
   size_t ibCache;		/* Offset of cached block */
   size_t cbCache;		/* Length of cached block */
+  /* *** FIXME: buffers should be in .xbss section */
   char rgbCache[BLOCK_SIZE_MAX];
 
 };

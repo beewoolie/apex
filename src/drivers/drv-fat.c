@@ -199,6 +199,7 @@ struct fat_info {
 //unsigned cluster_dir;		/* Current directory cluster being read  */
 
   int fat_type;			/* Decided FAT format */
+  /* *** FIXME: buffers should be in .xbss section */
   char fat[SECTOR_SIZE*3];	/* Cached FAT sectors */
   int sector_fat;		/* Sector number of the cached FAT */
 
