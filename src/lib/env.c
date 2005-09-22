@@ -68,7 +68,7 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
-#define ENV_CHECK	(1024)	/* Comment out to check only one short */
+#define ENV_CHECK_LEN	(1024)	/* Comment out to check only one short */
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
 #define ENV_VAL_DELETED	 (0x00)
@@ -120,7 +120,7 @@ static char _env_locate (int i)
   return ch;
 }
 
-/* _env_check_magic
+/* env_check_magic
 
    performs a rewind of the environment descriptor and checks for the
    presence of the environment magic number at the start of the
@@ -136,11 +136,9 @@ static char _env_locate (int i)
 
 */
 
-static int _env_check_magic (void)
+int env_check_magic (void)
 {
   unsigned short s;
-
-  //  printf ("env_check_magic\n");
 
   _env_rewind ();
   _env_read (&s, 2);
@@ -150,9 +148,9 @@ static int _env_check_magic (void)
   if (s != 0xffff)
     return -1;
 
-#if defined (ENV_CHECK) 
+#if defined (ENV_CHECK_LEN) 
   {
-    int c = ENV_CHECK/2;
+    int c = ENV_CHECK_LEN/2;
     while (--c) {
       _env_read (&s, 2);
       if (s != 0xffff)
@@ -182,7 +180,7 @@ static const char* _env_find (int i)
   if (!is_descriptor_open (&env_d))
     return NULL;
 
-  if (_env_check_magic ())
+  if (env_check_magic ())
     return NULL;
 
   if (_env_locate (i) != ENV_END) {
@@ -312,7 +310,7 @@ void env_erase (const char* szKey)
   if (i < 0)
     return;
 
-  if (_env_check_magic ())
+  if (env_check_magic ())
     return;
 
   if ((ch = _env_locate (i)) != ENV_END) {
@@ -343,7 +341,7 @@ int env_store (const char* szKey, const char* szValue)
   if (i < 0 || cch > ENV_CB_MAX - 1)
     return 1;
 
-  switch (_env_check_magic ()) {
+  switch (env_check_magic ()) {
   case 0:			/* magic present */
     break;
   case 1:			/* uninitialized */
@@ -353,8 +351,9 @@ int env_store (const char* szKey, const char* szValue)
       _env_write (&s, 2);
     }
     break;
+  default:
   case -1:			/* unrecognized */
-    return 1;
+    return -1;
   }
 
   while ((ch = _env_locate (i)) != ENV_END) {

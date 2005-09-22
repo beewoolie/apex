@@ -83,13 +83,7 @@ int cmd_printenv (int argc, const char** argv)
   const char* szKey;
   const char* szValue;
   int fDefault;
-
-#if 0
-  SerialOutputString ("environment head = 0x");
-  SerialOutputHex (ENV_HEAD);
-  SerialOutputString ("\n");
-#endif
-
+  
   while ((pv = env_enumerate (pv, &szKey, &szValue, &fDefault))) {
     puts (szKey);
     if (fDefault)
@@ -129,14 +123,6 @@ static int cmd_setenv (int argc, const char** argv)
   if (argc < 3)
     return ERROR_PARAM;
 
-#if 0
-  SerialOutputString ("set ");
-  SerialOutputString (argv[1]);
-  SerialOutputString (" = ");
-  SerialOutputString (argv[2]);
-  SerialOutputString ("\n");
-#endif
-  
   for (i = 2; i < argc; ++i) {
     cb = strlen (argv[i]);
     strlcpy (sz + ib , argv[i], sizeof (sz) - ib);
@@ -149,10 +135,16 @@ static int cmd_setenv (int argc, const char** argv)
 
   result = env_store (argv[1], sz);
 
-  if (result)
-    printf ("Unrecognized variable or environment\n");
+#if defined (CONFIG_SMALL)  
+  return result ? ERROR_FAILURE : 0;
+#else
+  if (result < 0)
+    printf ("Environment region is unwritable\n");
+  else if (result)
+    printf ("Unrecognized variable\n");
 
   return 0;
+#endif
 }
 
 static __command struct command_d c_setenv = {
@@ -175,12 +167,6 @@ static int cmd_unsetenv (int argc, const char** argv)
 
   if (argc != 2)
     return ERROR_PARAM; 
-
-#if 0
-  SerialOutputString ("unset ");
-  SerialOutputString (argv[1]);
-  SerialOutputString ("\n");
-#endif
   
   env_erase (argv[1]);
 

@@ -32,6 +32,7 @@
 #include <apex.h>
 #include <command.h>
 #include <service.h>
+#include <environment.h>
 
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
@@ -60,7 +61,20 @@ int cmd_version (int argc, const char** argv)
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START),
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
 #if defined (CONFIG_ENV_REGION)
-  printf ("  env  => %s\n", CONFIG_ENV_REGION);
+  printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
+  switch (env_check_magic ()) {
+  case 0:
+    printf ("present");
+    break;
+  case 1:
+    printf ("uninitialized");
+    break;
+  default:
+  case -1:
+    printf ("unwritable");
+    break;
+  }
+  printf (")\n");
 #endif
 #endif
 

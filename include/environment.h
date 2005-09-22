@@ -54,7 +54,7 @@ void	    env_erase (const char* szKey);
 void*	    env_enumerate (void* pv, const char** pszKey, 
 			   const char** pszValue, int* fDefault);
 void        env_erase_all (void);
-
+int	    env_check_magic (void);
 
 
 #endif  /* __ENVIRONMENT_H__ */
