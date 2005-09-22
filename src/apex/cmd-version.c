@@ -64,14 +64,14 @@ int cmd_version (int argc, const char** argv)
   printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
   switch (env_check_magic ()) {
   case 0:
-    printf ("present");
+    printf ("in-use");
     break;
   case 1:
-    printf ("uninitialized");
+    printf ("empty");
     break;
   default:
   case -1:
-    printf ("unwritable");
+    printf ("no-write");
     break;
   }
   printf (")\n");
