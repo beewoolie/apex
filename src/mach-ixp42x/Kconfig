@@ -127,14 +127,22 @@ config MACH
 
 config ARCH_IXP420
 	bool
+	select CPU_ARMV5
+	select CPU_XSCALE
 
 config ARCH_IXP422
 	bool
+	select CPU_ARMV5
+	select CPU_XSCALE
 
 config ARCH_IXP425
 	bool
+	select CPU_ARMV5
+	select CPU_XSCALE
 
 config MACH_AVILA
 	bool
+	select CPU_ARMV5
+	select CPU_XSCALE
 
 endif

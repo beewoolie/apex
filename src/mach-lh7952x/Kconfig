@@ -186,9 +186,13 @@ config MACH
 
 config ARCH_LH79520
 	bool
+	select CPU_ARMV4
+	select CPU_ARM720T
 
 config ARCH_LH79524
 	bool
+	select CPU_ARMV4
+	select CPU_ARM720T
 
 config MACH_LPD7952X
 	bool

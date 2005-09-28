@@ -55,6 +55,8 @@ static void init_services (void)
     PUTC_LL (i%8 + '0');
     PUTC_LL (',');
     PUTHEX_LL (&service->init);
+    PUTC_LL (',');
+    PUTHEX_LL (service->init);
     PUTC_LL ('\r');
     PUTC_LL ('\n');
     if (service->init)

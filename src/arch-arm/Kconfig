@@ -16,6 +16,31 @@ config ARM
 	  Europe.  There is an ARM Linux project with a web page at
 	  <http://www.arm.linux.org.uk/>.
 
+
+config CPU_ARMV4
+	bool
+
+config CPU_ARMV5
+	bool
+
+config CPU_XSCALE
+	bool
+
+config CPU_ARM720T
+	bool
+
+config CPU_ARM920T
+	bool
+
+config CPU_ARM922T
+	bool
+
+config CPU_ARM925T
+	bool
+
+config CPU_ARM926T
+	bool
+
 choice
 	prompt "ARM Platform"
 	default ARCH_LH7952X
