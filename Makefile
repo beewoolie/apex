@@ -773,9 +773,9 @@ $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 
 .PHONY: check_cc
 check_cc:
-	@if [ "`$(CC) -dumpversion`" = "3.4.4ok" ] ; \
-         then echo " *** $(CC)" ;\
-	      echo "     is an unsupported compiler version." ; exit 1 ; fi
+#	@if [ "`$(CC) -dumpversion`" = "3.4.4" ] ; \
+#         then echo " *** $(CC)" ;\
+#	      echo "     is an unsupported compiler version." ; exit 1 ; fi
 
 # Handle descending into subdirectories listed in $(apex-dirs)
 # Preset locale variables to speed up the build process. Limit locale
