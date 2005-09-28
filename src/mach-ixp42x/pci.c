@@ -32,7 +32,7 @@
 
 #include <config.h>
 #include <service.h>
-//#include <apex.h>		/* printf */
+#include <apex.h>
 
 #include "hardware.h"
 
