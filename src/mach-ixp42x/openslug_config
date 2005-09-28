@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Jun 15 14:39:35 2005
+# Tue Sep 27 18:14:09 2005
 #
 CONFIG_ARM=y
 # CONFIG_ARCH_LH7952X is not set
@@ -12,7 +12,8 @@ CONFIG_ARCH_IXP42X=y
 #
 # General Setup
 #
-CONFIG_CROSS_COMPILE="/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-"
+CONFIG_CROSS_COMPILE="/usr/armv5b-softfloat-linux/gcc-3.4.4-glibc-2.3.5/bin/armv5b-softfloat-linux-"
+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_SMALL is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
@@ -32,6 +33,7 @@ CONFIG_ENV_STARTUP=""
 CONFIG_MACH="ixp42x"
 CONFIG_MACH_NSLU2=y
 # CONFIG_MACH_AVILA2347 is not set
+CONFIG_USER_BIGENDIAN=y
 
 #
 # Platform Setup
@@ -44,6 +46,8 @@ CONFIG_ARCH_IXP420=y
 # Commands
 #
 CONFIG_ALLHELP=y
+CONFIG_ALPHABETIZE_COMMANDS=y
+CONFIG_CMD_ALIAS=y
 CONFIG_CMD_CHECKSUM=y
 CONFIG_CMD_COPY=y
 CONFIG_CMD_COMPARE=y
