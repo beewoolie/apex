@@ -1,9 +1,11 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Sep 27 18:14:09 2005
+# Wed Sep 28 12:19:20 2005
 #
 CONFIG_ARM=y
+CONFIG_CPU_ARMV5=y
+CONFIG_CPU_XSCALE=y
 # CONFIG_ARCH_LH7952X is not set
 # CONFIG_ARCH_LH7A40X is not set
 CONFIG_ARCH_IXP42X=y
