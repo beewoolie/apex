@@ -123,6 +123,15 @@ of flash.  The environment allows APEX to be customized at runtime.
  o Changing the startup command to automatically boot the kernel
 
 
+  Checksum Compatibility
+  ----------------------
+
+The checksum command built into APEX does not conform to the
+algorithms used by the checksum command.  The cksfv command *does* use
+the same CCITT polynomial and may be used to verify files transfered
+between the target and the host.
+
+
   Getting Help
   ------------
 

@@ -93,7 +93,7 @@ SECTIONS
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (4);
-	. += 8192;
+	. += 32768;
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
 	. += 8192;

@@ -37,6 +37,12 @@
 
 #define _Z_UTIL_H
 
+//#define DEBUG_ZLIB
+#if defined DEBUG_ZLIB
+extern int __attribute__((format (printf, 1, 2)))
+     printf (const char * fmt, ...);
+#endif
+
 #include "zlib.h"
 
 #ifndef local
@@ -92,13 +98,16 @@ extern const char * const z_errmsg[]; /* indexed by 1-zlib_error */
 #define zmemcpy memcpy
 #define zmemzero(dest, len)	memset(dest, 0, len)
 
+#define fprintf(d, s...) printf (s)
+
 /* Diagnostic functions */
 #ifdef DEBUG_ZLIB
-#  include <stdio.h>
+//#  include <stdio.h>
 #  ifndef verbose
 #    define verbose 0
 #  endif
-#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
+//#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
+#  define Assert(cond,msg)
 #  define Trace(x) fprintf x
 #  define Tracev(x) {if (verbose) fprintf x ;}
 #  define Tracevv(x) {if (verbose>1) fprintf x ;}
@@ -208,7 +217,7 @@ struct inflate_huft_s {
 };
 
 #ifdef DEBUG_ZLIB
-  local uInt inflate_hufts;
+//  local uInt inflate_hufts;
 #endif
 
 local int inflate_trees_bits OF((

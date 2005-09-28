@@ -473,6 +473,9 @@ static int jffs2_load_cache (void)
 
   printf ("caching jffs2 filesystem: "); 
 
+  cDirentCache = 0;		/* Reset cache in case we were cancelled */
+  cInodeCache = 0;
+
   for (ib = 0; ib < jffs2.d.length; ib = (ib + cbNode + 3) & ~3) {
 
     if (console->poll (0, 0))	/* Check for ^C */
@@ -487,7 +490,7 @@ static int jffs2_load_cache (void)
       cbNode = 4;
       if (node.u.marker == MARKER_JFFS2_REV) {
 	if (ib == 0)
-	  return;		/* endian mismatch only on first read */
+	  return ERROR_FAILURE;	/* endian mismatch only on first read */
 	continue;
       }
 
@@ -608,6 +611,7 @@ static int jffs2_decompress_node (int index)
     {
       z_stream z;
       int result;
+
       memset (&z, 0, sizeof (z));
       z.zalloc = zlib_heap_alloc;
       z.zfree = zlib_heap_free;
@@ -637,6 +641,8 @@ static int jffs2_decompress_node (int index)
   case COMPRESSION_LZO:
   case COMPRESSION_LZARI:
   default:
+    PRINTF ("%s: unsupported compression mode %d\n", __FUNCTION__, 
+	    node->compr);
     jffs2.ibCache = 0;
     jffs2.cbCache = 0;
     return ERROR_UNSUPPORTED;

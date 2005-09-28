@@ -1,3 +1,14 @@
+2005-09-27  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Enlarged the stacks.  We were
+	crashing from a stack overflow in the jffs2 decompression path.
+
+	* src/lib/zlib.c: Changes so that we can use the debug option.
+
+	* src/drivers/drv-jffs2.c (jffs2_load_cache): Fixed bug in jffs2
+	filesystem cache.  Cancelled cache operation which was restarted
+	would create duplicate entries in the cache.
+
 2005-09-18  Marc Singer  <elf@buici.com>
 
 	* include/attributes.h (__xbss): New attribute macro for easy xbss
