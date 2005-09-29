@@ -1,3 +1,8 @@
+2005-09-29  Marc Singer  <elf@buici.com>
+
+	* src/apex/env.c: Updated autoboot cancellation message to be more
+	correct.  Only ^C cancels now.
+
 2005-09-28  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/Makefile: architecture and tune features.  This

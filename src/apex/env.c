@@ -61,7 +61,7 @@ static __env struct env_d e_startup = {
 #endif
 #if defined (CONFIG_AUTOBOOT)
 # if CONFIG_AUTOBOOT_DELAY != 0
-    "wait " _t(CONFIG_AUTOBOOT_DELAY) " Press a key to cancel autoboot.;"
+    "wait " _t(CONFIG_AUTOBOOT_DELAY) " Type ^C key to cancel autoboot.;"
 # endif
     "boot"
 #endif
