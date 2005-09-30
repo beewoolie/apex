@@ -123,15 +123,15 @@
 //#define SMC_BCR7_V		(0x1000b2c2)	// CPLD & Ethernet
 
 /* APEX oringinal  */
-#define SMC_BCR0_V		(0x200002a0)	// Bootflash
-#define SMC_BCR1_V		(0x00000000)	// IO Barrier, fastest timing
-#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
-#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
+//#define SMC_BCR0_V		(0x200002a0)	// Bootflash
+#define SMC_BCR1_V		(0x1f<<5)	// IO Barrier, slowest timing
+//#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
+//#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
 
 /* LOLO 2.0.3 */
-//#define SMC_BCR0_V		(0x200002a2)	// Bootflash
-//#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
-//#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+#define SMC_BCR0_V		(0x200002a2)	// Bootflash
+#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
+#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 
 // Alternative timings.
 //#define SMC_BCR0_V		(0x20000200)	// Bootflash
