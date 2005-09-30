@@ -66,6 +66,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <service.h>
+#include <sdramboot.h>
 
 #include "hardware.h"
 #include <debug_ll.h>
@@ -235,9 +236,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
 		  "cmp %0, %1\n\t"
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  "movls r0, #1\n\t"
+		  "strls r0, [%2]\n\t"
+#endif
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS)
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  , "r" (&fSDRAMBoot) 
+#endif
+		  : "r0");
 
 
   /* SDRAM Initialization
@@ -266,6 +275,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   SDRC_CONFIG0 = SDRC_CONFIG_V;
   SDRC_CONFIG1 = SDRC_COMMAND_NORMAL;
+
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+  barrier ();
+  fSDRAMBoot = 0;
+#endif
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));

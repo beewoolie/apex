@@ -63,6 +63,15 @@ config EXPERIMENTAL
 	  This option grants configuration access to experimental
 	  features.  It is best to leave this disabled.
 
+config SMALL
+	bool "Make APEX small"
+	default n
+	help
+	  This option helps make APEX as small as possible.  It
+	  removes unnecessary strings and selects smallest command and
+	  driver implementations when available.  Selecting this
+	  option may make APEX difficult for novice users to operate.
+
 menu "General Setup"
 
 config CROSS_COMPILE
@@ -82,15 +91,6 @@ config CC_OPTIMIZE_FOR_SIZE
 	help
 	  This option sets the -Os compiler option.  Otherwise, the
 	  optimization option is -O2.  
-
-config SMALL
-	bool "Make APEX small"
-	default n
-	help
-	  This option helps make APEX as small as possible.  It
-	  removes unnecessary strings and selects smallest command and
-	  driver implementations when available.  Selecting this
-	  option may make APEX difficult for novice users to operate.
 
 config DEBUG_LL
 	bool "Low-level debug support"
@@ -136,6 +136,16 @@ config INTERRUPTS
 	help
 	  This feature is experimental and non-operational.  Leave it
 	  disabled.
+
+config SDRAMBOOT_REPORT
+	bool "Report that APEX was executed directly from SDRAM"
+	default y
+	depends on !SMALL
+	help
+ 	  This option enables a message in the service report that APEX
+	  was executed from SDRAM and, therefore, could not initialize
+	  SDRAM.  This is purely informational, but is very helpful to
+	  users who are new to using APEX.
 
 endmenu
 

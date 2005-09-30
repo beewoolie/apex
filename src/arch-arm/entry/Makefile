@@ -20,6 +20,7 @@
 #
 
 obj-y := entry.o
+obj-$(CONFIG_SDRAMBOOT_REPORT) += sdramboot.o
 #lib-y += relocate.o
 
 CPPFLAGS_apex.lds += -DAPEX_VMA=$(CONFIG_APEX_VMA)

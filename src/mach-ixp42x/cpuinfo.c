@@ -51,12 +51,4 @@ static __service_7 struct service_d cpuinfo_service = {
   .report = cpuinfo_report,
 };
 
-void target_report (void)
-{
-  extern int fSDRAMBoot;
-
-  if (fSDRAMBoot)
-    printf ("  ixp42x: *** No SDRAM init when APEX loaded into SDRAM.\n");
-}
-
 #endif

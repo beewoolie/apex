@@ -38,6 +38,7 @@
 #include <asm/bootstrap.h>
 #include <service.h>
 #include <debug_ll.h>
+#include <sdramboot.h>
 
 #include "hardware.h"
 
@@ -63,12 +64,6 @@
 # else
 #  define SDR_CONFIG_CHIPS	SDR_CONFIG_2x32Mx16;
 # endif
-#endif
-
-
-#if !defined (CONFIG_SMALL)
-int fSDRAMBoot;
-extern void target_report (void);
 #endif
 
 
@@ -256,7 +251,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     PUTC_LL ('n');
     _L(LED2);
 
-#if !defined (CONFIG_SMALL)
+#if defined (CONFIG_SDRAMBOOT_REPORT)
     fSDRAMBoot = 1;
 #endif
 
@@ -299,6 +294,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 				   SDRAM access */
 
   _L(LED3);
+
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+  barrier ();
+  fSDRAMBoot = 0;
+#endif
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
@@ -417,7 +417,4 @@ static void target_release (void)
 static __service_0 struct service_d ixp42x_target_service = {
   .init    = target_init,
   .release = target_release,
-#if !defined (CONFIG_SMALL)
-  .report = target_report,
-#endif
 };

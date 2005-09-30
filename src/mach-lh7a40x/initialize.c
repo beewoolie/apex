@@ -33,6 +33,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <service.h>
+#include <sdramboot.h>
 
 #include "hardware.h"
 #include <debug_ll.h>
@@ -150,12 +151,6 @@
 #define SDRAM_MODE		_SDRAM_MODE	  | SDRAM_MODE_SROMLL
 
 
-#if !defined (CONFIG_SMALL)
-int fSDRAMBoot;
-extern void target_report (void);
-#endif
-
-
 /* usleep
 
    this function accepts a count of microseconds and will wait at
@@ -240,13 +235,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   SMC_BCR7 = SMC_BCR7_V;
 
   __asm volatile ("cmp %0, %1\n\t"
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  "movhi r0, #1\n\t"
+		  "strhi r0, [%2]\n\t"
+#endif
 		  "movhi r0, #0\n\t"
 		  "movhi pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS));
-
-#if !defined (CONFIG_SMALL)
-  fSDRAMBoot = 1;
+		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS)
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  , "r" (&fSDRAMBoot) 
 #endif
+		        : "r0");
 
   PUTC_LL ('S');
 
@@ -272,6 +271,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   SDRC_SDCSC0 = SDRAM_MODE;
   
   PUTC_LL ('s');
+
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+  barrier ();
+  fSDRAMBoot = 0;
+#endif
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
@@ -313,7 +317,4 @@ static void target_release (void)
 static __service_0 struct service_d lh7a40x_target_service = {
   .init    = target_init,
   .release = target_release,
-#if !defined (CONFIG_SMALL)
-  .report = target_report,
-#endif
 };
