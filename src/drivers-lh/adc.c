@@ -25,6 +25,10 @@
    DESCRIPTION
    -----------
 
+   Reference:
+     "Using the SHARP ADC with Resistive Touch Screens", 
+       Sharp Application Note.
+
  Processing: 
   Initialize the adc to its default state.
   Map all touchscreen pins to ADC input

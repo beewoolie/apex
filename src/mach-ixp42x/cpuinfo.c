@@ -56,7 +56,7 @@ void target_report (void)
   extern int fSDRAMBoot;
 
   if (fSDRAMBoot)
-    printf ("  ixp42x: *** No SDRAM init when APEX loaded from SDRAM.\n");
+    printf ("  ixp42x: *** No SDRAM init when APEX loaded into SDRAM.\n");
 }
 
 #endif

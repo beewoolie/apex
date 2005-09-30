@@ -150,6 +150,12 @@
 #define SDRAM_MODE		_SDRAM_MODE	  | SDRAM_MODE_SROMLL
 
 
+#if !defined (CONFIG_SMALL)
+int fSDRAMBoot;
+extern void target_report (void);
+#endif
+
+
 /* usleep
 
    this function accepts a count of microseconds and will wait at
@@ -238,6 +244,10 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "movhi pc, %0\n\t"
 		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS));
 
+#if !defined (CONFIG_SMALL)
+  fSDRAMBoot = 1;
+#endif
+
   PUTC_LL ('S');
 
 	/* Initialize SDRAM */
@@ -303,4 +313,7 @@ static void target_release (void)
 static __service_0 struct service_d lh7a40x_target_service = {
   .init    = target_init,
   .release = target_release,
+#if !defined (CONFIG_SMALL)
+  .report = target_report,
+#endif
 };
