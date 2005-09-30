@@ -20,7 +20,8 @@
 	 /* LPD7A400 and LPD7A404 use the same IO mapping */
 # define SMC_IOBASE		(0x70000000)
 
-#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0xc0000000)
+	 /* Use the second static bank, with fast timings, as an IOBARRIER */
+#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0x10000000)
 
 static inline u16 SMC_inw (unsigned long base, int r)
 {

@@ -40,7 +40,7 @@
 
 # if !defined (CF_PHYS)
 #  define CF_PHYS		(0x60200000)
-#  define CF_IOBARRIER_PHYS	(0xc0000000)
+#  define CF_IOBARRIER_PHYS	(0x10000000)
 # endif
 
 # define CF_WIDTH		(16)
