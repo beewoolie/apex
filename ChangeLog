@@ -1,5 +1,9 @@
 2005-09-30  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/initialize.c: Slowed the timing down for the
+	IOBARRIER.  Now, we're using the slowest timing because that's all
+	that seems to work.
+ 
 	* src/arch-arm/entry/sdramboot.c (sdramboot_report): Unified
 	support for reporting when APEX is booted from SDRAM.  While only
 	informational, this will help explain to new users the difference
