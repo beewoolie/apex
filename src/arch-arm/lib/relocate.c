@@ -38,6 +38,7 @@
 
 #if defined (CONFIG_DEBUG_LL)
 # define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+# define USE_COPY_VERIFY
 #endif
 
 
@@ -113,8 +114,22 @@ void __naked __section (.bootstrap) relocate_apex (void)
   PUTC_LL ('=');
   PUTC_LL ('>');
   PUTHEX_LL (*(unsigned long*) (offset + lr));
+  PUTC_LL ('=');
+  PUTC_LL ('=');
+  PUTHEX_LL (*(unsigned long*) (lr));
   PUTC_LL ('\r');
   PUTC_LL ('\n');
+
+#if defined (USE_COPY_VERIFY)
+  if (*(unsigned long*) lr != *(unsigned long*) (lr + offset)) {
+    PUTC_LL ('@');
+    PUTC_LL ('F');
+    PUTC_LL ('A');
+    PUTC_LL ('I');
+    PUTC_LL ('L');
+    __asm volatile ("0: b 0b");
+  }  
+#endif
 
   PUTC_LL ('j');
 

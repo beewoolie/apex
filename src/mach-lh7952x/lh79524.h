@@ -376,12 +376,24 @@
 #define IOCON_MUXCTL6_V		(0x000a)	/* Enable UART0 */
 #define IOCON_MUXCTL7_V		(0x5555) 	/* Enable A23-A19 */
 #define IOCON_RESCTL7_V		(0x5555) 	/* Pull-down */
+
+#if defined (CONFIG_ARCH_LH79524)
 #define IOCON_MUXCTL10_V	(0x5555)	/* Enable D25-D21, D15-D13 */
 #define IOCON_MUXCTL11_V	(0x5555) 	/* Enable D20-D17, D12-D9 */
 #define IOCON_MUXCTL12_V	(0x5000)	/* Enable D16, D8 */
 #define IOCON_MUXCTL14_V	(0x0000)	/* Normalize nCS0 */
 #define IOCON_MUXCTL19_V	(0x0441)	/* Enable D31-D29 */
 #define IOCON_MUXCTL20_V	(0x1110)	/* Enable D28-D26 */
+#endif
+
+#if defined (CONFIG_ARCH_LH79525)
+#define IOCON_MUXCTL10_V	(0x0444)	/* Enable D15-D13 */
+#define IOCON_MUXCTL11_V	(0x4441)	/* Enable D12-D9 */
+#define IOCON_MUXCTL12_V	(0x1000)	/* Enable D8 */
+#define IOCON_MUXCTL14_V	(0x0000)	/* Normalize nCS0 */
+#define IOCON_MUXCTL19_V	(0x0000)
+#define IOCON_MUXCTL20_V	(0x0000)
+#endif
 
 		/* *** FIXME: works with 1:1 clock mode only */
 #define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000)

@@ -98,7 +98,7 @@ void lh7952x_serial_init (void)
 
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
   
   /* Enable ALL uarts since we don't know which we're using */
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;

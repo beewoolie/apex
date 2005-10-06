@@ -69,7 +69,7 @@
 #define PRINTF(f...)		do {} while (0)
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
 # define USE_CPU_MASTER
 # define USE_DMA
 #endif
@@ -133,7 +133,7 @@
 #define SSP_SR_TNF	(1<<1)	/* Transmit FIFO not full */
 #define SSP_SR_TFE	(1<<0)	/* Transmit FIFO empty */
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
 # define I2S_CTRL	__REG(I2S_PHYS + 0x00)
 # define I2S_STAT	__REG(I2S_PHYS + 0x04)
 # define I2S_IMSC	__REG(I2S_PHYS + 0x08)

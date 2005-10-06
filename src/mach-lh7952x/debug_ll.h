@@ -80,6 +80,10 @@
 # define UART		(UART0_PHYS)
 #endif
 
+#if defined (CONFIG_MACH_KEV79525)
+# define UART		(UART0_PHYS)
+#endif
+
 #endif
 
 #if !defined (UART_DR)

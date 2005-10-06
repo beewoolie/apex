@@ -34,6 +34,15 @@ config MACH_KEV79524
 	select DRIVERS_LH
 	select HAS_LH_ADC
 
+config MACH_KEV79525
+	bool "Sharp KEV79525"
+	select ARCH_LH79525
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select USES_NAND_BOOTFLASH
+	select DRIVERS_LH
+	select HAS_LH_ADC
+
 endchoice
 
 menu "Platform Setup"
@@ -83,12 +92,14 @@ config NOR_BANK0_START
 	hex "Physical address of NOR flash bank 0"
 	default "0x40000000" if ARCH_LH79520
 	default "0x44000000" if ARCH_LH79524
+	default "0x44000000" if ARCH_LH79525
 	depends on NOR_BANK0
 
 config NOR_BANK0_LENGTH
 	hex "Size, in bytes, of NOR flash bank 0"
 	default "0x00800000" if MACH_LPD7952X
 	default "0x00400000" if MACH_KEV79524
+	default "0x00400000" if MACH_KEV79525
 	depends on NOR_BANK0
 
 config NOR_BANK1
@@ -130,14 +141,14 @@ endmenu
 menu "Platform Drivers"
 
 config DRIVER_EMAC_LH79524
-	bool "LH79524 EMAC"
-	depends on ARCH_LH79524
+	bool "LH79524/5 EMAC"
+	depends on ARCH_LH79524 || ARCH_LH79525
 	select DRIVER_CPLD_SPI if MACH_LPD79524
 	select USE_ETHERNET
 	default y
 	help
 	  This driver initializes the built-in Ethernet MAC of the
-	  Sharp lh79524. 
+	  Sharp lh79524/5. 
 
 config CLCDC
 	bool "Color LCD Test"
@@ -190,6 +201,11 @@ config ARCH_LH79520
 	select CPU_ARM720T
 
 config ARCH_LH79524
+	bool
+	select CPU_ARMV4
+	select CPU_ARM720T
+
+config ARCH_LH79525
 	bool
 	select CPU_ARMV4
 	select CPU_ARM720T

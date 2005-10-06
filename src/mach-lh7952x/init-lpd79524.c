@@ -152,6 +152,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
 
   RCPC_AHBCLKCTRL = RCPC_AHBCLKCTRL_V;
+//  RCPC_PCLKCTRL0  = RCPC_PCLKCTRL0_V;
   RCPC_PCLKCTRL0  &= ~(1<<9);	/* RTC enable */
   RCPC_PCLKCTRL1  = RCPC_PCLKCTRL1_V;
   RCPC_PCLKSEL0   = RCPC_PCLKSEL0_V;

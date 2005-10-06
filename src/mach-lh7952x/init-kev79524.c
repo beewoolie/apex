@@ -56,8 +56,13 @@
 
 	// SDRAM
 #define SDRAM_RASCAS		EMC_RASCAS_V
-#define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
-//#define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(4<<9)|(0<<7))
+//#define SDRAM_CFG_SETUP ((1<<14)|(1<<12)|(4<<9)|(0<<7))
+#if defined (CONFIG_MACH_KEV79524)
+# define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+#endif
+#if defined (CONFIG_MACH_KEV79525)
+# define SDRAM_CFG_SETUP	 ((0<<14)|(1<<12)|(3<<9)|(1<<7))
+#endif
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
 
@@ -95,8 +100,8 @@ void __section (.bootstrap) usleep (unsigned long us)
 	 :
 	 : "r" (TIMER1_PHYS), 
 	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us - (us>>4))), /* timer counts up */
-	   "r" ((1<<1)|(5<<2)),
+	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
+	   "r" (TIMER_CS | TIMER_SCALE_64),
 	   "i" (0x8000)
 	 );
 }
@@ -154,7 +159,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   RCPC_CTRL       |= RCPC_CTRL_UNLOCK;
 
   RCPC_AHBCLKCTRL = RCPC_AHBCLKCTRL_V;
-  RCPC_PCLKCTRL0  = RCPC_PCLKCTRL0_V;
+  RCPC_PCLKCTRL0  &= ~(1<<9);	/* RTC enable */
+//  RCPC_PCLKCTRL0  = RCPC_PCLKCTRL0_V;
   RCPC_PCLKCTRL1  = RCPC_PCLKCTRL1_V;
 
   RCPC_PCLKSEL0   = RCPC_PCLKSEL0_V;
@@ -187,12 +193,16 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* CPLD, 16 bit */
   EMC_SCONFIG3    = 0x81;
 
+  PUTC_LL('x');
+
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
 		  "cmp %0, %1\n\t"
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
 		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+
+  PUTC_LL('r');
 
 	/* SDRAM */
   EMC_READCONFIG  = EMC_READCONFIG_CMDDELAY;
@@ -230,6 +240,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNCFG0     = SDRAM_CFG;
   EMC_DYNCFG1     = SDRAM_CFG;
   
+  PUTC_LL('j');
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
 }
@@ -272,13 +284,6 @@ static void target_init (void)
   BOOT_CS1OV    &= ~(1<<0);
 }
 
-#if 0
-static void target_release (void)
-{
-}
-#endif
-
 static __service_0 struct service_d lh79524_target_service = {
   .init    = target_init,
-  //  .release = target_release,
 };

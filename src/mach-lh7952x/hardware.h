@@ -42,7 +42,7 @@
 # include "lh79520.h"
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
 # include "lh79524.h"
 #endif
 
@@ -54,7 +54,7 @@
 # include "lpd79524.h"
 #endif
 
-#if defined (CONFIG_MACH_KEV79524)
+#if defined (CONFIG_MACH_KEV79524) || defined (CONFIG_MACH_KEV79525)
 # include "kev79524.h"
 #endif
 

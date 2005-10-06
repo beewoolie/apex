@@ -276,7 +276,7 @@ static void adc_init (void)
      multiplexer for the proper output pins.  On the lh7a404, we
      don't. */
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
 
   RCPC_CTRL      |=  (1<<9);	/* Unlock */
   RCPC_ADCPRE     =  RCPC_ADCPRE_V/2;

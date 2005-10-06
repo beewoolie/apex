@@ -147,7 +147,7 @@ static void clcdc_init (void)
   RCPC_LCDCLKPRESCALE = (1>>1);	/* HCLK/1 */
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
   RCPC_PCLKCTRL1 &= ~(1<<0);
   RCPC_AHBCLKCTRL &= ~(1<<4);
 //  RCPC_LCDPRE = (8>>1); 	/* HCLK divisor 8 */
@@ -171,7 +171,7 @@ static void clcdc_init (void)
 //  IOCON_LCDMUX = 0x1fbeda9e;
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
   MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<2)|(3<<0),
 		(1<<2)|(1<<0));
@@ -219,7 +219,7 @@ static void clcdc_init (void)
 #if defined (CONFIG_ARCH_LH79520)
   ALI_CTRL	  = 0x00000003; /* SPS & CLS */
 #endif
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
   ALI_CTRL	  = 0x00000013;	/* VEEEN & SPS & CLS*/
 #endif
   ALI_TIMING1     = 0x0000087d;
@@ -259,7 +259,7 @@ static void clcdc_release (void)
   RCPC_PERIPHCLKCTRL2 |= (1<<0);
 #endif
 
-#if defined (CONFIG_ARCH_LH79524)
+#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
   RCPC_PCLKCTRL1  |=   1<<0;
   RCPC_AHBCLKCTRL |=   1<<4;
 #endif

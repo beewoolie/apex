@@ -5,6 +5,18 @@ APEX Boot Loader
 
 TODO:
 
+  o Command history.
+
+    o Should be easy to implement
+    o Ring buffer of strings.
+    o Say, 4k
+    o Each line is entered as a null terminated line of text followed
+      by a word aligned length.
+    o There is a pointer to the next available position in the buffer.
+    o Previous command is found by back tracing until the length of
+      the previous command is zero or the length bypasses the pointer
+      to the next available space in the buffer.
+
   o There is an error in the dump code.  It doesn't dump the CLCD
     registers correctly.  This is not excusable. 
 
