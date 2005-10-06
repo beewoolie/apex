@@ -300,7 +300,7 @@ char *strnchr(const char *s, size_t count, int c)
 EXPORT_SYMBOL(strnchr);
 #endif
 
-#if 1
+#if 0
 /**
  * strnlen - Find the length of a length-limited string
  * @s: The string to be sized
@@ -434,7 +434,7 @@ EXPORT_SYMBOL(strsep);
 void * memset(void * s,int c,size_t count)
 {
 	char *xs = (char *) s;
-
+ 
 	while (count--)
 		*xs++ = c;
 
@@ -520,7 +520,7 @@ void * memmove(void * dest,const void *src,size_t count)
 EXPORT_SYMBOL(memmove);
 #endif
 
-#if 1
+#if 0
 /**
  * memcmp - Compare two areas of memory
  * @cs: One area of memory
