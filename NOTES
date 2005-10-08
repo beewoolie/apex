@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o arp_resolve returns a string.  It should be able to return an
+    error condition.  This means that a ^C will terminate the ARP, but
+    it won't tell the user that that is the reason.
+
   o Command history.
 
     o Should be easy to implement

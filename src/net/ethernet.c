@@ -695,9 +695,13 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
 int arp_terminate (void* pv)
 {
   struct arp_terminate_context* context = (struct arp_terminate_context*) pv;
+  extern struct driver_d* console;
 
   if (arp_cache_lookup (context->ip_address))
     return 1;
+
+  if (console->poll (0, 0))
+    return -2;			/* Not really a timeout */
 
   return ethernet_timeout (&context->timeout);
 }
@@ -751,6 +755,8 @@ const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
     struct arp_terminate_context context;
 
     DBG (2, "transmitting arp request, %d bytes\n", frame->cb);
+    DBG (2, "d %p  d->driver %p  d->driver->write %p\n", 
+	 d, d->driver, d->driver->write);   
 
     d->driver->write (d, frame->rgb, frame->cb);
     ++tries;
@@ -759,8 +765,8 @@ const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
     context.ip_address = ip_address;
     context.timeout.ms_timeout = MS_ARP_TIMEOUT;
     result = ethernet_service (d, arp_terminate, &context);
-    /* result == 1 on success, -1 on timeout  */
-  } while (result <= 0 && tries < ARP_TRIES_MAX);
+    /* result == 1 on success, -1 on timeout, -2 on cancel  */
+  } while (result <= 0 && result != -2 && tries < ARP_TRIES_MAX);
 
   ethernet_frame_release (frame);
 

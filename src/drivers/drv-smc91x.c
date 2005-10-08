@@ -492,6 +492,7 @@ static void smc91x_phy_configure (void)
   v = smc91x_phy_read (phy_address, PHY_CONTROL);
 }
 
+
 /* smc91x_receive
 
    pulls packets from the SMC chip buffers into memory.  This can be
@@ -571,6 +572,8 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int pkt;
   unsigned long l;
+
+  ENTRY;
 
   smc91x_receive ();		/* Receive when we can */
 

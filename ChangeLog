@@ -1,3 +1,12 @@
+2005-10-08  Marc Singer  <elf@buici.com>
+
+	* src/net/ethernet.c (arp_terminate): Added a check for ^C in the
+	ARP termination function.
+
+	* src/net/tftp.c (tftp_open): Reorganized the tftp open sequence
+	in case ARP for the TFTP server has yet to be achieved.  This was
+	a crash bug.
+ 
 2005-10-07  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/Kconfig: Start of changes for the kev79525.

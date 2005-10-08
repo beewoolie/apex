@@ -385,6 +385,9 @@ static int tftp_open (struct descriptor_d* d)
   
   memset (&tftp, 0, sizeof (tftp)); /* clobber transfer state */
 
+  if ((result = parse_descriptor (szNetDriver, &tftp.d)))
+    return result;
+
   result = getaddr (d->pb[0], tftp.server_ip);
   if (result)
     return result;
@@ -392,8 +395,7 @@ static int tftp_open (struct descriptor_d* d)
   if (!arp_resolve (&tftp.d, tftp.server_ip, 0))
     ERROR_RETURN (ERROR_PARAM, "no route to host");
 
-  if (   (result = parse_descriptor (szNetDriver, &tftp.d))
-      || (result = open_descriptor (&tftp.d))) 
+  if ((result = open_descriptor (&tftp.d))) 
     return result;
 
   register_ethernet_receiver (100, tftp_receiver, &tftp);
