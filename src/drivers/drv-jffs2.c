@@ -471,7 +471,7 @@ static int jffs2_load_cache (void)
 
   ENTRY (0);
 
-  printf ("caching jffs2 filesystem: "); 
+  printf ("Caching jffs2 filesystem\n"); 
 
   cDirentCache = 0;		/* Reset cache in case we were cancelled */
   cInodeCache = 0;
@@ -482,6 +482,14 @@ static int jffs2_load_cache (void)
       return ERROR_BREAK;
 
 //    PRINTF ("reading node @0x%x\n", ib);
+
+    /* *** FIXME: this may be a controversial addition.  We're running
+       *** the spinner while we cache the jffs2 filesystem.  This is
+       *** mainly for the benefit of the slug where the LEDs give
+       *** indication about the loader's operation.  Without this, it
+       *** looks like nothing happens for several seconds when the
+       *** machine starts.  */
+    SPINNER_STEP;
 
     jffs2.d.driver->seek (&jffs2.d, ib, SEEK_SET);
     jffs2.d.driver->read (&jffs2.d, &node, sizeof (node));
