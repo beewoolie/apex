@@ -34,7 +34,7 @@ lib-y += alias.o
 ifneq ($(CONFIG_THUMB),)
 CFLAGS_vsprintf.o	+= -mthumb
 CFLAGS_ctype.o		+= -mthumb
-#CFLAGS_xmodem.o += -mthumb
+#CFLAGS_xmodem.o		+= -mthumb -mcaller-super-interworking
 CFLAGS_strlen.o		+= -mthumb
 CFLAGS_strnlen.o	+= -mthumb
 CFLAGS_strrchr.o	+= -mthumb
