@@ -83,6 +83,12 @@
    We're checking CRCs sparsely.  Should be done everywhere possible.
    Enough said.
    
+   compression
+   -----------
+   
+   Only zlib compression is implemented.  Empirical evidence suggests
+   that none other is used.
+
 */
 
 #include <config.h>
