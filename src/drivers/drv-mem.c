@@ -27,6 +27,19 @@
 
    Memory block IO driver.
 
+
+   Probing and our BSS/Data sections
+   ---------------------------------
+
+   There have been some problems with the way we probe to find unique
+   SDRAM.  The present implementation has only the restrictions that
+
+    1) the last word of the stack must be available during probing 
+    2) that the CB_BLOCK is larger than the size of the loader footprint
+    3) that the loader is aligned to CB_BLOCK.
+    4) if loader is longer than a CB_BLOCK, only the first CB_BLOCK of
+       data is protected from probes.  
+
 */
 
 #include <driver.h>
@@ -63,15 +76,17 @@ static struct mem_region regions[32];
 static int memory_scan (int i, unsigned long start, unsigned long length)
 {
   extern char APEX_VMA_START;
-  extern char APEX_VMA_PROTECT_END;
+  extern char APEX_VMA_PROBE_END;
   unsigned long* pl;
 
+//  length = 1024*1024*36;
   PUTC_LL ('k');
-  PRINTF ("  marking\n");
+  PRINTF ("  marking start %lx length %lx probe %x\n", start, length, 
+	  &APEX_VMA_PROBE_END - &APEX_VMA_START);
 
 	/* Mark */
   for (pl = (unsigned long*) (start + length - CB_BLOCK
-			      + (&APEX_VMA_PROTECT_END - &APEX_VMA_START));
+			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
        1;
        pl -= CB_BLOCK/sizeof (*pl)) {
 //    PRINTF ("   %p\n", pl);
@@ -87,17 +102,17 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 
 	/* Identify */
   for (pl = (unsigned long*) (start 
-			      + (&APEX_VMA_PROTECT_END - &APEX_VMA_START));
+			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
        pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
        pl += CB_BLOCK/sizeof (*pl)) {
-//    PRINTF ("   %p\n", pl);
+    //    PRINTF ("   %p %p\n", pl, *pl);
     //    if (testram ((u32) pl) != 0)
     //      continue;
     if (*pl == (unsigned long) pl) {
       if (regions[i].length == 0)
 	regions[i].start
-	  = (unsigned long) pl - (&APEX_VMA_PROTECT_END - &APEX_VMA_START);
+	  = (unsigned long) pl - (&APEX_VMA_PROBE_END - &APEX_VMA_START);
       regions[i].length += CB_BLOCK;
     }
     else
@@ -119,7 +134,7 @@ static void memory_init (void)
   PRINTF ("Scanning bank 0 %x %x\n", 
 	  RAM_BANK0_START, RAM_BANK0_LENGTH);
   i = memory_scan (i, RAM_BANK0_START, RAM_BANK0_LENGTH);
-  PRINTF ("  %d blocks\n", i);
+  PRINTF ("  %d block%s\n", i, i != 1 ? "s" : "");
 #endif
 
 #if defined (RAM_BANK1_START)

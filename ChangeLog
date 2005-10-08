@@ -1,3 +1,10 @@
+2005-10-07  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/Kconfig: Start of changes for the kev79525.
+
+	* src/arch-arm/entry/apex.lds.S: Fixed the drv-mem probe code to
+	be reliable and safe.
+
 2005-09-30  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/initialize.c: Slowed the timing down for the

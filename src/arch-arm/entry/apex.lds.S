@@ -93,15 +93,15 @@ SECTIONS
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
 	. = ALIGN (4);
+	APEX_VMA_PROBE_END = .;
+	/* The next word is the location we'll be writing to when
+	   probing.  See note in drv-mem.c. */
 	. += 32768;
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
 	. += 8192;
 	APEX_VMA_IRQSTACK_START = .;
 	. = ALIGN (4);
-	APEX_VMA_PROTECT_END = .;
-	/* Before this point, all of the data is protected from memory
-	   sizing probes. */
 	.bss . : {		/* Normal, zeroed BSS */
 		APEX_VMA_BSS_START = .;
 		*(.bss)

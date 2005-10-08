@@ -152,5 +152,3 @@ void __naked __section (.bootstrap) relocate_apex (void)
 				/* Return to SDRAM */
   __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
 }
-
-
