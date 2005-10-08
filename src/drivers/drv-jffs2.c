@@ -474,6 +474,7 @@ static int jffs2_load_cache (void)
   union node node;
   int cEmpties = 0;		/* Count of consecutive empties */
   extern struct driver_d* console;
+  int result = 0;
 
   ENTRY (0);
 
@@ -484,8 +485,10 @@ static int jffs2_load_cache (void)
 
   for (ib = 0; ib < jffs2.d.length; ib = (ib + cbNode + 3) & ~3) {
 
-    if (console->poll (0, 0))	/* Check for ^C */
-      return ERROR_BREAK;
+    if (console->poll (0, 0)) {	/* Check for ^C */
+      result = ERROR_BREAK;
+      goto exit;
+    }
 
 //    PRINTF ("reading node @0x%x\n", ib);
 
@@ -503,8 +506,10 @@ static int jffs2_load_cache (void)
     if (node.u.marker != MARKER_JFFS2 || !verify_header_crc (&node.u)) {
       cbNode = 4;
       if (node.u.marker == MARKER_JFFS2_REV) {
-	if (ib == 0)
-	  return ERROR_FAILURE;	/* endian mismatch only on first read */
+	if (ib == 0) {
+	  result = ERROR_FAILURE; /* endian mismatch only on first read */
+	  goto exit;
+	}
 	continue;
       }
 
@@ -562,7 +567,10 @@ static int jffs2_load_cache (void)
   printf ("\r%d directory nodes %d inodes nodes\n",
 	  cDirentCache, cInodeCache);
 
-  return 0;
+ exit:
+  putchar ('\r');
+
+  return result;
 }
 
 
