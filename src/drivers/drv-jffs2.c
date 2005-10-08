@@ -553,7 +553,7 @@ static int jffs2_load_cache (void)
   sort (inode_cache,  cInodeCache,  sizeof (struct inode_cache), 
 	compare_inode_cache, NULL);
 
-  printf ("%d directory nodes %d inodes nodes\n",
+  printf ("\r%d directory nodes %d inodes nodes\n",
 	  cDirentCache, cInodeCache);
 
   return 0;
