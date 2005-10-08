@@ -60,7 +60,7 @@ int cmd_version (int argc, const char** argv)
 	  (void*) &APEX_VMA_COPY_START,
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START),
 	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
-#if defined (CONFIG_ENV_REGION)
+#if defined (CONFIG_CMD_SETENV)
   printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
   switch (env_check_magic ()) {
   case 0:
