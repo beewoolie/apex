@@ -21,7 +21,8 @@
 
 lib-y := vsprintf.o ctype.o
 lib-y += strlen.o strnlen.o strchr.o strlcpy.o strcmp.o strnicmp.o strcpy.o strcspn.o
-lib-y +=  memcmp.o memset.o
+lib-y += memcmp.o memset.o
+lib-$(CONFIG_SMALL) += memcpy.o memmove.o
 lib-y += crc32.o xmodem.o
 lib-y += env.o spinner.o
 lib-y += dump.o
