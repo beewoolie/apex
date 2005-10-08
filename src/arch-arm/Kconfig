@@ -71,6 +71,20 @@ config SMALL
 	  removes unnecessary strings and selects smallest command and
 	  driver implementations when available.  Selecting this
 	  option may make APEX difficult for novice users to operate.
+config THUMB
+	bool "Use Thumb instructions"
+	default n
+	depends on SMALL=y && EXPERIMENTAL=y
+	help
+	  This option builds some portions of the loader with thumb
+	  instructions, a 16 bit instruction format available in some
+	  ARM cores.  This feature is intended to produce a smaller
+	  executable for the sake of squeezing more features into a
+	  smaller space.
+	  
+	  This feature is experimental and, frankly unlikely to
+	  work.  It's best to leave it disabled unless you are
+	  prepared for the worst.
 
 menu "General Setup"
 

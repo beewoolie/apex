@@ -31,6 +31,23 @@ lib-y += png.o
 lib-y += sort.o
 lib-y += alias.o
 
+ifneq ($(CONFIG_THUMB),)
+CFLAGS_vsprintf.o	+= -mthumb
+CFLAGS_ctype.o		+= -mthumb
+#CFLAGS_xmodem.o += -mthumb
+CFLAGS_strlen.o		+= -mthumb
+CFLAGS_strnlen.o	+= -mthumb
+CFLAGS_strrchr.o	+= -mthumb
+CFLAGS_strlcpy.o	+= -mthumb
+CFLAGS_strnicmp.o	+= -mthumb
+CFLAGS_strcpy.o		+= -mthumb
+CFLAGS_memcmp.o		+= -mthumb
+CFLAGS_memset.o		+= -mthumb
+CFLAGS_memcpy.o		+= -mthumb
+CFLAGS_memmove.o	+= -mthumb
+CFLAGS_png.o		+= -mthumb
+endif
+
 #lib-y += div64.o
 #lib-y += udiv.o
 #CFLAGS_vsprintf.o += -mthumb
