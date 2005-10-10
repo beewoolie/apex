@@ -80,9 +80,9 @@
 //#define USE_LOOPBACK_I2S
 #define USE_SIGNED_CONVERSION
 //#define USE_LOOPBACK_SSP
-//#define USE_8KHZ
+#define USE_8KHZ
 //#define USE_22KHZ
-#define USE_44KHZ
+//#define USE_44KHZ
 #define USE_LOOPS	2000
 //#define USE_LOOPS	5
 

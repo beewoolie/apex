@@ -107,6 +107,9 @@ config CODEC
 	  This driver includes commands to initialize and test the
 	  AC97 link and associated codec.
 
+	  You will not be able to use this code without first creating
+	  PCM test data.  It's best to leave this option disabled.
+
 endmenu
 
 config MACH

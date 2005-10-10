@@ -163,7 +163,10 @@ config CODEC
 	default n
 	help
 	  This driver includes commands to initialize and test the
-	  TI audio codec as well as the CPUs SSP module.
+	  TI audio codec as well as the CPUs SSP module.  
+
+	  You will not be able to use this code without first creating
+	  PCM test data.  It's best to leave this option disabled.
 
 config CODEC_LH79520
 	bool "Audio Codec"
