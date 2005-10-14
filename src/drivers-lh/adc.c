@@ -74,6 +74,8 @@
 #include <command.h>
 #include <mach/hardware.h>
 
+extern struct driver_d* console;
+
 //#define TALK 1
 
 #if defined (TALK)
@@ -318,56 +320,72 @@ static void adc_init (void)
   adc_setup ();
 }
 
-
 #define MS_TIMEOUT 2*1000
+#define MS_ADC_DELAY 500
 
 static int cmd_adc (int argc, const char** argv)
 {
-  unsigned long status = ADC_GS;
+  unsigned long status;
   int i;
   unsigned long timeStart;
 
+  while (1) {
+//    printf ("\n\n\n\n\n");
+
+    status = ADC_GS;
 				/* Flush the results FIFO */
-  while ((ADC_FS & ADC_FS_FEMPTY) == 0)
-    ADC_RR;
+    while ((ADC_FS & ADC_FS_FEMPTY) == 0)
+      ADC_RR;
 
-  if (ADC_IS & ADC_IS_PEN)
-    printf ("pen down\n");
+    if (ADC_IS & ADC_IS_PEN)
+      printf ("pen down irq\n");
+    
+    printf ("[%4lx %4lx] ", ADC_FS, status);
+//    printf ("start %lx\n", status);
 
-  printf ("fifo %lx\n", ADC_FS);
-  printf ("start %lx\n", status);
+    ADC_IC |= ADC_IC_EOS | ADC_IC_PEN;
+    ADC_GC |= (1<<2);		/* Start sampling */
 
-  ADC_IC |= ADC_IC_EOS | ADC_IC_PEN;
-  ADC_GC |= (1<<2);		/* Start sampling */
+    timeStart = timer_read (); 
 
-  timeStart = timer_read (); 
-
-  do {
-    if (ADC_IS & ADC_IS_EOS)
-      break;
+    do {
+      if (ADC_IS & ADC_IS_EOS)
+	break;
 #if 0
-    unsigned long l = ADC_GS;
-    if ((l & (0xf<<4)) != (status & (0xf<<4)))
-      printf ("state %lx\n", (l >> 4) & 0xf);
-    status = l;
-    if (((status >> 4) & 0xf) == 0x4) /* End of sequence */
-      break;
-    if (((status >> 4) & 0xf) == 0x1) /* Idle, which is really an error */
-      break;
+      unsigned long l = ADC_GS;
+      if ((l & (0xf<<4)) != (status & (0xf<<4)))
+	printf ("state %lx\n", (l >> 4) & 0xf);
+      status = l;
+      if (((status >> 4) & 0xf) == 0x4) /* End of sequence */
+	break;
+      if (((status >> 4) & 0xf) == 0x1) /* Idle, which is really an error */
+	break;
 #endif
-  } while (timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
+    } while (timer_delta (timeStart, timer_read ()) < MS_TIMEOUT);
 
+    printf ("-> [gs %lx %lx]\n", ADC_GS, ADC_FS);
+//    printf ("fifo %lx\n", ADC_FS);
 
-  printf ("done (gs %lx)\n", ADC_GS);
-  printf ("fifo %lx\n", ADC_FS);
+    for (i = 0; i < SAMPLES; ++i) {
+      unsigned long v = ADC_RR;
+//      printf ("%2d rr %5ld (%lx) - (%lx)\n", i, (v >> 6), (v & 0xf), ADC_FS);
+      printf (" %4ld", (v >> 6));
+    }
 
-  for (i = 0; i < SAMPLES; ++i) {
-    unsigned long v = ADC_RR;
-    printf ("%2d rr %5ld (%lx) - (%lx)\n", i, (v >> 6), (v & 0xf), ADC_FS);
+    printf ("\n");
+
+    printf ("fifo %4lx ", ADC_FS);
+    printf ("hw 0x%4lx  lw 0x%4lx\n", ADC_HW, ADC_LW);
+
+    timeStart = timer_read ();
+    while (timer_delta (timeStart, timer_read ()) < MS_ADC_DELAY)
+      if (console->poll (0, 0))
+	goto done;
+//    printf ("\n\n\n\n\n");
   }
 
-  printf ("fifo %lx\n", ADC_FS);
-  printf ("hw 0x%lx  lw 0x%lx\n", ADC_HW, ADC_LW);
+ done:
+
   return 0;
 }
 
