@@ -37,10 +37,20 @@
 
 /* ----- Constants */
 
-#define NOR_WIDTH	(32)
-#define NOR_0_PHYS	(0x00000000)
+#if defined CONFIG_MACH_TROUNCER
+# define NOR_WIDTH		(16)
+# define NOR_CHIP_MULTIPLIER	(1)
+#endif
 
-#define NOR_CHIP_MULTIPLIER	(2)	/* Number of chips at REGA */
+#if !defined (NOR_WIDTH)
+# define NOR_WIDTH		(32)
+#endif
+#if !defined (NOR_0_PHYS)
+# define NOR_0_PHYS		(0x00000000)
+#endif
+#if !defined (NOR_CHIP_MULTIPLIER)
+# define NOR_CHIP_MULTIPLIER	(2)	/* Number of chips at REGA */
+#endif
 
 #if defined (CPLD_FLASH)
 # define VPEN_ENABLE		(CPLD_FLASH |=  CPLD_FLASH_FL_VPEN)

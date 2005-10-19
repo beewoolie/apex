@@ -66,8 +66,8 @@
 
 #include <mach/nor-cfi.h>
 
-//#define TALK
-//#define NOISY
+#define TALK
+#define NOISY
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -255,7 +255,8 @@ static void nor_init_chip (unsigned long phys)
   int i;
   unsigned long start;
 
-  PRINTF ("%s: probing %lx\n", __FUNCTION__, phys);
+  PRINTF ("%s: probing %lx (%d %d)\n", __FUNCTION__, phys, 
+	  NOR_WIDTH, NOR_CHIP_MULTIPLIER);
 
   REGA (phys) = CMD (ReadArray);
   REGA (phys) = CMD (ReadQuery);

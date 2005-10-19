@@ -25,6 +25,15 @@ config MACH_LPD7A404
 	select USES_SMC91X
 	select DRIVERS_LH
 
+config MACH_TROUNCER
+	bool "Interalia TROUNCER"
+	select ARCH_LH7A404
+	select USES_NOR_CFI
+	select USES_COMPACTFLASH
+	select USES_NOR_BOOTFLASH
+	select HAS_LH_ADC
+	select DRIVERS_LH
+
 endchoice
 
 menu "Platform Setup"

@@ -129,9 +129,15 @@
 //#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
 
 /* LOLO 2.0.3 */
-#define SMC_BCR0_V		(0x200002a2)	// Bootflash
-#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
-#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+#if defined (CONFIG_MACH_TROUNCER)
+# define SMC_BCR0_V		(0x1000fce1)	// Bootflash
+#endif
+
+#if defined (CONFIG_MACH_LPD7A40X)
+# define SMC_BCR0_V		(0x200002a2)	// Bootflash
+# define SMC_BCR6_V		(0x100003e2)	// CompactFlash
+# define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+#endif
 
 // Alternative timings.
 //#define SMC_BCR0_V		(0x20000200)	// Bootflash
@@ -237,10 +243,18 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	   disabled which breaks the CPLD handling of chip
 	   selects. */
   SMC_PCMCIACON |= 0x3;		/* Enable both PCMCIA slots */
+#if defined (SMC_BCR0_V)
   SMC_BCR0 = SMC_BCR0_V;
+#endif
+#if defined (SMC_BCR1_V)
   SMC_BCR1 = SMC_BCR1_V;
+#endif
+#if defined (SMC_BCR6_V)
   SMC_BCR6 = SMC_BCR6_V;
+#endif
+#if defined (SMC_BCR7_V)
   SMC_BCR7 = SMC_BCR7_V;
+#endif
 
   __asm volatile ("cmp %0, %1\n\t"
 #if defined (CONFIG_SDRAMBOOT_REPORT)
@@ -318,8 +332,10 @@ void __naked target_init (void)
 
 static void target_release (void)
 {
+#if defined (CPLD_FLASH)
   /* Flash is enabled for the kernel */
   CPLD_FLASH |=  CPLD_FLASH_FL_VPEN;
+#endif
 }
 
 static __service_0 struct service_d lh7a40x_target_service = {
