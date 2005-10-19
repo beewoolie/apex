@@ -66,8 +66,8 @@
 
 #include <mach/nor-cfi.h>
 
-#define TALK
-#define NOISY
+//#define TALK
+//#define NOISY
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
