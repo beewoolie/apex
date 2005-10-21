@@ -114,7 +114,7 @@ struct driver_d {
 #define __driver_2 __used __section(.driver.2)
 #define __driver_3 __used __section(.driver.3) /* flash */
 #define __driver_4 __used __section(.driver.4) /* ethernet */
-#define __driver_5 __used __section(.driver.5) /* cf */
+#define __driver_5 __used __section(.driver.5) /* cf/mmc/sd */
 #define __driver_6 __used __section(.driver.6) /* filesystems */
 #define __driver_7 __used __section(.driver.7)
 

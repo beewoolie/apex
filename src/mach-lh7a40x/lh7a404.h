@@ -62,6 +62,26 @@
 #define ADC_MIS		__REG(ADC_PHYS + 0xac)	/* Masked Interrupt Status  */
 #define ADC_IC		__REG(ADC_PHYS + 0xb0)	/* Interrupt clear */
 
+#define MMC_PHYS	(0x80000100)
+
+#define MMC_CLKC	__REG(MMC_PHYS + 0x00)
+#define MMC_STATUS	__REG(MMC_PHYS + 0x04)
+#define MMC_RATE	__REG(MMC_PHYS + 0x08)
+#define MMC_PREDIV	__REG(MMC_PHYS + 0x0c)
+#define MMC_CMDCON	__REG(MMC_PHYS + 0x14)
+#define MMC_RES_TO	__REG(MMC_PHYS + 0x18)
+#define MMC_READ_TO	__REG(MMC_PHYS + 0x1c)
+#define MMC_BLK_LEN	__REG(MMC_PHYS + 0x20)
+#define MMC_NOB		__REG(MMC_PHYS + 0x24)
+#define MMC_INT_STATUS	__REG(MMC_PHYS + 0x28)
+#define MMC_EOI		__REG(MMC_PHYS + 0x2c)
+#define MMC_INT_MASK	__REG(MMC_PHYS + 0x34)
+#define MMC_CMD		__REG(MMC_PHYS + 0x38)
+#define MMC_ARGUMENT	__REG(MMC_PHYS + 0x3c)
+#define MMC_RES_FIFO	__REG(MMC_PHYS + 0x40)
+#define MMC_DATA_FIFO	__REG(MMC_PHYS + 0x48)
+
+
 /* ----- Globals */
 
 /* ----- Prototypes */

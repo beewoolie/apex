@@ -32,6 +32,7 @@ config MACH_TROUNCER
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
 	select HAS_LH_ADC
+	select HAS_LH_MMC
 	select DRIVERS_LH
 
 endchoice

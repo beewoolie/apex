@@ -42,11 +42,11 @@
 
 */
 
+#include <config.h>
 #include <driver.h>
 #include <service.h>
 #include <linux/string.h>
 #include <apex.h>
-#include <config.h>
 
 #if defined (CONFIG_ATAG)
 # include <atag.h>

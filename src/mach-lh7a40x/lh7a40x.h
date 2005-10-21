@@ -82,12 +82,19 @@
 #define CSC_PWRSR_CHIPID_MASK	(0xff)
 
 	      /* FCLK_HCLK_PCLK */
-#define CSC_CLKSET_200_100_50	(0x0004ee39)
-#define CSC_CLKSET_150_75_37	(0x00048eb1)
-#define CSC_CLKSET_200_66_33	(0x0004ee3a)
+#define CSC_CLKSET_200_100_50	(0x0004ee39) /* HCLK 99993600 */
+#define CSC_CLKSET_150_75_37	(0x00048eb1) /* HCLK 75004600 */
+#define CSC_CLKSET_200_66_33	(0x0004ee3a) /* HCLK 66662400 */
 
-#define CSC_CLKSET_V		CSC_CLKSET_200_100_50
-#define HCLK			99993600
+#if defined (CONFIG_MACH_TROUNCER)
+# define CSC_CLKSET_V		CSC_CLKSET_200_66_33
+# define HCLK			(66662400)
+#endif
+
+#if !defined (CSC_CLKSET_V)
+# define CSC_CLKSET_V		CSC_CLKSET_200_100_50
+# define HCLK			(99993600)
+#endif
 
 #define CSC_PWRCNT_USBH_EN	(1<<28)	/* USB Host power enable */
 #define CSC_PWRCNT_DMAC_M2M1_EN	(1<<27)
@@ -152,6 +159,8 @@
 #define GPIO_PCDD		__REG (GPIO_PHYS + 0x18)
 #define GPIO_PED		__REG (GPIO_PHYS + 0x20)
 #define GPIO_PEDD		__REG (GPIO_PHYS + 0x24)
+#define GPIO_PFD		__REG (GPIO_PHYS + 0x30)
+#define GPIO_PFDD		__REG (GPIO_PHYS + 0x34)
 
 #define DMAC_GCA		__REG(DMAC_PHYS + 0x2b80)
 #define DMAC_GIR		__REG(DMAC_PHYS + 0x2bc0)

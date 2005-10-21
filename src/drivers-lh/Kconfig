@@ -9,11 +9,22 @@ config DRIVER_LH_ADC
 	help
 	  This driver includes commands to initialize and test the
 	  ADC/touchscreen controller.
+
+config DRIVER_LH_MMC
+	bool "MMC"
+	depends on HAS_LH_MMC
+	default n
+	help
+	  This driver supports the MMC/SD
+	  (MultiMediaCard/SecureDigital) interfate. 
 endmenu
 
 endif
 
 config HAS_LH_ADC
+	bool
+
+config HAS_LH_MMC
 	bool
 
 config DRIVERS_LH

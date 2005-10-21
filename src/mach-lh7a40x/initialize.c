@@ -178,6 +178,8 @@
    round to zero.  The compiler is efficient and can make the roundoff
    in a single instruction.
 
+   The maximum range of this timer is about 64ms.
+
  */
 
 void __section (.bootstrap) usleep (unsigned long us)

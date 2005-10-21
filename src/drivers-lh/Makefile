@@ -1,7 +1,7 @@
 #
 # Makefile for APEX loader
 #
-#   Copyright (C) 2004 Marc Singer
+#   Copyright (C) 2004,2005 Marc Singer
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -20,3 +20,4 @@
 #
 
 obj-$(CONFIG_DRIVER_LH_ADC)	+= adc.o
+obj-$(CONFIG_DRIVER_LH_MMC)	+= drv-mmc.o
