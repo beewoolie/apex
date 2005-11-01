@@ -38,7 +38,7 @@
 extern struct driver_d* console;
 extern char* strcat (char*, const char*);
 
-#define TALK 2
+#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -303,21 +303,41 @@ struct _mmc_csd {
 #define MMC_CMDCON_RESPONSE_FORMAT_SHIFT (0)
 #define MMC_CMDCON_RESPONSE_FORMAT_MASK (0x3)
 
-#define MMC_CMDCON_RESPONSE_NONE	(0 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT)
-#define MMC_CMDCON_RESPONSE_R1		(1 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT)
-#define MMC_CMDCON_RESPONSE_R2		(2 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT)
-#define MMC_CMDCON_RESPONSE_R3		(3 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT)
+#define MMC_CMDCON_RESPONSE_NONE (0 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //   0
+#define MMC_CMDCON_RESPONSE_R1	 (1 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //  48
+#define MMC_CMDCON_RESPONSE_R2	 (2 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) // 136
+#define MMC_CMDCON_RESPONSE_R3	 (3 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //  48
 
 
 #define MMC_RATE_IO_V		(0)
 #define MMC_RATE_ID_V		(6)
-#define MMC_PREDIV_V		(4)
-//#define MMC_PREDIV_V		(8)
-#define MMC_RES_TO_V		(0x7f)
-#define MMC_READ_TO_V		(64)
+//#define MMC_PREDIV_V		(4)
+#define MMC_PREDIV_V		(8)
+#define MMC_RES_TO_V		(0x3f)
+#define MMC_READ_TO_V		(0x7fff)
 
 #define MMC_WAIT		udelay(1)
 
+//#define MMC_OCR_ARG_V		(0x00ffc000)
+#define MMC_OCR_ARG_V		(0x00ff8000)
+
+#define CMD_BIT_APP		 (1<<23)
+#define CMD_BIT_INIT		 (1<<22)
+#define CMD_MASK_RESP		 (3<<24)
+#define CMD_SHIFT_RESP		 (24)
+#define CMD_MASK_CMD		 (0xff)
+#define CMD_SHIFT_CMD		 (0)
+
+#define CMD(c,a,r,i)		(((c) & 0xff)\
+				 | ((r) << 24)\
+				 | ((a) ? CMD_BIT_APP : 0)\
+				 | ((i) ? CMD_BIT_INIT : 0)\
+				 )
+
+#define CMD_IDLE		 CMD(MMC_GO_IDLE_STATE,	0, 0, 1)
+#define CMD_SD_OP_COND		 CMD(SD_APP_OP_COND,	1, 3, 1)
+#define CMD_MMC_OP_COND		 CMD(MMC_SEND_OP_COND,	0, 3, 1)
+#define CMD_ALL_SEND_CID	 CMD(MMC_ALL_SEND_CID,	0, 2, 0)
 
 struct mmc_info {
   char response[17];		/* Most recent response */
@@ -359,15 +379,20 @@ static const char* report_status (unsigned long l)
 static void start_clock (void)
 {
   ENTRY ();
+
   if (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
     return;
 
+//  MMC_CLKC = 0;
+//  MMC_WAIT;
   MMC_CLKC = MMC_CLKC_START_CLK;
-  MMC_WAIT;
+//  MMC_WAIT;
 
-  /* *** FIXME: may be helpful to implement a timeout check */
-  while (MMC_STATUS & MMC_STATUS_CLK_DIS)
-    MMC_WAIT;
+  /* *** FIXME: may be helpful to implement a timeout check.
+     *** Interestingly, the Sharp implementation doesn't wait at all. */
+
+//  while (MMC_STATUS & MMC_STATUS_CLK_DIS)
+//    MMC_WAIT;
 }
 
 static void stop_clock (void)
@@ -378,12 +403,17 @@ static void stop_clock (void)
     return;
 
   udelay (100);
+//  MMC_CLKC = 0;
+//  MMC_WAIT;
   MMC_CLKC = MMC_CLKC_STOP_CLK;
-  MMC_WAIT;
+//  MMC_WAIT;
 
-  /* *** FIXME: may be helpful to implement a timeout check */
+  /* *** FIXME: may be helpful to implement a timeout check.
+     Interestingly, the Sharp implementation of this function doesn't
+     have a timeout. */ 
   while (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
-    MMC_WAIT;
+    //    MMC_WAIT
+    ;
 }
 
 static void clear_fifo (void)
@@ -424,6 +454,7 @@ static void pull_response (int length)
   printf ("response ");
   for (i = 0; i < length;) {
     unsigned short s = MMC_RES_FIFO;
+    printf (" [%04x]", s);
     if (i == 0)
       result = s;
     mmc.response[i++] = s & 0xff;
@@ -447,7 +478,7 @@ static unsigned short wait_for_completion (void)
     status = MMC_STATUS;
     MMC_WAIT;
     if (status != status_last)
-      printf (" %x", status);
+      printf (" %04x", status);
     status_last = status;
   } while ((status
 	    & (  MMC_STATUS_ENDRESP
@@ -459,11 +490,74 @@ static unsigned short wait_for_completion (void)
 	       | MMC_STATUS_CRCREAD
 		 ))
 	   == 0);
-  printf ("wait: %s %lx\n", report_status (status), MMC_INT_STATUS);
+  printf (" wait: %s %lx\n", report_status (status), MMC_INT_STATUS);
   { int i; for (i = 0; i < 229743; i++); }
   stop_clock ();
 
   return status_last;
+}
+
+static void report_command (void)
+{
+  DBG (1, "cmd 0x%lx (%ld) arg 0x%lx  cmdcon 0x%lx  rate 0x%lx/%ld\n",
+       MMC_CMD, MMC_CMD, MMC_ARGUMENT, MMC_CMDCON, MMC_PREDIV, MMC_RATE);
+}
+
+
+static unsigned short execute_command (unsigned long cmd, unsigned long arg)
+{
+  int state = (cmd & CMD_BIT_APP) ? 99 : 0;
+  unsigned short s = 0;
+
+ top:
+  stop_clock ();
+
+  switch (state) {
+
+  case 0:			/* Execute command */
+    MMC_CMD = ((cmd & CMD_MASK_CMD) >> CMD_SHIFT_CMD);
+    MMC_RATE = MMC_RATE_ID_V;
+    MMC_ARGUMENT = arg;
+    MMC_CMDCON = ((cmd & CMD_MASK_RESP) >> CMD_SHIFT_RESP)
+      | ((cmd & CMD_BIT_INIT) ? MMC_CMDCON_INITIALIZE : 0);
+    ++state;
+    break;
+
+  case 1:
+    return s;
+
+  case 99:			/* APP prefix */
+    MMC_CMD = MMC_APP_CMD;
+    MMC_RATE = MMC_RATE_ID_V;
+    MMC_ARGUMENT = 0;
+    MMC_CMDCON = MMC_CMDCON_RESPONSE_R1
+      | ((cmd & CMD_BIT_INIT) ? MMC_CMDCON_INITIALIZE : 0);
+    state = 0;
+    break;
+  }
+
+  clear_fifo ();
+  clear_status ();
+  report_command ();
+  start_clock ();
+  s = wait_for_completion ();
+
+  if (s & MMC_STATUS_TORES)
+    return s;
+
+  switch (MMC_CMDCON & 0x3) {
+  case 0:
+    break;
+  case 1:
+  case 3:
+    pull_response (48);
+    break;
+  case 2:
+    pull_response (136);
+    break;
+  }
+
+  goto top;
 }
 
 static void mmc_probe (void)
@@ -481,93 +575,62 @@ static void mmc_probe (void)
 //  MMC_CMDCON &= ~MMC_CMDCON_INITIALIZE;
 
 //  MMC_CMDCON |= MMC_CMDCON_DATA_EN | MMC_CMDCON_BIG_ENDIAN;
+
+//  MMC_CMDCON |= MMC_CMDCON_SDIO_EN;
+//  MMC_CMDCON |= MMC_CMDCON_WIDE;
+
 #if 1
-  MASK_AND_SET (MMC_CMDCON, MMC_CMDCON_RESPONSE_FORMAT_MASK,
-		MMC_CMDCON_RESPONSE_NONE);
-  MMC_WAIT;
-
-  MMC_CMD = MMC_GO_IDLE_STATE;
-  MMC_WAIT;
-  MMC_ARGUMENT = 0;
-  MMC_WAIT;
-//  MMC_CMDCON = cmdcon;
-  MMC_RATE = MMC_RATE_ID_V;
-  MMC_WAIT;
-
-  clear_fifo ();
-  clear_status ();
-  printf ("attempting to idle MMC (%s %lx)\n", 
-	  report_status (MMC_STATUS), MMC_INT_STATUS);
-  start_clock ();
-  wait_for_completion ();
-//  MMC_CMDCON &= ~MMC_CMDCON_INITIALIZE;
+  execute_command (CMD_IDLE, 0);
 #endif
 
 #if 1
-  tries = 5;
- redo_op_cond:
-  stop_clock ();
+  s = execute_command (CMD_SD_OP_COND, 0);
 
-  //  MMC_CMDCON &= ~MMC_CMDCON_INITIALIZE;
-  MMC_CMD = MMC_SEND_OP_COND;
-  MMC_WAIT;
-  MMC_ARGUMENT = 0 ; // 0x00ffc000;
-  MMC_WAIT;
-  MMC_RATE = MMC_RATE_ID_V;
-  MMC_WAIT;
-  MASK_AND_SET (MMC_CMDCON, MMC_CMDCON_RESPONSE_FORMAT_MASK,
-		MMC_CMDCON_RESPONSE_R3);
-  MMC_WAIT;
-  
-  clear_fifo ();
-  clear_status ();
-  printf ("attempting to op_cond MMC (%s %lx)\n", 
-	  report_status (MMC_STATUS), MMC_INT_STATUS);
-  start_clock ();
-  wait_for_completion ();
+  if (s & MMC_STATUS_TORES) {
+    printf ("failed to sd_op_cond\n");
+    goto mmc_op_cond;
+  }
 
-  pull_response (48);
+  s = execute_command (CMD_SD_OP_COND, MMC_OCR_ARG_V);
 
-  if ((mmc.response[1] & 0x80) == 0 && tries--) {
-    { int i; for (i = 0; i < 229743; i++); }
-    udelay (1000);
-    goto redo_op_cond;
+  if (s & MMC_STATUS_TORES) {
+    printf ("failed to sd_op_cond with arg\n");
+    goto mmc_op_cond;
+  }
+#endif  
+
+  goto cid;
+
+ mmc_op_cond:
+
+#if 1
+  s = execute_command (CMD_MMC_OP_COND, 0);
+
+  if (s & MMC_STATUS_TORES) {
+    printf ("failed to mmc_op_cond\n");
+    return;
+  }
+
+  s = execute_command (CMD_MMC_OP_COND, MMC_OCR_ARG_V);
+
+  if (s & MMC_STATUS_TORES) {
+    printf ("failed to mmc_op_cond with arg\n");
+    return;
   }
 
 #endif  
 
+ cid:
+
   tries = 3;
+  redo:
 
- redo:
-  stop_clock ();
-  MMC_CMD = MMC_ALL_SEND_CID;
-  MMC_WAIT;
-  MMC_ARGUMENT = 0;
-  MMC_WAIT;
-  MMC_RATE = MMC_RATE_ID_V;
-  MMC_WAIT;
-  MASK_AND_SET (MMC_CMDCON, MMC_CMDCON_RESPONSE_FORMAT_MASK,
-		MMC_CMDCON_RESPONSE_R2);
-  MMC_WAIT;
-  
-  DBG (2, "CMDCON 0x%lx\n", MMC_CMDCON);
-
-  clear_fifo ();
-  clear_status ();
-  printf ("attempting to all_send_cid MMC (%s %lx)\n", 
-	  report_status (MMC_STATUS), MMC_INT_STATUS);
-  start_clock ();
-  s = wait_for_completion ();
+  s = execute_command (CMD_ALL_SEND_CID, 0);
 
   if ((s & MMC_STATUS_TORES) && tries--) {
     udelay (1000);
     goto redo;
   }
-
-  if (!(s & MMC_STATUS_TORES))
-    pull_response (136);
-  
-//  stop_clock ();
 }
 
 static void mmc_init (void)
