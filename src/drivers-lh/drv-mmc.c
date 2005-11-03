@@ -319,28 +319,28 @@ struct _mmc_csd {
 #define MMC_WAIT		udelay(1)
 
 //#define MMC_OCR_ARG_V		(0x00ffc000)
-#define MMC_OCR_ARG_V		(0x00ff8000)
+//#define MMC_OCR_ARG_V		(0x00ff8000)
+#define MMC_OCR_ARG_V		(0x00ff0000)
 
 #define CMD_BIT_APP		 (1<<23)
 #define CMD_BIT_INIT		 (1<<22)
+#define CMD_BIT_BUSY		 (1<<21)
 #define CMD_MASK_RESP		 (3<<24)
 #define CMD_SHIFT_RESP		 (24)
 #define CMD_MASK_CMD		 (0xff)
 #define CMD_SHIFT_CMD		 (0)
 
-#define CMD(c,a,r,i)		(((c) & 0xff)\
-				 | ((r) << 24)\
-				 | ((a) ? CMD_BIT_APP : 0)\
-				 | ((i) ? CMD_BIT_INIT : 0)\
+#define CMD(c,r)		(  ((c) &  CMD_MASK_CMD)\
+				 | ((r) << CMD_SHIFT_RESP)\
 				 )
 
-#define CMD_IDLE		 CMD(MMC_GO_IDLE_STATE,	0, 0, 1)
-#define CMD_SD_OP_COND		 CMD(SD_APP_OP_COND,	1, 3, 1)
-#define CMD_MMC_OP_COND		 CMD(MMC_SEND_OP_COND,	0, 3, 1)
-#define CMD_ALL_SEND_CID	 CMD(MMC_ALL_SEND_CID,	0, 2, 0)
+#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0) | CMD_BIT_INIT
+#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 3) | CMD_BIT_APP | CMD_BIT_INIT
+#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3) | CMD_BIT_INIT
+#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2) //| CMD_BIT_BUSY
 
 struct mmc_info {
-  char response[17];		/* Most recent response */
+  char response[20];		/* Most recent response */
 };
 
 struct mmc_info mmc;
@@ -378,7 +378,7 @@ static const char* report_status (unsigned long l)
 
 static void start_clock (void)
 {
-  ENTRY ();
+//  ENTRY ();
 
   if (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
     return;
@@ -397,12 +397,12 @@ static void start_clock (void)
 
 static void stop_clock (void)
 {
-  ENTRY ();
+  //  ENTRY ();
 
   if (MMC_STATUS & MMC_STATUS_CLK_DIS)
     return;
 
-  udelay (100);
+//  udelay (100);
 //  MMC_CLKC = 0;
 //  MMC_WAIT;
   MMC_CLKC = MMC_CLKC_STOP_CLK;
@@ -447,23 +447,42 @@ static void clear_status (void)
 static void pull_response (int length)
 {
   int i;
+  int c = 16; //length/8;
   unsigned short result;
 
-  length /= 8;
-
   printf ("response ");
-  for (i = 0; i < length;) {
+
+#if 0
+  for (i = 0; i < c; ) {
+    unsigned short s = MMC_RES_FIFO;
+    if (i == 0)
+      result = s;
+    printf (" [%04x]", s);
+    *(unsigned short*) &mmc.response[i] = s;
+    {
+      unsigned char c = mmc.response[i];
+      mmc.response[i] = mmc.response[i + 1];
+      mmc.response[i + 1] = c;
+    }
+    printf (" %02x %02x", mmc.response[i], mmc.response[i + 1]);
+    i += 2;
+  }
+#endif
+#if 1
+  for (i = 0; i < c;) {
     unsigned short s = MMC_RES_FIFO;
     printf (" [%04x]", s);
     if (i == 0)
       result = s;
-    mmc.response[i++] = s & 0xff;
-    printf (" %02x", s & 0xff);
-    if (i < length) {
-      mmc.response[i++] = (s >> 8) & 0xff;
-      printf (" %02x", (s >> 8) & 0xff);
+    mmc.response[i++] = (s >> 8) & 0xff;
+    printf (" %02x", (s >> 8) & 0xff);
+    if (i < c) {
+      mmc.response[i++] = s & 0xff;
+      printf (" %02x", s & 0xff);
     }
   }
+#endif
+
   printf ("\n");
 }
 
@@ -482,8 +501,8 @@ static unsigned short wait_for_completion (void)
     status_last = status;
   } while ((status
 	    & (  MMC_STATUS_ENDRESP
-	       | MMC_STATUS_DONE
-	       | MMC_STATUS_TRANDONE
+//	       | MMC_STATUS_DONE
+//	       | MMC_STATUS_TRANDONE
 //	       | MMC_STATUS_TORES
 //	       | MMC_STATUS_TOREAD
 	       | MMC_STATUS_CRC
@@ -518,8 +537,10 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
     MMC_CMD = ((cmd & CMD_MASK_CMD) >> CMD_SHIFT_CMD);
     MMC_RATE = MMC_RATE_ID_V;
     MMC_ARGUMENT = arg;
-    MMC_CMDCON = ((cmd & CMD_MASK_RESP) >> CMD_SHIFT_RESP)
-      | ((cmd & CMD_BIT_INIT) ? MMC_CMDCON_INITIALIZE : 0);
+    MMC_CMDCON
+      = ((cmd & CMD_MASK_RESP) >> CMD_SHIFT_RESP)
+      | ((cmd & CMD_BIT_INIT)  ? MMC_CMDCON_INITIALIZE : 0)
+      | ((cmd & CMD_BIT_BUSY)  ? MMC_CMDCON_BUSY : 0);
     ++state;
     break;
 
@@ -650,7 +671,7 @@ static void mmc_init (void)
 
   DBG (2, "%s: enabling MMC\n", __FUNCTION__);
 
-  MMC_PREDIV = MMC_PREDIV_MMC_EN | MMC_PREDIV_V;
+  MMC_PREDIV = MMC_PREDIV_MMC_EN | MMC_PREDIV_APB_RD_EN | MMC_PREDIV_V;
   MMC_WAIT;
   MMC_RATE = MMC_RATE_ID_V;
   MMC_WAIT;
