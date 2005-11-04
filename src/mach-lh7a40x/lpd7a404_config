@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Sep 28 12:16:29 2005
+# Thu Nov  3 16:06:41 2005
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -10,17 +10,18 @@ CONFIG_CPU_ARM920T=y
 CONFIG_ARCH_LH7A40X=y
 # CONFIG_ARCH_IXP42X is not set
 # CONFIG_EXPERIMENTAL is not set
+# CONFIG_SMALL is not set
 
 #
 # General Setup
 #
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-# CONFIG_SMALL is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
 # CONFIG_DISABLE_MMU_AT_BOOT is not set
+CONFIG_SDRAMBOOT_REPORT=y
 CONFIG_ATAG_PHYS=0xc0000100
 CONFIG_APEX_VMA=0xc0200000
 CONFIG_KERNEL_LMA=0xc0008000
@@ -31,6 +32,7 @@ CONFIG_SDRAM_BANK0=y
 CONFIG_MACH="lh7a40x"
 # CONFIG_MACH_LPD7A400 is not set
 CONFIG_MACH_LPD7A404=y
+# CONFIG_MACH_TROUNCER is not set
 
 #
 # Platform Setup
