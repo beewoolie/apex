@@ -113,9 +113,10 @@
 #define OST_WDOG_ENAB	__REG(OST_PHYS + 0x18) /* Watchdog enable */
 #define OST_WDOG_KEY	__REG(OST_PHYS + 0x1c) /* Watchdog enable */
 
-#define UART0_PHYS	(0xc8000000)
-#define UART1_PHYS	(0xc8001000)
-#define UART_PHYS	(UART0_PHYS) /* Console */
+#define UART0_PHYS	(0xc8000000) /* High-speed UART */
+#define UART1_PHYS	(0xc8001000) /* Console UART */
+#define UART_PHYS	(UART0_PHYS) /* Primary */
+#define UART_SEC_PHYS	(UART1_PHYS) /* Secondary */
 
 #define GPIO_PHYS	(0xc8004000)
 #define GPIO_OUTR	__REG(GPIO_PHYS + 0x00)

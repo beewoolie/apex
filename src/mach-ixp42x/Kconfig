@@ -119,6 +119,18 @@ config ENV_STARTUP
 	  This is generally not needed, but the facility is available
 	  ust in case.
 
+config DISABLE_SECOND_UART_INIT
+	bool "Disable initialization of second UART"
+	help
+	  The Linux kernel serial driver for the IXP42x doesn't enable
+	  the UARTs.  This option prevents the secondary UART from be
+	  enabled and, therefore, preventing it from being used by the
+	  kernel.  In other words, setting this option to Y will
+	  prevent Linux from using the second UART.
+
+	  Best to leave this option as 'N' unless you have a good
+	  reason to change it.
+
 endmenu
 
 config MACH

@@ -49,6 +49,8 @@
 #define UART_LSR	__REG(UART_PHYS + 0x14)	/* Line status */
 #define UART_ISR	__REG(UART_PHYS + 0X20)	/* Interrupt status */
 
+#define UART_SEC_IER	__REG(UART_SEC_PHYS + 0x04) /* UART enable */
+
 #define UART_IER_UUE	(1<<6)
 
 #define UART_LCR_DLAB	(1<<7)
@@ -104,6 +106,10 @@ void ixp42x_serial_init (void)
 
 //  console_driver->write (0, "Console initialized\r\n", 21);
   _L(LED8);
+
+#if !defined (DISABLE_SECOND_UART_INIT)
+  UART_SEC_IER  = UART_IER_UUE;	/* Enable second UART as well */
+#endif
 }
 
 ssize_t ixp42x_serial_poll (struct descriptor_d* d, size_t cb)
