@@ -1,3 +1,8 @@
+2005-11-07  Marc Singer  <elf@buici.com>
+
+	* Makefile: Rolling release for 79525 and for a fix to the
+	emac79524 driver.
+
 2005-10-08  Marc Singer  <elf@buici.com>
 
 	* src/net/ethernet.c (arp_terminate): Added a check for ^C in the
