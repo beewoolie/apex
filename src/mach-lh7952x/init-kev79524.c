@@ -25,8 +25,9 @@
    DESCRIPTION
    -----------
 
-   Hardware initializations for the KEV79524.  Some initializations
-   may be left to drivers, such as the serial interface and timer.
+   Hardware initializations for the KEV79524/79525.  Some
+   initializations may be left to drivers, such as the serial
+   interface and timer.
 
 */
 
@@ -40,30 +41,32 @@
 
 //#define USE_SLOW
 
-#if defined (USE_SLOW)
-# define EMC_RASCAS_V	((3<<0)|(3<<8))	// RAS3, CAS3
-#else
-# define EMC_RASCAS_V	((3<<0)|(2<<8))	// RAS3, CAS2
-#endif
-
-#if defined (USE_SLOW)
-# define SDRAM_CHIP_MODE	(0x32<<11)	// CAS3 BURST4
-//# define SDRAM_CHIP_MODE	(((3<<0)|(3<<4))<<11)	// BURST8 CAS3
-#else
-# define SDRAM_CHIP_MODE	(0x22<<11)	// CAS2 BURST4
-//# define SDRAM_CHIP_MODE	(((3<<0)|(2<<4))<<11)	// BURST8 CAS2
-#endif
-
 	// SDRAM
-#define SDRAM_RASCAS		EMC_RASCAS_V
 //#define SDRAM_CFG_SETUP ((1<<14)|(1<<12)|(4<<9)|(0<<7))
 #if defined (CONFIG_MACH_KEV79524)
 # define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+# define SDRAM_MODE_SHIFT	11
 #endif
 #if defined (CONFIG_MACH_KEV79525)
+/* Two banks of 16Mx16 */
 # define SDRAM_CFG_SETUP	 ((0<<14)|(1<<12)|(3<<9)|(1<<7))
+# define SDRAM_MODE_SHIFT	12
 #endif
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
+
+#define SDRAM_BURST		0 /* 2^x where x is this value */
+
+#define SDRAM_RAS		3
+
+#if defined (USE_SLOW)
+# define SDRAM_CAS		3
+#else
+# define SDRAM_CAS		2
+#endif
+
+#define EMC_RASCAS_V	((SDRAM_RAS<<0)|(SDRAM_CAS<<8))
+#define SDRAM_CHIP_MODE\
+	(((SDRAM_BURST<<0)|(SDRAM_CAS<<4))<<SDRAM_MODE_SHIFT)
 
 
 /* usleep
@@ -207,9 +210,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* SDRAM */
   EMC_READCONFIG  = EMC_READCONFIG_CMDDELAY;
   EMC_DYNCFG0     = SDRAM_CFG_SETUP;
-  EMC_DYNRASCAS0  = SDRAM_RASCAS;
+  EMC_DYNRASCAS0  = EMC_RASCAS_V;
   EMC_DYNCFG1     = SDRAM_CFG_SETUP;
-  EMC_DYNRASCAS1  = SDRAM_RASCAS;
+  EMC_DYNRASCAS1  = EMC_RASCAS_V;
 
   EMC_PRECHARGE   = NS_TO_HCLK(20);
   EMC_DYNM2PRE    = NS_TO_HCLK(60);
