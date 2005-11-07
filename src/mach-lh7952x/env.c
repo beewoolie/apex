@@ -70,7 +70,8 @@ __env struct env_d e_cmdline = {
 
 #endif
 
-#if defined (CONFIG_MACH_KEV79524) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
+#if (defined (CONFIG_MACH_KEV79524) || defined (CONFIG_MACH_KEV79525))\
+ && !defined (CONFIG_ENV_DEFAULT_CMDLINE)
 
 __env struct env_d e_cmdline = {
   .key = "cmdline",

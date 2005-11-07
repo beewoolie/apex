@@ -107,11 +107,12 @@ config CMD_XRECEIVE
 	default y
 
 config CMD_EMAC_LH79524
-	bool "Define LH79524 Ethernet MAC Command" 
-	depends on ARCH_LH79524 && DRIVER_EMAC_LH79524
+	bool "Define LH79524/5 Ethernet MAC Command" 
+	depends on DRIVER_EMAC_LH79524
 	default y
 	help
-	  Commands to configure the built-in MAC of the LH79524.
+	  Commands to configure the built-in MAC of the LH79524 and
+	  LH79525.  
 
 config CMD_EMAC_LH79524_DIAG
 	bool "Define LH79524 Ethernet MAC Diagnostics"

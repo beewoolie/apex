@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o The envmagic is weak.  If a variable isn't defined for a given
+    configuration, but it exists elsewhere in the code, the magic
+    number will be the same when thay variable is added to the
+    configuration.  So, either we insert the string into the
+    environment, or ... I don't have another plan except to ignore the
+    problem.
+
   o arp_resolve returns a string.  It should be able to return an
     error condition.  This means that a ^C will terminate the ARP, but
     it won't tell the user that that is the reason.

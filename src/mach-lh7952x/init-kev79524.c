@@ -34,6 +34,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <service.h>
+#include <sdramboot.h>
 
 #include "hardware.h"
 
@@ -46,15 +47,15 @@
 #if defined (CONFIG_MACH_KEV79524)
 # define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
 # define SDRAM_MODE_SHIFT	11
+# define SDRAM_BURST		2 /* 2^x where x is this value */
 #endif
 #if defined (CONFIG_MACH_KEV79525)
 /* Two banks of 16Mx16 */
 # define SDRAM_CFG_SETUP	 ((0<<14)|(1<<12)|(3<<9)|(1<<7))
-# define SDRAM_MODE_SHIFT	12
+# define SDRAM_MODE_SHIFT	10
+# define SDRAM_BURST		3 /* 2^x where x is this value */
 #endif
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
-
-#define SDRAM_BURST		0 /* 2^x where x is this value */
 
 #define SDRAM_RAS		3
 
@@ -201,9 +202,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __asm volatile ("tst %0, #0xf0000000\n\t"
 		  "beq 1f\n\t"
 		  "cmp %0, %1\n\t"
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  "movls r0, #1\n\t"
+		  "strls r0, [%2]\n\t"
+#endif
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS));
+		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS)
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+		  , "r" (&fSDRAMBoot) 
+#endif
+		  );
 
   PUTC_LL('r');
 
@@ -219,7 +228,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_REFEXIT     = NS_TO_HCLK(120);
   EMC_DOACTIVE    = NS_TO_HCLK(120);
   EMC_DIACTIVE    = NS_TO_HCLK(120);
-  EMC_DWRT	     = NS_TO_HCLK(40);
+  EMC_DWRT	  = NS_TO_HCLK(40);
   EMC_DYNACTCMD   = NS_TO_HCLK(120);
   EMC_DYNAUTO     = NS_TO_HCLK(120);
   EMC_DYNREFEXIT  = NS_TO_HCLK(120);
@@ -244,6 +253,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNCFG1     = SDRAM_CFG;
   
   PUTC_LL('j');
+
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+  barrier ();
+  fSDRAMBoot = 0;
+#endif
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "mov pc, %0" : : "r" (lr));
