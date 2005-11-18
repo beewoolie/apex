@@ -62,6 +62,21 @@ config DRIVER_NOR_CFI
 	  This driver implements a CFI compliant NOR flash driver
 	  which works with most contemporary NOR flash chips. 
 
+config DRIVER_NOR_CFI_NO_BUFFERED
+	bool "Inhibit Buffered Writes"
+	depends on DRIVER_NOR_CFI
+	default n
+	help
+	  This option disables the buffered write code in the CFI NOR
+	  flash driver.  While the driver detects the capability of
+	  buffered writes in the flash chip, there are reports that
+	  some flash chips fail to perform them properly.  This option
+	  disables the buffered write code in favor of the slower,
+	  single byte write code.
+
+	  Leave this option set to 'N' unless you know what you are
+	  doing.
+
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"
 	depends on USES_COMPACTFLASH=y

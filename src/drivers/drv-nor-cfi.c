@@ -104,7 +104,7 @@
 #if NOR_WIDTH == 16
 /* *** This has only be tested to work with a single chip and a bus
    width of 16. */
-# if ! defined (CONFIG_SMALL)
+# if ! defined (CONFIG_SMALL) && ! defined (CONFIG_DRIVER_NOR_CFI_NO_BUFFERED)
 #  define USE_BUFFERED_WRITE	/* Use write buffer for faster operation */
 # endif
 #endif
