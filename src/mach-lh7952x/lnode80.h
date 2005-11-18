@@ -1,8 +1,11 @@
-/* hardware.h
+/* lnode80.h
      $Id$
 
    written by Marc Singer
-   15 Nov 2004
+   14 Nov 2004
+
+   with modifications for the LNode80 done by David Anders
+   06 Nov 2005
 
    Copyright (C) 2004 Marc Singer
 
@@ -27,40 +30,10 @@
 
 */
 
-#if !defined (__HARDWARE_H__)
-#    define   __HARDWARE_H__
+#if !defined (__LNODE80_H__)
+#    define   __LNODE80_H__
 
 /* ----- Includes */
-
-#include <config.h>
-
-#if defined (CONFIG_INTERRUPTS)
-//#define IRQ_COUNT	32
-#endif
-
-#if defined (CONFIG_ARCH_LH79520)
-# include "lh79520.h"
-#endif
-
-#if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
-# include "lh79524.h"
-#endif
-
-#if defined (CONFIG_MACH_LNODE80)
-# include "lnode80.h"
-#endif
-
-#if defined (CONFIG_MACH_LPD79520)
-# include "lpd79520.h"
-#endif
-
-#if defined (CONFIG_MACH_LPD79524)
-# include "lpd79524.h"
-#endif
-
-#if defined (CONFIG_MACH_KEV79524) || defined (CONFIG_MACH_KEV79525)
-# include "kev79524.h"
-#endif
 
 /* ----- Types */
 
@@ -68,6 +41,4 @@
 
 /* ----- Prototypes */
 
-
-
-#endif  /* __HARDWARE_H__ */
+#endif  /* __LNODE80_H__ */

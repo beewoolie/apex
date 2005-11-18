@@ -4,6 +4,13 @@ choice
 	prompt "LH7952X Implementations"
 	default MACH_LPD79524
 
+config MACH_LNODE80
+	bool "LNode80 Arm Development System"
+	select ARCH_LH79520
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select DRIVERS_LH
+
 config MACH_LPD79520
 	bool "Logic Product Development LPD79520"
 	select ARCH_LH79520
@@ -59,6 +66,7 @@ config ATAG_PHYS
 
 config ARCH_NUMBER
 	int
+	default 537 if MACH_LNODE80
 	default 537 if MACH_LPD79520
 	default 609 if MACH_LPD79524
 	default 609 if MACH_KEV79524
@@ -72,6 +80,26 @@ config KERNEL_LMA
 	hex "Kernel load address"
 	default "0x20008000"
 
+config USE_RAMDISK
+	bool "Enable ramdisk options"
+	depends on MACH_LNODE80
+	default y
+	help
+	  This option doesn't enable the ramdisk, per se.  It enables
+	  other configuration options that help setup a default
+	  ramdisk.  The kernel command line and the APEX startup
+	  commands may be overridden to perform the same steps.
+
+	  There is a separate option in the Environment section that
+	  controls whether or not APEX copies the ramdisk from flash
+	  into RAM at startup.  That is where the ramdisk region is
+	  defined.
+
+config RAMDISK_LMA
+	hex "Ramdisk load address"
+	default "0x20400000"
+	depends on USE_RAMDISK
+
 config SDRAM_BANK0
 	bool "Enable SDRAM bank 0"
 	default y
@@ -79,6 +107,7 @@ config SDRAM_BANK0
 config SDRAM_BANK1
 	bool "Enable SDRAM bank 1"
 	depends on SDRAM_BANK0
+	depends on !MACH_LNODE80
 	default y if MACH_KEV79524 
 
 config NOR_BUSWIDTH
@@ -98,6 +127,7 @@ config NOR_BANK0_START
 
 config NOR_BANK0_LENGTH
 	hex "Size, in bytes, of NOR flash bank 0"
+	default "0x00400000" if MACH_LNODE80
 	default "0x00800000" if MACH_LPD7952X
 	default "0x00400000" if MACH_KEV79524
 	default "0x00400000" if MACH_KEV79525
@@ -106,6 +136,7 @@ config NOR_BANK0_LENGTH
 config NOR_BANK1
 	bool "Enable NOR flash bank 1"
 	depends on NOR_BANK0
+	depends on !MACH_LNODE80
 	default n if MACH_LPD79520
 	default y if MACH_LPD79524
 
