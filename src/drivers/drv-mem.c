@@ -46,6 +46,9 @@
 #include <driver.h>
 #include <service.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
+#include <error.h>
+#include <command.h>
 #include <apex.h>
 
 #if defined (CONFIG_ATAG)
@@ -70,6 +73,10 @@ struct mem_region {
 };
 
 static struct mem_region regions[32];
+
+#if defined (CONFIG_CMD_MEMLIMIT)
+static unsigned memlimit;
+#endif
 
 #define CB_BLOCK	     (1024*1024)
 
@@ -172,6 +179,14 @@ static void memory_report (void)
 	      regions[i].start, regions[i].length, 
 	      regions[i].length/(1024*1024));
     }
+#if defined (CONFIG_CMD_MEMLIMIT)
+  if (memlimit)
+    printf ("          memlimit is %d.%03d MiB, %d (0x%x) bytes\n", 
+	    memlimit/(1024*1024),
+	    (((memlimit/1024)*1000)/1024)%1000,
+	    memlimit, memlimit);
+#endif  
+
 }
 #endif
 
@@ -235,11 +250,65 @@ static __service_4 struct service_d memory_service = {
 };
 
 
+#if defined (CONFIG_CMD_MEMLIMIT)
+
+static int cmd_memlimit (int argc, const char** argv)
+{
+  char* pchEnd;
+  unsigned long l;
+
+  if (argc == 1) {
+    printf ("memlimit is %d.%03d MiB, %d (0x%x) bytes\n", 
+	    memlimit/(1024*1024),
+	    (((memlimit/1024)*1000)/1024)%1000,
+	    memlimit, memlimit);
+    return 0;
+  }
+  if (argc != 2)
+    return ERROR_PARAM;
+
+  l = simple_strtoul (argv[1], &pchEnd, 0);
+  if (*pchEnd == 'k' || *pchEnd == 'K')
+    l *= 1024;
+  if (*pchEnd == 'm' || *pchEnd == 'm')
+    l *= 1024*1024;
+
+  l += 4*1024 - 1;
+  l &= ~(4*1024 - 1);
+  memlimit = l;
+
+  return 0;
+}
+
+
+static __command struct command_d c_memlimit = {
+  .command = "memlimit",
+  .description = "limit memory passed to Linux",
+  .func = cmd_memlimit,
+  COMMAND_HELP(
+"memlimit"
+" [SIZE]\n"
+"  Limit amount of memory passed to the Linux kernel.\n"
+"  SIZE is a count of bytes and my be suffixed with 'm' or megabytes.\n"
+"  Pass a SIZE of zero to clear the limit.  If there is no parameter,\n"
+"  the command will display the current limit.  The limit is always rounded\n"
+"  to an even number of 4KiB pages.\n\n"
+"  e.g.  memlimit 8m\n"
+  )
+};
+
+#endif
+
 #if defined (CONFIG_ATAG)
 
 static struct tag* atag_memory (struct tag* p)
 {
   int i;
+  unsigned long start;
+  unsigned long length;
+#if defined (CONFIG_CMD_MEMLIMIT)
+  unsigned long limit = memlimit;
+#endif
 
   for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i) {
     if (!regions[i].length)
@@ -248,8 +317,21 @@ static struct tag* atag_memory (struct tag* p)
     p->hdr.tag = ATAG_MEM;
     p->hdr.size = tag_size (tag_mem32);
 
-    p->u.mem.start = regions[i].start;
-    p->u.mem.size  = regions[i].length;
+    start = regions[i].start;
+    length = regions[i].length;
+
+#if defined (CONFIG_CMD_MEMLIMIT)
+    if (memlimit) {
+      if (!limit)
+	break;
+      if (length > limit)
+	length = limit;
+      limit -= length;
+    }
+#endif
+
+    p->u.mem.start = start;
+    p->u.mem.size  = length;
 			
 //    printf (" mem 0x%08x # 0x%08x\n", p->u.mem.start, p->u.mem.size);
     p = tag_next (p);

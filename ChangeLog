@@ -1,3 +1,9 @@
+2005-12-16  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-mem.c: Added memlimit command so that we can
+	constrain the amount of memory that the Linux kernel sees.  It's a
+	handy debug feature.
+
 2005-11-18  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-nor-cfi.c: Added option to inhibit the NOR CFI

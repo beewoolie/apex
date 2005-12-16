@@ -128,4 +128,11 @@ config CMD_ETH_SMC91X
 	depends on DRIVER_SMC91X
 	default n
 
+config CMD_MEMLIMIT
+	bool "Constrain amount of RAM available to Linux kernel"
+	default n
+	help
+	  This is a command to testing how the kernel responds to
+	  a limited memory resource.  It's only useful for debugging.
+
 endmenu
