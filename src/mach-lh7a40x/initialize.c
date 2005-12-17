@@ -227,18 +227,49 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL('A');
 #endif
 
-	/* Enable Asynchronous Bus mode, NotFast and iA bits */
+	/* Set the running clock speed.  This won't increate the speed
+	   of the CPU until the CLOCKMODE is changed in the CP15
+	   control register. */
+  CSC_CLKSET = CSC_CLKSET_V;
+
+	   /* There are two bits that control bus clocking modes.
+		iA (1<<31) Asynchronous clock select
+	        nF (1<<30) notFastBus
+	      The valid combinations are as follows:
+
+	       iA nF
+	        0  0	FastBus; mode after system reset
+		0  1	Synchronous
+		1  1	Asynchronous
+
+	      From the ARM 922 TRM, Chapter 5,
+
+	      FastBus mode, GCLK sources from BCLK and FCLK is
+	        ignored.  The BCLK signal controls both the ARM core
+	        as well as the AMBA ASB interface.
+	      Synchronous mode, GCLK is sourced from BCLK or FCLK.
+	        FCLK must be faster than BCLK.
+		FCLK must be an integer multiple of BCLK.
+	      Asynchronous mode, GCLK is sourced from BCLK or FCLK.
+	        FCLK must be faster than BCLK.
+  */
+
   {
     unsigned long l;
     __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
+#if (CLOCKMODE == 's')
+		    "bic	%0, %0, #(1<<31)\n\t"
+		    "orr	%0, %0, #(1<<30)\n\t"
+#endif
+#if (CLOCKMODE == 'a')
 		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
-//		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
+#endif
+#if (CLOCKMODE == 'f')
+		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
+#endif
 		    "mcr	p15, 0, %0, c1, c0, 0"
 		    : "=r" (l));
   }
-
-	/* Set the running clock speed */
-  CSC_CLKSET = CSC_CLKSET_V;
 
 	/* Enable PCMCIA.  This is a workaround for a buggy CPLD on
 	   the LPD boards.  Apparently, the PCMCIA signals float when

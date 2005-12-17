@@ -81,19 +81,47 @@
 #define CSC_PWRSR_CHIPID_SHIFT	(16)
 #define CSC_PWRSR_CHIPID_MASK	(0xff)
 
+  /* CLOCKMODE describes how the system should setup the clocking
+     mode.  Simply put, if FCLK and HCLK are the same, the CLOCKMODE
+     is FastBus.  If FCLK is an integer multiple of HCLK, the
+     CLOCKMODE is synchronous.  If FCLK is not an integer multiple of
+     HCLK, the CLOCKMODE is asynchronous.
+
+     Set the CLKCOMODE macro to a letter of either 'f', 'a', or 's'.
+  */
+
 	      /* FCLK_HCLK_PCLK */
-#define CSC_CLKSET_200_100_50	(0x0004ee39) /* HCLK 99993600 */
-#define CSC_CLKSET_150_75_37	(0x00048eb1) /* HCLK 75004600 */
-#define CSC_CLKSET_200_66_33	(0x0004ee3a) /* HCLK 66662400 */
+#define CSC_CLKSET_100_100_50	(0x0004eab8) /* HCLK  99993600 */
+#define CSC_CLKSET_240_120_60	(0x000095b9) /* HCLK 119808000 */
+#define CSC_CLKSET_200_100_50	(0x0004ee39) /* HCLK  99993600 */
+#define CSC_CLKSET_150_75_37	(0x00048eb1) /* HCLK  75004600 */
+#define CSC_CLKSET_200_66_33	(0x0004ee3a) /* HCLK  66662400 */
 
 #if defined (CONFIG_MACH_TROUNCER)
 # define CSC_CLKSET_V		CSC_CLKSET_200_66_33
 # define HCLK			(66662400)
+# define CLKMODE		's'
+#endif
+
+#if 0
+/* Overclocking */
+# define CSC_CLKSET_V		CSC_CLKSET_240_120_60
+# define HCLK			(119808000)
+# define CLKMODE		's'
+#endif
+
+#if 0
+/* FastBus */
+# define CSC_CLKSET_V		CSC_CLKSET_100_100_50
+# define HCLK			(99993600)
+# define CLKMODE		'f'
 #endif
 
 #if !defined (CSC_CLKSET_V)
+/* Default */
 # define CSC_CLKSET_V		CSC_CLKSET_200_100_50
 # define HCLK			(99993600)
+# define CLOCKMODE		's'
 #endif
 
 #define CSC_PWRCNT_USBH_EN	(1<<28)	/* USB Host power enable */

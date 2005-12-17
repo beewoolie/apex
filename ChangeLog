@@ -1,5 +1,14 @@
 2005-12-16  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/lh7a40x.h: Added an overclocking mode.
+
+	* src/mach-lh7a40x/initialize.c: Added more explicit macros to
+	handle bus clocking modes.  Also, we've switched to the
+	synchronous bus mode as the default.
+
+	* src/mach-lh7a40x/lh7a40x.h: Added more explicit macros to handle
+	bus clocking modes. 
+
 	* src/drivers/drv-mem.c: Added memlimit command so that we can
 	constrain the amount of memory that the Linux kernel sees.  It's a
 	handy debug feature.
