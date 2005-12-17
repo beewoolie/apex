@@ -227,31 +227,32 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL('A');
 #endif
 
-	/* Set the running clock speed.  This won't increate the speed
-	   of the CPU until the CLOCKMODE is changed in the CP15
-	   control register. */
+	/* Set the running clock speed.  This will increase the HCLK
+	   (bus) speed but not let the FCLK (CPU) speed be independent
+	   of HCLK until the CLOCKMODE is changed in the CP15 control
+	   register. */
   CSC_CLKSET = CSC_CLKSET_V;
 
-	   /* There are two bits that control bus clocking modes.
-		iA (1<<31) Asynchronous clock select
-	        nF (1<<30) notFastBus
-	      The valid combinations are as follows:
+	/* There are two bits that control bus clocking modes.
+	     iA (1<<31) Asynchronous clock select
+	     nF (1<<30) notFastBus
+	   The valid combinations are as follows:
 
-	       iA nF
-	        0  0	FastBus; mode after system reset
-		0  1	Synchronous
-		1  1	Asynchronous
+	     iA nF
+	      0  0	FastBus; mode after system reset
+	      0  1	Synchronous
+	      1  1	Asynchronous
 
-	      From the ARM 922 TRM, Chapter 5,
+	    From the ARM 922 TRM, Chapter 5,
 
-	      FastBus mode, GCLK sources from BCLK and FCLK is
-	        ignored.  The BCLK signal controls both the ARM core
-	        as well as the AMBA ASB interface.
-	      Synchronous mode, GCLK is sourced from BCLK or FCLK.
-	        FCLK must be faster than BCLK.
-		FCLK must be an integer multiple of BCLK.
-	      Asynchronous mode, GCLK is sourced from BCLK or FCLK.
-	        FCLK must be faster than BCLK.
+	    FastBus mode, GCLK sources from BCLK and FCLK is
+	      ignored.  The BCLK signal controls both the ARM core
+	      as well as the AMBA ASB interface.
+	    Synchronous mode, GCLK is sourced from BCLK or FCLK.
+	      FCLK must be faster than BCLK.
+	      FCLK must be an integer multiple of BCLK.
+	    Asynchronous mode, GCLK is sourced from BCLK or FCLK.
+	      FCLK must be faster than BCLK.
   */
 
   {
