@@ -113,6 +113,11 @@ static __driver_0 struct driver_d _console = {
   .poll = console_poll,
 };
 
+/* Note that this datum will appear in the data segment.  Because it
+   is const, we can be assured that it won't be changed within the
+   code.  So, it's OK that we have something statically initialized in
+   the program.  We cannot allow there to be initialized static symbols
+   that may change during th execution of the program. */
 const struct driver_d* console = &_console;
 
 int puts (const char* fmt)

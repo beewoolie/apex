@@ -68,7 +68,7 @@ static void msleep (int ms)
 static void draw_splash (void)
 {
 #if defined (USE_PNG)
-  void* pv = open_png (rgbPNG, sizeof (rgbPNG));
+  void* pv = open_pngr (d);	/* *** FIXME: need a descriptor */
   struct png_header hdr;
   unsigned short* ps = buffer;
   int i;
@@ -77,7 +77,7 @@ static void draw_splash (void)
   if (pv == 0)
     return;
 
-  if (read_png_ihdr (pv, &hdr))
+  if (read_pngr_ihdr (pv, &hdr))
     goto fail;
 
   if (hdr.bit_depth != 8)
@@ -85,7 +85,7 @@ static void draw_splash (void)
 
   {
     for (i = hdr.height; i--; ) {
-      const unsigned char* pb = read_png_row (pv);
+      const unsigned char* pb = read_pngr_row (pv);
       if (pb == NULL) {
 	printf ("%s: read failed at %d\n", __FUNCTION__, i);
 	goto fail;

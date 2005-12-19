@@ -29,6 +29,7 @@ lib-y += env.o spinner.o
 lib-y += dump.o
 lib-y += zlib.o zlib-heap.o
 lib-y += png.o
+lib-y += pngr.o
 lib-y += sort.o
 lib-y += alias.o
 

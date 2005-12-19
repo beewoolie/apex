@@ -47,6 +47,10 @@
      of clusters as long as the offset/cluster_size, or we have to
      fail to do the right thing.
 
+     Probably, the best we can do is handle seeking before the current
+     position is to rewind to the beginning of the file and seek
+     forward.
+
    o FAT caching
 
      one FAT sector is cached to make it somewhat efficient to read

@@ -35,9 +35,12 @@
 #include <linux/string.h>
 #include <apex.h>
 #include "hardware.h"
+#include <png.h>
+#include <command.h>
+#include <error.h>
 
 //#define USE_BORDER
-#define USE_FILL
+//#define USE_FILL
 
 #define BPP1	(0<<1)
 #define BPP2	(1<<1)
@@ -171,8 +174,7 @@
 #define LCDEN	(1<<0)
 
 
-static unsigned short __attribute__((section(".clcdc.xbss"))) 
-     buffer[PEL_WIDTH*PEL_HEIGHT];
+static unsigned short __xbss(clcdc) buffer[PEL_WIDTH*PEL_HEIGHT];
 
 /* msleep
 
@@ -319,3 +321,90 @@ static __service_7 struct service_d lpd7a40x_clcdc_service = {
   .init    = clcdc_init,
   .release = clcdc_release,
 };
+
+
+
+#if defined (CONFIG_CMD_SPLASH) || 1
+
+int cmd_splash (int argc, const char** argv)
+{
+  int result;
+  struct descriptor_d d;
+  void* pv;
+  struct png_header hdr;
+  unsigned short* ps = buffer;
+  int i;
+  int j;
+
+  if (argc != 2)
+    return ERROR_PARAM;
+
+  if (   (result = parse_descriptor (argv[1], &d))
+      || (result = open_descriptor (&d))) {
+    printf ("Unable to open source %s\n", argv[1]);
+    goto fail_early;
+  }
+
+  printf ("open_pngr %s\n", argv[1]);
+  pv = open_pngr (&d);
+  if (pv == 0)
+    goto fail_close;
+
+  printf ("read_ihdr\n");
+  if (read_pngr_ihdr (pv, &hdr))
+    goto fail_close;
+
+  if (hdr.bit_depth != 8)
+    goto fail_close;
+
+  {
+    for (i = hdr.height; i--; ) {
+      const unsigned char* pb = read_pngr_row (pv);
+      if (pb == NULL) {
+	printf ("%s: read failed at %d\n", __FUNCTION__, i);
+	goto fail_close;
+      }
+      switch (hdr.color_type) {
+      case 2:			/* RGB */
+	for (j = 0; j < hdr.width; ++j, ++ps)
+	  *ps = 0
+	    +   ((pb[j*3    ] & 0xf8) >> 3)
+	    +   ((pb[j*3 + 1] & 0xf8) << 2)
+	    +   ((pb[j*3 + 2] & 0xf8) << 7)
+	    ;
+	break;
+      case 6:			/* RGBA */
+	for (j = 0; j < hdr.width; ++j, ++ps)
+	  *ps = ((pb[j*4    ] & 0xf8) >> 3)
+	    +   ((pb[j*4 + 1] & 0xf8) << 2)
+	    +   ((pb[j*4 + 2] & 0xf8) << 7);
+	
+	break;
+      }
+    }
+  }
+
+ fail_close:
+  close_png (pv);
+
+ fail_early:
+  close_descriptor (&d);
+
+  return result;
+}
+
+
+static __command struct command_d c_splash = {
+  .command = "splash",
+  .description = "display image on the LCD",
+  .func = cmd_splash,
+  COMMAND_HELP(
+"splash"
+" SRC\n"
+"  Display the image from SRC on the LCD screen.\n"
+"  The image is read from region SRC.\n\n"
+"  e.g.  splash fat://1/logo.png\n"
+  )
+};
+
+#endif

@@ -32,17 +32,19 @@
 
 /* ----- Includes */
 
+#include <driver.h>
+
 /* ----- Types */
 
 struct png_header {
   int width;
   int height;
-  int bit_depth;
-  int color_type;
-  int compression;
-  int filter;
-  int interleave;
-};
+  unsigned char bit_depth;
+  unsigned char color_type;
+  unsigned char compression;
+  unsigned char filter;
+  unsigned char interleave;
+} __attribute__((packed));
 
 /* ----- Globals */
 
@@ -52,5 +54,10 @@ void*		     open_png (const void* pv, size_t cb);
 int		     read_png_ihdr (void* pv, struct png_header* hdr);
 const unsigned char* read_png_row (void* pv);  
 void		     close_png (void* pv);
+
+void*		     open_pngr (struct descriptor_d* d);
+int		     read_pngr_ihdr (void* pv, struct png_header* hdr);
+const unsigned char* read_pngr_row (void* pv);  
+void		     close_pngr (void* pv);
 
 #endif  /* __PNG_H__ */
