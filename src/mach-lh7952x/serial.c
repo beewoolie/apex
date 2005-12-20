@@ -135,6 +135,13 @@ void lh7952x_serial_init (void)
     console_driver = &lh7952x_serial_driver;
 }
 
+void lh7952x_serial_release (void)
+{
+	/* flush serial output */
+  while (!(UART_FR & UART_FR_TXFE))
+    ;
+}
+
 ssize_t lh7952x_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb ? ((UART_FR & UART_FR_RXFE) ? 0 : 1) : 0;
@@ -201,4 +208,5 @@ static __driver_0 struct driver_d lh7952x_serial_driver = {
 
 static __service_3 struct service_d lh7952x_serial_service = {
   .init = lh7952x_serial_init,
+  .init = lh7952x_serial_release,
 };

@@ -39,6 +39,8 @@ static void cpuinfo_report (void)
   unsigned long id;
   unsigned long ctrl;
   unsigned long cpsr;
+  unsigned long ttbl;
+  unsigned long domain;
   unsigned long csc = (CSC_PWRSR>>CSC_PWRSR_CHIPID_SHIFT);
   char* sz = NULL;
 
@@ -50,10 +52,13 @@ static void cpuinfo_report (void)
 
   __asm volatile ("mrc p15, 0, %0, c0, c0" : "=r" (id));
   __asm volatile ("mrc p15, 0, %0, c1, c0" : "=r" (ctrl));
+  __asm volatile ("mrc p15, 0, %0, c2, c0" : "=r" (ttbl));
+  __asm volatile ("mrc p15, 0, %0, c3, c0" : "=r" (domain));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
-  printf ("  cpu:    id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n"
+  printf ("  cpu:      id 0x%lx    ctrl 0x%lx  cpsr 0x%lx\n"
+	  "          ttbl 0x%lx  domain 0x%lx\n"
 	  "          chipid 0x%x %s\n",
-	  id, ctrl, cpsr, (unsigned) csc, sz);
+	  id, ctrl, cpsr, ttbl, domain, (unsigned) csc, sz);
 
 #if defined (CPLD_REVISION)
   printf ("  cpld:   revision 0x%x\n", CPLD_REVISION);

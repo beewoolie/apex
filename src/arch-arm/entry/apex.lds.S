@@ -115,6 +115,8 @@ SECTIONS
 		*(.clcdc.xbss)
 		. = ALIGN (4);
 		*(.pcm.xbss)
+		. = ALIGN (16384);
+		*(.ttbl.xbss)   /* MMU translation table */
 		. = ALIGN (4);
 		*(.*.xbss)	/* All other xbss sections */
 	}

@@ -44,7 +44,7 @@ struct service_d {
 };
 
 #define __service_0 __used __section(.service.0) /* target */
-#define __service_1 __used __section(.service.1) /* exception */
+#define __service_1 __used __section(.service.1) /* exception & mmu*/
 #define __service_2 __used __section(.service.2) /* timer */
 
 #define __service_3 __used __section(.service.3) /* serial */

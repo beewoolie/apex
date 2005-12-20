@@ -1,3 +1,14 @@
+2005-12-19  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/mmu.c: Service to enable and disable the MMU.
+	This makes the boot loader execute much faster than without.
+
+	* src/mach-lh7952x/serial.c (lh7952x_serial_release): Added a
+	release function so that serial data in the FIFO is flushed. 
+
+	* src/mach-lh7a40x/serial.c (lh7a40x_serial_release): Added a
+	release function so that serial data in the FIFO is flushed.
+
 2005-12-16  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/lh7a40x.h: Added an overclocking mode.

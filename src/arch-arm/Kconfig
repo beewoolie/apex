@@ -86,6 +86,17 @@ config THUMB
 	  work.  It's best to leave it disabled unless you are
 	  prepared for the worst.
 
+config MMU
+	bool "Enable MMU"
+	default n
+	depends on SMALL=n && EXPERIMENTAL=y
+	help
+	  This option enables the MMU while the boot-loader is
+	  running.  Doing so may make the loader run faster because
+	  the MMU being enabled allows SDRAM to be cacheable and
+	  write-buffered.  The MMU is disabled before jumping to the
+	  Linux kernel or using the 'go' command.
+
 menu "General Setup"
 
 config CROSS_COMPILE

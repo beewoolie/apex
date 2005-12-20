@@ -345,20 +345,23 @@ int cmd_splash (int argc, const char** argv)
     goto fail_early;
   }
 
-  printf ("open_pngr %s\n", argv[1]);
+  //  printf ("open_pngr %s\n", argv[1]);
   pv = open_pngr (&d);
-  if (pv == 0)
-    goto fail_close;
+  if (pv == NULL)
+    goto fail_early;
 
-  printf ("read_ihdr\n");
+//  printf ("read_ihdr\n");
   if (read_pngr_ihdr (pv, &hdr))
     goto fail_close;
 
   if (hdr.bit_depth != 8)
     goto fail_close;
 
+
+  memset (buffer, 0, sizeof (buffer));
+
   {
-    for (i = hdr.height; i--; ) {
+    for (i = hdr.height; i--; ps += PEL_WIDTH - hdr.width) {
       const unsigned char* pb = read_pngr_row (pv);
       if (pb == NULL) {
 	printf ("%s: read failed at %d\n", __FUNCTION__, i);

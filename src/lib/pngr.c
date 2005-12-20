@@ -154,9 +154,9 @@ static ssize_t pngr_read (struct png* png, void* pv, size_t cb)
   if (cb > png->c.length - png->ib)
     cb = png->c.length - png->ib;
 
-  printf ("%s: pngr_read %d to %p\n", __FUNCTION__, cb, pv);
+//  printf ("%s: pngr_read %d to %p\n", __FUNCTION__, cb, pv);
   cbRead = png->d->driver->read (png->d, pv, cb);
-  printf ("%s: pngr_read complete\n", __FUNCTION__);
+//  printf ("%s: pngr_read complete\n", __FUNCTION__);
   png->ib += cbRead;
 
   return cbRead;
@@ -174,7 +174,7 @@ static long read_long (const void* pv)
 
 static int next_chunk (struct png* png)
 {
-  printf ("%s:%d\n", __FUNCTION__, png->ib);
+//  printf ("%s:%d\n", __FUNCTION__, png->ib);
 
   //  if (png->ib)
   //    png->ib += 8 + png->c.length + 4;
@@ -186,16 +186,16 @@ static int next_chunk (struct png* png)
 
 	/* Skip remainder of chunk */
   if (png->c.length) {
-    printf ("%s: seeking %d\n", __FUNCTION__, png->c.length - png->ib + 4);
+//    printf ("%s: seeking %d\n", __FUNCTION__, png->c.length - png->ib + 4);
     png->d->driver->seek (png->d, png->c.length - png->ib + 4, SEEK_CUR);
   }
 
-  printf ("%s: reading chunk header %d\n",
-	  __FUNCTION__, sizeof (struct chunk));
+//  printf ("%s: reading chunk header %d\n",
+//	  __FUNCTION__, sizeof (struct chunk));
   png->d->driver->read (png->d, &png->c.length, sizeof (struct chunk));
   png->c.length = read_long (&png->c.length);
   png->ib = 0;
-  printf ("%s: type %x  l %d\n", __FUNCTION__, png->c.id, png->c.length);
+//  printf ("%s: type %x  l %d\n", __FUNCTION__, png->c.id, png->c.length);
   return 0;
 }
 
@@ -208,17 +208,15 @@ void* open_pngr (struct descriptor_d* d)
   png.pbThis = 0;		/* In lieu of free */
   png.pbPrev = 0;		/* In lieu of free */
 
-  printf ("%s\n", __FUNCTION__); 
+//  printf ("%s\n", __FUNCTION__); 
 
-  if (d->length < 8) {
-  close_fail:
+  if (d->length < 8)
     return NULL;
-  }
 
-  printf ("pngr_read of magic\n");
+//  printf ("pngr_read of magic\n");
   cb = d->driver->read (d, rgb, 8);
   if (cb < 8)
-    goto close_fail;
+    return NULL;
 
   if (   rgb[0] != 137
       || rgb[1] != 80
@@ -228,27 +226,27 @@ void* open_pngr (struct descriptor_d* d)
       || rgb[5] != 10
       || rgb[6] != 26
       || rgb[7] != 10)
-    goto close_fail;
+    return NULL;
 
-  printf ("%s: magic OK\n", __FUNCTION__); 
+//  printf ("%s: magic OK\n", __FUNCTION__); 
 
   png.d = d;
 //  png.ib = 0;
   png.c.length = 0;
 
   if (next_chunk (&png) || memcmp (&png.c.id, "IHDR", 4))
-    goto close_fail;
+    return NULL;
 
-  printf ("%s: pulling header\n", __FUNCTION__); 
+//  printf ("%s: pulling header\n", __FUNCTION__); 
 
   pngr_read (&png, &png.hdr, sizeof (struct png_header));
-  printf ("%s: fixing header\n", __FUNCTION__);
+//  printf ("%s: fixing header\n", __FUNCTION__);
   png.hdr.width       = read_long (&png.hdr.width);
   png.hdr.height      = read_long (&png.hdr.height);
 
-  printf ("%s: header %d %d %d %d\n", __FUNCTION__,
-	  png.hdr.width, png.hdr.height, 
-	  png.hdr.bit_depth, png.hdr.color_type);
+//  printf ("%s: header %d %d %d %d\n", __FUNCTION__,
+//	  png.hdr.width, png.hdr.height, 
+//	  png.hdr.bit_depth, png.hdr.color_type);
 
   switch (png.hdr.color_type) {
   case 0:
@@ -269,10 +267,10 @@ void* open_pngr (struct descriptor_d* d)
   }
 
   if (png.hdr.bit_depth != 8)	/* Weak sanity check */
-    goto close_fail;
+    return NULL;
 
   png.cbRow = 1 + png.hdr.width*png.bpp;
-  printf ("%s: cbRow %d  bpp %d\n", __FUNCTION__, png.cbRow, png.bpp);
+//  printf ("%s: cbRow %d  bpp %d\n", __FUNCTION__, png.cbRow, png.bpp);
 
   return &png;
 }
@@ -303,7 +301,7 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 
 	/* Find next IDAT chunk */
   if (png->z.avail_in == 0) {
-    printf ("%s: search for idat\n", __FUNCTION__); 
+//    printf ("%s: search for idat\n", __FUNCTION__); 
     while (next_chunk (png) == 0) {
 //      printf ("%s: looking %d %4.4s\n", __FUNCTION__, 
 //	      png->c.length, (char*) &png->c.id);
@@ -409,6 +407,9 @@ const unsigned char* read_pngr_row (void* pv)
 void close_pngr (void* pv)
 {
   struct png* png = pv;
+
+  if (pv == NULL)		/* Sanity check */
+    return;
 
   inflateEnd (&png->z);
 

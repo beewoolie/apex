@@ -91,6 +91,13 @@ void lh7a40x_serial_init (void)
 //  printf ("Really, it is\n");
 }
 
+void lh7a40x_serial_release (void)
+{
+	/* flush serial output */
+  while (!(UART_STATUS & UART_STATUS_TXFE))
+    ;
+}
+
 ssize_t lh7a40x_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb
@@ -146,4 +153,5 @@ static __driver_0 struct driver_d lh7a40x_serial_driver = {
 
 static __service_3 struct service_d lh7a40x_serial_service = {
   .init = lh7a40x_serial_init,
+  .release = lh7a40x_serial_release,
 };
