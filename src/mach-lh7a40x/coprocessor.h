@@ -15,11 +15,7 @@
 #if !defined (__COPROCESSOR_H__)
 #    define   __COPROCESSOR_H__
 
-#define COPROCESSOR_WAIT\
- ({ __asm volatile ("sub pc, pc, #4\n\t"\
-		    "nop\n\t"\
-		    "nop\n\t"\
-		    "nop\n\t"\
-		    ); })
+/* There is no requirement for stalling the CPU after a CP instruction. */
+#define COPROCESSOR_WAIT
 
 #endif  /* __COPROCESSOR_H__ */

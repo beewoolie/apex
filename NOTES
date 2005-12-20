@@ -5,6 +5,17 @@ APEX Boot Loader
 
 TODO:
 
+  o Splash has some issues.  If the image length is too short, we need
+    to abort instead of looping forever.  If the image IDAT is larger
+    than our buffer, we fail to decompress.  
+
+  o Copying from TFTP doesn't reliably finish.  The transfer tends to
+    halt, either after no blocks, or one block.  We need to diagnose
+    the nature of the failure and either implement a retry, or come up
+    with a method to restart the operation.  For example, it could be
+    that we restart transparently so that we can see to the place
+    where we are attempting to read.
+
   o The envmagic is weak.  If a variable isn't defined for a given
     configuration, but it exists elsewhere in the code, the magic
     number will be the same when thay variable is added to the
