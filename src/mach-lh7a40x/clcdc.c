@@ -364,7 +364,7 @@ int cmd_splash (int argc, const char** argv)
     for (i = hdr.height; i--; ps += PEL_WIDTH - hdr.width) {
       const unsigned char* pb = read_pngr_row (pv);
       if (pb == NULL) {
-	printf ("%s: read failed at %d\n", __FUNCTION__, i);
+	printf ("%s: read failed at row %d\n", __FUNCTION__, i);
 	goto fail_close;
       }
       switch (hdr.color_type) {

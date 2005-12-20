@@ -174,16 +174,6 @@ static long read_long (const void* pv)
 
 static int next_chunk (struct png* png)
 {
-//  printf ("%s:%d\n", __FUNCTION__, png->ib);
-
-  //  if (png->ib)
-  //    png->ib += 8 + png->c.length + 4;
-  //  else
-  //    png->ib = 8;		/* Skip MAGIC */
-//  printf ("%s:  %d %d\n", __FUNCTION__, png->ib, png->cb);
-  //  if (png->ib >= png->cb)
-  //    return -1;
-
 	/* Skip remainder of chunk */
   if (png->c.length) {
 //    printf ("%s: seeking %d\n", __FUNCTION__, png->c.length - png->ib + 4);
@@ -192,9 +182,11 @@ static int next_chunk (struct png* png)
 
 //  printf ("%s: reading chunk header %d\n",
 //	  __FUNCTION__, sizeof (struct chunk));
-  png->d->driver->read (png->d, &png->c.length, sizeof (struct chunk));
-  png->c.length = read_long (&png->c.length);
   png->ib = 0;
+  if (png->d->driver->read (png->d, &png->c.length, sizeof (struct chunk))
+      != sizeof (struct chunk))
+    return -1;
+  png->c.length = read_long (&png->c.length);
 //  printf ("%s: type %x  l %d\n", __FUNCTION__, png->c.id, png->c.length);
   return 0;
 }
@@ -302,7 +294,7 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 	/* Find next IDAT chunk */
   if (png->z.avail_in == 0) {
 //    printf ("%s: search for idat\n", __FUNCTION__); 
-    while (next_chunk (png) == 0) {
+    while (result = next_chunk (png), result == 0) {
 //      printf ("%s: looking %d %4.4s\n", __FUNCTION__, 
 //	      png->c.length, (char*) &png->c.id);
 
@@ -311,6 +303,9 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
       if (memcmp (&png->c.id, "IDAT", 4) == 0)
 	break;
     }
+
+    if (result)			/* Unable to read next chunk */
+      return -1;
 
     /* *** FIXME: we assume that we can read all of the chunk into
        this buffer.  It would be better to code the loop to be able to
@@ -352,7 +347,7 @@ const unsigned char* read_pngr_row (void* pv)
 //  printf ("%s:\n", __FUNCTION__); 
 
   if (read_pngr_idat (pv, pb, cbRow) != cbRow) {
-    printf ("%s: read failed\n", __FUNCTION__); 
+//    printf ("%s: read failed\n", __FUNCTION__); 
     return NULL;
   }
 
