@@ -59,6 +59,7 @@
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(240)
 #define PEL_HEIGHT	(320)
+#define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(16)
 #define RIGHT_MARGIN	(21)
@@ -76,6 +77,7 @@
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
+#define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
 #define RIGHT_MARGIN	(15)
@@ -95,6 +97,7 @@
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(640)
 #define PEL_HEIGHT	(480)
+#define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
 #define RIGHT_MARGIN	(15)
@@ -114,6 +117,7 @@
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(640)
 #define PEL_HEIGHT	(480)
+#define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
 #define RIGHT_MARGIN	(15)
@@ -135,6 +139,7 @@
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(800)
 #define PEL_HEIGHT	(600)
+#define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(86)
 #define RIGHT_MARGIN	(15)
@@ -174,7 +179,11 @@
 #define LCDEN	(1<<0)
 
 
-static unsigned short __xbss(clcdc) buffer[PEL_WIDTH*PEL_HEIGHT];
+#define CB_BUFFER ((PEL_WIDTH*PEL_HEIGHT*BIT_DEPTH)/8)
+
+unsigned short* buffer;
+//static unsigned short __xbss(clcdc) buffer[PEL_WIDTH*PEL_HEIGHT];
+
 
 /* msleep
 
@@ -208,7 +217,21 @@ extern int determine_arch_number (void); /* *** HACK */
 
 static void clcdc_init (void)
 {
-  printf ("clcdc: initializing %s\n", PANEL_NAME);
+  /* Frame buffer is in the first megabyte after the end of the
+     program image.  */
+  {
+    extern char APEX_VMA_END;
+    buffer = (unsigned short*)
+      (((unsigned long)&APEX_VMA_END + (1024*1024 - 1)) & ~(1024*1024 - 1));
+  }
+#if defined (CONFIG_MMU)
+  {
+    extern void mmu_protsegment (void*, int, int);
+    mmu_protsegment (buffer, 0, 0); /* uncached, unbuffered */
+  }
+#endif
+
+  printf ("clcdc: initializing %s at 0x%p\n", PANEL_NAME, buffer);
   printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
 	  HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
 	  HSYNC_WIDTH, VSYNC_WIDTH,
@@ -345,12 +368,10 @@ int cmd_splash (int argc, const char** argv)
     goto fail_early;
   }
 
-  //  printf ("open_pngr %s\n", argv[1]);
   pv = open_pngr (&d);
   if (pv == NULL)
     goto fail_early;
 
-//  printf ("read_ihdr\n");
   if (read_pngr_ihdr (pv, &hdr))
     goto fail_close;
 
@@ -358,7 +379,7 @@ int cmd_splash (int argc, const char** argv)
     goto fail_close;
 
 
-  memset (buffer, 0, sizeof (buffer));
+  memset (buffer, 0, CB_BUFFER);
 
   {
     for (i = hdr.height; i--; ps += PEL_WIDTH - hdr.width) {
