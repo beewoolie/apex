@@ -5,9 +5,6 @@ APEX Boot Loader
 
 TODO:
 
-  o Move the LCD initialization code to a common location so that all
-    of the common pieces can be shared.  It shouldn't be too bad.
-
   o Splash has some issues.  If the image IDAT is larger than our
     buffer, we fail to decompress. 
 
