@@ -1,3 +1,11 @@
+2005-12-22  Marc Singer  <elf@buici.com>
+
+	* src/drivers-lh/drv-clcdc.c: Common LCD driver for Sharp LH
+	parts.
+
+	* src/arch-arm/entry/mmu-alloc.c (alloc_uncached): Function to
+	allocate memory that won't be cached even when the MMU is enabled.
+
 2005-12-19  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/mmu.c: Service to enable and disable the MMU.
