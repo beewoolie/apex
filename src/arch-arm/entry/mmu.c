@@ -84,6 +84,7 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define Ctt   (1<<3)
 #define MMUEN (1<<0)
 
+
 /* mmu_init
 
 */

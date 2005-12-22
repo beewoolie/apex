@@ -135,6 +135,7 @@
 #include <linux/string.h>
 #include "hardware.h"
 #include <linux/kernel.h>
+#include <asm/mmu.h>
 
 #define USE_DISABLE_AUTOMDI_MDIX /* Disable auto-mdi/mdix detection */
 #define USE_PHY_RESET		/* Reset the PHY after detection  */
@@ -201,10 +202,10 @@ static unsigned long phy_id;	/* ID read from PHY */
 #define TX_QUEUE_LENGTH	 C_TX_BUFFER
 #define TX_BUFFER_SIZE	 CB_TX_BUFFER
 
-static long __xbss(ethernet) rgl_rx_descriptor[2*C_RX_BUFFER];
-static long __xbss(ethernet) rgl_tx_descriptor[2*C_TX_BUFFER];
-static char __xbss(ethernet) rgbRxBuffer[CB_RX_BUFFER*C_RX_BUFFER];
-static char __xbss(ethernet) rgbTxBuffer[CB_TX_BUFFER*C_RX_BUFFER];
+static long* rgl_rx_descriptor;
+static long* rgl_tx_descriptor;
+static char* rgbRxBuffer;
+static char* rgbTxBuffer;
 
 static int head_rx;		/* Index of next receive buffer */
 static int head_tx;
@@ -461,6 +462,12 @@ void emac_init (void)
 {
   PRINTF ("emac: init\n");
   
+	/* Allocate buffers */
+  rgl_rx_descriptor = alloc_uncached (2*C_RX_BUFFER*sizeof (long), 16);
+  rgl_tx_descriptor = alloc_uncached (2*C_TX_BUFFER*sizeof (long), 16);
+  rgbRxBuffer	    = alloc_uncached (CB_RX_BUFFER*C_RX_BUFFER, 128);
+  rgbTxBuffer	    = alloc_uncached (CB_TX_BUFFER*C_RX_BUFFER, 128);
+
 	/* Hardware setup -- necessary for the PHY to be detected. */
   MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<8)|(3<<6)|(3<<4),

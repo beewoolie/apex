@@ -220,6 +220,8 @@ static void clcdc_init (void)
   /* Frame buffer is in the first megabyte after the end of the
      program image.  We do this so that we can set the MMU section
      bits. */
+  buffer = alloc_uncached
+
   {
     extern char APEX_VMA_END;
     buffer = (unsigned short*)

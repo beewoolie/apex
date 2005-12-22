@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := entry.o
+obj-y := entry.o mmu-alloc.o
 obj-$(CONFIG_SDRAMBOOT_REPORT) += sdramboot.o
 obj-$(CONFIG_MMU) += mmu.o
 #lib-y += relocate.o
@@ -27,4 +27,3 @@ obj-$(CONFIG_MMU) += mmu.o
 CPPFLAGS_apex.lds += -DAPEX_VMA=$(CONFIG_APEX_VMA)
 
 extra-y=apex.lds
-
