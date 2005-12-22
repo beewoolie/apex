@@ -1,6 +1,5 @@
 /* Linking loader script for APEX Boot Loader */
 
-
 OUTPUT_ARCH(arm)
 EXTERN(entry)
 ENTRY(entry)
@@ -110,10 +109,6 @@ SECTIONS
 		APEX_VMA_BSS_END = .;
 	}
 	.xbss (NOLOAD) : {	/* Special BSS, non-zeroed */
-		*(.ethernet.xbss)
-		. = ALIGN (128);
-		*(.clcdc.xbss)
-		. = ALIGN (4);
 		*(.pcm.xbss)
 		. = ALIGN (16384);
 		*(.ttbl.xbss)   /* MMU translation table */

@@ -34,11 +34,13 @@
 #include <service.h>
 #include <linux/string.h>
 #include <apex.h>
-#include "hardware.h"
+#include <mach/hardware.h>
 #include <png.h>
 #include <command.h>
 #include <error.h>
+#include <asm/mmu.h>
 
+//#define USE_COLORBARS
 //#define USE_BORDER
 //#define USE_FILL
 
@@ -182,7 +184,6 @@
 #define CB_BUFFER ((PEL_WIDTH*PEL_HEIGHT*BIT_DEPTH)/8)
 
 unsigned short* buffer;
-//static unsigned short __xbss(clcdc) buffer[PEL_WIDTH*PEL_HEIGHT];
 
 
 /* msleep
@@ -200,8 +201,8 @@ static void msleep (int ms)
 }
 
 /* cannot do scaling without __divsi3 */
-#define I(c,i) ((c)*(i)/255)
-//#define I(c,i) (c)
+//#define I(c,i) ((c)*(i)/255)
+#define I(c,i) (c)
 
 #define RGB(r,g,b) ( (((r) & 0xf8) >>  3)\
 		    |(((g) & 0xf8) <<  2)\
@@ -217,28 +218,30 @@ extern int determine_arch_number (void); /* *** HACK */
 
 static void clcdc_init (void)
 {
-  /* Frame buffer is in the first megabyte after the end of the
-     program image.  We do this so that we can set the MMU section
-     bits. */
-  buffer = alloc_uncached
-
-  {
-    extern char APEX_VMA_END;
-    buffer = (unsigned short*)
-      (((unsigned long)&APEX_VMA_END + (1024*1024 - 1)) & ~(1024*1024 - 1));
-  }
-#if defined (CONFIG_MMU)
-  {
-    extern void mmu_protsegment (void*, int, int);
-    mmu_protsegment (buffer, 0, 0); /* uncached, unbuffered */
-  }
-#endif
+  buffer = alloc_uncached (CB_BUFFER, 1024*1024);
 
   printf ("clcdc: initializing %s at 0x%p\n", PANEL_NAME, buffer);
   printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
 	  HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
 	  HSYNC_WIDTH, VSYNC_WIDTH,
 	  LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
+
+  /* Color bars */
+#if defined (USE_COLORBARS)
+  {
+    int i;
+    for (i = 0; i < 320*240; ++i) {
+      if (i > 3*(320*240)/4)
+	buffer[i] = 0xffff;
+      else if (i > 2*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<10;
+      else if (i > 1*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<5;
+      else if (i > 0*(320*240)/4)
+	buffer[i] = I(0x1f,(i%240)*255/255)<<0;
+    }
+  }
+#endif
 
 #if defined (USE_FILL)
 
@@ -274,6 +277,8 @@ static void clcdc_init (void)
 #endif
 
 #if defined (CONFIG_ARCH_LH7952X)
+
+  RCPC_CTRL |= (1<<9); /* Unlock */
 
 # if defined (CONFIG_ARCH_LH79520)
   RCPC_PERIPHCLKCTRL2 &= ~(1<<0);
@@ -343,7 +348,7 @@ static void clcdc_init (void)
 		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0)); 
 # endif
 
-#endif
+#endif /* CONFIG_ARCH_LH7952X */
 
 
   /* Note that PE4 must be driven high on the LPD7A404 to prevent the
@@ -369,13 +374,11 @@ static void clcdc_init (void)
   CLCDC_UPBASE    = (unsigned long) buffer;
   CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
 
+#if defined (CONFIG_ARCH_LH7952X)
+  ALI_SETUP	  = 0x00000efd;
+#endif
+
 #if defined (CONFIG_LCD_3_5_QVGA_20)
-# if defined (CONFIG_ARCH_LH7A400)
-  HRTFTC_SETUP   = 0x00002efd;
-  HRTFTC_CON     = 0x00000003;
-  HRTFTC_TIMING1 = 0x0000087d;
-  HRTFTC_TIMING2 = 0x00009ad0;
-# endif
 
 # if defined (CONFIG_ARCH_LH79520)
   ALI_CTRL	  = 0x00000003; /* SPS & CLS */
@@ -387,6 +390,13 @@ static void clcdc_init (void)
 # if defined (CONFIG_ARCH_LH7952X)
   ALI_TIMING1     = 0x0000087d;
   ALI_TIMING2     = 0x00009ad0;
+# endif
+
+# if defined (CONFIG_ARCH_LH7A400)
+  HRTFTC_SETUP   = 0x00002efd;
+  HRTFTC_CON     = 0x00000003;
+  HRTFTC_TIMING1 = 0x0000087d;
+  HRTFTC_TIMING2 = 0x00009ad0;
 # endif
 
 # if defined (CONFIG_ARCH_LH7A404)
@@ -411,12 +421,14 @@ static void clcdc_init (void)
   CPLD_CTRL1 |= CPLD_CTRL1_LCD_BACKLIGHT_EN;
 #endif
 
+#if defined (CONFIG_MACH_LPD7A40X)
   if (determine_arch_number () == 389)		/* lh7400 */
     CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN;
   if (determine_arch_number () == 390) {	/* lh7a404 */
     GPIO_PCDD |= (1<<3);
     GPIO_PCD  |= (1<<3);
   }
+#endif
 }
 
 static void clcdc_release (void)
@@ -425,10 +437,12 @@ static void clcdc_release (void)
   CPLD_CTRL1 &= ~CPLD_CTRL1_LCD_BACKLIGHT_EN;
 #endif
 
+#if defined (CONFIG_MACH_LPD7A40X)
   if (determine_arch_number () == 389)		/* lh7a400 */
     CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN;
   if (determine_arch_number () == 390)		/* lh7a404  */
     GPIO_PCD  &= ~(1<<3);
+#endif
 
   CLCDC_CTRL &= ~(1<<11); /* Remove power */
   msleep (20);			/* Wait 20ms */
@@ -471,8 +485,7 @@ static __service_7 struct service_d lpd7a40x_clcdc_service = {
 };
 
 
-
-#if defined (CONFIG_CMD_SPLASH) || 1
+#if defined (CONFIG_CMD_SPLASH)
 
 int cmd_splash (int argc, const char** argv)
 {
