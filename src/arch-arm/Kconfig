@@ -135,7 +135,7 @@ config ATAG
 config MMU
 	bool "Enable MMU for APEX"
 	default n
-	depends on SMALL=n && EXPERIMENTAL=y
+	depends on SMALL=n
 	help
 	  This option enables the MMU while the boot-loader is
 	  running.  Doing so may make the loader run faster because
