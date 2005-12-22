@@ -28,6 +28,16 @@
    Code to enable and disable the MMU.  Enabling the MMU means that we
    can use the cache.
 
+   Any target that wants to use this feature should define a function
+   in mach-X/memory.h called protection_for ();
+
+   int protection_for (unsigned long l);
+
+   The return value is -1 to not map the segment (1MiB region of
+   memory), Otherwise, return Ctt and or Btt. For example, SDRAM
+   should be (3<<2), NOR flash should be 0.
+
+
    ARM922
    ------
 
@@ -51,6 +61,7 @@
 #include <linux/string.h>
 #include <service.h>
 #include <apex.h>
+#include <mach/memory.h>	/* protection_for() function/macro */
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT
@@ -66,6 +77,8 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 
 #define Icr   (1<<12)
 #define Dcr   (1<<2)
+#define Btt   (1<<2)
+#define Ctt   (1<<3)
 #define MMUEN (1<<0)
 
 /* mmu_init
@@ -81,17 +94,20 @@ void mmu_init (void)
 
   /* Fill with 1:1 mapping sections */
   for (i = 0; i < C_PTE; ++i) {
+    int protection = PROTECTION_FOR (i<<20);
+    if (protection == -1) {
+      ttbl[i] = 0;
+      continue;
+    }
+    protection &= (Ctt | Btt);
+#if defined (CONFIG_WT)
+    if (protection == (Ctt | Btt))
+      protection &= ~Btt;	/* Disable buffering of cached segments */
+#endif
     ttbl[i] = (i<<20) 
       | (3<<10)			/* AP(R/W) */
       | (0<<5)			/* domain(0) */
-      | ((i >= 0xc00 && i <= 0xe00) 
-#if defined (CONFIG_WB)
-	 ? (3<<2)		/* CB(cacheable,buffered) */
-#endif
-#if defined (CONFIG_WT)
-	 ? (2<<2)		/* CB(cacheable,unbuffered) */
-#endif
-	 : 0)			/* CB(uncacheable,unbuffered) */
+      | protection
       | (2<<0);			/* type(section) */
   }
 
@@ -99,9 +115,9 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (ttbl));
   __asm volatile ("mcr p15, 0, %0, c3, c0" : : "r" (domain));
 
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Flush I cache
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Flush D cache
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Flush TLBs
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
+  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 
 	/* Enable MMU */
   { 
@@ -140,23 +156,21 @@ void mmu_release (void)
 #define DASSOC(l)	((l>>(12+3))&7)
 #define DM(l)		((l>>(12+2))&1)
     unsigned long cache;
-    int i, j;
-    unsigned long l;
+    int set, index;
     int linelen;
     int assoc;
     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
-    linelen = DLEN(cache)+3;
+    linelen = DLEN(cache) + 3;
     assoc = 32 - DASSOC(cache);
     /* *** FIXME: this docs are unclear about what to do with M==1 and
        cleaning. */
 //    if (DM(l))
 //      assoc = 3*assoc/2;
-    for (i = 1<<(DSIZE(cache) + 6 - DASSOC(cache) - DLEN(cache)); i--; )
-      for (j = 1<<DASSOC(cache); j--;) {
-	l = (i<<linelen)|(j<<assoc);
-	__asm volatile ("mcr p15, 0, %0, c7, c10, 2" : : "r" (l));  // Clean
+    for (set = 1<<(DSIZE(cache) + 6 - DASSOC(cache) - DLEN(cache)); set--; )
+      for (index = 1<<DASSOC(cache); index--;) {
+	__asm volatile ("mcr p15, 0, %0, c7, c10, 2" 
+			: : "r" ((index<<assoc)|(set<<linelen))); // clean
       }
-    
   }
 
 	/* Disable MMU */
@@ -174,9 +188,9 @@ void mmu_release (void)
   }
   COPROCESSOR_WAIT;
 
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Flush I cache
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Flush D cache
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Flush TLBs
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
+  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 }
 
 static __service_1 struct service_d mmu_service = {
