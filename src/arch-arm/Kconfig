@@ -86,17 +86,6 @@ config THUMB
 	  work.  It's best to leave it disabled unless you are
 	  prepared for the worst.
 
-config MMU
-	bool "Enable MMU"
-	default n
-	depends on SMALL=n && EXPERIMENTAL=y
-	help
-	  This option enables the MMU while the boot-loader is
-	  running.  Doing so may make the loader run faster because
-	  the MMU being enabled allows instructions and data to be
-	  cacheable and write-buffered.  The MMU is disabled before
-	  jumping to the Linux kernel or using the 'go' command.
-
 menu "General Setup"
 
 config CROSS_COMPILE
@@ -143,20 +132,40 @@ config ATAG
 	  it.  Including ATAG support will not preclude booting to
 	  older kernels.
 
+config MMU
+	bool "Enable MMU for APEX"
+	default n
+	depends on SMALL=n && EXPERIMENTAL=y
+	help
+	  This option enables the MMU while the boot-loader is
+	  running.  Doing so may make the loader run faster because
+	  the MMU being enabled allows instructions and data to be
+	  cacheable and write-buffered.  The MMU is disabled before
+	  jumping to the Linux kernel or using the 'go' command.
+
+config FORCE_WRITETHROUGH_DCACHE
+	bool "Force write-through caching"
+	default n
+	depends on MMU
+	help
+	  If you distrust the write-back cache logic, enable this
+	  option to prevent cached sections from being write-buffered
+	  as well.  It is usually safe to set this option to 'N'.
+
 config DISABLE_MMU_AT_BOOT
-	bool "Disable MMU when APEX starts"
+	bool "Disable MMU when APEX boots"
 	default y
 	help
 	  Generally, it isn't necessary to disable the MMU when APEX
 	  starts.  It is off when the CPU resets.  However, when
 	  bootstrapping from one boot loader into APEX, it is
 	  sometimes necessary to disable the MMU because the previous
-	  loader fails to do so.  It is generally safe to leave this
-	  feature enabled.
+	  loader fails to do so.  It is safe to leave this feature
+	  enabled.
 
 	  Believe it or not, this option is independent of the MMU
-	  enable option which enables when APEX is running and
-	  disables it before executing the Linux kernel or a loaded
+	  enable option which activates the MMU for running APEX and
+	  disables it before executing the Linux kernel or a loaded 
 	  program.
 
 config INTERRUPTS

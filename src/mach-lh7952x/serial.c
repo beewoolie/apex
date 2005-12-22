@@ -74,7 +74,6 @@ void lh7952x_serial_init (void)
   u32 divisor_i = 0;
   u32 divisor_f = 0;
 
-
   /* *** FIXME: the only reason there are two of these is because the
      *** name of the constants changed.  Also, the UARTMUX stuff.
      *** Clean it up. */
@@ -208,5 +207,5 @@ static __driver_0 struct driver_d lh7952x_serial_driver = {
 
 static __service_3 struct service_d lh7952x_serial_service = {
   .init = lh7952x_serial_init,
-  .init = lh7952x_serial_release,
+  .release = lh7952x_serial_release,
 };

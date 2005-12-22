@@ -67,9 +67,12 @@
 # define COPROCESSOR_WAIT
 #endif
 
+#if !defined (PROTECTION_FOR)
+#warning "There's not much point in enabling the MMU without declaring a PROTECTION_FOR macro."
+#define PROTECTION_FOR(p) (0)
+#endif
+
 //#define CONFIG_HAVE_BCR	/* Have a Bcr bit in the control register */
-//#define CONFIG_WT		/* Write-through */
-#define CONFIG_WB		/* Write-back */
 
 #define C_PTE			(1<<12)
 
@@ -100,7 +103,7 @@ void mmu_init (void)
       continue;
     }
     protection &= (Ctt | Btt);
-#if defined (CONFIG_WT)
+#if defined (CONFIG_FORCE_WRITETHROUGH_DCACHE)
     if (protection == (Ctt | Btt))
       protection &= ~Btt;	/* Disable buffering of cached segments */
 #endif
@@ -125,7 +128,7 @@ void mmu_init (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
 		    /* D-cache, Write buffer, MMU enable */
 		    "orr %0, %0, #("
-#if defined (CONFIG_HAVE_BCR) && defined (CONFIG_WB)
+#if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITETHROUGH_DCACHE)
 		    "(1<<3)|"
 #endif
 		    "(1<<2)|(1<<0))\n\t"
@@ -179,7 +182,7 @@ void mmu_release (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
 		    /* D-cache, Write buffer, MMU disable */
 		    "bic %0, %0, #("
-#if defined (CONFIG_HAVE_BCR) && defined (CONFIG_WB)
+#if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITHROUGH_DCACHE)
 		    "(1<<3)|"
 #endif
 		    "(1<<2)|(1<<0))\n\t"

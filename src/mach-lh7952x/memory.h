@@ -47,4 +47,12 @@
 # define RAM_BANK1_LENGTH	0x10000000
 #endif
 
+/* MMU macro for assigning segment protection bits. */
+#define PROTECTION_FOR(p) \
+({ int v = 0;   /* uncacheable, unbuffered */ \
+   if (   p >= SDRAM_BANK0_PHYS \
+       && p <= SDRAM_BANK1_PHYS + 0x10000000)\
+     v = 3<<2;/* cacheable, buffered */ \
+   v; })
+
 #endif  /* __MEMORY_H__ */

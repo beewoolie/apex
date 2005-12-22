@@ -20,6 +20,7 @@ config MACH_LPD79520
 	select USES_NOR_BOOTFLASH
 	select USES_SMC91X
 	select DRIVERS_LH
+	select HAS_LH_CLCDC
 
 config MACH_LPD79524
 	bool "Logic Product Development LPD79524"
@@ -31,6 +32,7 @@ config MACH_LPD79524
 	select USES_NAND_BOOTFLASH
 	select DRIVERS_LH
 	select HAS_LH_ADC
+	select HAS_LH_CLCDC
 
 config MACH_KEV79524
 	bool "Sharp KEV79524"
@@ -40,6 +42,7 @@ config MACH_KEV79524
 	select USES_NAND_BOOTFLASH
 	select DRIVERS_LH
 	select HAS_LH_ADC
+	select HAS_LH_CLCDC
 
 config MACH_KEV79525
 	bool "Sharp KEV79525"
@@ -49,6 +52,7 @@ config MACH_KEV79525
 	select USES_NAND_BOOTFLASH
 	select DRIVERS_LH
 	select HAS_LH_ADC
+	select HAS_LH_CLCDC
 
 endchoice
 
@@ -181,13 +185,6 @@ config DRIVER_EMAC_LH79524
 	help
 	  This driver initializes the built-in Ethernet MAC of the
 	  Sharp lh79524/5. 
-
-config CLCDC
-	bool "Color LCD Test"
-	depends on MACH_LPD79520 || MACH_LPD79524
-	default n
-	help
-	  This driver initializes and tests the CLCD controller.
 
 config CODEC
 	bool "Audio Codec"

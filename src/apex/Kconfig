@@ -129,10 +129,11 @@ config CMD_ETH_SMC91X
 	default n
 
 config CMD_MEMLIMIT
-	bool "Constrain amount of RAM available to Linux kernel"
+	bool "Define Memlimit Command"
 	default n
 	help
-	  This is a command to testing how the kernel responds to
-	  a limited memory resource.  It's only useful for debugging.
+	  This command constrains amount of RAM available to Linux
+	  kernel.  It is useful for testing how the kernel
+	  responds to a limited memory resource.
 
 endmenu

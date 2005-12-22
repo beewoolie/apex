@@ -26,7 +26,8 @@ config DRIVER_LH_CLCDC
 	  This driver initializes the CLCD controller.  It is
 	  necessary if you want to show a splash screen. 
 
-prompt "LCD Panel"
+choice
+	prompt "LCD Panel"
 	depends on DRIVER_LH_CLCDC
 	default LCD_3_5_QVGA_20
 
@@ -52,6 +53,9 @@ config HAS_LH_ADC
 	bool
 
 config HAS_LH_MMC
+	bool
+
+config HAS_LH_CLCDC
 	bool
 
 config DRIVERS_LH
