@@ -1,5 +1,12 @@
 2005-12-22  Marc Singer  <elf@buici.com>
 
+	* src/lib/zlib-heap.c: Makde the zlib heap larger since the
+	decompressor was choking on the decode of a large splash image.
+	Also moved the memory to xbss.  We're still using a stupid null
+	free heap which has to be as large as all of the allocated memory.
+	RAM is cheap, at the moment.  Perhaps we should switch to the
+	kernel's zlib decompressor instead of the uboot version.
+
 	* src/drivers-lh/drv-clcdc.c: Common LCD driver for Sharp LH
 	parts.
 

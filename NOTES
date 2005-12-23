@@ -5,8 +5,10 @@ APEX Boot Loader
 
 TODO:
 
-  o Splash has some issues.  If the image IDAT is larger than our
-    buffer, we fail to decompress. 
+  o Splash has some issues.  It doesn't read from tftp or ext2
+    directly.  This is probably a problem with the region handling in
+    the main routines.  Other than that, it's pretty good.  Maybe we
+    want options for centering...or not.
 
   o Copying from TFTP doesn't reliably finish.  The transfer tends to
     halt, either after no blocks, or one block.  We need to diagnose

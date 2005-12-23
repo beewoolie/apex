@@ -30,9 +30,11 @@
 #include <linux/string.h>
 #include <zlib.h>
 #include <zlib-heap.h>
+#include <attributes.h>
 
-/* *** FIXME: this heap isn't really going to cut it, it is? */
-static unsigned char heap [128*1024]; /* Fake heap */
+/* *** FIXME: this heap can't really cut it, can it? */
+#define CB_HEAP   (256*1024)
+static unsigned char __xbss(zlib) heap [CB_HEAP]; /* Fake heap */
 static size_t heap_allocated;	/* Bytes allocated on the heap */
 
 voidpf zlib_heap_alloc (voidpf opaque, uInt items, uInt size)
@@ -58,5 +60,12 @@ void zlib_heap_free (voidpf opaque, voidpf address, uInt nbytes)
 
 void zlib_heap_reset (void)
 {
+  /* *** FIXME: not sure why, but we need to initialize the allocated
+	 memory or the decompression has problems.  Instead of
+	 amortizing the cost, we clear memory in one pass.  It means
+	 that the decompression part, if visible, will be as fast as
+	 possible.  I suspect that the time will be negligible in any
+	 case. */
+  memset (heap, 0, CB_HEAP);
   heap_allocated = 0;
 }

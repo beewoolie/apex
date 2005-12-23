@@ -124,7 +124,6 @@ struct png {
 };
 
 static struct png png;
-static char __xbss(png) rgbDecode[32*1024];	/* zlib decode buffer */
 
 static inline int paeth_predictor (int a, int b, int c)
 {
@@ -171,6 +170,9 @@ static long read_long (const void* pv)
     + (pb[2] << 8)
     +  pb[3];
 }
+
+#define avail_chunk(png) ((png)->c.length - (png)->ib)
+
 
 static int next_chunk (struct png* png)
 {
@@ -278,12 +280,13 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 {
   struct png* png = pv;
   int result;
+  static char __xbss(png) rgbDecode[32*1024]; /* Kinda small decode buffer */
 
 	/* Initialization */
   if (memcmp (&png->c.id, "IDAT", 4)) {
-//    printf ("%s: init\n", __FUNCTION__); 
+    //    printf ("%s: init\n", __FUNCTION__); 
 
-//    printf ("%s: inflateInit\n", __FUNCTION__); 
+    printf ("%s: inflateInit\n", __FUNCTION__); 
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = zlib_heap_alloc;
     png->z.zfree = zlib_heap_free;
@@ -291,37 +294,42 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
       return -1;
   }
 
-	/* Find next IDAT chunk */
-  if (png->z.avail_in == 0) {
-//    printf ("%s: search for idat\n", __FUNCTION__); 
-    while (result = next_chunk (png), result == 0) {
-//      printf ("%s: looking %d %4.4s\n", __FUNCTION__, 
-//	      png->c.length, (char*) &png->c.id);
-
-      if (memcmp (&png->c.id, "IEND", 4) == 0)
-	return -1;
-      if (memcmp (&png->c.id, "IDAT", 4) == 0)
-	break;
-    }
-
-    if (result)			/* Unable to read next chunk */
-      return -1;
-
-    /* *** FIXME: we assume that we can read all of the chunk into
-       this buffer.  It would be better to code the loop to be able to
-       read out pieces of the image. */
-    png->z.next_in = rgbDecode;
-    png->z.avail_in = pngr_read (png, rgbDecode, sizeof (rgbDecode));
-  }
-
   png->z.next_out = rgb;
   png->z.avail_out = cb;
-//  printf ("%s: inflate\n", __FUNCTION__); 
-  result = inflate (&png->z, 0);
-  if (result < 0)
-    return result;
-  if (result == Z_STREAM_END && cb - png->z.avail_out == 0)
-    return -1;
+  while (png->z.avail_out) {
+    if (!png->z.avail_in) {
+//      printf ("%s: input buffer exhausted\n", __FUNCTION__);
+		/* input buffer exhausted */
+      if (!avail_chunk (png)) {
+//	printf ("%s: chunk empty\n", __FUNCTION__);
+		/* read next chunk  */
+	while (result = next_chunk (png), result == 0) {
+	  if (memcmp (&png->c.id, "IEND", 4) == 0)
+	    return -1;		/* End of image data */
+	  if (memcmp (&png->c.id, "IDAT", 4) == 0)
+	    break;
+	}
+
+	if (result)		/* Unable to read next chunk */
+	  return -1;
+      }
+      png->z.next_in = rgbDecode;
+      png->z.avail_in = pngr_read (png, rgbDecode, sizeof (rgbDecode));
+//      printf ("%s: pngr_read %d\n", __FUNCTION__, png->z.avail_in);
+    }
+
+		/* Decode */
+    //    printf ("%s: inflate\n", __FUNCTION__);
+    result = inflate (&png->z, 0);
+    if (result < 0)
+      return result;		/* Decode failed */
+    if (result == Z_STREAM_END) {
+      if (cb - png->z.avail_out == 0)
+	return -1;		/* Stream end */
+      break;
+    }
+  }
+
   return cb - png->z.avail_out;
 }
 

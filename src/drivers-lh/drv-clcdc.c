@@ -17,7 +17,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
+   along with this program; if not, write to the Free Software4096
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
    USA.
 
@@ -26,6 +26,16 @@
    -----------
 
    Sharp LH CLCD controller initialization, splash, and test support.
+
+   Splash Command
+   --------------
+
+   This code is, more or less, complete.  It doesn't read from tftp
+   and it probably doesn't read from a filesystem either.  That has to
+   be fixed.  It also doesn't double-buffer which would make the
+   display snappier.  However, the image decode is robust.
+   
+   
 
 */
 
@@ -40,7 +50,7 @@
 #include <error.h>
 #include <asm/mmu.h>
 
-//#define USE_COLORBARS
+#define USE_COLORBARS
 //#define USE_BORDER
 //#define USE_FILL
 
@@ -230,15 +240,15 @@ static void clcdc_init (void)
 #if defined (USE_COLORBARS)
   {
     int i;
-    for (i = 0; i < 320*240; ++i) {
-      if (i > 3*(320*240)/4)
+    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
+      if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = 0xffff;
-      else if (i > 2*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<10;
-      else if (i > 1*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<5;
-      else if (i > 0*(320*240)/4)
-	buffer[i] = I(0x1f,(i%240)*255/255)<<0;
+      else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
+      else if (i > 1*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<5;
+      else if (i > 0*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<0;
     }
   }
 #endif
