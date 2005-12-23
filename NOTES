@@ -5,10 +5,8 @@ APEX Boot Loader
 
 TODO:
 
-  o Splash has some issues.  It doesn't read from tftp or ext2
-    directly.  This is probably a problem with the region handling in
-    the main routines.  Other than that, it's pretty good.  Maybe we
-    want options for centering...or not.
+  o Splash needs to be tested for reading from filesystems.  We'll
+    need a seek function...like tftp at least.
 
   o Copying from TFTP doesn't reliably finish.  The transfer tends to
     halt, either after no blocks, or one block.  We need to diagnose

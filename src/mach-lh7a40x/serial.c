@@ -140,7 +140,7 @@ ssize_t lh7a40x_serial_write (struct descriptor_d* d,
     ++cWrote;
   }
 
-#if 0
+#if 1
 	/* flush serial output */
   while (!(UART_STATUS & UART_STATUS_TXFE))
     ;

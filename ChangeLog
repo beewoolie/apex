@@ -1,5 +1,14 @@
 2005-12-22  Marc Singer  <elf@buici.com>
 
+	* src/lib/pngr.c (open_pngr): Function modified to allow for
+	reading from TFTP where we don't know the length of the stream
+	a priori. 
+
+	* src/net/tftp.c (tftp_seek): Rudimentary seek function
+	implemented for the sake of splash decoding.  We needed to be able
+	to seek over the CRC (or unused portion of any chunk) in order to
+	decode PNG images over the network.
+
 	* src/lib/zlib-heap.c: Makde the zlib heap larger since the
 	decompressor was choking on the decode of a large splash image.
 	Also moved the memory to xbss.  We're still using a stupid null

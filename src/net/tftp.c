@@ -418,6 +418,37 @@ static void tftp_close (struct descriptor_d* d)
 }
 
 
+/* tftp_seek
+
+   very limited seek function.
+
+*/
+
+static size_t tftp_seek (struct descriptor_d* d, ssize_t cb, int whence)
+{
+  if (cb < 0 || whence != SEEK_CUR)
+    return 0;			/* *** FIXME */
+
+  while (cb) {
+    int available = tftp.cbRec - (d->start + d->index);
+    if (available > cb)
+      available = cb;
+
+    if (!available) {
+      char ch;
+      available = d->driver->read (d, &ch, 1);
+      if (!available)
+	return 0;		/* *** FIXME: error condition? */
+    }
+
+    cb -= available;
+    d->index += available;
+  }
+
+  return 0;
+}
+
+
 #if 0
 static ssize_t tftp_write (struct descriptor_d* d, void*, size_t cb)
 {
@@ -435,7 +466,7 @@ static __driver_6 struct driver_d tftp_driver = {
   .read = tftp_read,
 //  .write = tftp_write,
 //  .erase = cf_erase,
-//  .seek = tftp_seek,
+  .seek = tftp_seek,
 #if defined CONFIG_CMD_INFO
 //  .info = tftp_info,
 #endif

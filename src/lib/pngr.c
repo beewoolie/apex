@@ -177,6 +177,9 @@ static long read_long (const void* pv)
 static int next_chunk (struct png* png)
 {
 	/* Skip remainder of chunk */
+		/* *** FIXME: what we're really saying is skip the
+		   rest of the chunk if there was a chunk, but length
+		   can be zero for valid chunks. */
   if (png->c.length) {
 //    printf ("%s: seeking %d\n", __FUNCTION__, png->c.length - png->ib + 4);
     png->d->driver->seek (png->d, png->c.length - png->ib + 4, SEEK_CUR);
@@ -203,9 +206,6 @@ void* open_pngr (struct descriptor_d* d)
   png.pbPrev = 0;		/* In lieu of free */
 
 //  printf ("%s\n", __FUNCTION__); 
-
-  if (d->length < 8)
-    return NULL;
 
 //  printf ("pngr_read of magic\n");
   cb = d->driver->read (d, rgb, 8);
@@ -280,13 +280,15 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 {
   struct png* png = pv;
   int result;
-  static char __xbss(png) rgbDecode[32*1024]; /* Kinda small decode buffer */
+//#define CB_DECODE 128
+#define CB_DECODE 32*1024
+  static char __xbss(png) rgbDecode[CB_DECODE]; /* Kinda small decode buffer */
 
 	/* Initialization */
   if (memcmp (&png->c.id, "IDAT", 4)) {
     //    printf ("%s: init\n", __FUNCTION__); 
 
-    printf ("%s: inflateInit\n", __FUNCTION__); 
+//    printf ("%s: inflateInit\n", __FUNCTION__); 
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = zlib_heap_alloc;
     png->z.zfree = zlib_heap_free;
