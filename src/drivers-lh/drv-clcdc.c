@@ -39,8 +39,24 @@
    be fixed.  It also doesn't double-buffer which would make the
    display snappier.  However, the image decode is robust.
    
-   
 
+   Target Macros
+   -------------
+
+   Some of the functions of this driver are target specific.  Instead
+   of including all of the ifdefs within the body of the driver, each
+   target supplies these functions as macros in the header
+   mach/drv-clcdc.h.  A target may choose to not define a macro in
+   which case it will be a NOP.  The macros are as follows.
+
+   DRV_CLCDC_SETUP			- Setup clocks and muxing.
+   DRV_CLCDC_POWER_ENABLE		- Enable power to LCD panel
+   DRV_CLCDC_BACKLIGHT_ENABLE		- Enable power backlight power
+   DRV_CLCDC_BACKLIGHT_DISABLE		- Disable backlight power
+   DRV_CLCDC_DISABLE			- Extra LCD controller disabling
+   DRV_CLCDC_POWER_DISABLE		- Disable power to LCD panel
+   DRV_CLCDC_RELEASE			- Release clocks
+   
 */
 
 #include <config.h>
@@ -53,6 +69,29 @@
 #include <command.h>
 #include <error.h>
 #include <asm/mmu.h>
+#include <mach/drv-clcdc.h>
+
+#if ! defined (DRV_CLCDC_SETUP)
+# define DRV_CLCDC_SETUP
+#endif
+#if ! defined (DRV_CLCDC_POWER_ENABLE)
+# define DRV_CLCDC_POWER_ENABLE
+#endif
+#if ! defined (DRV_CLCDC_BACKLIGHT_ENABLE)
+# define DRV_CLCDC_BACKLIGHT_ENABLE
+#endif
+#if ! defined (DRV_CLCDC_BACKLIGHT_DISABLE)
+# define DRV_CLCDC_BACKLIGHT_DISABLE
+#endif
+#if ! defined (DRV_CLCDC_DISABLE)
+# define DRV_CLCDC_DISABLE
+#endif
+#if ! defined (DRV_CLCDC_POWER_DISABLE)
+# define DRV_CLCDC_POWER_DISABLE
+#endif
+#if ! defined (DRV_CLCDC_RELEASE)
+# define DRV_CLCDC_RELEASE
+#endif
 
 #define USE_COLORBARS
 //#define USE_BORDER
@@ -288,88 +327,7 @@ static void clcdc_init (void)
 #endif
 #endif
 
-#if defined (CONFIG_ARCH_LH7952X)
-
-  RCPC_CTRL |= (1<<9); /* Unlock */
-
-# if defined (CONFIG_ARCH_LH79520)
-  RCPC_PERIPHCLKCTRL2 &= ~(1<<0);
-  RCPC_PERIPHCLKSEL2 &= ~(1<<0); /* Use HCLK */
-  RCPC_LCDCLKPRESCALE = (1>>1);	/* HCLK/1 */
-# endif
-
-# if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
-  RCPC_PCLKCTRL1 &= ~(1<<0);
-  RCPC_AHBCLKCTRL &= ~(1<<4);
-//  RCPC_LCDPRE = (8>>1); 	/* HCLK divisor 8 */
-  RCPC_LCDPRE = (1>>1); 	/* HCLK divisor 1 */
-# endif
-
-  RCPC_CTRL &= ~(1<<9); /* Lock */
-
-# if defined (CONFIG_ARCH_LH79520)
-  IOCON_LCDMUX |= (1<<28) | (1<<27) | (1<<26) | (1<<25) | (1<<24)
-    | (1<<21) | (1<<20) | (1<<19) | (1<<18) | (1<<15) | (1<<12) | (1<<11)
-    | (1<<10) | (1<<3) | (1<<2);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<22, 2<<22); /* All for HR-TFT */
-  MASK_AND_SET (IOCON_LCDMUX, 3<<16, 2<<16);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<13, 2<<13);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<8,  2<<8);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<6,  2<<6);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<4,  0<<4);
-  MASK_AND_SET (IOCON_LCDMUX, 3<<0,  2<<0);
-//  IOCON_LCDMUX = 0x1fbeda9e;
-# endif
-
-# if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
-  MASK_AND_SET (IOCON_MUXCTL1,
-		(3<<2)|(3<<0),
-		(1<<2)|(1<<0));
-  MASK_AND_SET (IOCON_RESCTL1,
-		(3<<2)|(3<<0),
-		(0<<2)|(0<<0));
-
-  MASK_AND_SET (IOCON_MUXCTL19,
-		(3<<12)|(3<<8)|(3<<4)|(3<<2), 
-		/* LCDVEEN, LCDVDDEN, LCDREV, LCDCLS */
-		(1<<12)|(1<<8)|(2<<4)|(1<<2));
-  MASK_AND_SET (IOCON_RESCTL19,
-		(3<<12)|(3<<8)|(3<<4)|(3<<2), 
-		(0<<12)|(0<<8)|(0<<4)|(0<<2));
-
-  MASK_AND_SET (IOCON_MUXCTL20, 
-		(3<<14)|(3<<10)|(3<<6)|(3<<2)|(3<<0), 
-		/* LCDPS, LCDDCLK, LCDHRLP, LCDSPS, LCDSPL */
-		(1<<14)|(1<<10)|(2<<6)|(2<<2)|(2<<0)); 
-  MASK_AND_SET (IOCON_RESCTL20, 
-		(3<<14)|(3<<10)|(3<<6)|(3<<2)|(3<<0), 
-		(0<<14)|(0<<10)|(0<<6)|(0<<2)|(0<<0)); 
-  
-  MASK_AND_SET (IOCON_MUXCTL21, 
-		(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
-		(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-  MASK_AND_SET (IOCON_RESCTL21, 
-		(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
-		(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
-
-  MASK_AND_SET (IOCON_MUXCTL22,
-		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
-		(1<<14)|(1<<12)|(1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0)); 
-  MASK_AND_SET (IOCON_RESCTL22, 
-		(3<<14)|(3<<12)|(3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0), 
-		(0<<14)|(0<<12)|(0<<10)|(0<<8)|(0<<6)|(0<<4)|(0<<2)|(0<<0)); 
-# endif
-
-#endif /* CONFIG_ARCH_LH7952X */
-
-
-  /* Note that PE4 must be driven high on the LPD7A404 to prevent the
-     CPLD JTAG chain from crashing the board.  See the target_init ()
-     code. */
-
-#if defined (CONFIG_ARCH_LH7A40X)
-  GPIO_PINMUX |= (1<<1) | (1<<0); /* LCDVD[15:4] */
-#endif
+  DRV_CLCDC_SETUP;
 
   CLCDC_TIMING0 = HBP (LEFT_MARGIN) | HFP (RIGHT_MARGIN) | HSW (HSYNC_WIDTH)
     | PPL (PEL_WIDTH);
@@ -422,77 +380,28 @@ static void clcdc_init (void)
 #endif
 
   CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
-#if defined CPLD_CTRL1_LCD_POWER_EN
-  MASK_AND_SET (CPLD_CTRL1, 
-		CPLD_CTRL1_LCD_POWER_EN | CPLD_CTRL1_LCD_OE,
-		CPLD_CTRL1_LCD_POWER_EN);
-#endif
+  DRV_CLCDC_POWER_ENABLE;
   msleep (20);			/* Wait 20ms for digital signals  */
   CLCDC_CTRL      |= PWR;	/* Apply power */
 
-#if defined CPLD_CTRL1_LCD_BACKLIGHT_EN
-  CPLD_CTRL1 |= CPLD_CTRL1_LCD_BACKLIGHT_EN;
-#endif
-
-#if defined (CONFIG_MACH_LPD7A400)
-  CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN;
-#endif
-
-#if defined (CONFIG_MACH_LPD7A404)
-  GPIO_PCDD |= (1<<3);
-  GPIO_PCD  |= (1<<3);
-#endif
+  DRV_CLCDC_BACKLIGHT_ENABLE;
 }
 
 static void clcdc_release (void)
 {
-#if defined CPLD_CTRL1_LCD_BACKLIGHT_EN
-  CPLD_CTRL1 &= ~CPLD_CTRL1_LCD_BACKLIGHT_EN;
-#endif
-
-#if defined (CONFIG_MACH_LPD7A400)
-  CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN;
-#endif
-#if defined (CONFIG_MACH_LPD7A404)
-  GPIO_PCD  &= ~(1<<3);
-#endif
+  DRV_CLCDC_BACKLIGHT_DISABLE;
 
   CLCDC_CTRL &= ~PWR;		/* Remove power */
   msleep (20);			/* Wait 20ms */
   CLCDC_CTRL &= ~LCDEN;		/* Disable CLCDC controller */
+  DRV_CLCDC_DISABLE;
 
-#if defined CPLD_CTRL1_LCD_POWER_EN
-  MASK_AND_SET (CPLD_CTRL1, 
-		CPLD_CTRL1_LCD_POWER_EN | CPLD_CTRL1_LCD_OE,
-		CPLD_CTRL1_LCD_OE);
-#endif
+  DRV_CLCDC_POWER_DISABLE;
 
-#if defined (CONFIG_ARCH_LH7A400)
-  HRTFTC_SETUP &= ~(1<<13); /* Disable HRTFT controller */
-#endif
-
-#if defined (CONFIG_ARCH_LH7A404)
-  ALI_SETUP &= ~(1<<13); /* Disable ALI */
-#endif
-
-#if defined (CONFIG_ARCH_LH7952X)
-				/*  Shutdown all the clocks */
-  RCPC_CTRL	  |=  (1<<9); /* Unlock */
-
-# if defined (CONFIG_ARCH_LH79520)
-  RCPC_PERIPHCLKCTRL2 |= (1<<0);
-# endif
-
-# if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
-  RCPC_PCLKCTRL1  |=   1<<0;
-  RCPC_AHBCLKCTRL |=   1<<4;
-# endif
-
-  RCPC_CTRL	  &= ~(1<<9); /* Lock */
-#endif
+  DRV_CLCDC_RELEASE;
 }
 
-static __service_7 struct service_d lpd7a40x_clcdc_service = {
+static __service_7 struct service_d lh7_clcdc_service = {
   .init    = clcdc_init,
   .release = clcdc_release,
 };
