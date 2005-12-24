@@ -291,6 +291,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	if (result == -2) {
 	  tftp.state = stateAbort;
 	  cbRead = ERROR_BREAK;
+	  DBG (1, "%s: abort\n", __FUNCTION__);
 	  goto quit;
 	}
 
@@ -299,6 +300,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 //	  printf ("tftp timeout\n");
 	  if (++tftp.cRetries >= RETRIES_MAX) {
 	    tftp.state = stateError;
+	    DBG (1, "%s: timeout error\n", __FUNCTION__);
 	    goto quit;
 	  }
 	  if (tftp.state == stateOpenWaiting)
@@ -309,15 +311,19 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	}
 
 	if (   tftp.state != stateBlockAvailable 
-	    && tftp.state != stateBlockFinal)
+	    && tftp.state != stateBlockFinal) {
+	  DBG (1, "%s: probably no file\n", __FUNCTION__);
 	  goto quit;		/* Terminate, probably no such file */
+	}
 
       }
       break;
 
     case stateBlockFinal:
-      if (available == 0)
+      if (available == 0) {
+	DBG (1, "%s: stateBlockFinal\n", __FUNCTION__);
 	goto quit;
+      }
       /* fall through */
 
     case stateBlockAvailable:
@@ -349,6 +355,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 
     case stateAbort:
       cbRead = ERROR_BREAK;
+      DBG (1, "%s: stateAbort\n", __FUNCTION__);
       goto quit;
     }
   }

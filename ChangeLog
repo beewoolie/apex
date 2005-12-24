@@ -2,7 +2,7 @@
 
 	* src/lib/pngr.c (open_pngr): Function modified to allow for
 	reading from TFTP where we don't know the length of the stream
-	a priori. 
+	a priori.
 
 	* src/net/tftp.c (tftp_seek): Rudimentary seek function
 	implemented for the sake of splash decoding.  We needed to be able

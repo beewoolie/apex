@@ -27,6 +27,10 @@
 
    Sharp LH CLCD controller initialization, splash, and test support.
 
+   This code needs a serious overhaul to remove the ifdef's from
+   within the bodies of the functions.  Macros for the custom
+   functions please.
+
    Splash Command
    --------------
 
@@ -146,7 +150,7 @@
 #define PANEL_NAME	"LCD 12.1\" SVGA"
 /* *** FIXME: this target frequency range isn't achievable with HCLK
    *** at 99993900 Hz. */
-#define PEL_CLOCK_EST	(42000000)     /* 35MHz-40MHz-42MHz */
+#define PEL_CLOCK_EST	(25000000)     /* 35MHz-40MHz-42MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(800)
@@ -223,8 +227,6 @@ static void msleep (int ms)
 		       |(((g) & 0xf8) <<  2)\
 		       |(((b) & 0xf8) <<  7)\
 		       |(((i) & 1) << 15))
-
-extern int determine_arch_number (void); /* *** HACK */
 
 static void clcdc_init (void)
 {
@@ -362,9 +364,10 @@ static void clcdc_init (void)
 
 
   /* Note that PE4 must be driven high on the LPD7A404 to prevent the
-     CPLD JTAG chain from crashing the board.  */
+     CPLD JTAG chain from crashing the board.  See the target_init ()
+     code. */
 
-#if defined (CONFIG_MACH_LPD7A40X)
+#if defined (CONFIG_ARCH_LH7A40X)
   GPIO_PINMUX |= (1<<1) | (1<<0); /* LCDVD[15:4] */
 #endif
 
@@ -418,26 +421,26 @@ static void clcdc_init (void)
 
 #endif
 
-  CLCDC_CTRL      |= (1<<0); /* Enable CLCDC */
+  CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
 #if defined CPLD_CTRL1_LCD_POWER_EN
   MASK_AND_SET (CPLD_CTRL1, 
 		CPLD_CTRL1_LCD_POWER_EN | CPLD_CTRL1_LCD_OE,
 		CPLD_CTRL1_LCD_POWER_EN);
 #endif
   msleep (20);			/* Wait 20ms for digital signals  */
-  CLCDC_CTRL      |= (1<<11); /* Apply power */
+  CLCDC_CTRL      |= PWR;	/* Apply power */
 
 #if defined CPLD_CTRL1_LCD_BACKLIGHT_EN
   CPLD_CTRL1 |= CPLD_CTRL1_LCD_BACKLIGHT_EN;
 #endif
 
-#if defined (CONFIG_MACH_LPD7A40X)
-  if (determine_arch_number () == 389)		/* lh7400 */
-    CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN;
-  if (determine_arch_number () == 390) {	/* lh7a404 */
-    GPIO_PCDD |= (1<<3);
-    GPIO_PCD  |= (1<<3);
-  }
+#if defined (CONFIG_MACH_LPD7A400)
+  CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN;
+#endif
+
+#if defined (CONFIG_MACH_LPD7A404)
+  GPIO_PCDD |= (1<<3);
+  GPIO_PCD  |= (1<<3);
 #endif
 }
 
@@ -447,16 +450,16 @@ static void clcdc_release (void)
   CPLD_CTRL1 &= ~CPLD_CTRL1_LCD_BACKLIGHT_EN;
 #endif
 
-#if defined (CONFIG_MACH_LPD7A40X)
-  if (determine_arch_number () == 389)		/* lh7a400 */
-    CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN;
-  if (determine_arch_number () == 390)		/* lh7a404  */
-    GPIO_PCD  &= ~(1<<3);
+#if defined (CONFIG_MACH_LPD7A400)
+  CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN;
+#endif
+#if defined (CONFIG_MACH_LPD7A404)
+  GPIO_PCD  &= ~(1<<3);
 #endif
 
-  CLCDC_CTRL &= ~(1<<11); /* Remove power */
+  CLCDC_CTRL &= ~PWR;		/* Remove power */
   msleep (20);			/* Wait 20ms */
-  CLCDC_CTRL &= ~(1<<0); /* Disable CLCDC controller */
+  CLCDC_CTRL &= ~LCDEN;		/* Disable CLCDC controller */
 
 #if defined CPLD_CTRL1_LCD_POWER_EN
   MASK_AND_SET (CPLD_CTRL1, 
