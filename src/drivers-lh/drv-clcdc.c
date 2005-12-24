@@ -354,16 +354,6 @@ static void clcdc_init (void)
 # endif
 
 #endif
-
-#if 0
-  CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
-  DRV_CLCDC_POWER_ENABLE;
-  msleep (20);			/* Wait 20ms for digital signals  */
-  CLCDC_CTRL      |= PWR;	/* Apply power */
-
-  msleep (100);			/* Wait for the display to settle */
-  DRV_CLCDC_BACKLIGHT_ENABLE;
-#endif
 }
 
 static void clcdc_release (void)
