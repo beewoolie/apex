@@ -42,7 +42,8 @@
      CPLD JTAG chain from crashing the board.  See the target_init ()
      code. */
 
-#define DRV_CLCDC_SETUP ({ GPIO_PINMUX |= (1<<1) | (1<<0); }) /* LCDVD[15:4] */
+#define DRV_CLCDC_SETUP\
+	({ GPIO_PINMUX |= (1<<1) | (1<<0); }) /* LCDVD[15:4] */
 
 #if defined (CONFIG_MACH_LPD7A400)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
@@ -63,7 +64,6 @@
 	({ GPIO_PCD  &= ~(1<<3); })
 #endif
 
-
 #if defined (CONFIG_ARCH_LH7A400)
 # define DRV_CLCDC_DISABLE\
 	({ HRTFTC_SETUP &= ~(1<<13); }) /* Disable HRTFT controller */
@@ -73,6 +73,5 @@
 # define DRV_CLCDC_DISABLE\
 	({ ALI_SETUP &= ~(1<<13); }) /* Disable ALI */
 #endif
-
 
 #endif  /* __MACH_DRV_CLCDC_H__ */
