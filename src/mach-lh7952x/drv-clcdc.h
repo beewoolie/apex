@@ -69,12 +69,12 @@
 # define DRV_CLCDC_SETUP_CLOCKS\
 	({ RCPC_PCLKCTRL1 &= ~(1<<0);\
 	   RCPC_AHBCLKCTRL &= ~(1<<4);\
-	   /*  RCPC_LCDPRE = (8>>1); 	/* HCLK divisor 8 */\
+	   /*  RCPC_LCDPRE = (8>>1);*/ 	/* HCLK divisor 8 */\
 	   RCPC_LCDPRE = (1>>1); 	/* HCLK divisor 1 */\
 	 })
 # define DRV_CLCDC_RELEASE_CLOCKS\
 	({ RCPC_PCLKCTRL1  |=   1<<0;\
-	   RCPC_AHBCLKCTRL |=   1<<4; )}
+	   RCPC_AHBCLKCTRL |=   1<<4; })
 
 # define DRV_CLCDC_SETUP_MUX\
 	({ MASK_AND_SET (IOCON_MUXCTL1,\
@@ -99,7 +99,7 @@
 			 (0<<14)|(0<<10)|(0<<6)|(0<<2)|(0<<0));\
 	   MASK_AND_SET (IOCON_MUXCTL21,\
 			 (3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),\
-			 (1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));
+			 (1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));\
 	   MASK_AND_SET (IOCON_RESCTL21,\
 			 (3<<10)|(3<<8)|(3<<6)|(3<<4)|(3<<2)|(3<<0),\
 			 (1<<10)|(1<<8)|(1<<6)|(1<<4)|(1<<2)|(1<<0));\
