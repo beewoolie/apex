@@ -136,11 +136,18 @@ config CMD_MEMLIMIT
 	  kernel.  It is useful for testing how the kernel
 	  responds to a limited memory resource.
 
-config CMD_SPLASH
-	bool "Define Splash commands"
+config CMD_CLCDC_SPLASH
+	bool "Define CLCDC Splash sub-command"
 	depends on DRIVER_LH_CLCDC
 	default y
 	help
-	  This command draws an image into the LCD frame buffer.
+	  This sub-command draws an image into the LCD frame buffer.
+
+config CMD_CLCDC_TEST
+	bool "Define CLCDC test sub-commands"
+	depends on DRIVER_LH_CLCDC
+	default n
+	help
+	  These sub-commands help with testing the CLCDC controller.
 
 endmenu

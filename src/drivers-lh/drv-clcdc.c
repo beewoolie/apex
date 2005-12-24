@@ -93,7 +93,6 @@
 # define DRV_CLCDC_RELEASE
 #endif
 
-#define USE_COLORBARS
 //#define USE_BORDER
 //#define USE_FILL
 
@@ -271,29 +270,6 @@ static void clcdc_init (void)
 {
   buffer = alloc_uncached (CB_BUFFER, 1024*1024);
 
-  printf ("clcdc: initializing %s at 0x%p\n", PANEL_NAME, buffer);
-  printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
-	  HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
-	  HSYNC_WIDTH, VSYNC_WIDTH,
-	  LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
-
-  /* Color bars */
-#if defined (USE_COLORBARS)
-  {
-    int i;
-    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
-      if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = 0xffff;
-      else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
-      else if (i > 1*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<5;
-      else if (i > 0*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<0;
-    }
-  }
-#endif
-
 #if defined (USE_FILL)
 
   {
@@ -379,12 +355,15 @@ static void clcdc_init (void)
 
 #endif
 
+#if 0
   CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
   DRV_CLCDC_POWER_ENABLE;
   msleep (20);			/* Wait 20ms for digital signals  */
   CLCDC_CTRL      |= PWR;	/* Apply power */
 
+  msleep (100);			/* Wait for the display to settle */
   DRV_CLCDC_BACKLIGHT_ENABLE;
+#endif
 }
 
 static void clcdc_release (void)
@@ -407,9 +386,9 @@ static __service_7 struct service_d lh7_clcdc_service = {
 };
 
 
-#if defined (CONFIG_CMD_SPLASH)
+#if defined (CONFIG_CMD_CLCDC_SPLASH)
 
-int cmd_splash (int argc, const char** argv)
+int cmd_splash (const char* region)
 {
   int result;
   struct descriptor_d d;
@@ -419,12 +398,9 @@ int cmd_splash (int argc, const char** argv)
   int i;
   int j;
 
-  if (argc != 2)
-    return ERROR_PARAM;
-
-  if (   (result = parse_descriptor (argv[1], &d))
+  if (   (result = parse_descriptor (region, &d))
       || (result = open_descriptor (&d))) {
-    printf ("Unable to open source %s\n", argv[1]);
+    printf ("Unable to open source %s\n", region);
     goto fail_early;
   }
 
@@ -477,18 +453,105 @@ int cmd_splash (int argc, const char** argv)
   return result;
 }
 
+#endif
 
-static __command struct command_d c_splash = {
-  .command = "splash",
-  .description = "display image on the LCD",
-  .func = cmd_splash,
+
+int cmd_clcdc (int argc, const char** argv)
+{
+  if (argc == 1) {
+    printf ("clcdc: initialized %s at 0x%p\n", PANEL_NAME, buffer);
+    printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
+	    HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
+	    HSYNC_WIDTH, VSYNC_WIDTH,
+	    LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
+    return 0;
+  }
+  
+#if defined (CONFIG_CMD_CLCDC_SPLASH)
+  if (strcmp (argv[1], "splash") == 0) {
+    if (argc != 3)
+      return ERROR_PARAM;
+    return cmd_splash (argv[2]);
+  }
+#endif
+
+#if defined (CONFIG_CMD_CLCDC_TEST)
+  if (strcmp (argv[1], "bars") == 0) {
+    int i;
+    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
+      if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = 0xffff;
+      else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
+      else if (i > 1*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<5;
+      else if (i > 0*(PEL_HEIGHT*PEL_WIDTH)/4)
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<0;
+    }
+    return 0;
+  }
+  if (strcmp (argv[1], "white") == 0) {
+    memset (buffer, 0xff, PEL_HEIGHT*PEL_WIDTH*(BIT_DEPTH/8));
+    return 0;
+  }
+  if (strcmp (argv[1], "black") == 0) {
+    memset (buffer, 0, PEL_HEIGHT*PEL_WIDTH*(BIT_DEPTH/8));
+    return 0;
+  }
+#endif
+
+  if (strcmp (argv[1],"on") == 0) {
+    CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
+    DRV_CLCDC_POWER_ENABLE;
+    msleep (20);		/* Wait 20ms for digital signals  */
+    CLCDC_CTRL      |= PWR;	/* Apply power */
+
+    /* *** FIXME: this value is calculable based on the LCD controller
+       parameters and the frame size. 40ms is the time for two frame
+       displays at 800x600 with a 25MHz pixel clock.  100ms was the
+       shortest time found that gave a solid image when the backlight
+       came on (with above parameters). */
+    msleep (100);		/* Wait for the display image to settle */
+    DRV_CLCDC_BACKLIGHT_ENABLE;
+    return 0;
+  }
+
+  if (strcmp (argv[1],"off") == 0) {
+    DRV_CLCDC_BACKLIGHT_DISABLE;
+
+    CLCDC_CTRL &= ~PWR;		/* Remove power */
+    msleep (20);		/* Wait 20ms */
+    CLCDC_CTRL &= ~LCDEN;	/* Disable CLCDC controller */
+    DRV_CLCDC_DISABLE;
+
+    DRV_CLCDC_POWER_DISABLE;
+    return 0; 
+  }
+
+  return ERROR_PARAM;
+}
+
+static __command struct command_d c_clcdc = {
+  .command = "clcdc",
+  .description = "commands for controlling the color LCD controller",
+  .func = cmd_clcdc,
   COMMAND_HELP(
-"splash"
-" SRC\n"
-"  Display the image from SRC on the LCD screen.\n"
-"  The image is read from region SRC.\n\n"
-"  e.g.  splash fat://1/logo.png\n"
+"clcdc [SUBCOMMAND [PARAMETER]]\n"
+" Without a SUBCOMMAND, it displays the LCD setup parameters.\n"
+" on         - enable the controller and LCD backlight\n"
+" off        - disable the controller and LCD backlight\n"
+#if defined (CONFIG_CMD_CLCDC_TEST)
+" bars       - draw color bars into frame buffer\n"
+" white      - draw white into frame buffer\n"
+" black      - draw black into frame buffer\n"
+#endif
+#if defined (CONFIG_CMD_CLCDC_SPLASH)
+" splash SRC - draw splash image (PNG) into frame buffer\n"
+#endif
+"\n"
+"  e.g.  clcdc on\n"
+#if defined (CONFIG_CMD_CLCDC_SPLASH)
+"        clcdc splash fat://1/logo.png\n"
+#endif
   )
 };
-
-#endif

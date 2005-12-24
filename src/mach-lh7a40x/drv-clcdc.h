@@ -60,7 +60,7 @@
 #endif
 #if defined (CONFIG_MACH_LPD7A404)
 # define DRV_CLCDC_BACKLIGHT_DISABLE\
-	({ GPIO_PCD  &= ~(1<<3); })
+	({ GPIO_PCD  &= ~(1<<3); GPIO_PCDD &= ~(1<<3); })
 #endif
 
 
