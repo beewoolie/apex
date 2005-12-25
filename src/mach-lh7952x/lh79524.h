@@ -224,22 +224,43 @@
 #define TIMER1_PHYS	(TIMER_PHYS + 0x30)
 #define TIMER2_PHYS	(TIMER_PHYS + 0x50)
 
-#define TIMER_CTRL	(0x00)
-#define TIMER_INTEN1	(0x04)
-#define TIMER_STATUS1	(0x08)
-#define TIMER_CNT1	(0xc)
+#define IRQ_TIMER0	4
+#define IRQ_TIMER1	5
+#define IRQ_TIMER2	6
 
-#define TIMER_CS	(1<<1)
-#define TIMER_PERIODIC	(1<<6)	// !FREERUNNING
-#define TIMER_CASCADE	(1<<4)
-#define TIMER_SCALE_MASK (3<<2)
-#define TIMER_SCALE_2	 (0<<2)
-#define TIMER_SCALE_4	 (1<<2)
-#define TIMER_SCALE_8	 (2<<2)
-#define TIMER_SCALE_16	 (3<<2)
-#define TIMER_SCALE_32	 (4<<2)
-#define TIMER_SCALE_64	 (5<<2)
-#define TIMER_SCALE_128	 (6<<2)
+#define TIMER1_CTRL	__REG(TIMER1_PHYS + 0x00)
+#define TIMER1_INTEN	__REG(TIMER1_PHYS + 0x04)
+#define TIMER1_STATUS	__REG(TIMER1_PHYS + 0x08)
+#define TIMER1_CNT	__REG(TIMER1_PHYS + 0x0c)
+#define TIMER1_CMP0	__REG(TIMER1_PHYS + 0x10)
+#define TIMER1_CMP1	__REG(TIMER1_PHYS + 0x14)
+#define TIMER1_CAPA	__REG(TIMER1_PHYS + 0x18)
+#define TIMER1_CAPB	__REG(TIMER1_PHYS + 0x1c)
+
+#define TIMER2_CTRL	__REG(TIMER2_PHYS + 0x00)
+#define TIMER2_INTEN	__REG(TIMER2_PHYS + 0x04)
+#define TIMER2_STATUS	__REG(TIMER2_PHYS + 0x08)
+#define TIMER2_CNT	__REG(TIMER2_PHYS + 0x0c)
+#define TIMER2_CMP0	__REG(TIMER2_PHYS + 0x10)
+#define TIMER2_CMP1	__REG(TIMER2_PHYS + 0x14)
+#define TIMER2_CAPA	__REG(TIMER2_PHYS + 0x18)
+#define TIMER2_CAPB	__REG(TIMER2_PHYS + 0x1c)
+
+#define TIMER_CTRL_CCL		(1<<0)
+#define TIMER_CTRL_CS		(1<<1)
+#define TIMER_CTRL_TC		(1<<13)	/* Clear counter when CMP1 reached */
+#define TIMER_CTRL_CASCADE	(1<<4)
+#define TIMER_CTRL_SCALE_MASK	(3<<2)
+#define TIMER_CTRL_SCALE_2	(0<<2)
+#define TIMER_CTRL_SCALE_4	(1<<2)
+#define TIMER_CTRL_SCALE_8	(2<<2)
+#define TIMER_CTRL_SCALE_16	(3<<2)
+#define TIMER_CTRL_SCALE_32	(4<<2)
+#define TIMER_CTRL_SCALE_64	(5<<2)
+#define TIMER_CTRL_SCALE_128	(6<<2)
+#define TIMER_INTEN_OVF		(1<<0) /* overflow */
+#define TIMER_INTEN_CMP0	(1<<1) /* compare 0 */
+#define TIMER_INTEN_CMP1	(1<<2) /* compare 1 */
 
 #define RTC_PHYS	(0xfffe0000)
 #define RTC_DR		__REG (RTC_PHYS + 0x00)
@@ -270,6 +291,7 @@
 #define VIC_DEFVECTADDR	__REG(VIC_PHYS + 0x34)
 #define VIC_VECTADDR0	__REG(VIC_PHYS + 0x100)
 #define VIC_VECTCTRL0	__REG(VIC_PHYS + 0x200)
+#define VIC_ITOP	__REG(VIC_PHYS + 0x30c)
 
 #define ALI_PHYS	(0xfffe4000) /* Advanced LCD Interface */
 #define ALI_SETUP	__REG(ALI_PHYS + 0x00)

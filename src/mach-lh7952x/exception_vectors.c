@@ -102,19 +102,19 @@ void __irq_handler __section (.bootstrap) irq_handler (void)
   if (v == 0)
     return;
 
-  for (irq = 0; irq; ++irq) {
+  for (irq = 0; irq < 32; ++irq) {
     if (v & (1<<irq)) {
       if (!interrupt_handlers[irq]
 	  || interrupt_handlers[irq](irq) != IRQ_HANDLED) {
 	VIC_INTENCLEAR = (1<<irq);
-	VIC_VECTADDR = 0;
       }
       break;
     }    
   }
+  VIC_VECTADDR = 0;
 }
 
-void lh7952x_exception_init (void)
+static void lh7952x_exception_init (void)
 {
   RCPC_CTRL  |=  RCPC_CTRL_UNLOCK;
   RCPC_REMAP  =  0x1;	/* SDRAM at 0x0 */
@@ -141,13 +141,12 @@ void lh7952x_exception_init (void)
 		  : "r3"
 		  );		  
 
-  printf ("exceptions %p %p\n", 
-	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END);
-
   VIC_INTSELECT = 0;
   VIC_INTENABLE = 0;
   VIC_INTENCLEAR = ~0;
   VIC_SOFTINT_CLEAR = ~0;
+  VIC_DEFVECTADDR = (unsigned long) irq_handler;
+  VIC_VECTADDR = 0;
 
 		/* Initialize interrupt stack */
   __asm volatile ("mrs r2, cpsr\n\t"
@@ -162,17 +161,26 @@ void lh7952x_exception_init (void)
 		  : "r2","r3"
 		  );
 
-//  local_irq_enable ();
+  local_irq_enable ();
 }
 
-void lh7952x_exception_release (void)
+static void lh7952x_exception_release (void)
 {
-  VIC_INTENABLE = 0;
-
   local_irq_disable ();
+  VIC_INTENABLE = 0;
+}
+
+static void lh7952x_exception_report (void)
+{
+  printf ("  except: select 0x%lx  enable 0x%lx  status 0x%lx  raw 0x%lx"
+	  "  itop 0x%lx\n", 
+	  VIC_INTSELECT, VIC_INTENABLE, VIC_IRQSTATUS, VIC_RAWINTSR, VIC_ITOP);
+  printf ("          vectors %p %p\n", 
+	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END);
 }
 
 static __service_1 struct service_d lh7952x_exception_service = {
   .init    = lh7952x_exception_init,
   .release = lh7952x_exception_release,
+  .report  = lh7952x_exception_report,
 };

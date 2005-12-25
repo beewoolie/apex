@@ -19,6 +19,13 @@ SECTIONS
 	.bootstrap : {
 		*(.bootstrap)		
 	}		
+	.vector : {	/* Exception vector support, if there is any */
+		APEX_VMA_VECTOR_START = .;
+		*(.vector.0)
+		*(.vector.1)
+		APEX_VMA_VECTOR_END = .;
+		*(.vector)
+	}
 	.text : {
 		*(.text)
 		*(.fixup)
@@ -26,13 +33,6 @@ SECTIONS
 		*(.rodata.*)
 		*(.glue_7)
 		*(.glue_7t)
-	}
-	.vector : {	/* Exception vector support, if there is any */
-		APEX_VMA_VECTOR_START = .;
-		*(.vector.0)
-		*(.vector.1)
-		APEX_VMA_VECTOR_END = .;
-		*(.vector)
 	}
 	. = ALIGN (4);
 	APEX_DATA_START = .;

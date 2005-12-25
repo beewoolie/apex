@@ -25,6 +25,19 @@
    DESCRIPTION
    -----------
 
+   Using a timer
+   -------------
+
+   The timers can be clocked, at the slowest, at HCLK/128 which is
+   ~2.52us given the standard HCLK of 50803200 Hz.  The counters count
+   up and can be programmed to automatically clear when they reach a
+   set value.  The longest this can be is ~165ms which should be
+   adequate.
+
+   We can compute the timer limit by multiplying the HCLK base
+   frequency by the desired interrupt interval, in this case 10ms
+   (.01), and dividing that by the clock scalar of 128.
+
 */
 
 #include <config.h>
@@ -36,15 +49,30 @@
 # include <linux/compiler-gcc.h>
 #endif
 
+#define TIMER_CTRL	TIMER2_CTRL
+#define TIMER_INTEN	TIMER2_INTEN
+#define TIMER_STATUS	TIMER2_STATUS
+#define TIMER_CNT	TIMER2_CNT
+#define TIMER_CMP0	TIMER2_CMP0
+#define TIMER_CMP1	TIMER2_CMP1
+#define TIMER_CAPA	TIMER2_CAPA
+#define TIMER_CAPB	TIMER2_CAPB
+#define TIMER_IRQ	IRQ_TIMER2
+
+#define UART_DR		__REG(UART + 0x00)
+
+#define TIMER_LIMIT	(HCLK/(128*100))
+
 #if defined (CONFIG_INTERRUPTS)
 static irq_return_t timer_isr (int irq)
 {
   static int v;
 
-  __REG (TIMER1_PHYS + TIMER_STATUS1) = 0xf; /* Clear interrupt */
+//  UART_DR = '!';
+  TIMER_STATUS = 0xf;		/* Clear interrupt */
 
-  if (v++ %8 == 0) {
-    __REG (UART + UART_DR) = '.';
+  if (v++ %100 == 0) {
+    UART_DR = '.';
   }
   return IRQ_HANDLED;
 }
@@ -59,13 +87,19 @@ void lh79524_timer_init (void)
 
 #if defined (CONFIG_INTERRUPTS)
  {
-   interrupt_handlers[5] = timer_isr;
+   interrupt_handlers[TIMER_IRQ] = timer_isr;
    barrier ();
 
-   __REG (TIMER1_PHYS + TIMER_CTRL) = (7<<2)|(1<<1)|(1<<0);
-   __REG (TIMER1_PHYS + TIMER_INTEN1) = (1<<0);
+   TIMER_CMP1 = TIMER_LIMIT;
+   TIMER_CTRL
+     = TIMER_CTRL_SCALE_128
+     | TIMER_CTRL_CS
+     | TIMER_CTRL_TC
+     | TIMER_CTRL_CCL;
+   TIMER_INTEN = TIMER_INTEN_CMP1;
 
-   VIC_INTENABLE |= (1<<5);
+   VIC_INTSELECT = 0;
+   VIC_INTENABLE |= (1<<TIMER_IRQ);
  }
 #endif
 }
