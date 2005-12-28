@@ -5,9 +5,6 @@ APEX Boot Loader
 
 TODO:
 
-  o Splash needs to be tested for reading from filesystems.  We'll
-    need a seek function...like tftp at least.
-
   o Copying from TFTP doesn't reliably finish.  The transfer tends to
     halt, either after no blocks, or one block.  We need to diagnose
     the nature of the failure and either implement a retry, or come up
@@ -65,6 +62,7 @@ TODO:
       defined keystrokes for for break and cancel.  ESC isn't a good
       choice because we're like to be able to use arrows at some
       point.  ^C is better. 
+      + Implemented in the console code.
     o We can probably get away with a Kconfig option and no UI to
       change it.
 
@@ -159,11 +157,12 @@ TODO:
       something if we start to be able to handle telnet sessions as
       well as a USB console.
 
-  o tftp requires that we know if a descriptor is for reading for for
-    writing.  There is nothing in the interfaces to support this at
+  o tftp write requires that we know if a descriptor is for reading or
+    for writing.  There is nothing in the interfaces to support this at
     the moment.  Either we cache the file-open data, or we let it all
     be lazy and perform the open when the first read or write call is
-    made.
+    made.  
+    + Reading works fine at the moment.
 
   o descriptors really need to allow drivers to define a
     context.  tftp is probably the most compelling case for
@@ -226,6 +225,9 @@ TODO:
     This will also require that we be able to store an image in the
     loader and copy it out.  Aliases make this possible
       alias splashimage ...
+    + We have a splash command that reads from a region but doesn't
+      write to one.  In other words, we *could* do as suggested, but
+      there isn't much reason for it from the POV of simplicity.
   o Aliases mean we can have references to 
       alias env nor:128k+32k
       alias apex mem:...
@@ -270,6 +272,7 @@ TODO:
 
   o Separate the string functions so that the linker can include only
     those that are needed.
+    + Done.
 
   o I think that the partition logic needs to move to the CF driver
     (and other block-level drivers) so that the filesystem code can be
@@ -310,6 +313,7 @@ TODO:
   o Would be nice if ^C could break into long-running functions.
     Could be dangerous, though, e.g. writing to flash.  More thought
     needed.
+    + Supported and implemented in several places.
 
   o I am suspicious that the nor-cfi erase code isn't quite right.
     When asked to erase nor:0+120k, I think it erased the block at
@@ -318,7 +322,7 @@ TODO:
   o Checksum function doesn't appear to work over FAT read files.  It
     needs to clever about summing in the case that the descriptor
     itself knows the length.
-    o I believe this is fixed.
+    + I believe this is fixed.
 
   o Wonder if I need to do a shutdown before performing reset s.t. I
     can put the NOR flash in the right state.  This might be why reset
@@ -341,6 +345,8 @@ TODO:
     'describes' a descriptor.  Thus, a descriptor for an exact file
     shows the file info.  A descriptor for a directory lists the
     directory.  A descriptor for a driver describes that driver.
+    + Implemented the ability to read directory contents...except for
+      fatfs.
 
   o The default length for descriptors needs to be thought out.  If we
     set the default length to the greatest length available, then we
@@ -369,6 +375,7 @@ TODO:
     driver.  Not a bad idea.  This, then because a function of a
     driver to allow a describe, info, catalog, or whatever on a
     descriptor.
+    + Implemented as info
 
   o It would be nice if the fat/cf interface could be smart about
     detecting device changes.  Trouble is, CIS info doesn't appear to
@@ -377,6 +384,7 @@ TODO:
     o This would probably require an extra hook in the driver.
     o And, it isn't necessary since we read all of the device
       structures every time we perform IO.
+    o Although an interrupt timer could make this possible.
 
   o APEX prints an error when the startup command doesn't have a trailing ';'
 

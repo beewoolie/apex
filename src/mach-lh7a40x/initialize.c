@@ -184,19 +184,19 @@
 
 void __section (.bootstrap) usleep (unsigned long us)
 {
-  __asm volatile ("str %1, [%0, #8]\n\t"
-		  "str %2, [%0, #0]\n\t"
-		  "str %3, [%0, #8]\n\t"
-	       "0: ldr %2, [%0, #4]\n\t"
-	          "tst %2, %4\n\t"
+  unsigned long c = (us - us/2);
+  __asm volatile ("str %2, [%1, #8]\n\t"
+		  "str %0, [%1, #0]\n\t"
+		  "str %3, [%1, #8]\n\t"
+	       "0: ldr %0, [%1, #4]\n\t"
+	          "tst %0, %4\n\t"
 		  "beq 0b\n\t"
-		  "mov pc, lr\n\t"
-		  :
+		  : "+r" (c)
 		  : "r" (TIMER2_PHYS),
 		    "r" (0),
-		    "r" (us - us/2),
 		    "r" ((1<<7)|(1<<3)), /* Enable, Free, 508 KHz */
-		    "r" (0x8000));
+		    "I" (0x8000)
+		  : "cc");
 }
 
 
@@ -269,7 +269,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
 #endif
 		    "mcr	p15, 0, %0, c1, c0, 0"
-		    : "=r" (l));
+		    : "=&r" (l));
   }
 
 	/* Enable PCMCIA.  This is a workaround for a buggy CPLD on
@@ -297,11 +297,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 		  "movhi r0, #0\n\t"
 		  "movhi pc, %0\n\t"
-		  "1:" :: "r" (lr), "i" (SDRAM_BANK0_PHYS)
+		  "1:" :: "r" (lr), "I" (SDRAM_BANK0_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
 		  , "r" (&fSDRAMBoot) 
 #endif
-		        : "r0");
+		  : "cc");
 
   PUTC_LL ('S');
 
@@ -345,11 +345,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 */
 
-void __naked target_init (void)
+static void target_init (void)
 {
-  unsigned long lr;
-  __asm volatile ("mov %0, lr" : "=r" (lr));
-
 #if defined (CONFIG_MACH_LPD7A404)
   /* PE4 must be driven high to disable the CPLD JTAG & prevent CPLD crash */
   GPIO_PEDD &= ~(1<<4);
@@ -359,8 +356,6 @@ void __naked target_init (void)
   GPIO_PCDD &= ~(1<<6);
   GPIO_PCD  |=  (1<<6);
 #endif
-
-  __asm volatile ("mov pc, %0" : : "r" (lr));
 }
 
 

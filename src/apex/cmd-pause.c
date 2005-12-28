@@ -41,29 +41,43 @@
 #include <linux/types.h>
 #include <apex.h>
 #include <command.h>
+#include <error.h>
 
 #define SEC_PAUSE 5
 
 int cmd_pause (int argc, const char** argv)
 {
+  int mode = 0;
   printf ("pausing for %d seconds\n", SEC_PAUSE);
 
-#if 0
-  {
+  if (argc > 1) {
+    if (argc > 2)
+      return ERROR_PARAM;
+    switch (*argv[1]) {
+    case 't':
+      mode = 0;
+      break;
+    case 'u':
+      mode = 1;
+      break;
+    default:
+      return ERROR_PARAM;
+    }
+  }
+
+  if (mode == 0) {
     unsigned long time = timer_read ();
     while (timer_delta (time, timer_read ()) < SEC_PAUSE*1000)
       ;
   }
-#endif
 
-#if 1
-  {
+  if (mode == 1) {
     int i = SEC_PAUSE*1000*1000;
     i /= 32*1000;
     while (i--)
       usleep (32*1000);
   }
-#endif
+
 
 #if 0
   usleep (SEC_PAUSE*1000*1000);
@@ -78,4 +92,13 @@ static __command struct command_d c_pause = {
   .command = "pause",
   .description = "pause for 2 seconds",
   .func = cmd_pause,
+  COMMAND_HELP(
+"pause [MODE]\n"
+"  Pause for 5 seconds using one of several timing functions.\n"
+"  This command is used to test the timing functions within APEX.\n"
+"  The optional MODE selects which timer function to use.  Both methods\n"
+"  should be reasonably accurate.\n"
+"    t  - use the timer functions (default)\n"
+"    u  - use the usleep timer\n"
+)
 };

@@ -1,3 +1,35 @@
+2005-12-27  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/entry.c (setup_c): Added code for clearing
+	stacks to a known value.
+
+	* src/mach-lh7952x/exception_vectors.c: The exception handling
+	code works.  APEX can use interrupts.
+
+	* src/arch-arm/lib/relocate.c (relocate_apex) :recoded
+	relocation test to reduce the number of registers and to update
+	the syntax for __asm constraints.  This code was substantially
+	modified to reflect some minor optimizations.
+
+	* src/mach-lh7952x/relocate-nand.c (relocate_apex): recoded
+	relocation test to reduce the number of registers and to update
+	the syntax for __asm constraints.
+
+	* src/mach-lh7a40x/initialize.c (usleep): recoded timer to
+	update the syntax for __asm constraints.
+
+	* src/mach-lh7952x/init-kev79524.c (usleep): recoded timer to
+	update the syntax for __asm constraints.
+
+	* src/mach-lh7952x/init-lpd79520.c (usleep): recoded timer to
+	update the syntax for __asm constraints.
+
+	* src/mach-lh7952x/init-lnode80.c (usleep): recoded timer to
+	update the syntax for __asm constraints.
+
+	* src/mach-lh7952x/init-lpd79524.c (usleep): recoded timer to
+	update the syntax for __asm constraints.
+
 2005-12-22  Marc Singer  <elf@buici.com>
 
 	* src/lib/pngr.c (open_pngr): Function modified to allow for

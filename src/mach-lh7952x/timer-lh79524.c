@@ -25,8 +25,8 @@
    DESCRIPTION
    -----------
 
-   Using a timer
-   -------------
+   Using a Timer Interrupt
+   -----------------------
 
    The timers can be clocked, at the slowest, at HCLK/128 which is
    ~2.52us given the standard HCLK of 50803200 Hz.  The counters count
@@ -49,6 +49,8 @@
 # include <linux/compiler-gcc.h>
 #endif
 
+#include <debug_ll.h>
+
 #define TIMER_CTRL	TIMER2_CTRL
 #define TIMER_INTEN	TIMER2_INTEN
 #define TIMER_STATUS	TIMER2_STATUS
@@ -64,27 +66,24 @@
 #define TIMER_LIMIT	(HCLK/(128*100))
 
 #if defined (CONFIG_INTERRUPTS)
+
+static unsigned long ticks;
+
 static irq_return_t timer_isr (int irq)
 {
-  static int v;
-
-//  UART_DR = '!';
   TIMER_STATUS = 0xf;		/* Clear interrupt */
 
-  if (v++ %100 == 0) {
-    UART_DR = '.';
-  }
+  ++ticks;
+
+//  if (ticks%100 == 0)
+//    PUTC_LL ('.');
+
   return IRQ_HANDLED;
 }
 #endif
 
 void lh79524_timer_init (void)
 {
-  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
-  RCPC_PCLKSEL0  |= 3<<7; /* 32KHz oscillator for RTC */
-  RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
-  RTC_CR	  = RTC_CR_EN;  
-
 #if defined (CONFIG_INTERRUPTS)
  {
    interrupt_handlers[TIMER_IRQ] = timer_isr;
@@ -98,24 +97,38 @@ void lh79524_timer_init (void)
      | TIMER_CTRL_CCL;
    TIMER_INTEN = TIMER_INTEN_CMP1;
 
-   VIC_INTSELECT = 0;
+//   VIC_INTSELECT = 0;
    VIC_INTENABLE |= (1<<TIMER_IRQ);
  }
+#else
+  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+  RCPC_PCLKSEL0  |= 3<<7; /* 32KHz oscillator for RTC */
+  RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
+  RTC_CR	  = RTC_CR_EN;  
 #endif
 }
 
 static void lh79524_timer_release (void)
 {
-  RTC_CR &= ~RTC_CR_EN;  
-  RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
+#if defined (CONFIG_INTERRUPTS)
+  VIC_INTENCLEAR |= (1<<TIMER_IRQ);
+  TIMER_INTEN = 0;
+  TIMER_CTRL = 0;
+#else
+  RTC_CR	 &= ~RTC_CR_EN;  
+  RCPC_CTRL      |=  RCPC_CTRL_UNLOCK;
   RCPC_PCLKSEL0  &= ~(3<<7); /* 1Hz RTC */
   RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
-
+#endif
 }
 
 unsigned long timer_read (void)
 {
+#if defined (CONFIG_INTERRUPTS)
+  return ticks;
+#else
   return RTC_DR;
+#endif
 }
 
 
@@ -127,7 +140,11 @@ unsigned long timer_read (void)
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
 {
+#if defined (CONFIG_INTERRUPTS)
+  return (end - start)*10;
+#else
   return (end - start)*1000/32768;
+#endif
 }
 
 static __service_2 struct service_d lh79524_timer_service = { 

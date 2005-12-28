@@ -43,6 +43,8 @@ extern char APEX_VMA_VECTOR_START;
 extern char APEX_VMA_VECTOR_END;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
+extern char APEX_VMA_STACKS_START;
+extern char APEX_VMA_STACKS_END;
 extern char APEX_VMA_STACK_START;
 extern char APEX_VMA_IRQSTACK_START;
 extern char APEX_VMA_BSS_START;

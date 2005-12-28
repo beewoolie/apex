@@ -36,7 +36,6 @@
 #include <driver.h>
 #include <linux/string.h>
 #include <apex.h>
-
 #include <debug_ll.h>
 
 extern struct driver_d* console;

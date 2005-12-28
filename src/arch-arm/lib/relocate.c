@@ -36,6 +36,8 @@
 
 #include <debug_ll.h>
 
+//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+
 #if defined (CONFIG_DEBUG_LL)
 # define USE_LDR_COPY		/* Simpler copy loop, more free registers */
 # define USE_COPY_VERIFY
@@ -60,51 +62,54 @@
 
 void __naked __section (.bootstrap) relocate_apex (void)
 {
-  extern unsigned long reloc;
-  unsigned long offset;
   unsigned long lr;
+  extern unsigned long reloc;
+  unsigned long offset = (unsigned long) &reloc;
 
   PUTC_LL ('R');
-  __asm volatile ("mov %1, lr\n\t"
+  __asm volatile ("mov %0, lr\n\t"
 		  "bl reloc\n\t"
-	   "reloc: subs %0, %2, lr\n\t"
+	   "reloc: subs %1, %1, lr\n\t"
 	   ".globl reloc\n\t"
-		  "moveq pc, %1\n\t"	/* Return when already reloc'd  */
-		  : "=r" (offset), "=r" (lr)
-		  : "r" (&reloc)
-		  : "lr");
+		  "moveq pc, %0\n\t"	/* Return when already reloc'd  */
+		  "add %0, %0, %1"	/* Adjust lr for function return */
+		  :  "=&r" (lr),
+		     "+r" (offset)
+		  :: "lr", "cc");
 
   PUTC_LL ('c');
 
+  {
+    unsigned long d = (unsigned long) &APEX_VMA_COPY_START;
+    unsigned long s = (unsigned long) &APEX_VMA_COPY_START - offset;
 #if defined USE_LDR_COPY
- {
-   unsigned long index = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 3) & ~3;
-   __asm volatile (
-		   "sub r0, %0, %1\n\t"
-		"0: sub %2, %2, #4\n\t"
-		   "ldr r3, [r0, %2]\n\t"
-		   "str r3, [%0, %2]\n\t"
-		   "cmp %2, #0\n\t"
-		   "bne 0b\n\t"
-		   :
-		   : "r" (&APEX_VMA_COPY_START),
-		     "r" (offset), "r" (index)
-		  : "r0", "r3"
-		  );		  
- }
+    unsigned long index
+      = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 3 - 4) & ~3;
+    unsigned long v;
+    __asm volatile (
+		    "0: ldr %3, [%0, %2]\n\t"
+		       "str %3, [%1, %2]\n\t"
+		       "subs %2, %2, #4\n\t"
+		       "bne 0b\n\t"
+		       : "+r" (s),
+		         "+r" (d),	
+			 "+r" (index),
+			 "=&r" (v)
+		       :: "cc"
+		    );		  
 #else
   __asm volatile (
-		  "sub r0, %0, %2\n\t"
-	       "0: ldmia r0!, {r3-r10}\n\t"
-		  "stmia %0!, {r3-r10}\n\t"
-		  "cmp %0, %1\n\t"
+	       "0: ldmia %0!, {r3-r10}\n\t"
+		  "stmia %1!, {r3-r10}\n\t"
+		  "cmp %0, %2\n\t"
 		  "bls 0b\n\t"
-		  :
-		  : "r" (&APEX_VMA_COPY_START), "r" (&APEX_VMA_COPY_END),
-		    "r" (offset)
-		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"
+		  : "+r" (s), 
+		    "+r" (d)
+		  :  "r" (&APEX_VMA_COPY_END)
+		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 		  );		  
 #endif
+  }
 
   PUTC_LL ('\r');
   PUTC_LL ('\n');
@@ -113,15 +118,15 @@ void __naked __section (.bootstrap) relocate_apex (void)
   PUTHEX_LL (lr);
   PUTC_LL ('=');
   PUTC_LL ('>');
-  PUTHEX_LL (*(unsigned long*) (offset + lr));
+  PUTHEX_LL (*(unsigned long*) (lr - offset));	/* Original */
   PUTC_LL ('=');
   PUTC_LL ('=');
-  PUTHEX_LL (*(unsigned long*) (lr));
+  PUTHEX_LL (*(unsigned long*) (lr));		/* Copy */
   PUTC_LL ('\r');
   PUTC_LL ('\n');
 
 #if defined (USE_COPY_VERIFY)
-  if (*(unsigned long*) lr != *(unsigned long*) (lr + offset)) {
+  if (*(unsigned long*) lr != *(unsigned long*) (lr - offset)) {
     PUTC_LL ('@');
     PUTC_LL ('F');
     PUTC_LL ('A');
@@ -150,5 +155,6 @@ void __naked __section (.bootstrap) relocate_apex (void)
 #endif
 
 				/* Return to SDRAM */
-  __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
+  //  __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
+  __asm volatile ("mov pc, %0" : : "r" (lr));
 }

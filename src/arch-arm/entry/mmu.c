@@ -55,13 +55,13 @@
 */
 
 #include <config.h>
-#include <debug_ll.h>
 #include <mach/coprocessor.h>
 #include <attributes.h>
 #include <linux/string.h>
 #include <service.h>
 #include <apex.h>
 #include <mach/memory.h>	/* protection_for() function/macro */
+#include <debug_ll.h>
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT
@@ -134,7 +134,7 @@ void mmu_init (void)
 #endif
 		    "(1<<2)|(1<<0))\n\t"
 		    "orr %0, %0, #(1<<12)\n\t"	  /* I-cache */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (l));
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
   COPROCESSOR_WAIT;
 }
@@ -173,7 +173,7 @@ void mmu_release (void)
     for (set = 1<<(DSIZE(cache) + 6 - DASSOC(cache) - DLEN(cache)); set--; )
       for (index = 1<<DASSOC(cache); index--;) {
 	__asm volatile ("mcr p15, 0, %0, c7, c10, 2" 
-			: : "r" ((index<<assoc)|(set<<linelen))); // clean
+			:: "r" ((index<<assoc)|(set<<linelen))); // clean
       }
   }
 
@@ -188,7 +188,7 @@ void mmu_release (void)
 #endif
 		    "(1<<2)|(1<<0))\n\t"
 		    "bic %0, %0, #1<<12\n\t"	       /* I-cache */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=r" (l));
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
   COPROCESSOR_WAIT;
 

@@ -56,7 +56,7 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
     NAND_CLE = Status;
   } while ((NAND_DATA & Ready) == 0);
 #endif
-  __asm ("mov pc, lr");
+  __asm volatile ("mov pc, lr");
 }
 
 
@@ -75,7 +75,6 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 void __naked __section (.bootstrap) relocate_apex (void)
 {
   unsigned long lr;
-  extern char reloc;
 
 #if defined (EMERGENCY)
   IOCON_MUXCTL14 |=  (1<<8); 
@@ -90,15 +89,20 @@ void __naked __section (.bootstrap) relocate_apex (void)
   IOCON_RESCTL7  |=  (0xa<<12);
 #endif
 
-  __asm volatile ("mov r0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: subs r1, %1, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, r0\n\t" /* Simple return if we're reloc'd  */
-		  "add %0, r0, r1\n\t"
-		  : "=r" (lr)
-		  : "r" (&reloc)
-		  : "r0", "r1");
+  {
+    extern char reloc;
+    unsigned long offset = (unsigned long) &reloc;
+    __asm volatile ("mov %0, lr\n\t"
+		    "bl reloc\n\t"
+	     "reloc: subs %1, %1, lr\n\t"
+	     ".globl reloc\n\t"
+		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
+		    "add %0, %0, %1\n\t"   /* Adjust lr for function return */
+		    : "=r" (lr),
+		      "+r" (offset)
+		    :: "lr", "cc");
+
+  }
 
   {
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;

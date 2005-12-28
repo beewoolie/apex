@@ -95,19 +95,20 @@
 
 void __section (.bootstrap) usleep (unsigned long us)
 {
-  __asm ("str %1, [%0, #0]\n\t"
-	 "str %2, [%0, #0xc]\n\t"
-	 "str %3, [%0, #0]\n\t"
-      "0: ldr %2, [%0, #0xc]\n\t"
-	 "tst %2, %4\n\t"
-	 "beq 0b\n\t"
-	 :
-	 : "r" (TIMER1_PHYS), 
-	   "r" (0),
-	   "r" ((unsigned long) 0x8000 - (us - us/4)), /* timer counts up */
-	   "r" (TIMER_CS | TIMER_SCALE_64),
-	   "i" (0x8000)
-	 );
+  unsigned long c = (unsigned long) 0x8000 - (us - us/4); /* Timer counts up */
+  __asm volatile ("str %2, [%1, #0]\n\t"
+		  "str %0, [%1, #0xc]\n\t"
+		  "str %3, [%1, #0]\n\t"
+	       "0: ldr %0, [%1, #0xc]\n\t"
+		  "tst %0, %4\n\t"
+		  "beq 0b\n\t"
+		  : "+r" (c)
+		  :  "r" (TIMER1_PHYS), 
+		     "r" (0),
+		     "r" (TIMER_CTRL_CS | TIMER_CTRL_SCALE_64),
+		     "I" (0x8000)
+		  : "cc"
+		  );
 }
 
 
@@ -208,11 +209,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS)
+		  "1:" :: "r" (lr), "I" (SDRAM_BANK1_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
 		  , "r" (&fSDRAMBoot) 
 #endif
-		  );
+		  : "cc");
 
   PUTC_LL('r');
 

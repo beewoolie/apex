@@ -95,11 +95,13 @@ SECTIONS
 	APEX_VMA_PROBE_END = .;
 	/* The next word is the location we'll be writing to when
 	   probing.  See note in drv-mem.c. */
+	APEX_VMA_STACKS_START = .;
 	. += 32768;
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
-	. += 8192;
+	. += 4096;
 	APEX_VMA_IRQSTACK_START = .;
+	APEX_VMA_STACKS_END = .;
 	. = ALIGN (4);
 	.bss . : {		/* Normal, zeroed BSS */
 		APEX_VMA_BSS_START = .;

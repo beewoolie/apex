@@ -170,11 +170,11 @@ config DISABLE_MMU_AT_BOOT
 
 config INTERRUPTS
 	bool "Enable interrupt handlers"
-	depends on EXPERIMENTAL 
+	depends on EXPERIMENTAL && !SMALL
 	default n
 	help
-	  This feature is experimental and non-operational.  Leave it
-	  disabled.
+	  This feature is experimental.  Leave it disabled unless you
+	  know what you are doing.
 
 config SDRAMBOOT_REPORT
 	bool "Report that APEX was executed directly from SDRAM"
@@ -313,3 +313,8 @@ config RELOCATE_NAND
 
 config BIGENDIAN
 	bool
+
+config ALIGNMENT_TRAP
+	bool
+	default y
+	depends INTERRUPTS

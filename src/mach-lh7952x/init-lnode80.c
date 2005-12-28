@@ -144,19 +144,22 @@ void __naked __section (.bootstrap) usleep (unsigned long us)
        us = us_total;
      us_total -= us;
 #endif
-     __asm ("str %1, [%0, #8]\n\t"	/* Stop timer */
-	    "str %2, [%0, #0]\n\t"
-	    "str %3, [%0, #8]\n\t"
-	    "0: ldr %2, [%0, #4]\n\t"
-	    "tst %2, %4\n\t"
-	    "beq 0b\n\t"
-	    :
-	    : "r" (TIMER0_PHYS), 
-	    "r" (0),
-	    "r" ((unsigned long) ((us + 3)/4)),
-	    "r" (TIMER_ENABLE | TIMER_SCALE_256),
-	    "i" (0x8000)
-	    );
+     {
+       unsigned long c = (us + 3)/4;	/* Timer counts down */
+       __asm volatile ("str %2, [%1, #8]\n\t"	/* Stop timer */
+		       "str %0, [%1, #0]\n\t"
+		       "str %3, [%1, #8]\n\t"
+		    "0: ldr %0, [%1, #4]\n\t"
+		       "tst %0, %4\n\t"
+		       "beq 0b\n\t"
+		       : "+r" (c)
+		       : " r" (TIMER0_PHYS), 
+			 " r" (0),
+			 " r" (TIMER_ENABLE | TIMER_SCALE_256),
+			 " I" (0x8000)
+		       : "cc"
+		       );
+     }
 #if defined (USE_LONG_USLEEP)
    }
  }
@@ -238,11 +241,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 		  "movls r0, #0\n\t"
 		  "movls pc, %0\n\t"
-		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS)
+		"1:" :: "r" (lr), "I" (SDRAM_BANK1_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
 		  , "r" (&fSDRAMBoot) 
 #endif
-		  : "r0");
+		  : "cc");
 
 
   /* SDRAM Initialization
