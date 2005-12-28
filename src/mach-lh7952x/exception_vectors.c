@@ -97,21 +97,9 @@ void __naked reset_handler (void)
   PUTC_LL ('x');
   PUTC_LL ('R');
 
-  while (1)
-    ;
-
-	/* Disable MMU */
-  /* *** FIXME: we only need to disable the mmu if we've enabled it.  */
-  { 
-    unsigned long l;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "bic r0, %0, #1\n\t"
-		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
-  }
-
-
-	/* Reenter the loader */
-  __asm volatile ("mov pc, %0" :: "r" (reset));
+	/* Use the hardware to perform a reset */
+  RCPC_CTRL      |= (1<<9); /* Unlock */
+  RCPC_SOFTRESET  = 0xdead;
 }
 
 void __naked  undef_handler (void)

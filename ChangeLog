@@ -1,5 +1,13 @@
 2005-12-27  Marc Singer  <elf@buici.com>
 
+	* src/arch-arm/lib/relocate.c (relocate_apex): Improved the scarce
+	register version of the system copy routine.  It's now using the
+	same form as the fastest version.
+
+	* src/mach-lh7a40x/cmd-reset.c (cmd_reset): Added reset command
+	for the lh7a40x targets.  It used the watchdog timer to perform
+	the system reset.
+
 	* src/arch-arm/entry/entry.c (setup_c): Added code for clearing
 	stacks to a known value.
 

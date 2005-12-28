@@ -156,8 +156,8 @@ void __naked setup_c (void)
 		   "0: stmia %0!, {%2}\n\t"
 		   "   cmp %0, %1\n\t"
 		   "   bls 0b\n\t"
-		   : "=&r" (p)
-		   :   "r" (&APEX_VMA_STACKS_END), "r" (0xe5e5e5e5));
+		   : "+r" (p)
+		   :  "r" (&APEX_VMA_STACKS_END), "r" (0xe5e5e5e5));
  }
 #endif
 
@@ -168,8 +168,8 @@ void __naked setup_c (void)
 		   "0: cmp %0, %1\n\t"
 		      "stmlsia %0!, {%2}\n\t"
 		      "bls 0b\n\t"
-		   : "=&r" (p)
-		   :   "r" (&APEX_VMA_BSS_END), "r" (0));
+		   : "+r" (p)
+		   :  "r" (&APEX_VMA_BSS_END), "r" (0));
  }
 
   __asm volatile ("mov pc, lr");

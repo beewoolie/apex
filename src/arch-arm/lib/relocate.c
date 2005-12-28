@@ -36,10 +36,9 @@
 
 #include <debug_ll.h>
 
-//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
-
 #if defined (CONFIG_DEBUG_LL)
-# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+# define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
 # define USE_COPY_VERIFY
 #endif
 
@@ -90,23 +89,34 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		    "0: ldr %3, [%0, %2]\n\t"
 		       "str %3, [%1, %2]\n\t"
 		       "subs %2, %2, #4\n\t"
-		       "bne 0b\n\t"
+		       "bpl 0b\n\t"
 		       : "+r" (s),
 		         "+r" (d),	
 			 "+r" (index),
 			 "=&r" (v)
 		       :: "cc"
 		    );		  
-#else
+#elif defined (USE_SLOW_COPY)
   __asm volatile (
-	       "0: ldmia %0!, {r3-r10}\n\t"
-		  "stmia %1!, {r3-r10}\n\t"
-		  "cmp %0, %2\n\t"
+	       "0: ldmia %0!, {r3}\n\t"
+		  "stmia %1!, {r3}\n\t"
+		  "cmp %1, %2\n\t"
 		  "bls 0b\n\t"
 		  : "+r" (s), 
 		    "+r" (d)
 		  :  "r" (&APEX_VMA_COPY_END)
-		  : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
+		  : "r3", "cc"
+		  );		  
+#else
+  __asm volatile (
+	       "0: ldmia %0!, {r3-r10}\n\t"
+		  "stmia %1!, {r3-r10}\n\t"
+		  "cmp %1, %2\n\t"
+		  "bls 0b\n\t"
+		  : "+r" (s), 
+		    "+r" (d)
+		  :  "r" (&APEX_VMA_COPY_END)
+		  : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 		  );		  
 #endif
   }
