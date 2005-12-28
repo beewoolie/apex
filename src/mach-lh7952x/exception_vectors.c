@@ -44,6 +44,25 @@
    by the ATAGS structures.  It must also make sure not to modify
    registers before pushing onto the exception stack.
 
+   Reenabling Interrupts
+   ---------------------
+
+   We should reenable interrupts within the first couple of
+   instructions.  There are some issues to be aware of, however.
+   Unless we want to go through the trouble of doing everything that
+   the Linux kernel does, we'll probably want to be cautions about
+   reenabling interrupts.  The priority hardware may keep us catching
+   lower priority interrupts once we start processing one.  This will
+   require that either we be satisfied with the default priorities, or
+   we use the vectoring hardware.
+
+   Revectoring
+   -----------
+
+   The interrupt vectors use a simple pc relative ldr.  IMHO, it isn't
+   terribly awful since half of the vector addresses will be loaded in
+   a single cache line.
+
 */
 
 #include <config.h>
@@ -58,30 +77,22 @@
 extern void reset (void);
 extern void irq_handler (void);
 
-#define UART_DR		__REG(UART + 0x00)
-
 irq_return_t (*interrupt_handlers[32])(int irq);
 
 void __naked __section (.vector.0) exception_vectors (void)
 {
-  __asm ("b v_reset\n\t"		/* reset */
-	 "b v_undef_error\n\t"	/* undefined instruction */
-	 "b v_exception_error\n\t"	/* software interrupt (SWI) */
-	 "b v_prefetch_error\n\t"	/* prefetch abort */
-	 "b v_abort_error\n\t"	/* data abort */
-	 "b v_exception_error\n\t"	/* (reserved) */
-	 "b v_irq_handler\n\t"		/* irq (interrupt) */
-//	 "b v_exception_error\n\t"	/* irq (interrupt) */
-	 "b v_exception_error\n\t"	/* fiq (fast interrupt) */
+  __asm ("ldr pc, =reset_handler\n\t"		/* reset */
+	 "ldr pc, =undef_handler\n\t"		/* undefined instruction */
+	 "ldr pc, =exception_error_handler\n\t"	/* software interrupt (SWI) */
+	 "ldr pc, =prefetch_handler\n\t"	/* prefetch abort */
+	 "ldr pc, =abort_handler\n\t"		/* data abort */
+	 "ldr pc, =exception_error_handler\n\t"	/* (reserved) */
+	 "ldr pc, =irq_handler\n\t"		/* irq (interrupt) */
+	 "ldr pc, =exception_error_handler\n\t"	/* fiq (fast interrupt) */
 	 );
 }
 
-void __naked __section (.vector.1) v_irq_handler (void)
-{
-  __asm volatile ("ldr pc, =irq_handler"); /* Trampoline */
-}
-
-void __naked __section (.vector.1) v_reset (void)
+void __naked reset_handler (void)
 {
   PUTC_LL ('x');
   PUTC_LL ('R');
@@ -103,7 +114,7 @@ void __naked __section (.vector.1) v_reset (void)
   __asm volatile ("mov pc, %0" :: "r" (reset));
 }
 
-void __naked __section (.vector.1) v_undef_error (void)
+void __naked  undef_handler (void)
 {
   PUTC_LL ('x');
   PUTC_LL ('U');
@@ -112,7 +123,7 @@ void __naked __section (.vector.1) v_undef_error (void)
     ;
 }
 
-void __naked __section (.vector.1) v_prefetch_error (void)
+void __naked prefetch_handler (void)
 {
   PUTC_LL ('x');
   PUTC_LL ('P');
@@ -121,7 +132,7 @@ void __naked __section (.vector.1) v_prefetch_error (void)
     ;
 }
 
-void __naked __section (.vector.1) v_abort_error (void)
+void __naked abort_handler (void)
 {
   unsigned long far;
   unsigned long fsr;
@@ -140,45 +151,43 @@ void __naked __section (.vector.1) v_abort_error (void)
     ;
 }
 
-void __naked __section (.vector.1) v_exception_error (void)
+void __naked exception_error_handler (void)
 {
-  UART_DR = 'x';
-  UART_DR = 'E';
+  PUTC_LL ('x');
+  PUTC_LL ('E');
 
 	/* *** FIXME: this might be a good place to reset the system */
   while (1)
     ;
 }
 
-/* *** FIXME: this handler should not be in the bootstrap as this is
-   *** the portion that must fit in the first block of the loader.  In
-   *** fact, it should probably be in text. */
-
 void __irq_handler irq_handler (void)
 {
-#define C_LR	(4096)
-  static unsigned long irq_lr[C_LR];
-//  static unsigned long irq_lr; 
-  static unsigned long irq_c;
+  //#define C_LR	(4096)
+  //  static unsigned long irq_lr[C_LR];
+  //  static unsigned long irq_c;
   unsigned long v;
   int irq;
 
-  __asm volatile ("mov %0, lr, lsr #16\n\t"
-		  "cmp %0, %1\n\t"
-		  "0: bne 0" : "=&r" (v) : "r" (0x2020));
-
+  //  __asm volatile ("mov %0, lr, lsr #16\n\t"
+  //		  "cmp %0, %1\n\t"
+  //		  "0: bne 0" : "=&r" (v) : "r" (0x2020));
 
 //  __asm volatile ("ldr %0, [sp, #-1]" : "=r" (irq_lr));
-  __asm volatile ("str lr, [%0]" :: "r" (irq_lr + (irq_c%C_LR)));
-  ++irq_c;
-  barrier ();
+//  __asm volatile ("str lr, [%0]" :: "r" (irq_lr + (irq_c%C_LR)));
+//  ++irq_c;
+//  barrier ();
 
   v = VIC_IRQSTATUS;
 
   VIC_VECTADDR;		/* Tell priority hardware we're processing */
 
   /* *** FIXME: Now, I should be able to reenable interrupts so that
-     the higher priority interrupts can be handled. */
+     the higher priority interrupts can be handled.  We will have to
+     do so when we decide to handle data intensive tasks.  */
+
+  /* Check for interrupts that require processing.  Disable any that
+     don't handle their own load.  */
 
   for (irq = 0; irq < 32; ++irq) {
     if (v & (1<<irq)) {

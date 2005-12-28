@@ -38,6 +38,11 @@
    frequency by the desired interrupt interval, in this case 10ms
    (.01), and dividing that by the clock scalar of 128.
 
+   In this mode, using an interrupt as a time base, accuracy is very
+   good.  The ticks value is wrap in 2^32/(24*60*60*100) days where
+   the TIMER_LIMIT is HCLK/(128*100).  The '100' value is the number
+   of ticks per second.
+
 */
 
 #include <config.h>
@@ -97,7 +102,6 @@ void lh79524_timer_init (void)
      | TIMER_CTRL_CCL;
    TIMER_INTEN = TIMER_INTEN_CMP1;
 
-//   VIC_INTSELECT = 0;
    VIC_INTENABLE |= (1<<TIMER_IRQ);
  }
 #else
