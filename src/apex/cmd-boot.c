@@ -41,6 +41,8 @@
 #include <environment.h>
 #include <service.h>
 
+//#define CONFIG_ICACHE_BOOT
+
 #if defined (CONFIG_ATAG) 
 # include <atag.h>
 static int commandline_argc;
@@ -91,9 +93,23 @@ int cmd_boot (int argc, const char** argv)
   build_atags ();
 #endif
 
-  printf ("Booting kernel at 0x%p...\n", (void*) address);
+  printf ("Booting kernel at 0x%p"
+#if defined (CONFIG_ICACHE_BOOT)
+	  " with I-cache"
+#endif
+	  "...\n", (void*) address);
 
   release_services ();
+
+#if defined (CONFIG_ICACHE_BOOT)
+	/* Enable I-cache */
+  { 
+    unsigned long l;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
+		    "orr %0, %0, #(1<<12)\n\t"	  /* I-cache */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
+  }
+#endif
 
   ((void (*)(int, int, int)) address) (0, arch_number, CONFIG_ATAG_PHYS);
 
