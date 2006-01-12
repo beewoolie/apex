@@ -23,8 +23,10 @@ TODO:
     instruction cache while uncompressing the kernel.  I suspect that
     the gzip decompression would be noticeably faster with the
     instruction cache.  However, we don't know if the kernel will
-    tolerate the presence of the I-cache once it boots.  There is code
-    to do so, but it doesn't appear to make a different on the ARM9.
+    tolerate the presence of the I-cache once it boots.  
+
+    o There is now code to do so, but it doesn't appear to make a
+      different on the ARM9.
 
   o Copying from TFTP doesn't reliably finish.  The transfer tends to
     halt, either after no blocks, or one block.  We need to diagnose
