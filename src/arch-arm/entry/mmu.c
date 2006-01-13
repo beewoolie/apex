@@ -130,9 +130,20 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (ttbl));
   __asm volatile ("mcr p15, 0, %0, c3, c0" : : "r" (domain));
 
+#if defined CONFIG_CPU_XSCALE
+	    /* Flush caches */
+  {
+    int line;
+    unsigned long p = MVA_CACHE_CLEAN;
+    for (line = 0; line < 1024; ++line, p += 32) 
+      __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p));
+  }
+#endif
+
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
+  COPROCESSOR_WAIT;
 
 #if defined (CONFIG_CPU_XSCALE)
 		/* The XScale core guide says to do this.  It isn't
