@@ -1,5 +1,9 @@
 2006-01-13  Marc Singer  <elf@buici.com>
 
+	* src/mach-ixp42x/openslug_config: Openslug 3.1 no longer puts the
+	kernel in the jffs2 partition.  We default to reading the kernel
+	from flash.
+ 
 	* src/arch-arm/entry/mmu.c (mmu_release): In order to support
 	XScale MMU (and caches) we need to customize the MMU disabling
 	code to cope with a different method of cleaning the data cache.
