@@ -235,8 +235,8 @@ void mmu_release (void)
 #if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITHROUGH_DCACHE)
 		    "(1<<3)|"
 #endif
-		    "(1<<2)|(1<<0))\n\t"
-		    "bic %0, %0, #1<<12\n\t"	       /* I-cache */
+		    "(1<<2)|(1<<0))\n\t"		/* D-cache, MMU-EN */
+		    "bic %0, %0, #1<<12\n\t"		/* I-cache */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
   COPROCESSOR_WAIT;
@@ -244,7 +244,7 @@ void mmu_release (void)
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
-  COPROCESSOR_WAIT;	/* *** I don't believe this is necessary */
+  COPROCESSOR_WAIT;
 }
 
 static __service_1 struct service_d mmu_service = {
