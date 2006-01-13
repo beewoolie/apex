@@ -26,7 +26,13 @@ config CPU_ARMV5
 config CPU_XSCALE
 	bool
 
+config CPU_ARM7
+	bool
+
 config CPU_ARM720T
+	bool
+
+config CPU_ARM9
 	bool
 
 config CPU_ARM920T

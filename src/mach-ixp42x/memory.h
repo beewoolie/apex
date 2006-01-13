@@ -46,4 +46,14 @@
 # define RAM_BANK1_LENGTH	CONFIG_SDRAM_BANK_LENGTH
 #endif
 
+#define MVA_CACHE_CLEAN		(0x0 + 2*CONFIG_SDRAM_BANK_LENGTH)
+
+	/* MMU macro for assigning segment protection bits. */
+#define PROTECTION_FOR(p) \
+({ int v = 0;   /* uncacheable, unbuffered */ \
+   if (   (p) >= 0x0 \
+       && (p) <= 2*CONFIG_SDRAM_BANK_LENGTH)\
+     v = 3<<2;/* cacheable, buffered */ \
+   v; })
+
 #endif  /* __MEMORY_H__ */

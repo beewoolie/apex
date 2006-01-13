@@ -28,10 +28,10 @@
    Code to enable and disable the MMU.  Enabling the MMU means that we
    can use the cache.
 
-   Any target that wants to use this feature should define a function
-   in mach-X/memory.h called protection_for ();
+   Any target that wants to use this feature should define a macro
+   in mach-X/memory.h, 
 
-   int protection_for (unsigned long l);
+     PROTECTION_FOR(p)
 
    The return value is -1 to not map the segment (1MiB region of
    memory), Otherwise, return Ctt and or Btt. For example, SDRAM
@@ -52,6 +52,13 @@
    o The Linux kernel doesn't use the write-through code for the 922.
      Not sure why.
 
+
+   ARM7TDMI
+   --------
+   
+   o Supported by the same code as is used for the ARM922.
+
+   
 */
 
 #include <config.h>
@@ -72,7 +79,9 @@
 #define PROTECTION_FOR(p) (0)
 #endif
 
-//#define CONFIG_HAVE_BCR	/* Have a Bcr bit in the control register */
+#if defined CONFIG_ARCH_IXP42X
+# define CONFIG_HAVE_BCR	/* Have a Bcr bit in the control register */
+#endif
 
 #define C_PTE			(1<<12)
 
@@ -86,6 +95,10 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 
 
 /* mmu_init
+
+   performs MMU initialization.  We don't do anything very complex
+   here.  There is no protection.  The only thing we care about is
+   enabling caches and the write buffer.
 
 */
 
@@ -123,6 +136,9 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 
+		/* Added for the sake of the IXP42x. */
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
+
 	/* Enable MMU */
   { 
     unsigned long l;
@@ -139,9 +155,20 @@ void mmu_init (void)
   COPROCESSOR_WAIT;
 }
 
+
+/* mmu_protsegment
+
+   changes the protection for a region of memory given an address in
+   the region.  With segments defined in the MMU tables, this means
+   each 1MiB defines a section.
+
+*/
+
 void mmu_protsegment (void* pv, int cacheable, int bufferable)
 {
+	/* Convert address to table index/segment # */
   int i = (unsigned long) (pv) >> 20;
+
   ttbl[i] = (i<<20) 
     | (3<<10)			/* AP(R/W) */
     | (0<<5)			/* domain(0) */
@@ -150,10 +177,21 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
     | (2<<0);			/* type(section) */
 }
 
+
+/* mmu_release
+
+   performs the work to switch the MMU off before transferring to
+   another piece of code, Linux kernel, alternative boot loader.
+
+*/
+
 void mmu_release (void)
 {
 
   __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
+
+#if defined CONFIG_CPU_ARMV4
+
   {
 #define DLEN(l)		((l>>(12+0))&3)
 #define DSIZE(l)	((l>>(12+6))&7)
@@ -176,6 +214,16 @@ void mmu_release (void)
 			:: "r" ((index<<assoc)|(set<<linelen))); // clean
       }
   }
+#endif
+
+#if defined CONFIG_CPU_XSCALE
+  {
+    int line;
+    unsigned long p = MVA_CACHE_CLEAN;
+    for (line = 0; line < 1024; ++line, p += 32) 
+      __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p));
+  }
+#endif
 
 	/* Disable MMU */
   {
@@ -195,6 +243,7 @@ void mmu_release (void)
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
+  COPROCESSOR_WAIT;	/* *** I don't think this is really necessary */
 }
 
 static __service_1 struct service_d mmu_service = {
