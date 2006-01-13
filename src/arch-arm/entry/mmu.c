@@ -107,8 +107,6 @@ void mmu_init (void)
   int i;
   unsigned long domain;
 
-//  memset (ttbl, 0, sizeof (ttbl)); /* All entries produce faults */
-
   /* Fill with 1:1 mapping sections */
   for (i = 0; i < C_PTE; ++i) {
     int protection = PROTECTION_FOR (i<<20);
@@ -136,8 +134,11 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 
-		/* Added for the sake of the IXP42x. */
+#if defined (CONFIG_CPU_XSCALE)
+		/* The XScale core guide says to do this.  It isn't
+		   clear why it should be necessary, but we oblige. */
   __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
+#endif
 
 	/* Enable MMU */
   { 
@@ -243,7 +244,7 @@ void mmu_release (void)
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
-  COPROCESSOR_WAIT;	/* *** I don't think this is really necessary */
+  COPROCESSOR_WAIT;	/* *** I don't believe this is necessary */
 }
 
 static __service_1 struct service_d mmu_service = {

@@ -82,7 +82,16 @@ void __naked __section (.reset) reset (void)
      because: a preexisting bootloader fails to disable the MMU before
      calling other programs, the OS jumps to the bootloader to restart
      the machine, something else is screwy.  If the MMU mappings are
-     wonky, disabling the MMU may have dire consequences. */
+     wonky, disabling the MMU may have dire consequences. 
+
+     This is really much worse than that.  In the case of a system
+     that doesn't disable the MMU, we need to perform a batch of CP15
+     instructions to make sure the cache is correctly flushed.  Just
+     disabling the MMU isn't going to be enough.  This will have to be
+     linked in with the mmu code so that everything necessary is done.
+     I'm leaving this [broken] code here for the time being.
+  */
+
   {
     unsigned long l;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
