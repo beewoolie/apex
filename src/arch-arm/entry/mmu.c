@@ -89,6 +89,7 @@
 unsigned long __xbss(ttbl) ttbl[C_PTE];
 
 #define Icr   (1<<12)
+#define Bcr   (1<<3)
 #define Dcr   (1<<2)
 #define Btt   (1<<2)
 #define Ctt   (1<<3)
