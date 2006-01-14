@@ -152,8 +152,8 @@ void mmu_init (void)
 #if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITETHROUGH_DCACHE)
 		    "(1<<3)|"
 #endif
-		    "(1<<2)|(1<<0))\n\t"
-		    "orr %0, %0, #(1<<12)\n\t"	  /* I-cache */
+		    "(1<<2)|(1<<0))\n\t""		/* D-cache, MMU-EN */
+		    "orr %0, %0, #(1<<12)\n\t"		/* I-cache */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
   COPROCESSOR_WAIT;
