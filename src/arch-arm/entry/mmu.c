@@ -80,7 +80,7 @@
 #define PROTECTION_FOR(p) (0)
 #endif
 
-#if defined CONFIG_ARCH_IXP42X
+#if 0
 # define CONFIG_HAVE_BCR	/* Have a Bcr bit in the control register */
 #endif
 
