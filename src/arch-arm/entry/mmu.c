@@ -38,7 +38,7 @@
    should be (3<<2), NOR flash should be 0.
 
 
-   ARM922
+   ARMV4 (ARM922 & ARM720)
    ------
 
    o I-cache may be enabled without the MMU by setting the Icr bit in
@@ -53,10 +53,10 @@
      Not sure why.
 
 
-   ARM7TDMI
-   --------
-   
-   o Supported by the same code as is used for the ARM922.
+   XSCALE
+   ------
+
+   o Uses a different method for flushing caches than ARMV4.
 
    
 */
@@ -69,6 +69,7 @@
 #include <apex.h>
 #include <mach/memory.h>	/* protection_for() function/macro */
 #include <debug_ll.h>
+#include "mmu.h"
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT
@@ -129,16 +130,6 @@ void mmu_init (void)
   domain = 0xffffffff;
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (ttbl));
   __asm volatile ("mcr p15, 0, %0, c3, c0" : : "r" (domain));
-
-#if defined CONFIG_CPU_XSCALE
-	    /* Flush caches */
-  {
-    int line;
-    unsigned long p = MVA_CACHE_CLEAN;
-    for (line = 0; line < 1024; ++line, p += 32) 
-      __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p));
-  }
-#endif
 
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
@@ -202,40 +193,7 @@ void mmu_release (void)
 
   __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
 
-#if defined CONFIG_CPU_ARMV4
-
-  {
-#define DLEN(l)		((l>>(12+0))&3)
-#define DSIZE(l)	((l>>(12+6))&7)
-#define DASSOC(l)	((l>>(12+3))&7)
-#define DM(l)		((l>>(12+2))&1)
-    unsigned long cache;
-    int set, index;
-    int linelen;
-    int assoc;
-    __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
-    linelen = DLEN(cache) + 3;
-    assoc = 32 - DASSOC(cache);
-    /* *** FIXME: this docs are unclear about what to do with M==1 and
-       cleaning. */
-//    if (DM(l))
-//      assoc = 3*assoc/2;
-    for (set = 1<<(DSIZE(cache) + 6 - DASSOC(cache) - DLEN(cache)); set--; )
-      for (index = 1<<DASSOC(cache); index--;) {
-	__asm volatile ("mcr p15, 0, %0, c7, c10, 2" 
-			:: "r" ((index<<assoc)|(set<<linelen))); // clean
-      }
-  }
-#endif
-
-#if defined CONFIG_CPU_XSCALE
-  {
-    int line;
-    unsigned long p = MVA_CACHE_CLEAN;
-    for (line = 0; line < 1024; ++line, p += 32) 
-      __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p));
-  }
-#endif
+  CACHE_FLUSH;
 
 	/* Disable MMU */
   {

@@ -34,6 +34,7 @@
 #include <asm/bootstrap.h>
 #include <debug_ll.h>
 #include <mach/coprocessor.h>
+#include "mmu.h"
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT
@@ -77,6 +78,12 @@ void __naked __section (.reset) reset (void)
 
 #if defined (CONFIG_DISABLE_MMU_AT_BOOT)
 
+# if defined (CONFIG_CPU_XSCALE)
+	/* Unlock caches */
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"
+		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0));
+# endif
+
   /* This disables the MMU, but there should be no reason to include
      it.  However, there are some instances where it is necessary
      because: a preexisting bootloader fails to disable the MMU before
@@ -100,6 +107,14 @@ void __naked __section (.reset) reset (void)
 		    );
     COPROCESSOR_WAIT;
   }
+
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
+  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
+  COPROCESSOR_WAIT;
+
+  CACHE_FLUSH;
+
 #endif
 
 #if defined (CONFIG_BIGENDIAN)
