@@ -29,7 +29,7 @@
 #define _DM(l)		((l>>(12+2))&1)
 
 #define CACHE_FLUSH\
-  { unsigned long cache; int set, index; int linelen; int assoc;\
+  ({ unsigned long cache; int set, index; int linelen; int assoc;\
     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));\
     linelen = _DLEN(cache) + 3;\
     assoc = 32 - _DASSOC(cache);\
@@ -38,7 +38,11 @@
     for (set = 1<<(_DSIZE(cache) + 6 - _DASSOC(cache) - _DLEN(cache)); \
 	 set--; )\
       for (index = 1<<_DASSOC(cache); index--;) {\
-	__asm volatile ("mcr p15, 0, %0, c7, c10, 2" \
-			:: "r" ((index<<assoc)|(set<<linelen))); } }
+	 __asm volatile ("mcr p15, 0, %0, c7, c10, 2" \
+			:: "r" ((index<<assoc)|(set<<linelen))); } })
+
+#define CACHE_UNLOCK\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
+		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
 
 #endif  /* __MMU_ARMV4_H__ */

@@ -28,7 +28,7 @@
 	/* Flush all entries in data cache */
 #define CACHE_FLUSH\
   ({ int line; unsigned long p = MVA_CACHE_CLEAN;\
-    for (line = 0; line < 1024; ++line, p += 32) \
-      __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p)); })
+     for (line = 0; line < 1024; ++line, p += 32) \
+       __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p)); })
 
 #endif  /* __MMU_XSCALE_H__ */

@@ -25,6 +25,14 @@
 # include "mmu-xscale.h"
 #endif
 
+#if !defined (CACHE_FLUSH)
+# define CACHE_FLUSH
+#endif
+
+#if !defined (CACHE_UNLOCK)
+# define CACHE_UNLOCK
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

@@ -78,11 +78,7 @@ void __naked __section (.reset) reset (void)
 
 #if defined (CONFIG_DISABLE_MMU_AT_BOOT)
 
-# if defined (CONFIG_CPU_XSCALE)
-	/* Unlock caches */
-  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"
-		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0));
-# endif
+  CACHE_UNLOCK;
 
   /* This disables the MMU, but there should be no reason to include
      it.  However, there are some instances where it is necessary
@@ -96,7 +92,7 @@ void __naked __section (.reset) reset (void)
      instructions to make sure the cache is correctly flushed.  Just
      disabling the MMU isn't going to be enough.  This will have to be
      linked in with the mmu code so that everything necessary is done.
-     I'm leaving this [broken] code here for the time being.
+     I'm leaving this [somewhat broken] code here for the time being.
   */
 
   {
