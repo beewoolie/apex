@@ -1,3 +1,12 @@
+2006-01-20  Marc Singer  <elf@buici.com>
+
+	* src/lib/pngr.c (read_pngr_plte): When found, a palette is read
+	from the PNG file and stored for the decoder.
+
+	* src/drivers-lh/drv-clcdc.c (cmd_splash): Added support for
+	palettized images, but only at 8 bits per pel.  Other pel sizes
+	require unpacking of the image data.
+
 2006-01-13  Marc Singer  <elf@buici.com>
 
 	* src/mach-ixp42x/openslug_config: Openslug 3.1 no longer puts the
