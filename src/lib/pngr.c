@@ -188,7 +188,7 @@ static int next_chunk (struct png* png)
   }
 
 //  printf ("%s: reading chunk header %d\n",
-	  __FUNCTION__, sizeof (struct chunk));
+//	  __FUNCTION__, sizeof (struct chunk));
   png->ib = 0;
   if (png->d->driver->read (png->d, &png->c.length, sizeof (struct chunk))
       != sizeof (struct chunk))
