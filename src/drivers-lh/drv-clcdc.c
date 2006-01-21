@@ -121,6 +121,7 @@
 #define BOTTOM_MARGIN	(5)
 #define HSYNC_WIDTH	(61)
 #define VSYNC_WIDTH	NS_TO_CLOCK (60, PEL_CLOCK)
+#define INVERT_PIXEL_CLOCK
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
@@ -309,7 +310,10 @@ static void clcdc_init (void)
     | PPL (PEL_WIDTH);
   CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH) 
     | LPP (PEL_HEIGHT);
-  CLCDC_TIMING2   = CPL | IPC
+  CLCDC_TIMING2   = CPL
+#if defined (INVERT_PIXEL_CLOCK)
+    | IPC
+#endif
 #if defined (INVERT_HSYNC)
     | IHS
 #endif
@@ -385,6 +389,8 @@ int cmd_splash (const char* region)
   void* pv;
   struct png_header hdr;
   unsigned short* ps = buffer;
+  int cPalette = 0;
+  unsigned char* rgbPalette;
   int i;
   int j;
 
@@ -415,15 +421,35 @@ int cmd_splash (const char* region)
 	goto fail_close;
       }
       switch (hdr.color_type) {
-      case 2:			/* RGB */
+
+      case 2:		/* RGB */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = 0
-	    +   ((pb[j*3    ] & 0xf8) >> 3)
-	    +   ((pb[j*3 + 1] & 0xf8) << 2)
-	    +   ((pb[j*3 + 2] & 0xf8) << 7)
+	  *ps = ((pb[j*3    ] & 0xf8) >> 3) /* R */
+	    +   ((pb[j*3 + 1] & 0xf8) << 2) /* G */
+	    +   ((pb[j*3 + 2] & 0xf8) << 7) /* B */
 	    ;
 	break;
-      case 6:			/* RGBA */
+
+      case 3:		/* Palettized */
+	if (!cPalette)
+	  cPalette = palette_pngr (pv, &rgbPalette);
+	switch (hdr.bit_depth) {
+	case 1:
+	case 2:
+	case 4:
+	  break;		/* unimplemented */
+	case 8:
+	  for (j = 0; j < hdr.width; ++j, ++ps) {
+	    unsigned char* color = &rgbPalette[pb[j]*3];
+	    *ps = ((color[0] & 0xf8) >> 3)
+	      +   ((color[1] & 0xf8) << 2)
+	      +   ((color[2] & 0xf8) << 7)
+	    ;
+	  }
+	}
+	break;
+
+      case 6:		/* RGBA */
 	for (j = 0; j < hdr.width; ++j, ++ps)
 	  *ps = ((pb[j*4    ] & 0xf8) >> 3)
 	    +   ((pb[j*4 + 1] & 0xf8) << 2)
@@ -435,7 +461,7 @@ int cmd_splash (const char* region)
   }
 
  fail_close:
-  close_png (pv);
+  close_pngr (pv);
 
  fail_early:
   close_descriptor (&d);

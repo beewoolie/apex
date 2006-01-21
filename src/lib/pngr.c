@@ -107,9 +107,6 @@ struct chunk {
 struct png {
   struct descriptor_d* d;
 
-//  const unsigned char* pb;
-//  size_t cb;
-
   struct chunk c;		/* Current chunk */
   ssize_t ib;			/* Index within the chunk */
 
@@ -120,10 +117,15 @@ struct png {
   char* pbThis;
   char* pbPrev;
 
+  char rgbPalette[256*3];	/* Room for largest palette */
+  int cPalette;			/* Number of entries in the palette */
+
   z_stream z;			/* Decompressor context */
 };
 
 static struct png png;
+
+static void read_pngr_plte (struct png* png);
 
 static inline int paeth_predictor (int a, int b, int c)
 {
@@ -186,7 +188,7 @@ static int next_chunk (struct png* png)
   }
 
 //  printf ("%s: reading chunk header %d\n",
-//	  __FUNCTION__, sizeof (struct chunk));
+	  __FUNCTION__, sizeof (struct chunk));
   png->ib = 0;
   if (png->d->driver->read (png->d, &png->c.length, sizeof (struct chunk))
       != sizeof (struct chunk))
@@ -204,6 +206,8 @@ void* open_pngr (struct descriptor_d* d)
   zlib_heap_reset ();
   png.pbThis = 0;		/* In lieu of free */
   png.pbPrev = 0;		/* In lieu of free */
+  png.pbPrev = 0;		/* In lieu of free */
+  png.cPalette = 0;		/* In lieu of free */
 
 //  printf ("%s\n", __FUNCTION__); 
 
@@ -269,6 +273,22 @@ void* open_pngr (struct descriptor_d* d)
   return &png;
 }
 
+
+/* palette_pngr
+
+   returns the count of palette entries in the most recently read
+   palette as well as a pointer to the data.  The return value is zero
+   if there is no palette.  Even if the palette is empty, the pointer
+   returned points to valid memory.
+
+*/
+
+int palette_pngr (void* pv, unsigned char** prgb)
+{
+  *prgb = ((struct png*) pv)->rgbPalette;
+  return ((struct png*) pv)->cPalette;
+}
+
 int read_pngr_ihdr (void* pv, struct png_header* hdr)
 {
 	/* Read from our cached/fixed-up copy */
@@ -308,6 +328,10 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 	while (result = next_chunk (png), result == 0) {
 	  if (memcmp (&png->c.id, "IEND", 4) == 0)
 	    return -1;		/* End of image data */
+	  if (memcmp (&png->c.id, "PLTE", 4) == 0) {
+	    read_pngr_plte (png);
+	    continue;
+	  }
 	  if (memcmp (&png->c.id, "IDAT", 4) == 0)
 	    break;
 	}
@@ -334,6 +358,21 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 
   return cb - png->z.avail_out;
 }
+
+
+/* read_pngr_plte
+
+   is called when a palette chunk is found.  We just copy the data out
+   to the PNG structure in case the user's decoder wants to use it.
+
+*/
+
+static void read_pngr_plte (struct png* png)
+{
+  png->cPalette = png->c.length/3;
+  pngr_read (png, png->rgbPalette, png->c.length);
+}
+
 
 const unsigned char* read_pngr_row (void* pv)
 {
@@ -419,7 +458,4 @@ void close_pngr (void* pv)
   inflateEnd (&png->z);
 
   png->d = 0;
-
-//  png->pb = 0;
-//  png->cb = 0;
 }

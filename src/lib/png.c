@@ -89,6 +89,9 @@ struct png {
   char* pbThis;
   char* pbPrev;
 
+  char rgPalette[256*3];	/* Largest palette */
+  int cPalette;			/* Number of entries in the palette */
+
   z_stream z;			/* Decompressor context */
 };
 
@@ -140,11 +143,26 @@ static int next_chunk (struct png* png)
   return 0;
 }
 
+/* read_palette
+
+   is called when a palette chunk is found.  We just copy the data out
+   to the PNG structure in case the user's decoder wants to use it.
+
+*/
+
+static void read_palette (struct* png)
+{
+  png->cPalette = png->c.length/3;
+
+}
+
+
 void* open_png (const void* pv, size_t cb)
 {
   zlib_heap_reset ();
   png.pbThis = 0;		/* In lieu of free */
   png.pbPrev = 0;		/* In lieu of free */
+  png.cPalette = 0;		/* In lieu of free */
 
 //  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
 
@@ -214,6 +232,22 @@ void* open_png (const void* pv, size_t cb)
   return &png;
 }
 
+
+/* palette_png
+
+   returns the count of palette entries in the most recently read
+   palette as well as a pointer to the data.  The return value is zero
+   if there is no palette.  Even if the palette is empty, the pointer
+   returned points to valid memory.
+
+*/
+
+int palette_png (void* pv, const unsigned char** prgb)
+{
+  prgb = ((struct png*) pv)->rgbPalette;
+  return ((struct png*) pv)->cPalette;
+}
+
 int read_png_ihdr (void* pv, struct png_header* hdr)
 {
   memcpy (hdr, &((struct png*) pv)->hdr, sizeof (struct png_header));
@@ -237,7 +271,7 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
       return -1;
   }
 
-	/* Find next IDAT chunk */
+	/* Find next chunk, IDAT especially */
   if (png->z.avail_in == 0) {
 //    printf ("%s: search for idat\n", __FUNCTION__); 
     while (next_chunk (png) == 0) {
@@ -246,6 +280,9 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
       if (memcmp (&png->c.id, "IEND", 4) == 0)
 	return -1;
+      if (memcmp (&png->c.id, "PLTE", 4) == 0)
+	read_palette (
+
       if (memcmp (&png->c.id, "IDAT", 4) == 0)
 	break;
     }
