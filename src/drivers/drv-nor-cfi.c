@@ -259,7 +259,7 @@ static void nor_init_chip (unsigned long phys)
 	  NOR_WIDTH, NOR_CHIP_MULTIPLIER);
 
   REGA (phys) = CMD (ReadArray);
-  REGA (phys) = CMD (ReadQuery);
+  REGA (phys + (0x55 << WIDTH_SHIFT)) = CMD (ReadQuery);
 
   if (   REGA (phys + (0x10 << WIDTH_SHIFT)) != QRY('Q')
       || REGA (phys + (0x11 << WIDTH_SHIFT)) != QRY('R')
@@ -462,6 +462,10 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
   size_t cbWrote = 0;
   unsigned long pageLast = -1;
 
+  if (!chip->writebuffer_size)
+    ERROR_RETURN (ERROR_UNSUPPORTED,
+		  "flash chip doesn't support buffered writes");
+
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
@@ -588,7 +592,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   int cbWrote = 0;
-  unsigned long pageLast = -1;
+  unsigned long pageLast = ~0;
 
   while (cb) {
     unsigned long index = d->start + d->index;

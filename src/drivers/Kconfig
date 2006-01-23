@@ -68,14 +68,13 @@ config DRIVER_NOR_CFI_NO_BUFFERED
 	default n
 	help
 	  This option disables the buffered write code in the CFI NOR
-	  flash driver.  While the driver detects the capability of
-	  buffered writes in the flash chip, there are reports that
-	  some flash chips fail to perform them properly.  This option
-	  disables the buffered write code in favor of the slower,
-	  single byte write code.
+	  flash driver.  APEX is built with only one CFI flash write
+	  routine.  If the target has flash without a write buffer,
+	  this option must be used to force the driver to include the
+	  slower, unbuffered write code.
 
-	  Leave this option set to 'N' unless you know what you are
-	  doing.
+	  Leave this option set to 'N' unless your target is
+	  experiencing problems using the buffered write routine.
 
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"
