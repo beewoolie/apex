@@ -166,6 +166,8 @@
 
 #if defined (CONFIG_LCD_10_4_VGA_10)
 	/* Sharp PN LQ10D368 */
+/* The full horozontal cycle (Th) is clock/750/800/900. */
+/* The full vertical   cycle (Tv) is line/515/525/560. */
 #define PANEL_NAME	"LCD 10.4\" VGA"
 #define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
@@ -175,11 +177,11 @@
 #define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(21)
-#define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(34)	/* 34 */
-#define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
-#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define RIGHT_MARGIN	(800-21-640-96)
+#define TOP_MARGIN	(34)			/* lines/34 (480 line mode)*/
+#define BOTTOM_MARGIN	(540-34-480-2)
+#define HSYNC_WIDTH	(96)			/* clocks/2/96/200 */
+#define VSYNC_WIDTH	(2)			/* lines/1/?/34 */
 #define INVERT_HSYNC
 #define INVERT_VSYNC
 #endif
