@@ -63,6 +63,7 @@
 #include <config.h>
 #include <spinner.h>
 #include <asm/reg.h>
+#include <error.h>
 
 #include <mach/nor-cfi.h>
 
