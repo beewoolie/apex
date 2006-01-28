@@ -228,7 +228,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* *** 0x17ef was good enough for JTAG */
   IOCON_MEMMUX = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
 
-  SMC_BCR0 = 0x100020ef; /* NOR flash */
+  /* NOR flash */
+  if (CPLD_REVISION < 0x0021)
+    SMC_BCR0 = 0x100020ef;	/* BLE used for write-enable; old boards */
+  else
+    SMC_BCR0 = 0x100024ef;	/* WE used for write-enable */
+  
 
 //  SMC_BCR4 = 0x10007580; /* CompactFlash */
 //  SMC_BCR5 = 0x100034c0; /* CPLD */
