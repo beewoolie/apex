@@ -157,7 +157,6 @@
 #else
 # define _SDRAM_MODE_SETUP	(0x00210008)	// CAS2, RAStoCAS2, 32 bit
 # define _SDRAM_MODE		(0x01210008)	// Add autoprecharging
-//# define SDRAM_MODE		(0x01210028)	// Add autoprecharging SROMLL
 #endif
 
 #define SDRAM_MODE_SETUP	_SDRAM_MODE_SETUP | SDRAM_MODE_SROMLL
