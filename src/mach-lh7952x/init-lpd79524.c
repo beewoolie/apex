@@ -41,26 +41,29 @@
 
 //#define USE_SLOW
 
-#if defined (USE_SLOW)
-# define EMC_RASCAS_V	((3<<0)|(3<<8))	// RAS3, CAS3
-#else
-# define EMC_RASCAS_V	((3<<0)|(2<<8))	// RAS3, CAS2
-#endif
-
-#if defined (USE_SLOW)
-# define SDRAM_CHIP_MODE	(0x32<<11)	// CAS3 BURST4
-#else
-# define SDRAM_CHIP_MODE	(0x22<<11)	// CAS2 BURST4
-#endif
-
 	// SDRAM
-#define SDRAM_RASCAS		EMC_RASCAS_V
 #if defined (CONFIG_SDRAM_FORCE16BIT)
-# define SDRAM_CFG_SETUP	((0<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+# define SDRAM_CFG_SETUP	((0<<14)|(1<<12)|(2<<9)|(1<<7)) /*16LP;8Mx16*/
+# define SDRAM_MODE_SHIFT	10
+# define SDRAM_BURST		3
 #else
 # define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+# define SDRAM_MODE_SHIFT	11
+# define SDRAM_BURST		2
 #endif
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
+
+#define SDRAM_RAS		3
+
+#if defined (USE_SLOW)
+# define SDRAM_CAS		3
+#else
+# define SDRAM_CAS		2
+#endif
+
+#define SDRAM_RASCAS		((SDRAM_RAS<<0)|(SDRAM_CAS<<8))
+#define SDRAM_CHIP_MODE\
+	(((SDRAM_BURST<<0)|(SDRAM_CAS<<4))<<SDRAM_MODE_SHIFT)
 
 
 /* usleep

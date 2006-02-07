@@ -1,5 +1,11 @@
 2006-02-07  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7952x/init-lpd79524.c: Reworked SDRAM initialization.
+	Now, we can init the CPU with a 16 bit SDRAM bus even if the SDRAM
+	chips are configured in a 32 bit bus.  Half of the SDRAM will idle
+	in this configuration, but we can test CPU performance with the 16
+	bit bus.
+	
 	* src/mach-lh7a40x/cmd-cp15test.c: Added a cp15 test register
 	manipulation function.
 
