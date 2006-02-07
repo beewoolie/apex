@@ -1,3 +1,8 @@
+2006-02-07  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7a40x/cmd-cp15test.c: Added a cp15 test register
+	manipulation function.
+
 2006-02-06  Marc Singer  <elf@buici.com>
 
 	* lh7a404_config: Setting default memory mode to SROM_LL.

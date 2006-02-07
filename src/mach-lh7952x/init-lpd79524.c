@@ -55,7 +55,11 @@
 
 	// SDRAM
 #define SDRAM_RASCAS		EMC_RASCAS_V
-#define SDRAM_CFG_SETUP		((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+#if defined (CONFIG_SDRAM_FORCE16BIT)
+# define SDRAM_CFG_SETUP	((0<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+#else
+# define SDRAM_CFG_SETUP	((1<<14)|(1<<12)|(3<<9)|(1<<7)) /*32LP;16Mx16*/
+#endif
 #define SDRAM_CFG		(SDRAM_CFG_SETUP | (1<<19))
 
 

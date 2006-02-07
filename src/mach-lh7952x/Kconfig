@@ -114,6 +114,16 @@ config SDRAM_BANK1
 	depends on !MACH_LNODE80
 	default y if MACH_KEV79524 
 
+config SDRAM_FORCE16BIT
+	bool "Force SDRAM bus width to 16 bits"
+	depends on ARCH_LH79524
+	help
+	  This option allow for performance testing of the SDRAM
+	  memory bus.  It configures the SDRAM controller to use only
+	  the lower 16 bits of the bus, emulating [sic] the LH79525.
+
+	  There is no good reason to use the option for production systems. 
+
 config NOR_BUSWIDTH
 	int "Width of NOR flash bus"
 	default "16"

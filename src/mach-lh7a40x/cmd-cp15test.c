@@ -25,17 +25,15 @@
    DESCRIPTION
    -----------
 
-   Support for fiddling with the ARM922 CP15 test register(s).
+   Support for fiddling with the ARM920T/ARM922T CP15 test
+   registers.
 
 */
 
 #include <config.h>
 #include <apex.h>
 #include <command.h>
-//#include <service.h>
 #include <linux/string.h>
-
-//#include "hardware.h"
 
 #define TEST_DCACHE_STREAMING	(1<<12)
 #define TEST_ICACHE_STREAMING	(1<<11)
