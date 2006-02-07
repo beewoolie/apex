@@ -88,7 +88,7 @@ static __command struct command_d c_cp15test = {
   .func = (command_func_t) cmd_cp15test,
   COMMAND_HELP(
 "test\n"
-"  Modify the CP15 test register.\n"
+"  Modify the CP15 test register.  Beware, these are dangerous features.\n"
 "  The valid OPs are:\n"
 "    ds    - enable DCache streaming\n"
 "    is    - enable ICache streaming\n"
