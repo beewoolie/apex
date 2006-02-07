@@ -1,5 +1,7 @@
 2006-02-07  Marc Singer  <elf@buici.com>
 
+	* Makefile: 1.3.16
+
 	* src/mach-lh7952x/init-lpd79524.c: Reworked SDRAM initialization.
 	Now, we can init the CPU with a 16 bit SDRAM bus even if the SDRAM
 	chips are configured in a 32 bit bus.  Half of the SDRAM will idle
