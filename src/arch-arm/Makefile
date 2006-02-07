@@ -40,7 +40,7 @@ tune-$(CONFIG_CPU_ARM925T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_ARM926T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_XSCALE)  :=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
 
-CFLAGS+= $(arch-y) $(tune-y)
+CFLAGS+= $(arch-y) $(tune-y) -Wall
 
 ifneq ($(CONFIG_THUMB),)
 CFLAGS+= -mthumb-interwork

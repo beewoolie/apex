@@ -150,4 +150,12 @@ config CMD_CLCDC_TEST
 	help
 	  These sub-commands help with testing the CLCDC controller.
 
+config CMD_ARM920_TEST
+	bool "Define ARM920 CPU test sub-commands"
+	depends on CPU_ARM920T || CPU_ARM922T
+	default n
+	help
+	  These sub-commands allow for changes to the CP15 test
+	  registers.
+
 endmenu

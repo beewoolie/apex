@@ -107,13 +107,13 @@ config ARCH_LH7A400
 	bool
 	select CPU_ARMV4
 	select CPU_ARM9
-	select CPU_ARM920T
+	select CPU_ARM922T
 
 config ARCH_LH7A404
 	bool
 	select CPU_ARMV4
 	select CPU_ARM9
-	select CPU_ARM920T
+	select CPU_ARM922T
 
 config MACH_LPD7A40X
 	bool
