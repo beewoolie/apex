@@ -1,3 +1,7 @@
+2006-02-06  Marc Singer  <elf@buici.com>
+
+	* lh7a404_config: Setting default memory mode to SROM_LL.
+
 2006-01-20  Marc Singer  <elf@buici.com>
 
 	* src/lib/pngr.c (read_pngr_plte): When found, a palette is read
