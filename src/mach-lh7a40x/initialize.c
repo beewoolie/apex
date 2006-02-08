@@ -41,10 +41,15 @@
 /* Static Memory Controller
    ------------------------
 
-   In order to better support user needs WRT static memory regions, we
-   do not change the default timing or alignment for any of the the
-   SMC regions.  This means the reading from flash, for example, will
-   be slow.  However, it does mean the greatest compatibility.
+   While we must be circumspect about reprogramming the SRAM
+   controller, especially the NOR flash region when we are booting
+   from it, the default timings are quite slow.  So, we still
+   reprogram the SRAM controller regions, but we have to have special
+   settings for each target.
+
+   The code could check the bus width and leave the settings intact if
+   there is a mismatch.  Still, the boot loader won't do anything if
+   it flubs that part, so it seems better to go for speed.
 
 */
 
@@ -143,23 +148,34 @@
 //#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
 //#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 
+#define SDCSC_CASLAT(v)		((v - 1)<<16) /* CAS latency */
+#define SDCSC_RASTOCAS(v)	(v<<20) /* RAS to CAS latency */
+#define SDCSC_BANKCOUNT_2	(0<<3) /* BankCount, 2 bank devices */
+#define SDCSC_BANKCOUNT_4	(1<<3) /* BankCount, 4 bank devices */
+#define SDCSC_EBW_16		(1<<2) /* ExternalBuswidth, 16 bits w/burst length of 8 */
+#define SDCSC_EBW_32		(0<<2) /* ExternalBusWidth, 32 bits w/burst length of 4 */
+#define SDCRC_AUTOPRECHARGE	(1<24)
+
 #if defined (CONFIG_SDRAM_CONTIGUOUS)
 #define SDRAM_MODE_SROMLL	(1<<5)
 #else
 #define SDRAM_MODE_SROMLL	(0)
 #endif
 
-// SDRAM
 #if defined (USE_SLOW)
-# define _SDRAM_MODE_SETUP	(0x00320008)	// CAS3, RAStoCAS3, 32 bit
-# define _SDRAM_MODE		(0x01320008)	// Add autoprecharging
+# define SDRAM_CAS		3
+# define SDRAM_RAS		3
 #else
-# define _SDRAM_MODE_SETUP	(0x00210008)	// CAS2, RAStoCAS2, 32 bit
-# define _SDRAM_MODE		(0x01210008)	// Add autoprecharging
+# define SDRAM_CAS		2
+# define SDRAM_RAS		2
 #endif
 
-#define SDRAM_MODE_SETUP	_SDRAM_MODE_SETUP | SDRAM_MODE_SROMLL
-#define SDRAM_MODE		_SDRAM_MODE	  | SDRAM_MODE_SROMLL
+#define SDRAM_MODE_SETUP	( ((SDRAM_CAS - 1)<<16)\
+				 | (SDRAM_RAS << 20)\
+				 | SDCSC_EBW_32\
+				 | SDCSC_BANKCOUNT_4\
+				 | SDRAM_MODE_SROMLL)
+#define SDRAM_MODE		(SDRAM_MODE_SETUP | SDCRC_AUTOPRECHARGE)
 
 
 /* usleep
@@ -281,6 +297,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	   disabled which breaks the CPLD handling of chip
 	   selects. */
   SMC_PCMCIACON |= 0x3;		/* Enable both PCMCIA slots */
+
 #if defined (SMC_BCR0_V)
   SMC_BCR0 = SMC_BCR0_V;
 #endif
@@ -367,7 +384,7 @@ static void target_release (void)
 {
 #if defined (CPLD_FLASH)
   /* Flash is enabled for the kernel */
-  CPLD_FLASH |=  CPLD_FLASH_FL_VPEN;
+  CPLD_FLASH |= CPLD_FLASH_FL_VPEN;
 #endif
 }
 
