@@ -128,7 +128,6 @@
 //#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
 //#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
 
-/* LOLO 2.0.3 */
 #if defined (CONFIG_MACH_TROUNCER)
 # define SMC_BCR0_V		(0x1000fce1)	// Bootflash
 #endif
@@ -246,12 +245,18 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 	    FastBus mode, GCLK sources from BCLK and FCLK is
 	      ignored.  The BCLK signal controls both the ARM core
-	      as well as the AMBA ASB interface.
+	      as well as the AMBA AHB interface.
 	    Synchronous mode, GCLK is sourced from BCLK or FCLK.
 	      FCLK must be faster than BCLK.
 	      FCLK must be an integer multiple of BCLK.
 	    Asynchronous mode, GCLK is sourced from BCLK or FCLK.
 	      FCLK must be faster than BCLK.
+
+	    Use either synchronous or asynchronous mode for normal
+	    system operation.  Synchronous is more efficient because
+	    there is no cycle penalty for synchronizing the CPU to the
+	    bus.
+
   */
 
   {
