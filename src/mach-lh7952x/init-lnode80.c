@@ -153,10 +153,10 @@ void __naked __section (.bootstrap) usleep (unsigned long us)
 		       "tst %0, %4\n\t"
 		       "beq 0b\n\t"
 		       : "+r" (c)
-		       : " r" (TIMER0_PHYS), 
-			 " r" (0),
-			 " r" (TIMER_ENABLE | TIMER_SCALE_256),
-			 " I" (0x8000)
+		       : "r" (TIMER0_PHYS), 
+			 "r" (0),
+			 "r" (TIMER_ENABLE | TIMER_SCALE_256),
+			 "I" (0x8000)
 		       : "cc"
 		       );
      }
