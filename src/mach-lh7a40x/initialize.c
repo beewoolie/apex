@@ -28,6 +28,20 @@
    Hardware initializations.  Some initializationmay be left to
    drivers, such as the serial interface initialization.
 
+   CAS/RAS
+   
+     There have been problems with the performance of the memory
+     subsystem while a fast LCD panel is in use.  We found that the
+     display would glitch during high system activity.  The solution
+     has been to relax the RAS timing from 2 to 3.  The Wince loader
+     uses a RAS of 2 and a CAS of 3, but I found that that wasn't
+     working.
+
+     The spec on the Micron memory for the -75 part with a 100MHz
+     SDCLK is for a CAS latency of 2.
+
+     Looks like this isn't all of it.  
+
 */
 
 #include <config.h>
@@ -116,12 +130,6 @@
 #define SDRAM_REFRESH_CHARGING	(10)		// HCLKs, 10 //100MHz -> 100ns
 #define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
 
-#if defined (USE_SLOW)
-# define SDRAM_CHIP_MODE	(0x32<<10)	// CAS3 BURST4
-#else
-# define SDRAM_CHIP_MODE	(0x22<<10)	// CAS2 BURST4
-#endif
-
 // SRAM devices
 //#define SMC_BCR0_V		(0x200039af)	// Bootflash
 //#define SMC_BCR6_V		(0x1000fbe0)	// CompactFlash
@@ -162,13 +170,10 @@
 #define SDRAM_MODE_SROMLL	(0)
 #endif
 
-#if defined (USE_SLOW)
-# define SDRAM_CAS		3
-# define SDRAM_RAS		3
-#else
-# define SDRAM_CAS		2
-# define SDRAM_RAS		2
-#endif
+#define SDRAM_CAS		2 /* By Micron specification */
+#define SDRAM_RAS		3
+
+#define SDRAM_CHIP_MODE		(((SDRAM_CAS << 4) | 2)<<10) /* BURST4 */
 
 #define SDRAM_MODE_SETUP	( ((SDRAM_CAS - 1)<<16)\
 				 | (SDRAM_RAS << 20)\

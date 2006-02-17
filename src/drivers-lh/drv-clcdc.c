@@ -146,6 +146,8 @@
 
 #if defined (CONFIG_LCD_6_4_VGA_10)
 	/* Sharp PN LQ64D343 */
+/* The full horozontal cycle (Th) is clock/770/800/900. */
+/* The full vertical   cycle (Tv) is line/515/525/560. */
 #define PANEL_NAME	"LCD 6.4\" VGA"
 #define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
@@ -154,12 +156,14 @@
 #define PEL_HEIGHT	(480)
 #define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(21)
-#define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(34)	/* 34 */
-#define BOTTOM_MARGIN	(5)
+
+#define LEFT_MARGIN	(32)
+#define RIGHT_MARGIN	(800-32-640-96)
+#define TOP_MARGIN	(33)	/* 34 */
+#define BOTTOM_MARGIN	(540-33-480-2)
 #define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
-#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
+#define VSYNC_WIDTH	(2)	/* 2-?-34 lines */
+
 #define INVERT_HSYNC
 #define INVERT_VSYNC
 #endif
@@ -497,7 +501,17 @@ int cmd_clcdc (int argc, const char** argv)
   if (strcmp (argv[1], "bars") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
-      if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
+      if (i < PEL_WIDTH 
+	  || i%PEL_WIDTH == 0
+	  || i%PEL_WIDTH == PEL_WIDTH - 1
+	  || i > (PEL_HEIGHT - 1)*PEL_WIDTH)
+	buffer[i] = 0xffff;
+      else if (i < PEL_WIDTH*2 
+	  || i%PEL_WIDTH == 1
+	  || i%PEL_WIDTH == PEL_WIDTH - 2
+	  || i > (PEL_HEIGHT - 2)*PEL_WIDTH)
+	buffer[i] = 0x0000;
+      else if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = 0xffff;
       else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
