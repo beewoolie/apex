@@ -33,7 +33,7 @@
 #include <attributes.h>
 
 /* *** FIXME: this heap can't really cut it, can it? */
-#define CB_HEAP   (256*1024)
+#define CB_HEAP   (512*1024)
 static unsigned char __xbss(zlib) heap [CB_HEAP]; /* Fake heap */
 static size_t heap_allocated;	/* Bytes allocated on the heap */
 

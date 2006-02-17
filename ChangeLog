@@ -1,5 +1,8 @@
 2006-02-17  Marc Singer  <elf@buici.com>
 
+	* src/lib/zlib-heap.c (CB_HEAP): Increased the size of the heap so
+	I can decompress very large PNG images.
+
 	* Makefile:  1.3.17
 
 	* src/drivers-lh/drv-clcdc.c: New timings for the 6.4" display.
