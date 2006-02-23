@@ -28,6 +28,13 @@
    Hardware initializations for the LPD79524.  Some initializations
    may be left to drivers, such as the serial interface and timer.
 
+   CompactFlash Timing
+
+     I've tightened the timing on the ISA/CF region of memory.  The
+     read and write cycles use a 180ns delay instead of the default
+     which is 640ns.  The faster timing is well within the CF spec of
+     150ns/165ns for write/read minimum hold times.
+
 */
 
 #include <config.h>
@@ -205,6 +212,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_SWAITPAGE1  = 2;
   EMC_SWAITWR1    = 6;
   EMC_STURN1      = 1;
+
+	/* CF and ISA, 16 bit */
+  EMC_SCONFIG2    = 0x81;
+//  EMC_SWAITWEN2   = 1;
+//  EMC_SWAITOEN2   = 1;
+  EMC_SWAITRD2    = 8;
+//  EMC_SWAITPAGE2  = 2;
+  EMC_SWAITWR2     = 8;
+//  EMC_STURN2      = 1;
 
 	/* CPLD, 16 bit */
   EMC_SCONFIG3    = 0x81;

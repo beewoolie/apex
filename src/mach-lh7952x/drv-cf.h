@@ -42,7 +42,7 @@
 
 # if !defined (CF_PHYS)
 #  define CF_PHYS		(0x50200000)
-#  define CF_IOBARRIER_PHYS	(0x20000000)
+#  define CF_IOBARRIER_PHYS	(0x20000000) /* SDRAM IOBarrier */
 # endif
 
 # define CF_WIDTH		(16)
@@ -57,7 +57,7 @@
 
 # if !defined (CF_PHYS)
 #  define CF_PHYS		(0x48200000)
-#  define CF_IOBARRIER_PHYS	(0x20000000)
+#  define CF_IOBARRIER_PHYS	(0x20000000) /* SDRAM IOBarrier */
 # endif
 
 # define CF_WIDTH		(16)

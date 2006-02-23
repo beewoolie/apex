@@ -1,3 +1,24 @@
+2006-02-23  Marc Singer  <elf@buici.com>
+
+	* Makefile: 1.3.18
+
+	* src/mach-lh7952x/init-lpd79524.c: Tighetened the CF region
+	timing as is done for the other targets.
+ 
+	* src/mach-lh7952x/init-lpd79520.c: Adjusted to the CompactFlash
+	region timing to meet the CF spec.
+
+	* src/mach-lh7a40x/initialize.c (SMC_BCR6_V): Tightened the CF
+	region timing to be closer to the specified minimums.  The
+	original WST1 delay was 320ns which may interfere with the LCD
+	controller FIFO.
+
+2006-02-22  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7a40x/initialize.c (SMC_BCR1_V): Tightened the
+	IOBARRIER region timing to see if we can get access to NOR flash
+	without causing display flicker.
+
 2006-02-17  Marc Singer  <elf@buici.com>
 
 	* src/lib/zlib-heap.c (CB_HEAP): Increased the size of the heap so

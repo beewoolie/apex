@@ -42,6 +42,21 @@
 
      Looks like this isn't all of it.  
 
+   IOBARRIER Delay
+
+     On the LPD7A404, it was found that an IO barrier delay less than
+     13 cycles (WST1==0xc) caused the SMC91x chip to fail to
+     communicate properly with the system.  This translates to a delay
+     of 130ns.  We set the delay to 150ns to give a little head-room.
+
+   CompactFlash Timing
+
+     The WST1 value on the CF memory region is set to 320ns by LOLO.
+     The CF spec shows that this can probably be reduced.  Version 2.0
+     of the CF spec states that the WE pulse width must be at least
+     150ns.  The IORD width must be at least 165ns.  So, we set the
+     delay ot 180ns to give it some extra room.
+
 */
 
 #include <config.h>
@@ -137,7 +152,7 @@
 
 /* APEX oringinal  */
 //#define SMC_BCR0_V		(0x200002a0)	// Bootflash
-#define SMC_BCR1_V		(0x1f<<5)	// IO Barrier, slowest timing
+#define SMC_BCR1_V		((0x2<<28)|(0xe<<5)) // IOBarrier, 150ns delay
 //#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
 //#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
 
@@ -147,14 +162,17 @@
 
 #if defined (CONFIG_MACH_LPD7A40X)
 # define SMC_BCR0_V		(0x200002a2)	// Bootflash
-# define SMC_BCR6_V		(0x100003e2)	// CompactFlash
+# define SMC_BCR6_V		((1<<28)|(17<<5)) // CompactFlash
 # define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 #endif
 
-// Alternative timings.
-//#define SMC_BCR0_V		(0x20000200)	// Bootflash
-//#define SMC_BCR6_V		(0x100003e2)	// CompactFlash
-//#define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+// LOLO timings (LH7A404).
+//#define SMC_BCR0_V		(0x20000200)
+//#define SMC_BCR1_V		(0x0000fbe0)
+//#define SMC_BCR2_V		(0x0000fbe0)
+//#define SMC_BCR3_V		(0x0000fbe0)
+//#define SMC_BCR6_V		(0x100003e2)
+//#define SMC_BCR7_V		(0x10000102)
 
 #define SDCSC_CASLAT(v)		((v - 1)<<16) /* CAS latency */
 #define SDCSC_RASTOCAS(v)	(v<<20) /* RAS to CAS latency */
