@@ -57,6 +57,13 @@
      150ns.  The IORD width must be at least 165ns.  So, we set the
      delay ot 180ns to give it some extra room.
 
+   BootFlash Timing
+
+     The Intel datasheet on the 28F128J3A shows a read/write hold-time
+     of 150ns.  We set the region timing appropriately.  The LOLO
+     timing is much slower, 220ns.  Use of this timing was causing
+     problems, writes to NOR flash in APEX were failing. 
+
 */
 
 #include <config.h>
@@ -161,7 +168,7 @@
 #endif
 
 #if defined (CONFIG_MACH_LPD7A40X)
-# define SMC_BCR0_V		(0x200002a2)	// Bootflash
+# define SMC_BCR0_V		((2<<28)|(14<<5)|(2<<0)) // Bootflash
 # define SMC_BCR6_V		((1<<28)|(17<<5)) // CompactFlash
 # define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
 #endif
