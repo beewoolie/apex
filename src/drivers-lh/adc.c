@@ -26,10 +26,10 @@
    -----------
 
    Reference:
-     "Using the SHARP ADC with Resistive Touch Screens", 
+     "Using the SHARP ADC with Resistive Touch Screens",
        Sharp Application Note.
 
- Processing: 
+ Processing:
   Initialize the adc to its default state.
   Map all touchscreen pins to ADC input
   Set up the idle step to prevent false pen auto-triggering.
@@ -37,32 +37,32 @@
   Clear the pen and end of sequence interrupts.
   Set up the sequence as follows:
       0. Strong pullup on X+ pin, other pins float.
-         Measure on pin x+. This measurement will be discarded.
-         This step de-glitches any partial triggers.
+	 Measure on pin x+. This measurement will be discarded.
+	 This step de-glitches any partial triggers.
       1. Weak pullup on X+ pin, X- floats, Y- to Ground and neg
-         ref, Y+ floats (ratiometric).
-         Measure on X+ pin. This measurement is used to verify
-         the pen was down at the beginning of the coordinate
-         measurement.
+	 ref, Y+ floats (ratiometric).
+	 Measure on X+ pin. This measurement is used to verify
+	 the pen was down at the beginning of the coordinate
+	 measurement.
       2. X+ and X- float, Y- to Ground and neg
-         ref, Y+ to VDDA_ADC and positive reference (ratiometric).
-         Measure on pin x+. This is the X measurement.
+	 ref, Y+ to VDDA_ADC and positive reference (ratiometric).
+	 Measure on pin x+. This is the X measurement.
       3. Repeat the X measurement 3 more times (we will average
-         4 measurements to improve signal-to-noise.
+	 4 measurements to improve signal-to-noise.
       4. Y+ and Y- float, X- to Ground and neg
-         ref, X+ to VDDA_ADC and positive reference (ratiometric).
-         Measure on pin Y+. This is the Y measurement.
+	 ref, X+ to VDDA_ADC and positive reference (ratiometric).
+	 Measure on pin Y+. This is the Y measurement.
       5. Repeat the Y measurement 3 more times (we will average
-         4 measurements to improve signal-to-noise.
+	 4 measurements to improve signal-to-noise.
       6. Strong pullup on X+ pin, other pins float.
-         Measure on pin x+. This measurement will be discarded.
-         This step de-glitches any partial triggers.
+	 Measure on pin x+. This measurement will be discarded.
+	 This step de-glitches any partial triggers.
       7. Weak pullup on X+ pin, X- floats, Y- to Ground and neg
-         ref, Y+ floats (ratiometric).
-         Measure on X+ pin. This measurement is used to verify
-         the pen was down at the end of the coordinate
-         measurement. 
- 
+	 ref, Y+ floats (ratiometric).
+	 Measure on X+ pin. This measurement is used to verify
+	 the pen was down at the end of the coordinate
+	 measurement.
+
 
 */
 
@@ -105,10 +105,10 @@ extern struct driver_d* console;
 #define ADC_PC_BATEN		(1<<4)
 #define ADC_PC_NOC_SHIFT	(0)
 #define ADC_PC_NOC_MASK		(0xf)
-#define ADC_PC_PWM_MASK		(3<<6)	
-#define ADC_PC_PWM_OFF		(0<<6)	
-#define ADC_PC_PWM_STANDBY	(1<<6)	
-#define ADC_PC_PWM_RUN		(2<<6)	
+#define ADC_PC_PWM_MASK		(3<<6)
+#define ADC_PC_PWM_OFF		(0<<6)
+#define ADC_PC_PWM_STANDBY	(1<<6)
+#define ADC_PC_PWM_RUN		(2<<6)
 
 #define ADC_HW_SETTIME_SHIFT	(7)
 #define ADC_HW_SETTIME_MASK	(0x1ff<<ADC_HW_SETTIME_SHIFT)
@@ -196,7 +196,7 @@ static void adc_setup (void)
   while ((ADC_FS & ADC_FS_FEMPTY) == 0)
     ADC_RR;
 
-  MASK_AND_SET (ADC_PC, 
+  MASK_AND_SET (ADC_PC,
 		ADC_PC_NOC_MASK | ADC_PC_PWM_MASK,
 		((SAMPLES - 1)<<ADC_PC_NOC_SHIFT)|(ADC_PC_PWM_OFF)
 		| ADC_PC_REFEN
@@ -217,7 +217,7 @@ static void adc_setup (void)
 	/* Idle */
   ADC_IHWCTRL = _HI (ADC_HW_INP_AN1);
   ADC_ILWCTRL = _LO (0x1080);
-    
+
 	/* Sampling */
   for (i = 0; i < 16; ++i) {
     switch (i) {
@@ -295,7 +295,7 @@ static void adc_init (void)
   ADC_IM = 0; /* Disable all interrupts */
 
   ADC_PC = ADC_PC_CLKSEL_V | ADC_PC_PWM_OFF | (1<<ADC_PC_NOC_SHIFT);
-  ADC_GC = 
+  ADC_GC =
 //    ADC_GC_SSM_SSB
     ADC_GC_SSM_SSB_PEN
     | (0xf<<ADC_GC_FIFOWMK_SHIFT);
@@ -310,7 +310,7 @@ static void adc_init (void)
   ADC_IHWCTRL = (0x1ff << ADC_HW_SETTIME_SHIFT)
     | ADC_HW_INP_AN0 | ADC_HW_INN_GND | ADC_HW_REFP_VREFP;
   ADC_ILWCTRL = ADC_LW_REFN_VREFN;
-  
+
 				/* Flush the results FIFO */
   while ((ADC_FS & ADC_FS_FEMPTY) == 0)
     ADC_RR;
@@ -339,14 +339,14 @@ static int cmd_adc (int argc, const char** argv)
 
     if (ADC_IS & ADC_IS_PEN)
       printf ("pen down irq\n");
-    
+
     printf ("[%4lx %4lx] ", ADC_FS, status);
 //    printf ("start %lx\n", status);
 
     ADC_IC |= ADC_IC_EOS | ADC_IC_PEN;
     ADC_GC |= (1<<2);		/* Start sampling */
 
-    timeStart = timer_read (); 
+    timeStart = timer_read ();
 
     do {
       if (ADC_IS & ADC_IS_EOS)
@@ -400,4 +400,3 @@ static __service_7 struct service_d lpd79524_adc_service = {
   .init = adc_init,
 //  .release = adc_release,
 };
-

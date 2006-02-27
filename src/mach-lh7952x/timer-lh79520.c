@@ -57,7 +57,7 @@ unsigned long timer_read (void)
 /* timer_delta
 
    returns the difference in time in milliseconds.
-  
+
  */
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
@@ -65,7 +65,7 @@ unsigned long timer_delta (unsigned long start, unsigned long end)
   return (end - start)*1000/32768;
 }
 
-static __service_2 struct service_d lh79520_timer_service = { 
+static __service_2 struct service_d lh79520_timer_service = {
   .init = lh79520_timer_init,
   .release = lh79520_timer_release,
 };

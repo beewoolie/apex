@@ -1,5 +1,4 @@
 /* memory.h
-     $Id$
 
    written by Marc Singer
    22 Feb 2005

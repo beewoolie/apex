@@ -25,7 +25,7 @@
    DESCRIPTION
    -----------
 
-   For the time being, this function can only fill with bytes. 
+   For the time being, this function can only fill with bytes.
 
 */
 
@@ -99,7 +99,7 @@ static __command struct command_d c_fill = {
   COMMAND_HELP(
 "fill VALUE DST\n"
 "  Fills the DST region with the byte value VALUE.  This command\n"
-"  cannot be used to erase flash.\n" 
+"  cannot be used to erase flash.\n"
 "  e.g.  fill 0xe5 0x100+256\n"
   )
 };

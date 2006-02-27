@@ -93,7 +93,7 @@ static void cpuinfo_report (void)
 #if defined (BOOT_PBC)
 	  "  bootmode 0x%x, %s"
 #endif
-	  "\n", 
+	  "\n",
 	  chipid, sz
 #if defined (BOOT_PBC)
 	  ,bootmode, szBootmode

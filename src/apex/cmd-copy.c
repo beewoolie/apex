@@ -114,7 +114,7 @@ int cmd_copy (int argc, const char** argv)
 #if defined (USE_COPY_VERIFY)
       if (verify) {
 	char rgbVerify[1024];
-	ssize_t cbVerify = din_v.driver->read (&din_v, rgbVerify, 
+	ssize_t cbVerify = din_v.driver->read (&din_v, rgbVerify,
 					       sizeof (rgbVerify));
 	if (cbVerify != cb) {
 	  printf ("\rVerify failed: reread of input %d, expected %d, at"
@@ -139,7 +139,7 @@ int cmd_copy (int argc, const char** argv)
 #if defined (USE_COPY_VERIFY)
       if (verify) {
 	char rgbVerify[1024];
-	ssize_t cbVerify = dout_v.driver->read (&dout_v, rgbVerify, 
+	ssize_t cbVerify = dout_v.driver->read (&dout_v, rgbVerify,
 						sizeof (rgbVerify));
 	if (cbVerify != cb) {
 	  printf ("\rVerify failed: reread of output %d, expected %d, at"

@@ -34,7 +34,7 @@
 #include <driver.h>
 #include <service.h>
 
-#define _s(v) #v 
+#define _s(v) #v
 #define _t(v) _s(v)
 
 #if defined (CONFIG_KERNEL_LMA)
@@ -81,8 +81,7 @@ static void env_init (void)
     env_d.driver->close (&env_d);
 }
 
-static __service_7 struct service_d env_service = { 
+static __service_7 struct service_d env_service = {
   .init = env_init,
 };
 #endif
-

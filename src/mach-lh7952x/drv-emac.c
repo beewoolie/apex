@@ -35,9 +35,9 @@
    Let me propose a format for the eeprom data.
 
    Byte     0      1      2    2+n-1   2+n
-        +------+------+------+------+------+
-        | 0x94 |  OP  |    DATA[n]  |  OP  | ...
-        +------+------+------+------+------+
+	+------+------+------+------+------+
+	| 0x94 |  OP  |    DATA[n]  |  OP  | ...
+	+------+------+------+------+------+
 
    The first byte is 0x94 representing 79524, 9 for the series, and 4
    for the model.  Following this is a list of fields, each starting
@@ -106,7 +106,7 @@
 
   EMAC_NETCONFIG_CPYFRM & Promiscuous Mode
   ----------------------------------------
-  
+
   The receive code is written to discard frames that don't have either
   the broadcast or the specific address bits set.  By default, the
   EMAC has the CPYFRM bit set which means that all frames will be
@@ -258,7 +258,7 @@ struct ethernet_header {
 static void msleep (int ms)
 {
   unsigned long time = timer_read ();
-	
+
   do {
   } while (timer_delta (time, timer_read ()) < ms);
 }
@@ -389,7 +389,7 @@ static int emac_read_mac (char rgbResult[6])
     printf ("ethernet mac eeprom unavailable\n");
     return -1;			/* No driver */
   }
-  if (d.driver->read (&d, rgb, 8) == 8 
+  if (d.driver->read (&d, rgb, 8) == 8
       && rgb[0] == 0x94
       && rgb[1] == 0x01)
     memcpy (rgbResult, rgb + 2, 6);
@@ -414,7 +414,7 @@ static void emac_setup (void)
   int i;
 
   for (i = 0; i < C_RX_BUFFER; ++i) {
-    rgl_rx_descriptor[i*2]    = ((unsigned long)(rgbRxBuffer + i*CB_RX_BUFFER) 
+    rgl_rx_descriptor[i*2]    = ((unsigned long)(rgbRxBuffer + i*CB_RX_BUFFER)
 			      & ~3)
       | ((i == C_RX_BUFFER - 1) ? (1<<1) : 0);
     rgl_rx_descriptor[i*2 + 1] = 0;
@@ -429,15 +429,15 @@ static void emac_setup (void)
   PRINTF ("emac: setup rgl_rx_descriptor %p\n", rgl_rx_descriptor);
 
   EMAC_RXBQP = (unsigned long) rgl_rx_descriptor;
-  EMAC_RXSTATUS &= 
-    ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC 
+  EMAC_RXSTATUS &=
+    ~(  EMAC_RXSTATUS_RXCOVERRUN | EMAC_RXSTATUS_FRMREC
       | EMAC_RXSTATUS_BUFNOTAVAIL);
 
   PRINTF ("emac: setup rgl_tx_descriptor %p\n", rgl_tx_descriptor);
   EMAC_TXBQP = (unsigned long) rgl_tx_descriptor;
   EMAC_TXSTATUS
     = EMAC_TXSTATUS_TXUNDER | EMAC_TXSTATUS_TXCOMPLETE | EMAC_TXSTATUS_BUFEX;
-	 
+
   MASK_AND_SET (EMAC_NETCONFIG, 3<<10, EMAC_NETCONFIG_DIV32);
   EMAC_NETCONFIG |= 0
     //    | EMAC_NETCONFIG_FULLDUPLEX
@@ -461,7 +461,7 @@ static void emac_setup (void)
 void emac_init (void)
 {
   PRINTF ("emac: init\n");
-  
+
 	/* Allocate buffers */
   rgl_rx_descriptor = alloc_uncached (2*C_RX_BUFFER*sizeof (long), 16);
   rgl_tx_descriptor = alloc_uncached (2*C_TX_BUFFER*sizeof (long), 16);
@@ -471,7 +471,7 @@ void emac_init (void)
 	/* Hardware setup -- necessary for the PHY to be detected. */
   MASK_AND_SET (IOCON_MUXCTL1,
 		(3<<8)|(3<<6)|(3<<4),
-		(1<<8)|(1<<6)|(1<<4));		
+		(1<<8)|(1<<6)|(1<<4));
   MASK_AND_SET (IOCON_RESCTL1,
 		(3<<8)|(3<<6)|(3<<4),
 		(1<<8)|(1<<6)|(1<<4));
@@ -496,16 +496,16 @@ void emac_init (void)
   RCPC_CTRL	  &= ~RCPC_CTRL_UNLOCK;
 
   if (!emac_read_mac (host_mac_address)) {
-    EMAC_SPECAD1BOT 
+    EMAC_SPECAD1BOT
       = (host_mac_address[3]<<24)
       | (host_mac_address[2]<<16)
       | (host_mac_address[1]<<8)
       | (host_mac_address[0]<<0);
-    EMAC_SPECAD1TOP 
+    EMAC_SPECAD1TOP
       = (host_mac_address[5]<<8)
       | (host_mac_address[4]<<0);
 #if defined (TALK)
-    PRINTF ("emac: mac address\n"); 
+    PRINTF ("emac: mac address\n");
     dump (host_mac_address, 6, 0);
 #endif
   }
@@ -525,7 +525,7 @@ static void emac_report (void)
   if (phy_id) {
     unsigned long bot = EMAC_SPECAD1BOT;
     unsigned long top = EMAC_SPECAD1TOP;
-  
+
     printf ("  emac:   phy_addr %d  phy_id 0x%lx"
 	    "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
 	    phy_address, phy_id,
@@ -554,7 +554,7 @@ static void show_tx_flags (unsigned long l)
     printf (" under");
   if (l & (1<<27))
     printf (" exhaust");
-} 
+}
 
 static void show_rx_flags (unsigned long l0, unsigned long l1)
 {
@@ -570,7 +570,7 @@ static void show_rx_flags (unsigned long l0, unsigned long l1)
     printf (" start");
   if (l1 & RX1_END)
     printf (" end");
-} 
+}
 #endif
 
 
@@ -643,13 +643,13 @@ static int cmd_emac (int argc, const char** argv)
 	if (i && (i % WIDE) == 0)
 	  printf ("\n");
 	if (rgRegs[index].reg & (1<<8))
-	  emac_phy_write (phy_address, 28, 
+	  emac_phy_write (phy_address, 28,
 			  (emac_phy_read (phy_address, 28) & 0x0fff)
 			  | (rgRegs[index].reg & 0xf000));
-	printf ("%5s-%-2d %04x  ", 
-		rgRegs[index].label, rgRegs[index].reg & 0xff, 
+	printf ("%5s-%-2d %04x  ",
+		rgRegs[index].label, rgRegs[index].reg & 0xff,
 		emac_phy_read (phy_address, rgRegs[index].reg & 0xff));
-      }	
+      }
 #else
       for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
 	   ++i) {
@@ -661,10 +661,10 @@ static int cmd_emac (int argc, const char** argv)
 	  if (i && (index & 0x7) == 0)
 	    printf ("\n");
 	  if (rgRegs[index].reg & (1<<8))
-	    emac_phy_write (phy_address, 28, 
+	    emac_phy_write (phy_address, 28,
 			    (emac_phy_read (phy_address, 28) & 0x0fff)
 			    | (rgRegs[index].reg & 0xf000));
-	  printf ("%04x    ", emac_phy_read (phy_address, 
+	  printf ("%04x    ", emac_phy_read (phy_address,
 					     rgRegs[index].reg & 0xff));
 	}
 	else {
@@ -763,9 +763,9 @@ static int cmd_emac (int argc, const char** argv)
       PRINTF ("emac_rxbqp 0x%lx\n", EMAC_RXBQP);
 
       for (i = 0; i < TX_QUEUE_LENGTH; ++i) {
-	printf ("emac:tx%02d & %p (0x%08lx 0x%08lx)", 
-		i, &rgl_tx_descriptor[i*2], 
-		rgl_tx_descriptor[i*2 + 0], 
+	printf ("emac:tx%02d & %p (0x%08lx 0x%08lx)",
+		i, &rgl_tx_descriptor[i*2],
+		rgl_tx_descriptor[i*2 + 0],
 		rgl_tx_descriptor[i*2 + 1]);
 	show_tx_flags (rgl_tx_descriptor[i*2 + 1]);
 	if (i == head_tx)
@@ -777,8 +777,8 @@ static int cmd_emac (int argc, const char** argv)
 	printf ("\n");
       }
       for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
-	printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
-		i, &rgl_rx_descriptor[i*2], 
+	printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)",
+		i, &rgl_rx_descriptor[i*2],
 		rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
 	if (i == head_rx)
@@ -792,7 +792,7 @@ static int cmd_emac (int argc, const char** argv)
 #endif
   }
   else {
-    	/* Set mac address */
+	/* Set mac address */
     if (strcmp (argv[1], "mac") == 0) {
       unsigned char rgb[6];
       if (argc != 3)
@@ -813,15 +813,15 @@ static int cmd_emac (int argc, const char** argv)
       }
 
       memcpy (host_mac_address, rgb, 6); /* For networking layer */
-      EMAC_SPECAD1BOT 
+      EMAC_SPECAD1BOT
 	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
-      EMAC_SPECAD1TOP 
+      EMAC_SPECAD1TOP
 	= (rgb[5]<<8)|(rgb[4]<<0);
-      printf ("emac: mac address\n"); 
+      printf ("emac: mac address\n");
       dump (rgb, 6, 0);
     }
 
-    	/* Save mac address */
+	/* Save mac address */
     if (strcmp (argv[1], "save") == 0) {
       unsigned char rgb[9];
       unsigned long bot = EMAC_SPECAD1BOT;
@@ -837,7 +837,7 @@ static int cmd_emac (int argc, const char** argv)
       rgb[5] = bot >> 24;
       rgb[6] = top >>  0;
       rgb[7] = top >>  8;
-      
+
       {
 	struct descriptor_d d;
 	static const char sz[] = "mac:0#9";
@@ -846,12 +846,12 @@ static int cmd_emac (int argc, const char** argv)
 	  d.driver->erase (&d, 9);
 	  d.driver->seek (&d, 0, SEEK_SET);
 	  if (d.driver->write (&d, rgb, 9) != 9)
-	    result = ERROR_RESULT (ERROR_FAILURE, 
+	    result = ERROR_RESULT (ERROR_FAILURE,
 				   "unable to write mac address");;
 	  close_descriptor (&d);
 	}
 	else
-	  ERROR_RETURN (ERROR_NODRIVER, 
+	  ERROR_RETURN (ERROR_NODRIVER,
 			"mac eeprom driver unavailable");;
       }
     }
@@ -896,7 +896,7 @@ _USE_DIAG(
   )
 };
 
-#endif 				/* CONFIG_CMD_EMAC_LH79524 */
+#endif				/* CONFIG_CMD_EMAC_LH79524 */
 
 
 static int eth_open (struct descriptor_d* d)
@@ -912,14 +912,14 @@ static void eth_clean_rx_queue (void)
   EMAC_NETCTL &= ~EMAC_NETCTL_RXEN;
 
   i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
-  
+
   //  printf ("!");
 
 #if 0
   printf ("\n");
   for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
-    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
-	    i, &rgl_rx_descriptor[i*2], 
+    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)",
+	    i, &rgl_rx_descriptor[i*2],
 	    rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
     show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
     if (i == head_rx)
@@ -953,8 +953,8 @@ static void eth_clean_rx_queue (void)
   if (c == 0) {
     printf ("\n");
     for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
-      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
-	      i, &rgl_rx_descriptor[i*2], 
+      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)",
+	      i, &rgl_rx_descriptor[i*2],
 	      rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
       show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
       if (i == head_rx)
@@ -974,7 +974,7 @@ static inline void eth_clean_tx_queue (void)
 {
   int state = 0;
 
-  DBG (2, "clean [%lx %lx] #%d  txstatus 0x%x\n", 
+  DBG (2, "clean [%lx %lx] #%d  txstatus 0x%x\n",
        TXH0 (), TXH1 (),
        head_tx, EMAC_TXSTATUS);
 
@@ -1032,12 +1032,12 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
       RX0 () &= ~RX0_USED;
       DBG (1,"   %lx %lx\n", RX0 (), RX1 ());
       head_rx = (head_rx + 1) % RX_QUEUE_LENGTH;
-    } while (   (RX0 () & RX0_USED) 
+    } while (   (RX0 () & RX0_USED)
 	     && (RX1 () & RX1_START) == 0);
     goto restart;
 //    return 0;			/* Nothing to receive at the moment */
   }
-		
+
   EMAC_RXSTATUS = EMAC_RXSTATUS_FRMREC;
 
 	/* Determine length of frame */
@@ -1045,10 +1045,10 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
   for (i = head_rx; 1; i = (i + 1) %RX_QUEUE_LENGTH) {
     if ((rgl_rx_descriptor[i*2] & RX0_USED) == 0)
       return 0;     /* as yet, incompleted receive */
-    DBG (3, "  #%d(%d) %lx %lx\n", i, head_rx, 
+    DBG (3, "  #%d(%d) %lx %lx\n", i, head_rx,
 	 rgl_rx_descriptor[i*2], rgl_rx_descriptor[i*2 + 1]);
-    if ((rgl_rx_descriptor[i*2 + 1] & RX1_START) 
-	&& (i != head_rx || c)) 
+    if ((rgl_rx_descriptor[i*2 + 1] & RX1_START)
+	&& (i != head_rx || c))
       goto cleanup;		/* incomplete frame */
     ++c;
     if ((rgl_rx_descriptor[i*2 + 1] & RX1_END) == 0)
@@ -1072,7 +1072,7 @@ static ssize_t eth_read (struct descriptor_d* d, void* pv, size_t cb)
 
   {
     char* pb = pv;
-    size_t cbRead = 0; 
+    size_t cbRead = 0;
     c = 0;
     while (cbRead < frame_len) {
       size_t cbCopy = cb;
@@ -1172,8 +1172,8 @@ void eth_diag (int mode)
   default:
   case 0:
     for (i = 0; i < RX_QUEUE_LENGTH; ++i) {
-      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
-	      i, &rgl_rx_descriptor[i*2], 
+      printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)",
+	      i, &rgl_rx_descriptor[i*2],
 	      rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
       show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
       if (i == head_rx)
@@ -1185,8 +1185,8 @@ void eth_diag (int mode)
     break;
   case 1:
     i = ((void*) EMAC_RXBQP - (void*) rgl_rx_descriptor)/8;
-    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)", 
-	    i, &rgl_rx_descriptor[i*2], 
+    printf ("emac:rx%02d & %p (0x%08lx 0x%08lx)",
+	    i, &rgl_rx_descriptor[i*2],
 	    rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
     show_rx_flags (rgl_rx_descriptor[i*2 + 0], rgl_rx_descriptor[i*2 + 1]);
     if (i == head_rx)

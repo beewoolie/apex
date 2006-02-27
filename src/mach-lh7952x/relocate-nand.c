@@ -77,7 +77,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
   unsigned long lr;
 
 #if defined (EMERGENCY)
-  IOCON_MUXCTL14 |=  (1<<8); 
+  IOCON_MUXCTL14 |=  (1<<8);
   GPIO_MN_PHYS &= ~(1<<0);
   IOCON_MUXCTL7  &= ~(0xf<<12);
 

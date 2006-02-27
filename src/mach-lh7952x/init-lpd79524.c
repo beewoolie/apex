@@ -106,7 +106,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 		  "tst %0, %4\n\t"
 		  "beq 0b\n\t"
 		  : "+r" (c)
-		  :  "r" (TIMER1_PHYS), 
+		  :  "r" (TIMER1_PHYS),
 		     "r" (0),
 		     "r" (TIMER_CTRL_CS | TIMER_CTRL_SCALE_64),
 		     "I" (0x8000)
@@ -152,7 +152,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   MASK_AND_SET (IOCON_MUXCTL6, (3<<2)|(3<<0), (2<<2)|(2<<0));
 
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
-  
+
   UART_IBRD = 6;
   UART_FBRD = 8;
   UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
@@ -181,7 +181,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
 
 	/* Setup IO pin multiplexers */
-  IOCON_MUXCTL5  = IOCON_MUXCTL5_V; 	/* UART */
+  IOCON_MUXCTL5  = IOCON_MUXCTL5_V;	/* UART */
   IOCON_MUXCTL6  = IOCON_MUXCTL6_V;	/* UART */
   IOCON_MUXCTL10 = IOCON_MUXCTL10_V;	/* D */
   IOCON_MUXCTL11 = IOCON_MUXCTL11_V;	/* D */
@@ -245,7 +245,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "movls pc, %0\n\t"
 		"1:" :: "r" (lr), "I" (SDRAM_BANK1_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
-		  , "r" (&fSDRAMBoot) 
+		  , "r" (&fSDRAMBoot)
 #endif
 		  : "cc" );
 
@@ -286,7 +286,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNMCTRL    = (1<<1)|(1<<0)|(0<<7); /* NORMAL */
   EMC_DYNCFG0     = SDRAM_CFG;
   EMC_DYNCFG1     = SDRAM_CFG;
-  
+
   PUTC_LL('j');
 
 #if defined (CONFIG_SDRAMBOOT_REPORT)

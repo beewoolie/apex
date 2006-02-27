@@ -72,7 +72,7 @@ void lh7a40x_serial_init (void)
   u32 divisor = 0;
 
   switch (baudrate) {
-  case 115200: 
+  case 115200:
     divisor = 0x03; break;
 
   default:
@@ -101,7 +101,7 @@ void lh7a40x_serial_release (void)
 ssize_t lh7a40x_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb
-    ? ((UART_STATUS & UART_STATUS_RXFE) ? 0 : 1) 
+    ? ((UART_STATUS & UART_STATUS_RXFE) ? 0 : 1)
     : 0;
 }
 
@@ -125,7 +125,7 @@ ssize_t lh7a40x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t lh7a40x_serial_write (struct descriptor_d* d, 
+ssize_t lh7a40x_serial_write (struct descriptor_d* d,
 			      const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;

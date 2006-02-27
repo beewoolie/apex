@@ -1,5 +1,4 @@
 /* drv-clcdc.h
-     $Id$
 
    written by Marc Singer
    24 Dec 2005
@@ -69,8 +68,8 @@
 # define DRV_CLCDC_SETUP_CLOCKS\
 	({ RCPC_PCLKCTRL1 &= ~(1<<0);\
 	   RCPC_AHBCLKCTRL &= ~(1<<4);\
-	   /*  RCPC_LCDPRE = (8>>1);*/ 	/* HCLK divisor 8 */\
-	   RCPC_LCDPRE = (1>>1); 	/* HCLK divisor 1 */\
+	   /*  RCPC_LCDPRE = (8>>1);*/	/* HCLK divisor 8 */\
+	   RCPC_LCDPRE = (1>>1);	/* HCLK divisor 1 */\
 	 })
 # define DRV_CLCDC_RELEASE_CLOCKS\
 	({ RCPC_PCLKCTRL1  |=   1<<0;\
@@ -83,7 +82,7 @@
 	   MASK_AND_SET (IOCON_RESCTL1,\
 			 (3<<2)|(3<<0),\
 			 (0<<2)|(0<<0));\
-           MASK_AND_SET (IOCON_MUXCTL19,\
+	   MASK_AND_SET (IOCON_MUXCTL19,\
 			 (3<<12)|(3<<8)|(3<<4)|(3<<2),\
 			 /* LCDVEEN, LCDVDDEN, LCDREV, LCDCLS */\
 			 (1<<12)|(1<<8)|(2<<4)|(1<<2));\

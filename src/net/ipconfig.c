@@ -26,7 +26,7 @@
    -----------
 
    IP configuration, either manual or by network protocol.
-   
+
 */
 
 #include <config.h>
@@ -65,16 +65,16 @@ static void set_aliases (void)
 {
 #if defined (CONFIG_CMD_ALIAS)
   char sz[80];
-  sprintf (sz, "%d.%d.%d.%d", 
-	   host_ip_address[0], host_ip_address[1], 
+  sprintf (sz, "%d.%d.%d.%d",
+	   host_ip_address[0], host_ip_address[1],
 	   host_ip_address[2], host_ip_address[3]);
   alias_set ("hostip", sz);
-  sprintf (sz, "%d.%d.%d.%d", 
-	   server_ip_address[0], server_ip_address[1], 
+  sprintf (sz, "%d.%d.%d.%d",
+	   server_ip_address[0], server_ip_address[1],
 	   server_ip_address[2], server_ip_address[3]);
   alias_set ("serverip", sz);
-  sprintf (sz, "%d.%d.%d.%d", 
-	   gw_ip_address[0], gw_ip_address[1], 
+  sprintf (sz, "%d.%d.%d.%d",
+	   gw_ip_address[0], gw_ip_address[1],
 	   gw_ip_address[2], gw_ip_address[3]);
   alias_set ("gatewayip", sz);
 #endif
@@ -86,15 +86,15 @@ static void show_ip_config (void)
     printf ("IP unconfigured\n");
   else {
     printf ("hostip %d.%d.%d.%d\n",
-	    host_ip_address[0], host_ip_address[1], 
+	    host_ip_address[0], host_ip_address[1],
 	    host_ip_address[2], host_ip_address[3]);
     if (server_ip_address[0])
       printf ("serverip %d.%d.%d.%d\n",
-	      server_ip_address[0], server_ip_address[1], 
+	      server_ip_address[0], server_ip_address[1],
 	      server_ip_address[2], server_ip_address[3]);
     if (gw_ip_address[0])
       printf ("gatewayip %d.%d.%d.%d\n",
-	      gw_ip_address[0], gw_ip_address[1], 
+	      gw_ip_address[0], gw_ip_address[1],
 	      gw_ip_address[2], gw_ip_address[3]);
   }
 }
@@ -139,12 +139,12 @@ static int ipconfig_terminate (void* pv)
 
 */
 
-static int rarp_receiver (struct descriptor_d* d, 
-			  struct ethernet_frame* frame, 
+static int rarp_receiver (struct descriptor_d* d,
+			  struct ethernet_frame* frame,
 			  void* context)
 {
 #if 0
-  printf ("%s len %d %d proto %x %x (%d %d)\n", __FUNCTION__, frame->cb, 
+  printf ("%s len %d %d proto %x %x (%d %d)\n", __FUNCTION__, frame->cb,
 	  sizeof (struct header_ethernet) + sizeof (struct header_arp),
 	  ETH_F (frame)->protocol,
 	  HTONS (ETH_PROTO_RARP),
@@ -159,7 +159,7 @@ static int rarp_receiver (struct descriptor_d* d,
 
   if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_RARP))
     return 0;
-  
+
   if (   ARP_F (frame)->hardware_address_length != 6
       || ARP_F (frame)->protocol_address_length != 4)
     return -1;			/* unrecognized form, discard */
@@ -175,7 +175,7 @@ static int rarp_receiver (struct descriptor_d* d,
     memcpy (host_ip_address, ARP_F (frame)->target_protocol_address, 4);
 		/* Add ARP entry for the server */
     arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address, 
+		      ARP_F (frame)->sender_protocol_address,
 		      1);
     memcpy (server_ip_address, ARP_F (frame)->sender_protocol_address, 4);
     memcpy (gw_ip_address, ARP_F (frame)->sender_protocol_address, 4);
@@ -195,7 +195,7 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
   int tries = 0;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d)))
     return result;
 
   DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
@@ -220,7 +220,7 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
 
   memcpy (ARP_F (frame)->sender_hardware_address, host_mac_address, 6);
   memset (ARP_F (frame)->sender_protocol_address, 0, 4);
-  memcpy (ARP_F (frame)->target_hardware_address, 
+  memcpy (ARP_F (frame)->target_hardware_address,
 	  ARP_F (frame)->sender_hardware_address, 10);
   frame->cb = sizeof (struct header_ethernet) + sizeof (struct header_arp);
 //  dump (frame->rgb, frame->cb, 0);
@@ -232,7 +232,7 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
     struct ethernet_timeout_context timeout;
 
     DBG (1,"%s: send frame\n", __FUNCTION__);
-    d.driver->write (&d, frame->rgb, 
+    d.driver->write (&d, frame->rgb,
 		     sizeof (struct header_ethernet)
 		     + sizeof (struct header_arp));
     ++tries;
@@ -255,7 +255,7 @@ int cmd_ipconfig_rarp (int argc, const char** argv)
 
   ethernet_frame_release (frame);
 
-  close_descriptor (&d);  
+  close_descriptor (&d);
 
   return result < 0 ? result : 0;
 }
@@ -284,25 +284,25 @@ int cmd_ipconfig (int argc, const char** argv)
       alias_unset ("hostip");
       alias_unset ("serverip");
       alias_unset ("gatewayip");
-#endif      
+#endif
       goto done;
     }
 
-#if defined (CONFIG_CMD_IPCONFIG_RARP) 
+#if defined (CONFIG_CMD_IPCONFIG_RARP)
     if (strcmp (argv[1], "rarp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;
       return cmd_ipconfig_rarp (argc, argv);
     }
 #endif
-#if defined (CONFIG_CMD_IPCONFIG_BOOTP) 
+#if defined (CONFIG_CMD_IPCONFIG_BOOTP)
     if (strcmp (argv[1], "bootp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;
       return cmd_ipconfig_bootp (argc, argv);
     }
 #endif
-#if defined (CONFIG_CMD_IPCONFIG_DHCP) 
+#if defined (CONFIG_CMD_IPCONFIG_DHCP)
     if (strcmp (argv[1], "dhcp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;

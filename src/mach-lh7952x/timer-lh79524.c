@@ -108,7 +108,7 @@ void lh79524_timer_init (void)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
   RCPC_PCLKSEL0  |= 3<<7; /* 32KHz oscillator for RTC */
   RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
-  RTC_CR	  = RTC_CR_EN;  
+  RTC_CR	  = RTC_CR_EN;
 #endif
 }
 
@@ -119,7 +119,7 @@ static void lh79524_timer_release (void)
   TIMER_INTEN = 0;
   TIMER_CTRL = 0;
 #else
-  RTC_CR	 &= ~RTC_CR_EN;  
+  RTC_CR	 &= ~RTC_CR_EN;
   RCPC_CTRL      |=  RCPC_CTRL_UNLOCK;
   RCPC_PCLKSEL0  &= ~(3<<7); /* 1Hz RTC */
   RCPC_CTRL      &= ~RCPC_CTRL_UNLOCK;
@@ -139,7 +139,7 @@ unsigned long timer_read (void)
 /* timer_delta
 
    returns the difference in time in milliseconds.
-  
+
  */
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
@@ -151,7 +151,7 @@ unsigned long timer_delta (unsigned long start, unsigned long end)
 #endif
 }
 
-static __service_2 struct service_d lh79524_timer_service = { 
+static __service_2 struct service_d lh79524_timer_service = {
   .init    = lh79524_timer_init,
   .release = lh79524_timer_release,
 };

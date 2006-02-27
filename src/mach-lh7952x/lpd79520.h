@@ -1,5 +1,4 @@
 /* lpd79520.h
-     $Id$
 
    written by Marc Singer
    14 Nov 2004

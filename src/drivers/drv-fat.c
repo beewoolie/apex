@@ -54,7 +54,7 @@
    o FAT caching
 
      one FAT sector is cached to make it somewhat efficient to read
-     through a file.  
+     through a file.
 
      It used to be one sector, but now it is three.  We do this
      because the FAT12 cluster values may span sectors.  It is far
@@ -208,7 +208,7 @@ struct fat_info {
   int sector_fat;		/* Sector number of the cached FAT */
 
   struct directory file;	/* Directory entry for the current file */
-  unsigned cluster_file; 	/* Current file cluster being read */
+  unsigned cluster_file;	/* Current file cluster being read */
   size_t index_cluster_file;	/* Index at base of the cluster */
 };
 
@@ -259,7 +259,7 @@ static int fat_identify (void)
 
   snprintf (sz, sizeof (sz), "%s:+1s", szBlockDriver);
   if (   (result = parse_descriptor (sz, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d)))
     return result;
 
 
@@ -285,9 +285,9 @@ static int fat_identify (void)
 }
 
 
-/* fat_next_cluster 
-   
-   searches the FAT for the next cluster in the chain.  
+/* fat_next_cluster
+
+   searches the FAT for the next cluster in the chain.
 
    *** This implementation works only for FAT12 and FAT16
 
@@ -346,7 +346,7 @@ static unsigned fat_next_cluster (unsigned cluster)
    a little more complex.
 
    Storing of the file information is a side-effect of this call.  The
-   returned cluster number is, really, just informative.  
+   returned cluster number is, really, just informative.
 
 */
 
@@ -355,9 +355,9 @@ static int fat_find (struct descriptor_d* d)
   int i;
 
 	/* Start reading the root directory */
-  fat.d.driver->seek (&fat.d, 
+  fat.d.driver->seek (&fat.d,
 		      (fat.parameter.sectors_per_fat*fat.parameter.fats
-		       + fat.parameter.reserved_sectors)*SECTOR_SIZE, 
+		       + fat.parameter.reserved_sectors)*SECTOR_SIZE,
 		      SEEK_SET);
   for (i = 0; i < fat.parameter.root_entries; ++i) {
     char sz[12];
@@ -387,8 +387,8 @@ static int fat_find (struct descriptor_d* d)
 #if defined (TALK)
     {
       unsigned cluster_next = fat_next_cluster (fat.file.cluster);
-      PRINTF ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n", 
-	      sz, fat.file.cluster, fat.file.length, 
+      PRINTF ("  (%12.12s) @ %5d  %8ld bytes  %d (0x%x)\n",
+	      sz, fat.file.cluster, fat.file.length,
 	      cluster_next, cluster_next);
     }
 #endif
@@ -424,8 +424,8 @@ static int fat_open (struct descriptor_d* d)
 
 		/* Read just the partition table */
   if (d->c == 0) {
-    snprintf (sz, sizeof (sz), "%s:%d+%d", 
-	      szBlockDriver, 
+    snprintf (sz, sizeof (sz), "%s:%d+%d",
+	      szBlockDriver,
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
   }
@@ -434,10 +434,10 @@ static int fat_open (struct descriptor_d* d)
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
     if (partition < 0 || partition > 3 || fat.partition[partition].length == 0)
-      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
-	      szBlockDriver, 
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+	      szBlockDriver,
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
 
@@ -445,7 +445,7 @@ static int fat_open (struct descriptor_d* d)
 
 	/* Open descriptor for the partition */
   if (   (result = parse_descriptor (sz, &fat.d))
-      || (result = open_descriptor (&fat.d))) 
+      || (result = open_descriptor (&fat.d)))
     return result;
 
 	/* Read parameter block */
@@ -505,7 +505,7 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
       /* Rewinding not supported   */
       return -1;
     }
-    
+
     /* Find next cluster */
     while (index >= fat.index_cluster_file + fat.bytes_per_cluster) {
       fat.cluster_file = fat_next_cluster (fat.cluster_file);
@@ -532,15 +532,15 @@ static ssize_t fat_read (struct descriptor_d* d, void* pv, size_t cb)
 	    " fat.by_p_clus %d\n"
 	    " idx %d (%x) "
 	    " fat.idx_clus_f %d (%x)\n",
-	    fat.index_cluster_2, fat.index_cluster_2, 
+	    fat.index_cluster_2, fat.index_cluster_2,
 	    fat.cluster_file,
 	    fat.bytes_per_cluster,
 	    index, index,
 	    fat.index_cluster_file, fat.index_cluster_file);
 #endif
 
-    fat.d.driver->seek (&fat.d, 
-			fat.index_cluster_2 
+    fat.d.driver->seek (&fat.d,
+			fat.index_cluster_2
 			+ (fat.cluster_file - 2)*fat.bytes_per_cluster
 			+ index - fat.index_cluster_file,
 			SEEK_SET);
@@ -585,8 +585,8 @@ static int fat_info (struct descriptor_d* d)
 
 		/* Read just the partition table */
   if (d->c == 0) {
-    snprintf (sz, sizeof (sz), "%s:%d+%d", 
-	      szBlockDriver, 
+    snprintf (sz, sizeof (sz), "%s:%d+%d",
+	      szBlockDriver,
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
   }
@@ -595,10 +595,10 @@ static int fat_info (struct descriptor_d* d)
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
     if (partition < 0 || partition > 3 || fat.partition[partition].length == 0)
-      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
-	      szBlockDriver, 
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+	      szBlockDriver,
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
 
@@ -606,7 +606,7 @@ static int fat_info (struct descriptor_d* d)
 
 	/* Open descriptor for the partition */
   if (   (result = parse_descriptor (sz, &fat.d))
-      || (result = open_descriptor (&fat.d))) 
+      || (result = open_descriptor (&fat.d)))
     return result;
 
 	/* Read parameter block */
@@ -660,40 +660,40 @@ static void fat_report (void)
     fat.fOK = 1;
   }
 
-//  if (   fat.bootsector[SECTOR_SIZE - 2] == 0x55 
+//  if (   fat.bootsector[SECTOR_SIZE - 2] == 0x55
 //      && fat.bootsector[SECTOR_SIZE - 1] == 0xaa) {
-  printf ("  fat:"); 
+  printf ("  fat:");
 
   for (i = 0; i < 4; ++i)
     if (fat.partition[i].type || i == 0) {
       if (i != 0)
 	printf ("      ");
-      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n", i,
 	      fat.partition[i].boot ? '*' : ' ',
 	      fat.partition[i].type,
 	      fat.partition[i].start,
 	      fat.partition[i].length);
     }
 
-  printf ("          bps %d spc %d res %d fats %d re %d sec %d\n", 
+  printf ("          bps %d spc %d res %d fats %d re %d sec %d\n",
 	  read_short (&fat.parameter.bytes_per_sector),
 	  fat.parameter.sectors_per_cluster,
 	  read_short (&fat.parameter.reserved_sectors),
 	  fat.parameter.fats,
-	  read_short (&fat.parameter.root_entries), 
+	  read_short (&fat.parameter.root_entries),
 	  read_short  (&fat.parameter.small_sectors));
   printf ("          med 0x%x spf %d spt %d heads %d hidden %ld sec %ld\n",
 	  fat.parameter.media,
 	  read_short (&fat.parameter.sectors_per_fat),
 	  read_short (&fat.parameter.sectors_per_track),
 	  read_short (&fat.parameter.heads),
-	  read_long (&fat.parameter.hidden_sectors), 
+	  read_long (&fat.parameter.hidden_sectors),
 	  read_long  (&fat.parameter.large_sectors));
   printf ("          log 0x%02x sig 0x%x serial %08lx\n"
 	  "          vol '%11.11s' type '%8.8s' fat_type %d\n",
 	  read_short (&fat.parameter.logical_drive),
 	  fat.parameter.signature,
-	  read_long (&fat.parameter.serial),	    
+	  read_long (&fat.parameter.serial),
 	  fat.parameter.volume,
 	  fat.parameter.type,
 	  fat.fat_type);
@@ -721,10 +721,10 @@ static void fat_report (void)
       else
 	printf ("%12.12s%-11.11s 0x%x #%d %ld\n",
 		"",
-		fat.root[i].file, 
+		fat.root[i].file,
 		fat.root[i].attribute,
-		fat.root[i].cluster, 
-		fat.root[i].length); 
+		fat.root[i].cluster,
+		fat.root[i].length);
     }
 #endif
 

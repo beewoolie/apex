@@ -160,7 +160,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
-	if (d->rgb[ib] != '/' 
+	if (d->rgb[ib] != '/'
 	    || ((d->driver->flags & DRIVER_DESCRIP_SIMPLEPATH)
 		&& d->c > d->iRoot)) {
 	  TOLOWER (d->rgb[ib]);
@@ -171,7 +171,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       }
     }
   }
-  else 
+  else
   region_parse:
 #endif
   {			/* Region descriptor parse */

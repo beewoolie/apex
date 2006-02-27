@@ -34,7 +34,7 @@
 #include <driver.h>
 #include <service.h>
 
-#define _s(v) #v 
+#define _s(v) #v
 #define _t(v) _s(v)
 
 #if defined (CONFIG_MACH_NSLU2) && !defined (CONFIG_ENV_DEFAULT_CMDLINE)

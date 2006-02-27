@@ -80,7 +80,7 @@
    The 32 bit counter wraps after about 64s.
 
    Note that this function is neither __naked nor static.  It is
-   available to the rest of APEX. 
+   available to the rest of APEX.
 
  */
 
@@ -94,7 +94,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 		     "sub %0, %0, %2\n\t"
 		     "cmp %0, %3\n\t"
 		     "bls 0b\n\t"
-		  : : "r" (0), 
+		  : : "r" (0),
 		      "r" (OST_TS_PHYS),
 		      "r" (s),
 		      "r" (us)
@@ -158,7 +158,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 	/* Disable interrupts and set supervisor mode */
   __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
- 
+
 	/* Drain write buffer */
   __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
   COPROCESSOR_WAIT;
@@ -175,16 +175,16 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #if 1
   {
     unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t" 
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t"
 		    "orr %0, %0, #(1<<0)\n\t"
 		    "mcr p15, 0, %0, c1, c0, 1"
 		    : "=r" (v));
-  }		
+  }
 
   COPROCESSOR_WAIT;
 #endif
 
-     	/* Fixup the CP15 control word.  This is done for the cases
+	/* Fixup the CP15 control word.  This is done for the cases
 	   where we are bootstrapping from redboot which does not
 	   cleanup before jumping to code.  */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
@@ -214,7 +214,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | EXP_CS_EN
     ;
 
-	  /* Exit now if executing in SDRAM */ 
+	  /* Exit now if executing in SDRAM */
   if (EXP_CNFG0 & (1<<31)) {
     PUTC_LL ('b');
     _L(LED1);
@@ -238,7 +238,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 	/* Disable interrupts and set supervisor mode */
     __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
- 
+
 	/* Drain write buffer */
     __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
     COPROCESSOR_WAIT;
@@ -277,7 +277,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   SDR_IR = SDR_IR_PRECHARGE_ALL;
 
-  usleep (1);			/* datasheet: wait for Trp (<=20ns) 
+  usleep (1);			/* datasheet: wait for Trp (<=20ns)
 				   before starting AUTO REFRESH */
 
   /* datasheet: needs at least 8 refresh (bus) cycles.  Timing diagram
@@ -390,7 +390,7 @@ static void target_release (void)
 {
   /* *** FIXME: I don't think this is necessary.  I'm trying to figure
      *** out why the kernel fails to boot.  */
- 
+
 	/* Invalidate caches (I&D) and BTB (?) */
   __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
   COPROCESSOR_WAIT;
@@ -406,12 +406,12 @@ static void target_release (void)
 	/* Disable write buffer coalescing */
   {
     unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t" 
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t"
 		    "orr %0, %0, #(1<<0)\n\t"
 		    "mcr p15, 0, %0, c1, c0, 1"
 		    : "=r" (v));
     COPROCESSOR_WAIT;
-  }		
+  }
 }
 
 static __service_0 struct service_d ixp42x_target_service = {

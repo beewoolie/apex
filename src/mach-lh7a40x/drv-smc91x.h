@@ -30,7 +30,7 @@ static inline u16 SMC_inw (unsigned long base, int r)
   return v;
 }
 
-static inline void SMC_insw (unsigned long base, int r, 
+static inline void SMC_insw (unsigned long base, int r,
 			     unsigned char* pv, int l)
 {
   u16* ps = (u16*) pv;
@@ -46,7 +46,7 @@ static inline void SMC_outw (unsigned long base, int r, u16 v)
   SMC_IOBARRIER;
 }
 
-static inline void SMC_outsw (unsigned long base, int r, 
+static inline void SMC_outsw (unsigned long base, int r,
 			      const unsigned char* p, int l)
 {
   unsigned short* ps = (unsigned short*) p;

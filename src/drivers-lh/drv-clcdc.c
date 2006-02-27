@@ -38,7 +38,7 @@
    and it probably doesn't read from a filesystem either.  That has to
    be fixed.  It also doesn't double-buffer which would make the
    display snappier.  However, the image decode is robust.
-   
+
 
    Target Macros
    -------------
@@ -56,7 +56,7 @@
    DRV_CLCDC_DISABLE			- Extra LCD controller disabling
    DRV_CLCDC_POWER_DISABLE		- Disable power to LCD panel
    DRV_CLCDC_RELEASE			- Release clocks
-   
+
 */
 
 #include <config.h>
@@ -254,7 +254,7 @@ unsigned short* buffer;
 static void msleep (int ms)
 {
   unsigned long time = timer_read ();
-	
+
   do {
   } while (timer_delta (time, timer_read ()) < ms);
 }
@@ -314,7 +314,7 @@ static void clcdc_init (void)
 
   CLCDC_TIMING0 = HBP (LEFT_MARGIN) | HFP (RIGHT_MARGIN) | HSW (HSYNC_WIDTH)
     | PPL (PEL_WIDTH);
-  CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH) 
+  CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH)
     | LPP (PEL_HEIGHT);
   CLCDC_TIMING2   = CPL
 #if defined (INVERT_PIXEL_CLOCK)
@@ -460,7 +460,7 @@ int cmd_splash (const char* region)
 	  *ps = ((pb[j*4    ] & 0xf8) >> 3)
 	    +   ((pb[j*4 + 1] & 0xf8) << 2)
 	    +   ((pb[j*4 + 2] & 0xf8) << 7);
-	
+
 	break;
       }
     }
@@ -488,7 +488,7 @@ int cmd_clcdc (int argc, const char** argv)
 	    LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
     return 0;
   }
-  
+
 #if defined (CONFIG_CMD_CLCDC_SPLASH)
   if (strcmp (argv[1], "splash") == 0) {
     if (argc != 3)
@@ -501,12 +501,12 @@ int cmd_clcdc (int argc, const char** argv)
   if (strcmp (argv[1], "bars") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
-      if (i < PEL_WIDTH 
+      if (i < PEL_WIDTH
 	  || i%PEL_WIDTH == 0
 	  || i%PEL_WIDTH == PEL_WIDTH - 1
 	  || i > (PEL_HEIGHT - 1)*PEL_WIDTH)
 	buffer[i] = 0xffff;
-      else if (i < PEL_WIDTH*2 
+      else if (i < PEL_WIDTH*2
 	  || i%PEL_WIDTH == 1
 	  || i%PEL_WIDTH == PEL_WIDTH - 2
 	  || i > (PEL_HEIGHT - 2)*PEL_WIDTH)
@@ -557,7 +557,7 @@ int cmd_clcdc (int argc, const char** argv)
     DRV_CLCDC_DISABLE;
 
     DRV_CLCDC_POWER_DISABLE;
-    return 0; 
+    return 0;
   }
 
   return ERROR_PARAM;

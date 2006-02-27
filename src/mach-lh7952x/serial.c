@@ -79,16 +79,16 @@ void lh7952x_serial_init (void)
      *** Clean it up. */
 
 #if defined (CONFIG_ARCH_LH79520)
-  
+
   /* Enable ALL uarts since we don't know which we're using */
   IOCON_UARTMUX = 0xf;
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;
-  RCPC_PERIPHCLKCTRL &= 
-    ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);    
+  RCPC_PERIPHCLKCTRL &=
+    ~(RCPC_PERIPHCLK_U0 | RCPC_PERIPHCLK_U1 | RCPC_PERIPHCLK_U2);
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   switch (baudrate) {
-  case 115200: 
+  case 115200:
     divisor_i = 8; divisor_f = 0; break;
 
   default:
@@ -98,15 +98,15 @@ void lh7952x_serial_init (void)
 #endif
 
 #if defined (CONFIG_ARCH_LH79524) || defined (CONFIG_ARCH_LH79525)
-  
+
   /* Enable ALL uarts since we don't know which we're using */
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;
-  RCPC_PCLKCTRL0 &= 
-    ~(RCPC_PCLKCTRL0_U0 | RCPC_PCLKCTRL0_U1 | RCPC_PCLKCTRL0_U2);    
+  RCPC_PCLKCTRL0 &=
+    ~(RCPC_PCLKCTRL0_U0 | RCPC_PCLKCTRL0_U1 | RCPC_PCLKCTRL0_U2);
   RCPC_CTRL &= ~RCPC_CTRL_UNLOCK;
 
   switch (baudrate) {
-  case 115200: 
+  case 115200:
     divisor_i = 6; divisor_f = 8; break;
 
   default:
@@ -117,14 +117,14 @@ void lh7952x_serial_init (void)
 
 //  while (UART_FR & UART_FR_BUSY)
 //    ;
-  
+
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
-  
+
   UART_IBRD = divisor_i;
   UART_FBRD = divisor_f;
-  
+
   UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
-    
+
   UART_IMSC = 0x00; /* Mask interrupts */
   UART_ICR  = 0xff; /* Clear interrupts */
 
@@ -166,7 +166,7 @@ ssize_t lh7952x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t lh7952x_serial_write (struct descriptor_d* d, 
+ssize_t lh7952x_serial_write (struct descriptor_d* d,
 			      const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;

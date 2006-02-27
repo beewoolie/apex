@@ -53,7 +53,7 @@ volatile void __bug (const char* file, int line, void* data)
 {
 }
 
-int request_irq (int irq, void* func, long flags, char* driver, void* data) 
+int request_irq (int irq, void* func, long flags, char* driver, void* data)
 {
   return 0;
 }

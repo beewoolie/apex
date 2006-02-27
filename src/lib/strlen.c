@@ -20,7 +20,7 @@
  */
 
 #define IN_STRING_C 1
- 
+
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
@@ -43,4 +43,3 @@ size_t strlen(const char * s)
 }
 EXPORT_SYMBOL(strlen);
 #endif
-

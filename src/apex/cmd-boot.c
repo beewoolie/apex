@@ -43,7 +43,7 @@
 
 //#define CONFIG_ICACHE_BOOT
 
-#if defined (CONFIG_ATAG) 
+#if defined (CONFIG_ATAG)
 # include <atag.h>
 static int commandline_argc;
 static const char** commandline_argv;
@@ -103,9 +103,9 @@ int cmd_boot (int argc, const char** argv)
 
 #if defined (CONFIG_ICACHE_BOOT)
 	/* Enable I-cache */
-  { 
+  {
     unsigned long l;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    "orr %0, %0, #(1<<12)\n\t"	  /* I-cache */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
@@ -152,7 +152,7 @@ struct tag* atag_commandline (struct tag* p)
       pb += strlen (pb);
       *pb++ = ' ';
     }
-	
+
     pb--;
     *pb++ = 0;
 
@@ -169,7 +169,7 @@ struct tag* atag_commandline (struct tag* p)
     p->hdr.size
       = (sizeof (struct tag_header) + cb + 4) >> 2;
     p = tag_next (p);
-  }    
+  }
 
   return p;
 }

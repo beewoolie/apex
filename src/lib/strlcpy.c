@@ -5,7 +5,7 @@
  */
 
 #define IN_STRING_C 1
- 
+
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>

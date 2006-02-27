@@ -9,7 +9,7 @@
  * Wirzenius wrote this portably, Torvalds fucked it up :-)
  */
 
-/* 
+/*
  * Fri Jul 13 2001 Crutcher Dunnavant <crutcher+kernel@datastacks.com>
  * - changed to provide snprintf and vsnprintf functions
  * So Feb  1 16:51:32 CET 2004 Juergen Quade <quade@hsnr.de>
@@ -27,7 +27,7 @@
 
 #define PAGE_SIZE 1024		/* Not really, but a convenient limit */
 
-#define WARN_ON(v) 
+#define WARN_ON(v)
 
 /**
  * simple_strtol - convert a string to a signed long
@@ -143,7 +143,7 @@ int vsscanf(const char * buf, const char * fmt, va_list args)
 		if (!*fmt)
 			break;
 		++fmt;
-		
+
 		/* skip this conversion.
 		 * advance both strings to next white space
 		 */
@@ -225,14 +225,14 @@ int vsscanf(const char * buf, const char * fmt, va_list args)
 			base = 16;
 			break;
 		case 'i':
-                        base = 0;
+			base = 0;
 		case 'd':
 			is_sign = 1;
 		case 'u':
 			break;
 		case '%':
 			/* looking for '%' in str */
-			if (*str++ != '%') 
+			if (*str++ != '%')
 				return num;
 			continue;
 		default:
@@ -251,10 +251,10 @@ int vsscanf(const char * buf, const char * fmt, va_list args)
 			digit = *(str + 1);
 
 		if (!digit
-                    || (base == 16 && !isxdigit(digit))
-                    || (base == 10 && !isdigit(digit))
-                    || (base == 8 && (!isdigit(digit) || digit > '7'))
-                    || (base == 0 && !isdigit(digit)))
+		    || (base == 16 && !isxdigit(digit))
+		    || (base == 10 && !isdigit(digit))
+		    || (base == 8 && (!isdigit(digit) || digit > '7'))
+		    || (base == 0 && !isdigit(digit)))
 				break;
 
 		switch(qualifier) {
@@ -340,4 +340,3 @@ int sscanf(const char * buf, const char * fmt, ...)
 }
 
 EXPORT_SYMBOL(sscanf);
-

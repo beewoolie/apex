@@ -40,7 +40,7 @@ unsigned long timer_read (void)
 /* timer_delta
 
    returns the difference in time in milliseconds.
-  
+
    The base counter rate is 66.66MHz or a 15ns cycle time.  1us takes
    67 counts, 1ms takes 66660 counts.  It wraps at about 64 seconds.
 

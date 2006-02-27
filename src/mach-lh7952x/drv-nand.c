@@ -82,7 +82,7 @@ static void wait_on_busy (void)
 static void nand_enable (void)
 {
 #if !defined (CONFIG_NAND_LPD)
-  IOCON_MUXCTL14 |=  (1<<8); 
+  IOCON_MUXCTL14 |=  (1<<8);
   GPIO_MN_PHYS   &= ~(1<<0);
   IOCON_MUXCTL7  &= ~(0xf<<12);
   IOCON_MUXCTL7  |=  (0xa<<12); /* Boot ROM uses 0xf */
@@ -136,7 +136,7 @@ static void nand_init (void)
   manufacturer = NAND_DATA;
   device       = NAND_DATA;
 
-  for (chip = &chips[0]; 
+  for (chip = &chips[0];
        chip < chips + sizeof(chips)/sizeof (struct nand_chip);
        ++chip)
     if (chip->device == device)
@@ -148,7 +148,7 @@ static void nand_init (void)
   printf ("NAND flash ");
 
   if (chip)
-    printf (" %ldMiB total, %dKiB erase\n", 
+    printf (" %ldMiB total, %dKiB erase\n",
 	    chip->total_size/(1024*1024), chip->erase_size/1024);
   else
     printf (" unknown 0x%x/0x%x\n", manufacturer, device);
@@ -205,8 +205,8 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
 #endif
     while (available--)		/* May optimize with assembler...later */
       *((char*) pv++) = NAND_DATA;
-  }    
-  
+  }
+
   nand_disable ();
 
   return cbRead;
@@ -235,7 +235,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     if (available > cb)
       available = cb;
     tail = 528 - index - available;
-    
+
     NAND_CLE = SerialInput;
     NAND_ALE = 0;	/* Always start at page beginning */
     NAND_ALE = ( page        & 0xff);
@@ -265,7 +265,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
       printf ("Write failed at page %ld\n", page);
       goto exit;
     }
-  }    
+  }
 
  exit:
   nand_disable ();

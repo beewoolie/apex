@@ -1,5 +1,4 @@
 /* cmd_help.c
-     $Id$
 
    written by Marc Singer
    3 Nov 2004
@@ -34,7 +33,7 @@
 #include <sort.h>
 #include <error.h>
 
-#define MAX_COMMANDS	128 	/* Used to sort */
+#define MAX_COMMANDS	128	/* Used to sort */
 
 #if defined (CONFIG_ALPHABETIZE_COMMANDS)
 
@@ -105,7 +104,7 @@ int cmd_help (int argc, const char** argv)
       continue;
     }
 #endif
-    printf (" %-*.*s - %s\n", 16, 16, rgc[i]->command, 
+    printf (" %-*.*s - %s\n", 16, 16, rgc[i]->command,
 	    rgc[i]->description ? rgc[i]->description : "?");
   }
 

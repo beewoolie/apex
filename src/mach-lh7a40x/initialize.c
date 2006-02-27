@@ -29,7 +29,7 @@
    drivers, such as the serial interface initialization.
 
    CAS/RAS
-   
+
      There have been problems with the performance of the memory
      subsystem while a fast LCD panel is in use.  We found that the
      display would glitch during high system activity.  The solution
@@ -40,7 +40,7 @@
      The spec on the Micron memory for the -75 part with a 100MHz
      SDCLK is for a CAS latency of 2.
 
-     Looks like this isn't all of it.  
+     Looks like this isn't all of it.
 
    IOBARRIER Delay
 
@@ -62,7 +62,7 @@
      The Intel datasheet on the 28F128J3A shows a read/write hold-time
      of 150ns.  We set the region timing appropriately.  The LOLO
      timing is much slower, 220ns.  Use of this timing was causing
-     problems, writes to NOR flash in APEX were failing. 
+     problems, writes to NOR flash in APEX were failing.
 
 */
 
@@ -94,7 +94,7 @@
    -----
 
    According to the Sharp LH7A400 user's guide, SDRAM initialization
-   goes like this.  
+   goes like this.
 
    1) Wait 100us for device power to stabilize.  This isn't really a
       problem since we need to wait a couple of seconds for wakeup.
@@ -109,7 +109,7 @@
   10) Program the SDRC mode registers according to device mode
       register programming.
   11) Program initialize and MRS to 0 and set to GBLCFG for normal
-      operation.  
+      operation.
 
    According to the LH7A400 EVB start code, here's what we need to do:
 
@@ -122,7 +122,7 @@
    Micron SDRAM can be be initialized with this simple sequence.
    JEDEC is the same except that the wait is 200us and there are at least
    8 AUTO-REFRESH commands.  Changing to the JEDEC way only requires
-   lengthening the delays. 
+   lengthening the delays.
 
    1) Apply power
    2) Wait 100us while applying NOP/COMMAND INHIBIT
@@ -185,8 +185,8 @@
 #define SDCSC_RASTOCAS(v)	(v<<20) /* RAS to CAS latency */
 #define SDCSC_BANKCOUNT_2	(0<<3) /* BankCount, 2 bank devices */
 #define SDCSC_BANKCOUNT_4	(1<<3) /* BankCount, 4 bank devices */
-#define SDCSC_EBW_16		(1<<2) /* ExternalBuswidth, 16 bits w/burst length of 8 */
-#define SDCSC_EBW_32		(0<<2) /* ExternalBusWidth, 32 bits w/burst length of 4 */
+#define SDCSC_EBW_16		(1<<2) /* ExternalBuswidth, 16 bit w/burst 8 */
+#define SDCSC_EBW_32		(0<<2) /* ExternalBusWidth, 32 bit w/burst 4 */
 #define SDCRC_AUTOPRECHARGE	(1<24)
 
 #if defined (CONFIG_SDRAM_CONTIGUOUS)
@@ -233,7 +233,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 		  "str %0, [%1, #0]\n\t"
 		  "str %3, [%1, #8]\n\t"
 	       "0: ldr %0, [%1, #4]\n\t"
-	          "tst %0, %4\n\t"
+		  "tst %0, %4\n\t"
 		  "beq 0b\n\t"
 		  : "+r" (c)
 		  : "r" (TIMER2_PHYS),
@@ -248,7 +248,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 
    performs vital SDRAM initialization as well as some other memory
    controller initializations.  It will perform no work if we are
-   already running from SDRAM. 
+   already running from SDRAM.
 
    The return value is true if SDRAM has been initialized and false if
    this initialization has already been performed.  Note that the
@@ -350,7 +350,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "movhi pc, %0\n\t"
 		  "1:" :: "r" (lr), "I" (SDRAM_BANK0_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
-		  , "r" (&fSDRAMBoot) 
+		  , "r" (&fSDRAMBoot)
 #endif
 		  : "cc");
 
@@ -376,7 +376,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
   SDRC_GBLCNFG = SDRAM_CMD_NORMAL;
   SDRC_SDCSC0 = SDRAM_MODE;
-  
+
   PUTC_LL ('s');
 
 #if defined (CONFIG_SDRAMBOOT_REPORT)

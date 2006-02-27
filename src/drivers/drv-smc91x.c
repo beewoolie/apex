@@ -46,7 +46,7 @@
      o Data is clocked into the PHY on the rising edge of MCLK.
      o Autonegotiation depends both on the PHY being configured for
        autonegotiation as well as the MAC.  IIRC, this isn't typical
-       of other MACs & PHYs.   
+       of other MACs & PHYs.
 
    SMC_TCR_PAD_EN
 
@@ -163,7 +163,7 @@ static int head_rx;		/* Next buffer to accept a receive packet */
 static int count_rx;		/* Number of received packets buffered */
 static char __xbss(ethernet) rgbRxBuffer[C_RX_BUFFER*CB_RX_BUFFER];
 
-#define SMC_REG(b,r)	(r)		
+#define SMC_REG(b,r)	(r)
 
 #define SMC_TCR		SMC_REG(0,0x0) /* Transmit Control Register */
 #define SMC_EPH		SMC_REG(0,0x2) /*  */
@@ -280,7 +280,7 @@ static char __xbss(ethernet) rgbRxBuffer[C_RX_BUFFER*CB_RX_BUFFER];
 #define SMC_FIFO_REMPTY		(1<<15)	/* Receive FIFO empty */
 
 #define SMC_PTR_RCV		(1<<15)
-#define SMC_PTR_AUTO_INCR 	(1<<14)
+#define SMC_PTR_AUTO_INCR	(1<<14)
 #define SMC_PTR_READ		(1<<13)
 #define SMC_PTR_ETEN		(1<<12)
 #define SMC_PTR_NOT_EMPTY	(1<<11)
@@ -396,7 +396,7 @@ static unsigned int smc91x_mii_read (int length)
 
 static void smc91x_mii_disable (void)
 {
-  write_reg (SMC_MGMT, read_reg (SMC_MGMT) 
+  write_reg (SMC_MGMT, read_reg (SMC_MGMT)
 	     & ~(SMC_MGMT_MCLK | SMC_MGMT_MDOE | SMC_MGMT_MDO));
 }
 
@@ -456,7 +456,7 @@ static void smc91x_phy_detect (void)
 	&& id2 != 0x0000 && id2 != 0xffff && id2 != 0x8000) {
       phy_id = (id1 << 16) | id2;
       phy_address &= 0x1f;
-      PRINTF ("%s: phy_detect 0x%x  0x%lx\n", 
+      PRINTF ("%s: phy_detect 0x%x  0x%lx\n",
 	      DRIVER_NAME, phy_address, phy_id);
       break;
     }
@@ -465,8 +465,8 @@ static void smc91x_phy_detect (void)
 
 static void smc91x_phy_reset (void)
 {
-  smc91x_phy_write (phy_address, PHY_CONTROL, 
-		    smc91x_phy_read (phy_address, PHY_CONTROL) 
+  smc91x_phy_write (phy_address, PHY_CONTROL,
+		    smc91x_phy_read (phy_address, PHY_CONTROL)
 		    | PHY_CONTROL_RESET);
   /* Delay before accessing PHY again */
   {
@@ -511,21 +511,21 @@ static void smc91x_receive (void)
   select_bank (2);
   while (((v = read_reg (SMC_FIFO)) & SMC_FIFO_REMPTY) == 0) {
     write_reg (SMC_PTR, SMC_PTR_READ | SMC_PTR_AUTO_INCR | SMC_PTR_RCV);
-    
+
     status = read_reg (SMC_DATAL);
     length = (read_reg (SMC_DATAL) & 0x07ff) - 4;
 
-    save = (count_rx < C_RX_BUFFER) 
+    save = (count_rx < C_RX_BUFFER)
       && (status & (  SMC_PKTSTATUS_ALIGNERR
 		    | SMC_PKTSTATUS_BADCRC
 		    | SMC_PKTSTATUS_TOOLNG
 		    | SMC_PKTSTATUS_TOOSHORT)) == 0;
 
-//    printf ("receiving 0x%04x 0x%04x  save %d  head %d count %d\n", 
+//    printf ("receiving 0x%04x 0x%04x  save %d  head %d count %d\n",
 //	    status, length, save, head_rx, count_rx);
 
     if (save) {
-      SMC_insw (SMC_IOBASE, SMC_DATAL, 
+      SMC_insw (SMC_IOBASE, SMC_DATAL,
 		rgbRxBuffer + head_rx*CB_RX_BUFFER + 2, length/2);
       *(u16*) &rgbRxBuffer[head_rx*CB_RX_BUFFER]
 	= length - 2 + ((status & SMC_PKTSTATUS_ODDFRM ? 1 : 0));
@@ -554,7 +554,7 @@ static ssize_t smc91x_read (struct descriptor_d* d, void* pv, size_t cb)
 
   buffer = (head_rx + C_RX_BUFFER - count_rx)%C_RX_BUFFER;
 
-//  printf (" head_rx %d  count_rx %d  buffer %d\n", 
+//  printf (" head_rx %d  count_rx %d  buffer %d\n",
 //	  head_rx, count_rx, buffer);
 
   length = *(u16*) &rgbRxBuffer[buffer*CB_RX_BUFFER];
@@ -584,12 +584,12 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
   while (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT)
 	 && timer_delta (l, timer_read ()) < 100)
     ;
-  
+
   if (!(read_reg (SMC_INTERRUPT) & SMC_INT_ALLOC_INT)) {
     DBG (1, "transmit allocation failed\n");
     return 0;
   }
-    
+
   clear_interrupt (SMC_INT_ALLOC_INT);
 
   pkt = read_reg (SMC_PNR) >> 8;
@@ -608,7 +608,7 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
   /* write data */
   SMC_outsw (SMC_IOBASE, SMC_DATAL, pv, cb >> 1);
   /* write control and last byte if the length was odd */
-  SMC_outw (SMC_IOBASE, SMC_DATAL, 
+  SMC_outw (SMC_IOBASE, SMC_DATAL,
 	    (cb & 1) ? ((unsigned char*) pv)[cb - 1] | SMC_PKTCONTROL_ODD : 0);
 
   write_reg (SMC_MMUCR, SMC_MMUCR_ENQUEUE);
@@ -616,7 +616,7 @@ static int smc91x_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   while (!(read_reg (SMC_FIFO) & SMC_FIFO_TEMPTY))
     ;
-  
+
   return cb;
 }
 
@@ -724,7 +724,7 @@ void smc91x_init (void)
   write_reg (SMC_RCR, SMC_RCR_RXEN  | SMC_RCR_STRIP_CRC); /* Enable receiver */
   {
     int v = read_reg (SMC_RPCR);
-    v &= ~(  (SMC_RPCR_MASK << SMC_RPCR_LSA_SHIFT) 
+    v &= ~(  (SMC_RPCR_MASK << SMC_RPCR_LSA_SHIFT)
 	   | (SMC_RPCR_MASK << SMC_RPCR_LSB_SHIFT));
     v |= SMC_RPCR_LS_ACT    << SMC_RPCR_LSA_SHIFT;
     v |= SMC_RPCR_LS_LINK   << SMC_RPCR_LSB_SHIFT;
@@ -840,13 +840,13 @@ static int cmd_eth (int argc, const char** argv)
 	if (i && (i % WIDE) == 0)
 	  printf ("\n");
 	if (rgRegs[index].reg & (1<<8))
-	  smc91x_phy_write (phy_address, 28, 
+	  smc91x_phy_write (phy_address, 28,
 			  (smc91x_phy_read (phy_address, 28) & 0x0fff)
 			  | (rgRegs[index].reg & 0xf000));
-	printf ("%5s-%-2d %04x  ", 
-		rgRegs[index].label, rgRegs[index].reg & 0xff, 
+	printf ("%5s-%-2d %04x  ",
+		rgRegs[index].label, rgRegs[index].reg & 0xff,
 		smc91x_phy_read (phy_address, rgRegs[index].reg & 0xff));
-      }	
+      }
 #else
       for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
 	   ++i) {
@@ -858,10 +858,10 @@ static int cmd_eth (int argc, const char** argv)
 	  if (i && (index & 0x7) == 0)
 	    printf ("\n");
 	  if (rgRegs[index].reg & (1<<8))
-	    smc91x_phy_write (phy_address, 28, 
+	    smc91x_phy_write (phy_address, 28,
 			    (smc91x_phy_read (phy_address, 28) & 0x0fff)
 			    | (rgRegs[index].reg & 0xf000));
-	  printf ("%04x    ", smc91x_phy_read (phy_address, 
+	  printf ("%04x    ", smc91x_phy_read (phy_address,
 					     rgRegs[index].reg & 0xff));
 	}
 	else {

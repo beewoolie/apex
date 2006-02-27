@@ -46,7 +46,7 @@
 	PRECHARGE_ALL->SDRAM
 	MODE_REGISTER_SET->SDRAM_EXTENDED_MODE
 	MODE_REGISTER_SET->SDRAM
-	WAIT 200 cycles 
+	WAIT 200 cycles
 	PRECHARGE_ALL->SDRAM
 	AUTO_REFRESH->SDRAM *2
 	MODE_REGISTER_SET->SDRAM
@@ -110,7 +110,7 @@
    this function accepts a count of microseconds and will wait at
    least that long (though probably longer) before returning.  The
    timer clock must be activated by the initialization code before
-   using usleep.  
+   using usleep.
 
    Even though the timer is limited in range, the function can loop
    until the full count has been exhausted making the longest sleep is
@@ -156,7 +156,7 @@ void __naked __section (.bootstrap) usleep (unsigned long us)
 		       "tst %0, %4\n\t"
 		       "beq 0b\n\t"
 		       : "+r" (c)
-		       : "r" (TIMER0_PHYS), 
+		       : "r" (TIMER0_PHYS),
 			 "r" (0),
 			 "r" (TIMER_ENABLE | TIMER_SCALE_256),
 			 "I" (0x8000)
@@ -176,7 +176,7 @@ void __naked __section (.bootstrap) usleep (unsigned long us)
 
    performs vital SDRAM initialization as well as some other memory
    controller initializations.  It will perform no work if we are
-   already running from SDRAM.  It will 
+   already running from SDRAM.  It will
 
    The assembly output of this implementation of the initialization is
    more dense than the assembler version using a table of
@@ -206,7 +206,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   IOCON_UARTMUX |= 0xc;		/* Activate U1 MUX */
 
   UART_CR = UART_CR_EN; /* Enable UART without drivers */
-  
+
   UART_IBRD = 8;
   UART_FBRD = 0;
   UART_LCR_H = UART_LCR_FEN | UART_LCR_WLEN8;
@@ -233,14 +233,14 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* Stop watchdog? */
 
   /* *** 0x17ef was good enough for JTAG */
-  IOCON_MEMMUX = 0x3fff; /* 32 bit, SDRAM, all SRAM */ 
+  IOCON_MEMMUX = 0x3fff; /* 32 bit, SDRAM, all SRAM */
 
   /* NOR flash */
   if (CPLD_REVISION < 0x0021)
     SMC_BCR0 = 0x100020ef;	/* BLE used for write-enable; old boards */
   else
     SMC_BCR0 = 0x100024ef;	/* WE used for write-enable */
-  
+
 
 //  SMC_BCR4 = 0x10007580; /* CompactFlash */
 //  SMC_BCR5 = 0x100034c0; /* CPLD */
@@ -259,7 +259,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "movls pc, %0\n\t"
 		"1:" :: "r" (lr), "i" (SDRAM_BANK1_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
-		  , "r" (&fSDRAMBoot) 
+		  , "r" (&fSDRAMBoot)
 #endif
 		  : "r0");
 
@@ -283,7 +283,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);
   __REG (SDRAM_BANK1_PHYS + SDRAM_CHIP_MODE);
 
-		/* Wait for controller to idle 
+		/* Wait for controller to idle
 		   -- See AppNote LH79520 SoC SDRAM connection and Usage */
   while (SDRC_CONFIG1 & SDRC_CONFIG1_BUSY)
     ;

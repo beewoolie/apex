@@ -1,5 +1,4 @@
 /* lpd79524.h
-     $Id$
 
    written by Marc Singer
    12 Nov 2004
@@ -56,9 +55,10 @@
 #define CPLD_GPIODIR		__REG8(0x4cd00000)
 
 #define CPLD_FLASH_NANDSPD	(1<<6)
+#define CPLD_FLASH_FPOP		(1<<3)
 #define CPLD_FLASH_RDYnBSY	(1<<2)
-#define CPLD_FLASH_FL_VPEN	(1<<0)
 #define CPLD_FLASH_STS1		(1<<1)
+#define CPLD_FLASH_FL_VPEN	(1<<0)
 
 #define CPLD_CONTROL_WRLAN_ENABLE (1<<0)
 

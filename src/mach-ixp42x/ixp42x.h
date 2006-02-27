@@ -1,5 +1,4 @@
 /* ixp42x.h
-     $Id$
 
    written by Marc Singer
    14 Jan 2005
@@ -160,10 +159,10 @@
 
 #define GPIO_INT_TYPE_MASK(i)\
   (((i) > 7) ? (GPIO_IT2R &= ~(7 << (((i) - 8)*3)))\
-             : (GPIO_IT1R &= ~(7 << ( (i)     *3))))
+	     : (GPIO_IT1R &= ~(7 << ( (i)     *3))))
 #define GPIO_INT_TYPE_SET(i,v)\
   (((i) > 7) ? (GPIO_IT2R |= (v) << (((i) - 8)*3))\
-             : (GPIO_IT1R |= (v) << ( (i)     *3)))
+	     : (GPIO_IT1R |= (v) << ( (i)     *3)))
 
 #define GPIO_INT_TYPE(i,v) ( GPIO_INT_TYPE_MASK (i), GPIO_INT_TYPE_SET (i,v) )
 
@@ -248,13 +247,13 @@
 #define PCI_CONFIG_WRITE16(o,v) {\
     PCI_CRP_AD_CBE = ((o) & ~3) | PCI_CRP_AD_CBE_WRITE\
       | ((((3 << (PCI_CRP_AD_CBE_BE_SHIFT + (o & 3)))\
-         ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK));\
+	 ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK));\
     PCI_CRP_WDATA = (v) << (8 * ((o) & 3)); }
 
 #define PCI_CONFIG_READ32(o) (\
     PCI_CRP_AD_CBE = ((o) & ~3) | PCI_CRP_AD_CBE_READ\
       | ((((3 << (PCI_CRP_AD_CBE_BE_SHIFT + (o & 3)))\
-         ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK)),\
+	 ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK)),\
     PCI_CRP_RDATA )
 
 

@@ -1,5 +1,4 @@
 /* coprocessor.h
-     $Id$
 
    written by Marc Singer
    8 Apr 2005

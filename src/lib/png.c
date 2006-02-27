@@ -120,8 +120,8 @@ static inline int paeth_predictor (int a, int b, int c)
 
 static long read_long (const unsigned char* pb)
 {
-  return (pb[0] << 24) 
-    + (pb[1] << 16) 
+  return (pb[0] << 24)
+    + (pb[1] << 16)
     + (pb[2] << 8)
     +  pb[3];
 }
@@ -164,7 +164,7 @@ void* open_png (const void* pv, size_t cb)
   png.pbPrev = 0;		/* In lieu of free */
   png.cPalette = 0;		/* In lieu of free */
 
-//  printf ("%s: %p %d\n", __FUNCTION__, pv, cb); 
+//  printf ("%s: %p %d\n", __FUNCTION__, pv, cb);
 
   if (cb < 8)
     return NULL;
@@ -180,22 +180,22 @@ void* open_png (const void* pv, size_t cb)
 	|| pb[5] != 10
 	|| pb[6] != 26
 	|| pb[7] != 10)
-      return NULL; 
+      return NULL;
   }
 
-//  printf ("%s: magic OK\n", __FUNCTION__); 
+//  printf ("%s: magic OK\n", __FUNCTION__);
 
   png.pb = pv;
   png.cb = cb;
   png.ib = 0;
 
 
-//  printf ("%s: reading first chunk\n", __FUNCTION__); 
+//  printf ("%s: reading first chunk\n", __FUNCTION__);
 
   if (next_chunk (&png) || memcmp (&png.c.id, "IHDR", 4))
     return NULL;
 
-//  printf ("%s: pulling header\n", __FUNCTION__); 
+//  printf ("%s: pulling header\n", __FUNCTION__);
 
   png.hdr.width       = read_long (png.pb + png.ib + 8);
   png.hdr.height      = read_long (png.pb + png.ib + 8 + 4);
@@ -261,9 +261,9 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
 	/* Initialization */
   if (memcmp (&png->c.id, "IDAT", 4)) {
-//    printf ("%s: init\n", __FUNCTION__); 
+//    printf ("%s: init\n", __FUNCTION__);
 
-//    printf ("%s: inflateInit\n", __FUNCTION__); 
+//    printf ("%s: inflateInit\n", __FUNCTION__);
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = zlib_heap_alloc;
     png->z.zfree = zlib_heap_free;
@@ -273,9 +273,9 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
 	/* Find next chunk, IDAT especially */
   if (png->z.avail_in == 0) {
-//    printf ("%s: search for idat\n", __FUNCTION__); 
+//    printf ("%s: search for idat\n", __FUNCTION__);
     while (next_chunk (png) == 0) {
-//      printf ("%s: looking %d %4.4s\n", __FUNCTION__, 
+//      printf ("%s: looking %d %4.4s\n", __FUNCTION__,
 //	      png->c.length, (char*) &png->c.id);
 
       if (memcmp (&png->c.id, "IEND", 4) == 0)
@@ -293,7 +293,7 @@ static ssize_t read_png_idat (void* pv, unsigned char* rgb, size_t cb)
 
   png->z.next_out = rgb;
   png->z.avail_out = cb;
-//  printf ("%s: inflate\n", __FUNCTION__); 
+//  printf ("%s: inflate\n", __FUNCTION__);
   result = inflate (&png->z, 0);
   if (result < 0)
     return result;
@@ -321,10 +321,10 @@ const unsigned char* read_png_row (void* pv)
   pb     = png->pbThis + bpp - 1;
   pbPrev = png->pbPrev + bpp - 1;
 
-//  printf ("%s:\n", __FUNCTION__); 
+//  printf ("%s:\n", __FUNCTION__);
 
   if (read_png_idat (pv, pb, cbRow) != cbRow) {
-    printf ("%s: read failed\n", __FUNCTION__); 
+    printf ("%s: read failed\n", __FUNCTION__);
     return NULL;
   }
 
@@ -360,8 +360,8 @@ const unsigned char* read_png_row (void* pv)
     break;
   case 4:			/* Paeth filter */
     for (i = 1; i < cbRow; ++i)
-      pb[i] = (pb[i] + paeth_predictor (pb    [i - bpp], 
-					pbPrev[i      ], 
+      pb[i] = (pb[i] + paeth_predictor (pb    [i - bpp],
+					pbPrev[i      ],
 					pbPrev[i - bpp])) & 0xff;
     break;
   }

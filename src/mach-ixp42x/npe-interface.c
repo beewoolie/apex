@@ -64,7 +64,7 @@ static int npeDownload (int npeId, int functionalityId)
 
   if (ixNpeDlAvailableVersionsListGet (list, &c) != IX_SUCCESS)
     return 1;
-    
+
   major = minor = 0;
   for (i = 0; i < c; i++) {
     if (list[i].npeId == npeId) {

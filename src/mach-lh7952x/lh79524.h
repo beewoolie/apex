@@ -1,5 +1,4 @@
 /* lh79524.h
-     $Id$
 
    written by Marc Singer
    31 Oct 2004
@@ -376,7 +375,7 @@
 # define RCPC_SYSCLKPRE_V	(1)		/* HCLK = PLL/2 */
 # define RCPC_CPUCLKPRE_V	(1)		/* FCLK = PLL/2 */
 # define RCPC_CORECONFIG_V	(0)		/* Standard, async clocking */
-# define HCLK			(50803200) 	/* HCLK in Hz */
+# define HCLK			(50803200)	/* HCLK in Hz */
 #else // run...faster?
 
 #endif
@@ -396,12 +395,12 @@
 
 #define IOCON_MUXCTL5_V		(0x0a00)	/* Enable UART0 */
 #define IOCON_MUXCTL6_V		(0x000a)	/* Enable UART0 */
-#define IOCON_MUXCTL7_V		(0x5555) 	/* Enable A23-A19 */
-#define IOCON_RESCTL7_V		(0x5555) 	/* Pull-down */
+#define IOCON_MUXCTL7_V		(0x5555)	/* Enable A23-A19 */
+#define IOCON_RESCTL7_V		(0x5555)	/* Pull-down */
 
 #if defined (CONFIG_ARCH_LH79524)
 #define IOCON_MUXCTL10_V	(0x5555)	/* Enable D25-D21, D15-D13 */
-#define IOCON_MUXCTL11_V	(0x5555) 	/* Enable D20-D17, D12-D9 */
+#define IOCON_MUXCTL11_V	(0x5555)	/* Enable D20-D17, D12-D9 */
 #define IOCON_MUXCTL12_V	(0x5000)	/* Enable D16, D8 */
 #define IOCON_MUXCTL14_V	(0x0000)	/* Normalize nCS0 */
 #define IOCON_MUXCTL19_V	(0x0441)	/* Enable D31-D29 */

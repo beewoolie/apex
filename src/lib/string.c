@@ -20,7 +20,7 @@
  */
 
 #define IN_STRING_C 1
- 
+
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
@@ -275,8 +275,8 @@ char * strrchr(const char * s, int c)
 {
        const char *p = s + strlen(s);
        do {
-           if (*p == (char)c)
-               return (char *)p;
+	   if (*p == (char)c)
+	       return (char *)p;
        } while (--p >= s);
        return NULL;
 }
@@ -320,7 +320,7 @@ EXPORT_SYMBOL(strnlen);
 #ifndef __HAVE_ARCH_STRSPN
 /**
  * strspn - Calculate the length of the initial substring of @s which only
- * 	contain letters in @accept
+ *	contain letters in @accept
  * @s: The string to be searched
  * @accept: The string to search for
  */
@@ -348,7 +348,7 @@ EXPORT_SYMBOL(strspn);
 
 /**
  * strcspn - Calculate the length of the initial substring of @s which does
- * 	not contain letters in @reject
+ *	not contain letters in @reject
  * @s: The string to be searched
  * @reject: The string to avoid
  */
@@ -367,7 +367,7 @@ size_t strcspn(const char *s, const char *reject)
 	}
 
 	return count;
-}	
+}
 EXPORT_SYMBOL(strcspn);
 
 #if 0
@@ -434,7 +434,7 @@ EXPORT_SYMBOL(strsep);
 void * memset(void * s,int c,size_t count)
 {
 	char *xs = (char *) s;
- 
+
 	while (count--)
 		*xs++ = c;
 
@@ -560,7 +560,7 @@ void * memscan(void * addr, int c, size_t size)
 		p++;
 		size--;
 	}
-  	return (void *) p;
+	return (void *) p;
 }
 EXPORT_SYMBOL(memscan);
 #endif
@@ -604,7 +604,7 @@ void *memchr(const void *s, int c, size_t n)
 {
 	const unsigned char *p = s;
 	while (n-- != 0) {
-        	if ((unsigned char)c == *p++) {
+		if ((unsigned char)c == *p++) {
 			return (void *)(p-1);
 		}
 	}

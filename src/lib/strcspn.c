@@ -5,7 +5,7 @@
  */
 
 #define IN_STRING_C 1
- 
+
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
@@ -15,7 +15,7 @@
 
 /**
  * strcspn - Calculate the length of the initial substring of @s which does
- * 	not contain letters in @reject
+ *	not contain letters in @reject
  * @s: The string to be searched
  * @reject: The string to avoid
  */
@@ -34,5 +34,5 @@ size_t strcspn(const char *s, const char *reject)
 	}
 
 	return count;
-}	
+}
 EXPORT_SYMBOL(strcspn);

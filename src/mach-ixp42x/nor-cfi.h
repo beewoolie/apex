@@ -1,5 +1,4 @@
 /* nor-cfi.h
-     $Id$
 
    written by Marc Singer
    9 Mar 2005

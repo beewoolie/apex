@@ -65,7 +65,7 @@ static __command struct command_d c_go = {
   COMMAND_HELP(
 "go ADDRESS\n"
 "  Transfer execution to the program at ADDRESS.\n"
-"  Unlike the boot command, go does not pass data to a Linux\n" 
+"  Unlike the boot command, go does not pass data to a Linux\n"
 "  kernel.  Services and drivers will be disabled and the MMU\n"
 "  will be off before jumping to ADDRESS.\n\n"
 /* Cannot use this example until the ; works on the command line */

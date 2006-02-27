@@ -119,7 +119,7 @@ static int execute_spi_command (int chip_select,
     disable_cs (chip_select);
     time = timer_read ();
     enable_cs (chip_select);
-	
+
     l = -1;
     do {
       if (CPLD_SPI & CPLD_SPI_RX) {
@@ -132,7 +132,7 @@ static int execute_spi_command (int chip_select,
 	/* We pulse the clock before the data to skip the leading zero. */
     while (cread-- > 0) {
       pulse_clock ();
-      l = (l<<1) 
+      l = (l<<1)
 	| (((CPLD_SPI & CPLD_SPI_RX) >> CPLD_SPI_RX_SHIFT) & 0x1);
     }
 
@@ -168,10 +168,10 @@ static ssize_t spi_read (struct descriptor_d* d, void* pv, size_t cb)
   int i;
 
   for (i = 0; i < cb; ++i)
-    ((unsigned char*) pv)[i] 
-      = execute_spi_command (chip_select, 
+    ((unsigned char*) pv)[i]
+      = execute_spi_command (chip_select,
 			     P_START|P_READ|(i + index), 10, 8);
-  
+
   return cb;
 }
 
@@ -185,10 +185,10 @@ static ssize_t spi_write (struct descriptor_d* d, const void* pv, size_t cb)
   execute_spi_command (chip_select, P_START|P_EWEN|P_A_EWEN, 10, 0);
 
   for (i = 0; i < cb; ++i)
-    execute_spi_command (chip_select, 
+    execute_spi_command (chip_select,
 			 ((P_START|P_WRITE|(i + index))<<8)
 			 |((unsigned char*) pv)[i], 18, -1);
-  
+
   execute_spi_command (chip_select, P_START|P_EWDS|P_A_EWDS, 10, 0);
 
   return cb;
@@ -204,9 +204,9 @@ static void spi_erase (struct descriptor_d* d, size_t cb)
   execute_spi_command (chip_select, P_START|P_EWEN|P_A_EWEN, 10, 0);
 
   for (i = 0; i < cb; ++i)
-    execute_spi_command (chip_select, 
+    execute_spi_command (chip_select,
 			 P_START|P_ERASE|(i + index), 10, -1);
-  
+
   execute_spi_command (chip_select, P_START|P_EWDS|P_A_EWDS, 10, 0);
 }
 

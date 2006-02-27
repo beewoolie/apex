@@ -45,7 +45,7 @@ int printf (const char* fmt, ...)
   static char __xbss(console) rgb[2*1024];
   ssize_t cb;
   va_list ap;
-  extern ssize_t console_write (struct descriptor_d* d, 
+  extern ssize_t console_write (struct descriptor_d* d,
 				const void* pv, size_t cb);
 
 
@@ -62,7 +62,7 @@ int printf (const char* fmt, ...)
   cb = vsnprintf (rgb, sizeof (rgb) - 1, fmt, ap);
   va_end (ap);
   rgb[cb] = 0;
-  
+
 //  PUTC_LL ('P');
 
   {

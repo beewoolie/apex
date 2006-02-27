@@ -26,7 +26,7 @@
    -----------
 
    PNG decoder implemented for regions.  This module allows for
-   decompression of PNG images stored in any region. 
+   decompression of PNG images stored in any region.
 
    The code is very simple.  It only allows decompression of one image
    at a time.  The caller cannot know this and so must pass a context
@@ -80,7 +80,7 @@
      reasonably sized zlib input buffer.  Keep in mind that we may be
      reading from a filesystem and we cannot simply mmap the data.
      Moreover, we don't really know how large a chunk can be.  The
-     specification makes no such declaration.  
+     specification makes no such declaration.
 
      As a stop-gap measure, we're going to declare a static buffer.
      This isn't terribly onerous, but we would like to be able to
@@ -151,7 +151,7 @@ static inline int paeth_predictor (int a, int b, int c)
 static ssize_t pngr_read (struct png* png, void* pv, size_t cb)
 {
   ssize_t cbRead;
-  
+
   if (cb > png->c.length - png->ib)
     cb = png->c.length - png->ib;
 
@@ -167,8 +167,8 @@ static ssize_t pngr_read (struct png* png, void* pv, size_t cb)
 static long read_long (const void* pv)
 {
   const unsigned char* pb = (const char*) pv;
-  return (pb[0] << 24) 
-    + (pb[1] << 16) 
+  return (pb[0] << 24)
+    + (pb[1] << 16)
     + (pb[2] << 8)
     +  pb[3];
 }
@@ -209,7 +209,7 @@ void* open_pngr (struct descriptor_d* d)
   png.pbPrev = 0;		/* In lieu of free */
   png.cPalette = 0;		/* In lieu of free */
 
-//  printf ("%s\n", __FUNCTION__); 
+//  printf ("%s\n", __FUNCTION__);
 
 //  printf ("pngr_read of magic\n");
   cb = d->driver->read (d, rgb, 8);
@@ -226,7 +226,7 @@ void* open_pngr (struct descriptor_d* d)
       || rgb[7] != 10)
     return NULL;
 
-//  printf ("%s: magic OK\n", __FUNCTION__); 
+//  printf ("%s: magic OK\n", __FUNCTION__);
 
   png.d = d;
 //  png.ib = 0;
@@ -235,7 +235,7 @@ void* open_pngr (struct descriptor_d* d)
   if (next_chunk (&png) || memcmp (&png.c.id, "IHDR", 4))
     return NULL;
 
-//  printf ("%s: pulling header\n", __FUNCTION__); 
+//  printf ("%s: pulling header\n", __FUNCTION__);
 
   pngr_read (&png, &png.hdr, sizeof (struct png_header));
 //  printf ("%s: fixing header\n", __FUNCTION__);
@@ -243,7 +243,7 @@ void* open_pngr (struct descriptor_d* d)
   png.hdr.height      = read_long (&png.hdr.height);
 
 //  printf ("%s: header %d %d %d %d\n", __FUNCTION__,
-//	  png.hdr.width, png.hdr.height, 
+//	  png.hdr.width, png.hdr.height,
 //	  png.hdr.bit_depth, png.hdr.color_type);
 
   switch (png.hdr.color_type) {
@@ -306,9 +306,9 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 
 	/* Initialization */
   if (memcmp (&png->c.id, "IDAT", 4)) {
-    //    printf ("%s: init\n", __FUNCTION__); 
+    //    printf ("%s: init\n", __FUNCTION__);
 
-//    printf ("%s: inflateInit\n", __FUNCTION__); 
+//    printf ("%s: inflateInit\n", __FUNCTION__);
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = zlib_heap_alloc;
     png->z.zfree = zlib_heap_free;
@@ -393,10 +393,10 @@ const unsigned char* read_pngr_row (void* pv)
   pb     = png->pbThis + bpp - 1;
   pbPrev = png->pbPrev + bpp - 1;
 
-//  printf ("%s:\n", __FUNCTION__); 
+//  printf ("%s:\n", __FUNCTION__);
 
   if (read_pngr_idat (pv, pb, cbRow) != cbRow) {
-//    printf ("%s: read failed\n", __FUNCTION__); 
+//    printf ("%s: read failed\n", __FUNCTION__);
     return NULL;
   }
 
@@ -432,8 +432,8 @@ const unsigned char* read_pngr_row (void* pv)
     break;
   case 4:			/* Paeth filter */
     for (i = 1; i < cbRow; ++i)
-      pb[i] = (pb[i] + paeth_predictor (pb    [i - bpp], 
-					pbPrev[i      ], 
+      pb[i] = (pb[i] + paeth_predictor (pb    [i - bpp],
+					pbPrev[i      ],
 					pbPrev[i - bpp])) & 0xff;
     break;
   }

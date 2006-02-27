@@ -83,7 +83,7 @@ int cmd_printenv (int argc, const char** argv)
   const char* szKey;
   const char* szValue;
   int fDefault;
-  
+
   while ((pv = env_enumerate (pv, &szKey, &szValue, &fDefault))) {
     puts (szKey);
     if (fDefault)
@@ -135,7 +135,7 @@ static int cmd_setenv (int argc, const char** argv)
 
   result = env_store (argv[1], sz);
 
-#if defined (CONFIG_SMALL)  
+#if defined (CONFIG_SMALL)
   return result ? ERROR_FAILURE : 0;
 #else
   if (result < 0)
@@ -166,8 +166,8 @@ static int cmd_unsetenv (int argc, const char** argv)
     return ERROR_UNSUPPORTED;
 
   if (argc != 2)
-    return ERROR_PARAM; 
-  
+    return ERROR_PARAM;
+
   env_erase (argv[1]);
 
   return 0;
@@ -192,7 +192,7 @@ static int cmd_eraseenv (int argc, const char** argv)
     return ERROR_UNSUPPORTED;
 
   if (argc != 1)
-    return ERROR_PARAM; 
+    return ERROR_PARAM;
 
   env_erase_all ();
 

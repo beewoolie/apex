@@ -34,14 +34,14 @@
 
    ========================================
 
-   Test code for the audio codec. 
+   Test code for the audio codec.
 
    You can dump an 8 bit file with hexdump.  This one skips to the
    0x2c'th byte before dumping.
 
      hexdump -v -s 0x2c -n 32768 -e '8 1 "0x%02x, " "\n\t"' k3b_success1.wav
 
-   A 16 bit stereo file:   
+   A 16 bit stereo file:
 
      hexdump -v -s 0x108b0 -n 100000 -e '8 2 "0x%04x, " "\n\t"' track01.wav
 
@@ -50,7 +50,7 @@
 
   o There seems to be more at play in the signed versus unsigned
     arena.  The WAV format certainly uses signed integers for the
-    sample values. 
+    sample values.
   o As slave, the CPU appears to properly sequence data out in that
     the data starts one (or perhaps two) cycles after the start of the
     IWS signal transition.
@@ -140,7 +140,7 @@
 static void msleep (int ms)
 {
   unsigned long time = timer_read ();
-	
+
   do {
   } while (timer_delta (time, timer_read ()) < ms);
 }
@@ -198,7 +198,7 @@ static void codec_unmute (void)
 			    | (1<<1) /* Disable MIC  */
 			    | (1<<0) /* Disable LINE IN */
 			    ), 16);
-  execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
+  execute_spi_command (CMD (CODEC_DIGITAL_CTRL,
 			    0
 			    |(2<<1) /* 44.1 kHz deemphasis */
 			    ), 16);
@@ -206,7 +206,7 @@ static void codec_unmute (void)
 
 static void codec_mute (void)
 {
-  execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
+  execute_spi_command (CMD (CODEC_DIGITAL_CTRL,
 			    (1<<3) /* Soft mute */
 			    |(2<<1) /* 44.1 kHz deemphasis */
 			    ), 16);
@@ -283,11 +283,11 @@ static void codec_init (void)
 
   DMA_CLR   = 0xff;
   DMA_MASK |= (1 << DMA_CHANNEL); /* Enable of DMA channel */
-  
+
 //  codec_mute ();
 
   execute_spi_command (CMD (CODEC_RESET, 0), 16);
-  execute_spi_command (CMD (CODEC_DIGITAL_CTRL, 
+  execute_spi_command (CMD (CODEC_DIGITAL_CTRL,
 			    0
 			    |(2<<1) /* 44.1 kHz deemphasis */
 			    ), 16);
@@ -317,15 +317,15 @@ typedef unsigned char buffer_t;
 static buffer_t __attribute__((section(".pcm.bss"))) buffer[128*1024];
 
 /* convert_source
-   
-   returns the number of samples used in the buffer. 
+
+   returns the number of samples used in the buffer.
 
 */
 
 static int convert_source (void)
 {
   int source_samples = C_SAMPLES;
-  int buffer_samples = sizeof (buffer)/sizeof (buffer[0]); 
+  int buffer_samples = sizeof (buffer)/sizeof (buffer[0]);
   sample_t* rgb = (sample_t*) &rgbPCM[0];
   int is;
   int ib;
@@ -446,16 +446,16 @@ static int convert_source (void)
 error
 #endif
   }
-  
+
   return buffer_samples;
-} 
+}
 
 static int cmd_codec_test (int argc, const char** argv)
 {
   int samples = convert_source ();
   int index;			/* Index for DMA */
   int count;
-  int loops = 
+  int loops =
 #if defined USE_LOOPS
       USE_LOOPS
 #else

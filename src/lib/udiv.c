@@ -29,8 +29,8 @@
 
 */
 
-static unsigned long udivmodsi4 (unsigned long numerator, 
-				 unsigned long denominator, 
+static unsigned long udivmodsi4 (unsigned long numerator,
+				 unsigned long denominator,
 				 int return_modulus)
 {
   unsigned long bit = 1;
@@ -48,7 +48,7 @@ static unsigned long udivmodsi4 (unsigned long numerator,
     bit >>= 1;
     denominator >>= 1;
   }
-  
+
   return return_modulus ? numerator : result;
 }
 
@@ -61,4 +61,3 @@ long __umodsi3 (long a, long b)
 {
   return udivmodsi4 (a, b, 1);
 }
-

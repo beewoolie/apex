@@ -34,11 +34,11 @@
    There have been some problems with the way we probe to find unique
    SDRAM.  The present implementation has only the restrictions that
 
-    1) the last word of the stack must be available during probing 
+    1) the last word of the stack must be available during probing
     2) that the CB_BLOCK is larger than the size of the loader footprint
     3) that the loader is aligned to CB_BLOCK.
     4) if loader is longer than a CB_BLOCK, only the first CB_BLOCK of
-       data is protected from probes.  
+       data is protected from probes.
 
 */
 
@@ -88,7 +88,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 
 //  length = 1024*1024*36;
   PUTC_LL ('k');
-  PRINTF ("  marking start %lx length %lx probe %x\n", start, length, 
+  PRINTF ("  marking start %lx length %lx probe %x\n", start, length,
 	  &APEX_VMA_PROBE_END - &APEX_VMA_START);
 
 	/* Mark */
@@ -108,7 +108,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   PRINTF ("  identifying\n");
 
 	/* Identify */
-  for (pl = (unsigned long*) (start 
+  for (pl = (unsigned long*) (start
 			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
        pl < (unsigned long*) (start + length)
 	 && i < sizeof (regions)/sizeof (struct mem_region);
@@ -138,7 +138,7 @@ static void memory_init (void)
   i = 0;
 #if defined (RAM_BANK0_START)
   PUTC_LL ('0');
-  PRINTF ("Scanning bank 0 %x %x\n", 
+  PRINTF ("Scanning bank 0 %x %x\n",
 	  RAM_BANK0_START, RAM_BANK0_LENGTH);
   i = memory_scan (i, RAM_BANK0_START, RAM_BANK0_LENGTH);
   PRINTF ("  %d block%s\n", i, i != 1 ? "s" : "");
@@ -146,7 +146,7 @@ static void memory_init (void)
 
 #if defined (RAM_BANK1_START)
   PUTC_LL ('1');
-  PRINTF ("Scanning bank 1 %x %x\n", 
+  PRINTF ("Scanning bank 1 %x %x\n",
 	  RAM_BANK1_START, RAM_BANK1_LENGTH);
   i = memory_scan (i, RAM_BANK1_START, RAM_BANK1_LENGTH);
 #endif
@@ -175,17 +175,17 @@ static void memory_report (void)
     if (regions[i].length) {
       if (i)
 	printf ("         ");
-      printf (" 0x%lx 0x%08x (%d MiB)\n", 
-	      regions[i].start, regions[i].length, 
+      printf (" 0x%lx 0x%08x (%d MiB)\n",
+	      regions[i].start, regions[i].length,
 	      regions[i].length/(1024*1024));
     }
 #if defined (CONFIG_CMD_MEMLIMIT)
   if (memlimit)
-    printf ("          memlimit is %d.%03d MiB, %d (0x%x) bytes\n", 
+    printf ("          memlimit is %d.%03d MiB, %d (0x%x) bytes\n",
 	    memlimit/(1024*1024),
 	    (((memlimit/1024)*1000)/1024)%1000,
 	    memlimit, memlimit);
-#endif  
+#endif
 
 }
 #endif
@@ -216,7 +216,7 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   memcpy (pv, (void*) (d->start + d->index), cb);
 #endif
   d->index += cb;
-  
+
   return cb;
 }
 
@@ -227,7 +227,7 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   memcpy ((void*) (d->start + d->index), pv, cb);
   d->index += cb;
-  
+
   return cb;
 }
 
@@ -258,7 +258,7 @@ static int cmd_memlimit (int argc, const char** argv)
   unsigned long l;
 
   if (argc == 1) {
-    printf ("memlimit is %d.%03d MiB, %d (0x%x) bytes\n", 
+    printf ("memlimit is %d.%03d MiB, %d (0x%x) bytes\n",
 	    memlimit/(1024*1024),
 	    (((memlimit/1024)*1000)/1024)%1000,
 	    memlimit, memlimit);
@@ -332,7 +332,7 @@ static struct tag* atag_memory (struct tag* p)
 
     p->u.mem.start = start;
     p->u.mem.size  = length;
-			
+
 //    printf (" mem 0x%08x # 0x%08x\n", p->u.mem.start, p->u.mem.size);
     p = tag_next (p);
   }

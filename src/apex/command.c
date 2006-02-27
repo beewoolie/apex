@@ -1,5 +1,4 @@
 /* command.c
-     $Id$
 
    written by Marc Singer
    3 Nov 2004
@@ -36,7 +35,7 @@
 #include <environment.h>
 #include <spinner.h>
 #include <sort.h>
-#include <alias.h>  
+#include <alias.h>
 
 const char* error_description;
 
@@ -133,14 +132,14 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
 	  ++pb;
 	*pb = 0;
 	continue;
-      } 
+      }
       if (!*pb)
 	continue;
       argv[(*pargc)++] = pb++;
       while (*pb && !isspace (*pb))
 	++pb;
       --pb;
-    }      
+    }
   }
 
   *pargv = argv;
@@ -149,7 +148,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
 }
 
 
-int call_command (int argc, const char** argv) 
+int call_command (int argc, const char** argv)
 {
   extern char APEX_COMMAND_START;
   extern char APEX_COMMAND_END;
@@ -227,7 +226,7 @@ void exec_monitor (void)
     int argc;
     const char** argv;
     strcpy (sz, szStartup);
-    
+
     while (pch && *pch) {
       char* pchEnd = strchr (pch, ';');
       if (pchEnd)

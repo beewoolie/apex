@@ -48,7 +48,7 @@ voidpf zlib_heap_alloc (voidpf opaque, uInt items, uInt size)
   }
 
   heap_allocated += cb;
-//  printf ("%s: %p <= %d %d = %d (%d)\n", __FUNCTION__, 
+//  printf ("%s: %p <= %d %d = %d (%d)\n", __FUNCTION__,
 //	  result, items, size, cb, heap_allocated);
   return result;
 }

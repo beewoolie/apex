@@ -89,7 +89,7 @@ void init (void)
     extern char APEX_VMA_COPY_START;
     extern char APEX_VMA_COPY_END;
     char sz[80];
-    sprintf (sz, "mem:0x%p+0x%lx", 
+    sprintf (sz, "mem:0x%p+0x%lx",
 	     (void*) &APEX_VMA_COPY_START,
 	     (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
     alias_set ("apex", sz);

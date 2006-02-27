@@ -62,7 +62,7 @@ int cmd_checksum (int argc, const char** argv)
       index += cb;
     }
 
-    printf ("\rcrc32 0x%lx (%lu) over %d (0x%x) bytes\n", 
+    printf ("\rcrc32 0x%lx (%lu) over %d (0x%x) bytes\n",
 	    crc, crc, index, index);
   }
 

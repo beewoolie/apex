@@ -52,4 +52,3 @@ int determine_arch_number (void)
     return 390;			/* LPD7A404 */
   }
 }
-

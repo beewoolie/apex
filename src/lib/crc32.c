@@ -1,7 +1,7 @@
 /* crc3.cc
 
    written by Marc Singer
-   6 November 2004 
+   6 November 2004
 
    -----------
    DESCRIPTION
@@ -24,10 +24,10 @@
 
    Width parameter is the length, in bits, of the polynomial.  The
    Poly is a bit mask indicating which terms have non-zero
-   coefficients.  In this case, 
+   coefficients.  In this case,
 
      g(x) = x^32 + x^26 + x^23 + x^22 + x^16 + x^12 + x^11 + x^10 + x^8 +
-            x^7 + x^5 + x^4 + x^2 + x + 1
+	    x^7 + x^5 + x^4 + x^2 + x + 1
 
    Init is value used to initialize the CRC function.  RefIn and
    RefOut, being true, indicate that the algorithm interprets the MSB
@@ -37,7 +37,7 @@
    The implementation used herein comes from BLOB and was the work of
    several people, Erik Muow, Jan-Derk Bakker, and Russell King.  It
    was found to be faster than the table algorithm though a little
-   larger, ~124 bytes.   
+   larger, ~124 bytes.
 
 */
 
@@ -52,7 +52,7 @@ unsigned long compute_crc32_x (unsigned long crc, const void* pv, int cb)
   unsigned char* pb = (unsigned char*) pv;
   unsigned long poly = POLY;	// Hack to get a register allocated
 
-  crc = crc ^ 0xffffffff;	// Invert because we're continuing  
+  crc = crc ^ 0xffffffff;	// Invert because we're continuing
 
 #define DO_CRC\
   if (crc & 1) { \
@@ -110,4 +110,3 @@ unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
 
   return crc ^ 0xffffffff;
 }
-

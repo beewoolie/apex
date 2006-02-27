@@ -63,7 +63,7 @@ static void cpuinfo_report (void)
 	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n"
 	  "          chipid 0x%x %s\n"
 	  "          cp15test 0x%04lx\n",
-	  id, ctrl, cpsr, ttbl, domain, cache, (unsigned) csc, sz, 
+	  id, ctrl, cpsr, ttbl, domain, cache, (unsigned) csc, sz,
 	  test & 0xffff);
 
 #if defined (CPLD_REVISION)

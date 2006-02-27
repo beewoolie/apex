@@ -65,4 +65,4 @@ void spinner_clear (void)
 {
   if (hook_spinner)
     hook_spinner (~0);
-} 
+}

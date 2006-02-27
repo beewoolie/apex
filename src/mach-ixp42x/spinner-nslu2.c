@@ -87,4 +87,3 @@ static __service_7 struct service_d spinner_service = {
   .init    = spinner_init,
   .release = spinner_release,
 };
-

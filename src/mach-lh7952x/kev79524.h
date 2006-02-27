@@ -1,5 +1,4 @@
 /* kev79524.h
-     $Id$
 
    written by Marc Singer
    12 Nov 2004
@@ -47,7 +46,7 @@
 #define CPLD_STAT3			__REG16(CPLD_PHYS + 0x08)
 #define CPLD_STAT4			__REG16(CPLD_PHYS + 0x0a)
 
-#define CPLD_CTRL1_LCD_BACKLIGHT_EN	(1<<0)	
+#define CPLD_CTRL1_LCD_BACKLIGHT_EN	(1<<0)
 #define CPLD_CTRL1_LCD_OE		(1<<1)
 #define CPLD_CTRL1_LCD_POWER_EN		(1<<2)
 #define CPLD_CTRL1_CF_POWER		(1<<3)

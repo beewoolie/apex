@@ -116,15 +116,15 @@ extern char* strcat (char*, const char*);
 /*
   MMC status in R1
   Type
-  	e : error bit
+	e : error bit
 	s : status bit
 	r : detected and set for the actual command response
 	x : detected and set during command execution. the host must poll
-            the card by sending status command in order to read these bits.
+	    the card by sending status command in order to read these bits.
   Clear condition
-  	a : according to the card state
+	a : according to the card state
 	b : always related to the previous command. Reception of
-            a valid command will clear it (with a delay of one command)
+	    a valid command will clear it (with a delay of one command)
 	c : clear by read
  */
 
@@ -148,7 +148,7 @@ extern char* strcat (char*, const char*);
 #define R1_CARD_ECC_DISABLED	(1 << 14)	/* sx, a */
 #define R1_ERASE_RESET		(1 << 13)	/* sr, c */
 #define R1_STATUS(x)            (x & 0xFFFFE000)
-#define R1_CURRENT_STATE(x)    	((x & 0x00001E00) >> 9)	/* sx, b (4 bits) */
+#define R1_CURRENT_STATE(x)	((x & 0x00001E00) >> 9)	/* sx, b (4 bits) */
 #define R1_READY_FOR_DATA	(1 << 8)	/* sx, a */
 #define R1_APP_CMD		(1 << 5)	/* sr, c */
 
@@ -410,7 +410,7 @@ static void stop_clock (void)
 
   /* *** FIXME: may be helpful to implement a timeout check.
      Interestingly, the Sharp implementation of this function doesn't
-     have a timeout. */ 
+     have a timeout. */
   while (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
     //    MMC_WAIT
     ;
@@ -618,7 +618,7 @@ static void mmc_probe (void)
     printf ("failed to sd_op_cond with arg\n");
     goto mmc_op_cond;
   }
-#endif  
+#endif
 
   goto cid;
 
@@ -639,7 +639,7 @@ static void mmc_probe (void)
     return;
   }
 
-#endif  
+#endif
 
  cid:
 
@@ -768,4 +768,3 @@ static __command struct command_d c_mmc = {
   .description = "test MMC controller",
   .func = cmd_mmc,
 };
-

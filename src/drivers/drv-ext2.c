@@ -24,14 +24,14 @@
    -----------
    DESCRIPTION
    -----------
-   
+
    NOTES
    -----
 
    o Thanks to John,
      http://uranus.it.swin.edu.au/~jn/explore2fs/es2fs.htm, for
      compiling some of the information used to write this driver.
-     Unfortunately, some of his work is incorrect. 
+     Unfortunately, some of his work is incorrect.
    o Thanks to the GRUB project for implementing an ext2fs reader.
 
    o Partitions.  The partition support is redundant here.  We may
@@ -39,7 +39,7 @@
      stuff.  Later.
 
    o There is no inode 0, so no room is left for it in the on-disk
-     data structures.  
+     data structures.
    o The filesystem image starts with the superblock and is
      immediately followed by an array of block_group structures.
      These data are replicated in each block group.
@@ -50,11 +50,11 @@
    o Filesystem blocks are counted from zero starting at the beginning
      of the filesystem partition.
    o The bitmaps for the inodes and the used blocks are not
-     replicated, but are specific to each block group. 
+     replicated, but are specific to each block group.
    o Thus, a file read is <DIR_MODE>inode = root; block_group; inode;
      <FILE_MODE> data_block[n]; search for path element; resolve; inode =
      new_inode; repeat; <DIR_MODE> if more path elements, <DATA_MODE>
-     if file found. 
+     if file found.
 
    o Need to make sure that the constant BLOCK_SIZE_MAX isn't smaller
      than the block size on disk.
@@ -74,11 +74,11 @@
 
    o Symlinks
      o Are chased with recursive calls.  This means that the
-       code could fail with a very deep linking path.  Be warned. 
+       code could fail with a very deep linking path.  Be warned.
      o Very long links are not properly ready.  We only read links
        that fit in the inode.  Links that require a block read are not
        followed.  The main reason for this is that is must be tested
-       and I don't have a > 60 (15*4) character link to test.  
+       and I don't have a > 60 (15*4) character link to test.
 
    o ext2_info()
      o The call isn't elegant.  Because partition parsing is part of
@@ -176,7 +176,7 @@ struct block_group {
   __u16 bg_used_dirs_count;	/* Group's used directory total */
   __u16 bg_pad;			/* Padding */
   __u32 bg_reserved[3];		/* Padding */
-}; 
+};
 
 struct inode {
   __u16 i_mode;			/* File mode */
@@ -239,10 +239,10 @@ enum {
   EXT2_NULL_INO		= 0,	/* Invalid inode number */
   EXT2_BAD_INO		= 1,	/* Bad blocks inode */
   EXT2_ROOT_INO		= 2,	/* Root inode */
-  EXT2_ACL_IDX_INO 	= 3,	/* ACL inode */
-  EXT2_ACL_DATA_INO	= 4, 	/* ACL inode */
-  EXT2_BOOT_LOADER_INO	= 5, 	/* Boot loader inode */
-  EXT2_UNDEL_DIR_INO    = 6, 	/* Undelete directory inode */
+  EXT2_ACL_IDX_INO	= 3,	/* ACL inode */
+  EXT2_ACL_DATA_INO	= 4,	/* ACL inode */
+  EXT2_BOOT_LOADER_INO	= 5,	/* Boot loader inode */
+  EXT2_UNDEL_DIR_INO    = 6,	/* Undelete directory inode */
   EXT2_FIRST_INO	= 11,	/* First non reserved inode */
 };
 
@@ -326,7 +326,7 @@ static inline unsigned long read_block_number (int i)
 static int ext2_block_read (int block, void* pv, size_t cb)
 {
   PRINTF ("%s: %d\n", __FUNCTION__, block);
-  ext2.d.driver->seek (&ext2.d, ext2.block_size*block, SEEK_SET);  
+  ext2.d.driver->seek (&ext2.d, ext2.block_size*block, SEEK_SET);
   return ext2.d.driver->read (&ext2.d, pv, cb) != cb;
 }
 
@@ -349,7 +349,7 @@ static int ext2_update_block_cache (int block_index)
 {
   int block_base = 0;
 
-  if (block_index >= ext2.blockCache 
+  if (block_index >= ext2.blockCache
       && block_index < ext2.blockCache + ext2.cCache) {
 //    PRINTF ("ubc: %d %d %d\n", block_index, ext2.blockCache, ext2.cCache);
     return 0;			/* Already cached */
@@ -371,7 +371,7 @@ static int ext2_update_block_cache (int block_index)
 
   if (block_index < block_base + ext2.rg_blocking[1]) {	/* Indirect */
     PRINTF ("  indirect\n");
-    if (ext2_block_read (ext2.inode.i_block[12], 
+    if (ext2_block_read (ext2.inode.i_block[12],
 			 ext2.rgbCache, ext2.block_size))
       return -1;
     ext2.blockCache = block_base;
@@ -385,7 +385,7 @@ static int ext2_update_block_cache (int block_index)
     int offset = (block_index - block_base)/ext2.rg_blocking[1];
     PRINTF ("  offset %d\n", offset);
 
-    if (ext2_block_read (ext2.inode.i_block[13], 
+    if (ext2_block_read (ext2.inode.i_block[13],
 			 ext2.rgbCache, ext2.block_size))
       return -1;
     if (ext2_block_read (read_block_number (offset),
@@ -405,7 +405,7 @@ static int ext2_update_block_cache (int block_index)
     int offset = (block_index - block_base)/ext2.rg_blocking[2];
     PRINTF ("  offset %d\n", offset);
 
-    if (ext2_block_read (ext2.inode.i_block[14], 
+    if (ext2_block_read (ext2.inode.i_block[14],
 			 ext2.rgbCache, ext2.block_size))
       return -1;
     if (ext2_block_read (read_block_number (offset),
@@ -431,7 +431,7 @@ static int ext2_update_block_cache (int block_index)
 /* ext2_find_inode
 
    reads an inode into the current inode structure.  The return value
-   is zero on success, non-zero on error. 
+   is zero on success, non-zero on error.
 
 */
 
@@ -447,21 +447,21 @@ int ext2_find_inode (int inode)
   ext2.inode_number = 0;
 
 	/* Fetch block_group structure for the inode  */
-  ext2.d.driver->seek (&ext2.d, 
+  ext2.d.driver->seek (&ext2.d,
 		       2*BLOCK_SIZE
 		       + (sizeof (struct block_group)
-			  *((inode - 1)/ext2.superblock.s_inodes_per_group)), 
+			  *((inode - 1)/ext2.superblock.s_inodes_per_group)),
 		       SEEK_SET);
   if (ext2.d.driver->read (&ext2.d, &group, sizeof (group))
       != sizeof (struct block_group))
     return 1;
 
 	/* Fetch the inode  */
-  ext2.d.driver->seek (&ext2.d, 
+  ext2.d.driver->seek (&ext2.d,
 		       ext2.block_size*group.bg_inode_table
 		       + (sizeof (struct inode)
 			  *((inode - 1)%ext2.superblock.s_inodes_per_group)),
-		       SEEK_SET);  
+		       SEEK_SET);
 //  PRINTF ("%s: seeked to 0x%x\n", __FUNCTION__, ext2.d.index);
   if (ext2.d.driver->read (&ext2.d, &ext2.inode, sizeof (struct inode))
       != sizeof (struct inode))
@@ -469,10 +469,10 @@ int ext2_find_inode (int inode)
 
   ext2.inode_number = inode;
 
-  PRINTF ("inode %d: mode %07o  flags %x  size %d (0x%x)\n", 
+  PRINTF ("inode %d: mode %07o  flags %x  size %d (0x%x)\n",
 	  ext2.inode_number,
-	  ext2.inode.i_mode, ext2.inode.i_flags, 
-	  ext2.inode.i_size, ext2.inode.i_size); 
+	  ext2.inode.i_mode, ext2.inode.i_flags,
+	  ext2.inode.i_size, ext2.inode.i_size);
 
   return 0;
 }
@@ -584,10 +584,10 @@ static void* ext2_enum_directory (void* h, struct directory** pdir)
    The passed inode is the starting node for the search.
 
    This might seem like a peculiar way to traverse a path.  It is done
-   this way to simplify symlink traversal.  
+   this way to simplify symlink traversal.
 
    This is a core function of the driver.  It is what enabled the use
-   of pathnames to access files in the filesystem.  
+   of pathnames to access files in the filesystem.
 
 */
 
@@ -615,7 +615,7 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
     PRINTF ("%s: enumerating on inode %d\n", __FUNCTION__, ext2.inode_number);
     inode = ext2.inode_number;
     while ((h = ext2_enum_directory (h, &dir))) {
-      PRINTF ("  '%s' '%*.*s'\n", d->pb[i], 
+      PRINTF ("  '%s' '%*.*s'\n", d->pb[i],
 	      dir->name_len, dir->name_len, dir->name);
       if (length != dir->name_len)
 	continue;
@@ -674,7 +674,7 @@ static int ext2_path_to_inode (int inode, struct descriptor_d* d)
   }
 
   PRINTF ("%s: returning inode %d finding %d\n",
-	  __FUNCTION__, inode, ext2.inode_number); 
+	  __FUNCTION__, inode, ext2.inode_number);
 
   return inode;
 }
@@ -705,13 +705,13 @@ static int ext2_open (struct descriptor_d* d)
     int partition = 0;
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
-    if (partition < 0 || partition > 3 
+    if (partition < 0 || partition > 3
 		      || ext2.partition[partition].length == 0)
-      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
-	      szBlockDriver, 
-	      ext2.partition[partition].start, 
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+	      szBlockDriver,
+	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
   }
 
@@ -727,19 +727,19 @@ static int ext2_open (struct descriptor_d* d)
 
 	/* Open descriptor for the partition */
   if (   (result = parse_descriptor (sz, &ext2.d))
-      || (result = open_descriptor (&ext2.d))) 
+      || (result = open_descriptor (&ext2.d)))
     return result;
 
 	/* Default for superblock is 1 1KiB block into the partition */
   ext2.d.driver->seek (&ext2.d, BLOCK_SIZE, SEEK_SET);
-  if (ext2.d.driver->read (&ext2.d, &ext2.superblock, 
-			   sizeof (ext2.superblock)) 
+  if (ext2.d.driver->read (&ext2.d, &ext2.superblock,
+			   sizeof (ext2.superblock))
       != sizeof (ext2.superblock)
       || ext2.superblock.s_magic != MAGIC_EXT2) {
-    close_descriptor (&ext2.d); 
+    close_descriptor (&ext2.d);
     return -1;
   }
-  
+
 	/* Precompute constants based on block size */
   ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
   ext2.rg_blocking[0] = 12;
@@ -749,19 +749,19 @@ static int ext2_open (struct descriptor_d* d)
 #if 0
 	/* Read block group control structures */
   ext2.d.driver->seek (&ext2.d, 2*BLOCK_SIZE, SEEK_SET);
-  if (ext2.d.driver->read (&ext2.d, &ext2.block_group, 
-			   sizeof (ext2.block_group)) 
+  if (ext2.d.driver->read (&ext2.d, &ext2.block_group,
+			   sizeof (ext2.block_group))
       != sizeof (ext2.block_group)) {
-    close_descriptor (&ext2.d); 
+    close_descriptor (&ext2.d);
     return -1;
-  }    
+  }
 #endif
 
 	/* Parse an inode number */
   if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {
     int inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
     if (ext2_find_inode (inode_target)) {
-      close_descriptor (&ext2.d); 
+      close_descriptor (&ext2.d);
       return ERROR_FILENOTFOUND;
     }
   }
@@ -786,19 +786,19 @@ static int ext2_open (struct descriptor_d* d)
     void* h = NULL;
     struct directory* dir;
     while ((h = ext2_enum_directory (h, &dir))) {
-      printf ("%5d: 0x%x %*.*s\n", 
-	      dir->inode, dir->file_type, 
+      printf ("%5d: 0x%x %*.*s\n",
+	      dir->inode, dir->file_type,
 	      dir->name_len, dir->name_len, dir->name);
     }
-  }      
+  }
 #endif
 
 #if 0
   dump ((void*) &ext2.inode, 0x80, 0);
 
-  PRINTF ("inode: size %d  blocks %d\n", 
+  PRINTF ("inode: size %d  blocks %d\n",
 	  ext2.inode.i_size, ext2.inode.i_blocks);
-  PRINTF ("  [%d %d %d %d %d %d %d %d]\n", 
+  PRINTF ("  [%d %d %d %d %d %d %d %d]\n",
 	  ext2.inode.i_block[0], ext2.inode.i_block[1],
 	  ext2.inode.i_block[2], ext2.inode.i_block[3],
 	  ext2.inode.i_block[4], ext2.inode.i_block[5],
@@ -849,7 +849,7 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
       break;
 
     block = read_block_number (block_index - ext2.blockCache);
-    ext2.d.driver->seek (&ext2.d, ext2.block_size*block + offset, SEEK_SET);  
+    ext2.d.driver->seek (&ext2.d, ext2.block_size*block + offset, SEEK_SET);
 
     {
       ssize_t cbThis = ext2.d.driver->read (&ext2.d, pv, available);
@@ -893,13 +893,13 @@ static int ext2_info (struct descriptor_d* d)
     int partition = 0;
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
-    if (partition < 0 || partition > 3 
+    if (partition < 0 || partition > 3
 		      || ext2.partition[partition].length == 0)
-      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition"); 
+      ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds", 
-	      szBlockDriver, 
-	      ext2.partition[partition].start, 
+    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+	      szBlockDriver,
+	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
   }
 
@@ -915,19 +915,19 @@ static int ext2_info (struct descriptor_d* d)
 
 	/* Open descriptor for the partition */
   if (   (result = parse_descriptor (sz, &ext2.d))
-      || (result = open_descriptor (&ext2.d))) 
+      || (result = open_descriptor (&ext2.d)))
     return result;
 
 	/* Default for superblock is 1 1KiB block into the partition */
   ext2.d.driver->seek (&ext2.d, BLOCK_SIZE, SEEK_SET);
-  if (ext2.d.driver->read (&ext2.d, &ext2.superblock, 
-			   sizeof (ext2.superblock)) 
+  if (ext2.d.driver->read (&ext2.d, &ext2.superblock,
+			   sizeof (ext2.superblock))
       != sizeof (ext2.superblock)
       || ext2.superblock.s_magic != MAGIC_EXT2) {
-    close_descriptor (&ext2.d); 
+    close_descriptor (&ext2.d);
     return -1;
   }
-  
+
 	/* Precompute constants based on block size */
   ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
   ext2.rg_blocking[0] = 12;
@@ -938,7 +938,7 @@ static int ext2_info (struct descriptor_d* d)
   if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {
     int inode_target = simple_strtoul (d->pb[d->iRoot] + 2, NULL, 10);
     if (ext2_find_inode (inode_target)) {
-      close_descriptor (&ext2.d); 
+      close_descriptor (&ext2.d);
       return ERROR_FILENOTFOUND;
     }
   }
@@ -956,11 +956,11 @@ static int ext2_info (struct descriptor_d* d)
     while ((h = ext2_enum_directory (h, &dir)))
       printf ("%*.*s%c\n", dir->name_len, dir->name_len, dir->name,
 	      "  /    @"[dir->file_type]);
-  }      
+  }
   else {
-    printf ("inode %d  size %d  blocks %d\n", 
+    printf ("inode %d  size %d  blocks %d\n",
 	    ext2.inode_number, ext2.inode.i_size, ext2.inode.i_blocks);
-    printf ("  [%d %d %d %d %d %d %d %d]\n", 
+    printf ("  [%d %d %d %d %d %d %d %d]\n",
 	    ext2.inode.i_block[0], ext2.inode.i_block[1],
 	    ext2.inode.i_block[2], ext2.inode.i_block[3],
 	    ext2.inode.i_block[4], ext2.inode.i_block[5],
@@ -985,19 +985,19 @@ static void ext2_report (void)
     ext2.fOK = 1;
   }
 
-  printf ("  ext2:"); 
+  printf ("  ext2:");
   for (i = 0; i < 4; ++i)
     if (ext2.partition[i].type || i == 0) {
       if (i != 0)
 	printf ("       ");
-      printf ("   partition %d: %c %02x 0x%08lx 0x%08lx\n", i, 
+      printf ("   partition %d: %c %02x 0x%08lx 0x%08lx\n", i,
 	      ext2.partition[i].boot ? '*' : ' ',
 	      ext2.partition[i].type,
 	      ext2.partition[i].start,
 	      ext2.partition[i].length);
     }
   if (ext2.block_size) {
-    printf ("          total (i/b) %d/%d  free %d/%d  group %d/%d\n", 
+    printf ("          total (i/b) %d/%d  free %d/%d  group %d/%d\n",
 	    ext2.superblock.s_inodes_count,
 	    ext2.superblock.s_blocks_count,
 	    ext2.superblock.s_free_inodes_count,
@@ -1005,12 +1005,12 @@ static void ext2_report (void)
 	    ext2.superblock.s_inodes_per_group,
 	    ext2.superblock.s_blocks_per_group
 	    );
-    printf ("          first_data %d  block_size %d  groups %d\n", 
-	    ext2.superblock.s_first_data_block, 
+    printf ("          first_data %d  block_size %d  groups %d\n",
+	    ext2.superblock.s_first_data_block,
 	    ext2.block_size,
 	    block_groups (&ext2));
 #if 0
-    printf ("          group 0: inode block %d  free %d/%d\n", 
+    printf ("          group 0: inode block %d  free %d/%d\n",
 	    ext2.block_group[0].bg_inode_table,
 	    ext2.block_group[0].bg_free_inodes_count,
 	    ext2.block_group[0].bg_free_blocks_count);

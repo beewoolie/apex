@@ -35,7 +35,7 @@
 
    CRC32
    -----
-   
+
    The jffs2 filesystem doesn't use the proper CCITT CRC algorithm.
    The polynomial is correct, but they don't invert the incoming CRC
    at the start and the end.  We correct for this by passing ~0 as the
@@ -82,10 +82,10 @@
 
    We're checking CRCs sparsely.  Should be done everywhere possible.
    Enough said.
-   
+
    compression
    -----------
-   
+
    Only zlib compression is implemented.  Empirical evidence suggests
    that none other is used.
 
@@ -124,7 +124,7 @@
 #define MARKER_DIRTY		0x0000
 
 #define BLOCK_SIZE_MAX		(4*1024)
-#define ERASEBLOCK_SIZE		(64*1024) 
+#define ERASEBLOCK_SIZE		(64*1024)
 #define EMPTY_THRESHOLD		8
 
 #define NAME_LENGTH_MAX		254
@@ -312,7 +312,7 @@ static int verify_crc (void* pv, size_t cb, u32 crc)
 /* find_cached_inode
 
    performs a binary search on the inode data to find the cached inode
-   for the given inode number and file offset.  
+   for the given inode number and file offset.
 
    *** FIXME: we cannot be totally sure that we've found the right
    *** inode record unless we account for the potentiality of
@@ -397,7 +397,7 @@ const int find_cached_parent_inode (u32 inode)
       max = mid;
   }
 
-  PRINTF ("%s: min %d  pino %d\n", __FUNCTION__, 
+  PRINTF ("%s: min %d  pino %d\n", __FUNCTION__,
 	  min, dirent_cache[min].pino);
 
   return (dirent_cache[min].pino == inode) ? min : -1;
@@ -441,14 +441,14 @@ void summarize_inode (u32 inode, union node* node)
 {
   int i = find_cached_inode (inode, 0);
   u32 version = 0;
-  
+
   for (; i < cInodeCache; ++i) {
     if (inode_cache[i].ino != inode)
       break;
     if (inode_cache[i].version < version)
       continue;
     version = inode_cache[i].version;
-    PRINTF ("summarizing %d ver %d at %d(%x)\n", 
+    PRINTF ("summarizing %d ver %d at %d(%x)\n",
 	    inode, version, inode_cache[i].index, inode_cache[i].index);
     read_node (node, inode_cache[i].index, sizeof (struct inode_node));
   }
@@ -478,7 +478,7 @@ static int jffs2_load_cache (void)
 
   ENTRY (0);
 
-  printf ("Caching jffs2 filesystem\n"); 
+  printf ("Caching jffs2 filesystem\n");
 
   cDirentCache = 0;		/* Reset cache in case we were cancelled */
   cInodeCache = 0;
@@ -522,7 +522,7 @@ static int jffs2_load_cache (void)
       }
       continue;
     }
-    
+
     cEmpties = 0;
 
     cbNode = (node.u.length + 3) & ~3;
@@ -559,9 +559,9 @@ static int jffs2_load_cache (void)
     }
   }
 
-  sort (dirent_cache, cDirentCache, sizeof (struct dirent_cache), 
+  sort (dirent_cache, cDirentCache, sizeof (struct dirent_cache),
 	compare_dirent_cache, NULL);
-  sort (inode_cache,  cInodeCache,  sizeof (struct inode_cache), 
+  sort (inode_cache,  cInodeCache,  sizeof (struct inode_cache),
 	compare_inode_cache, NULL);
 
   printf ("\r%d directory nodes %d inodes nodes\n",
@@ -577,7 +577,7 @@ static int jffs2_load_cache (void)
 /* jffs2_decompress_node
 
    copies the given node, references by inode_cache index, to the
-   single node cache which is limited to 4KiB.  
+   single node cache which is limited to 4KiB.
 
    *** FIXME: we could do some optimizations for when a) the node is
    *** zero and b) when the node is uncompressed.  For the time being,
@@ -594,7 +594,7 @@ static int jffs2_decompress_node (int index)
 
   ENTRY (0);
 
-  read_node (rgb, inode_cache[index].index, 
+  read_node (rgb, inode_cache[index].index,
 	     sizeof (struct inode_node) + inode_cache[index].csize);
 
   if (!verify_crc (node + 1, node->csize, node->data_crc))
@@ -607,12 +607,12 @@ static int jffs2_decompress_node (int index)
   if (csize > BLOCK_SIZE_MAX)
     csize = BLOCK_SIZE_MAX;
 
-  PRINTF ("%s: %d of %d  cs %d  ds %d\n", __FUNCTION__, 
-	  index, 
-	  inode_cache[index].offset, 
-	  inode_cache[index].csize, 
+  PRINTF ("%s: %d of %d  cs %d  ds %d\n", __FUNCTION__,
+	  index,
+	  inode_cache[index].offset,
+	  inode_cache[index].csize,
 	  inode_cache[index].dsize);
-  PRINTF ("%s: z %d  of %d  cs %d  ds %d\n", __FUNCTION__, 
+  PRINTF ("%s: z %d  of %d  cs %d  ds %d\n", __FUNCTION__,
 	  node->compr, node->offset, node->csize, node->dsize);
 
   switch (node->compr) {
@@ -663,7 +663,7 @@ static int jffs2_decompress_node (int index)
   case COMPRESSION_LZO:
   case COMPRESSION_LZARI:
   default:
-    PRINTF ("%s: unsupported compression mode %d\n", __FUNCTION__, 
+    PRINTF ("%s: unsupported compression mode %d\n", __FUNCTION__,
 	    node->compr);
     jffs2.ibCache = 0;
     jffs2.cbCache = 0;
@@ -684,7 +684,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
   int i = d->iRoot;
 
   ENTRY (0);
-  
+
   if (!inode)
     inode = JFFS2_ROOT_INO;
 
@@ -723,7 +723,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 
       if (dirent_cache[index].nsize != length)
 	continue;
-      
+
       cbNode = sizeof (struct dirent_node) + dirent_cache[index].nsize;
       if (cbNode > sizeof (rgb))
 	cbNode = sizeof (rgb);
@@ -796,9 +796,9 @@ static int jffs2_identify (void)
     return 0;
 
   if (   (result = parse_descriptor (szBlockDriver, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d)))
     return result;
-  
+
   jffs2.d = d;
   result = jffs2_load_cache ();
   if (result)
@@ -859,7 +859,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
      within an existing cached block, satisfy it and return.  If the
      request is in another block, scan the inode data for the record
      and either copy it to the cache (if compressed) or read directly
-     from source.  That should be it, actually. 
+     from source.  That should be it, actually.
 
      The truth is that we aren't that smart.  We read from flash and
      either copy or decompress the data.  We don't do anything smart
@@ -885,7 +885,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
     if (index >= jffs2.ibCache && index < jffs2.ibCache + jffs2.cbCache) {
       size_t offset = index - jffs2.ibCache;
       size_t available = jffs2.cbCache - offset; /* available in the cache */
-      PRINTF ("%s: offset %d  available %d  remain %d  cb %d\n", 
+      PRINTF ("%s: offset %d  available %d  remain %d  cb %d\n",
 	      __FUNCTION__, offset, available, remain, cb);
       if (available > cb)
 	available = cb;
@@ -900,7 +900,7 @@ static ssize_t jffs2_read (struct descriptor_d* d, void* pv, size_t cb)
       cbRead += available;
       state = 0;
       continue;
-    } 
+    }
 
     for (i = find_cached_inode (jffs2.inode, index); i < cInodeCache; ++i) {
       PRINTF ("%s: inode %d  i %d  offset %d  version %d  dsize %d\n",
@@ -946,7 +946,7 @@ static int jffs2_info (struct descriptor_d* d)
 
   inode = jffs2_path_to_inode (0, d);
   if (inode <= 0) {
-    printf ("path not found\n"); 
+    printf ("path not found\n");
     return -1;
   }
 
@@ -954,20 +954,20 @@ static int jffs2_info (struct descriptor_d* d)
 
     summarize_inode (inode, &node);
 
-    printf ("mode %08o  s %d\n", 
+    printf ("mode %08o  s %d\n",
 	    node.i.mode, node.i.isize);
-    if (S_ISDIR (node.i.mode)) 
+    if (S_ISDIR (node.i.mode))
       printf ("    directory\n");
-    if (S_ISREG (node.i.mode)) 
+    if (S_ISREG (node.i.mode))
       printf ("    regular file\n");
-    if (S_ISLNK (node.i.mode)) 
+    if (S_ISLNK (node.i.mode))
       printf ("    link\n");
-    if (S_ISCHR (node.i.mode)) 
+    if (S_ISCHR (node.i.mode))
       printf ("    char dev\n");
-    if (S_ISBLK (node.i.mode)) 
+    if (S_ISBLK (node.i.mode))
       printf ("    blk dev\n");
   }
-  
+
   if (S_ISDIR (node.i.mode) || inode == 1) {
     i = find_cached_parent_inode (inode);
     for (; i != -1 && i < cDirentCache && dirent_cache[i].pino == inode; ++i) {
@@ -977,7 +977,7 @@ static int jffs2_info (struct descriptor_d* d)
       if (dirent_cache[i].ino == 0)
 	continue;
 
-      read_node (rgb, dirent_cache[i].index, 
+      read_node (rgb, dirent_cache[i].index,
 		 sizeof (struct dirent_node) + dirent_cache[i].nsize);
 
       printf ("%*.*s", dirent->nsize, dirent->nsize, dirent->name );

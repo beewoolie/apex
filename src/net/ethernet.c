@@ -77,9 +77,9 @@
 #endif
 
 #define ARP_TABLE_LENGTH	8
-#define FRAME_TABLE_LENGTH	8 
+#define FRAME_TABLE_LENGTH	8
 
-#define ARP_SECONDS_LIVE	30		
+#define ARP_SECONDS_LIVE	30
 
 struct arp_entry {
   u8  address[6];
@@ -92,7 +92,7 @@ char server_ip_address[4];	/* Address of server that helped us along */
 char gw_ip_address[4];
 char host_mac_address[6];
 const char szNetDriver[] = "eth:";
-static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff, 
+static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff,
 					       0xff, 0xff, 0xff };
 
 #define ARP_TRIES_MAX	5
@@ -117,7 +117,7 @@ struct ethernet_receiver {
   pfn_ethernet_receiver pfn;
   void* context;
 };
-  
+
 #define MAX_RECEIVERS	32
 static struct ethernet_receiver receivers[MAX_RECEIVERS];
 static int cReceivers;		/* Number of receivers */
@@ -180,7 +180,7 @@ void ethernet_frame_release (struct ethernet_frame* frame)
 
 
 /* getaddr
-   
+
    returns a binary, four-byte IP address from a string representing
    the address.  This function is *not* compliant with POSIX or RFCs.
    It is intended to be a light-weight conversion function which is
@@ -238,7 +238,7 @@ void ipv4_frame_reply (struct ethernet_frame* f)
   memcpy (IPV4_F (f)->destination_ip, IPV4_F (f)->source_ip, 4);
   memcpy (IPV4_F (f)->source_ip, host_ip_address, 4);
   IPV4_F (f)->checksum = 0;
-  IPV4_F (f)->checksum = htons (checksum ((void*) IPV4_F (f), 
+  IPV4_F (f)->checksum = htons (checksum ((void*) IPV4_F (f),
 					  sizeof (struct header_ipv4)));
 }
 
@@ -261,14 +261,14 @@ void arp_cache_update (const char* hardware_address,
     if (iEmpty == -1 && memcmp (arp_table[i].address, "\0\0\0\0\0", 6) == 0)
       iEmpty = i;
     if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
-      memcpy (arp_table[i].address, 
+      memcpy (arp_table[i].address,
 	      hardware_address ? hardware_address : broadcast_mac_address, 6);
       arp_table[i].seconds = ARP_SECONDS_LIVE;
       return;
     }
   }
   if (force && iEmpty != -1) {
-    memcpy (arp_table[iEmpty].address, 
+    memcpy (arp_table[iEmpty].address,
 	    hardware_address ? hardware_address : broadcast_mac_address, 6);
     memcpy (arp_table[iEmpty].ip, protocol_address, 4);
   }
@@ -317,7 +317,7 @@ int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
   DBG (2, "%s: proto %x\n", __FUNCTION__, HTONS (ETH_PROTO_ARP));
   if (ETH_F (frame)->protocol != HTONS (ETH_PROTO_ARP))
     return 0;
-  
+
   if (   ARP_F (frame)->hardware_address_length != 6
       || ARP_F (frame)->protocol_address_length != 4)
     return -1;			/* unrecognized form */
@@ -348,7 +348,7 @@ int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 
   case HTONS (ARP_REPLY):
     arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address, 
+		      ARP_F (frame)->sender_protocol_address,
 		      0);
     break;
   }
@@ -358,7 +358,7 @@ int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 
 #if defined (CONFIG_PROTO_ICMP_ECHO)
 
-int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
+int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 			void* context)
 {
   int l;
@@ -377,7 +377,7 @@ int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
   DBG (2,"%s: icmp %d received\n", __FUNCTION__, ICMP_F (frame)->type);
 
   l = htons (IPV4_F (frame)->length) - sizeof (struct header_ipv4);
-  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__, 
+  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__,
 	  ICMP_F (frame)->checksum,
 	  checksum (ICMP_F (frame), l), l);
 
@@ -385,7 +385,7 @@ int icmp_echo_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
     DBG (1,"%s: icmp discarded, header checksum incorrect\n", __FUNCTION__);
     return -1;
   }
-  
+
   if (ICMP_F (frame)->type == ICMP_TYPE_ECHO) {
     ethernet_frame_reply (frame); /* This isn't really valid, is it? */
     ipv4_frame_reply (frame);
@@ -447,7 +447,7 @@ void ethernet_receive (struct descriptor_d* d, struct ethernet_frame* frame)
   }
 }
 
-void udp_setup (struct ethernet_frame* frame, 
+void udp_setup (struct ethernet_frame* frame,
 		const char* destination_ip, u16 destination_port,
 		u16 source_port, size_t cb)
 {
@@ -459,7 +459,7 @@ void udp_setup (struct ethernet_frame* frame,
 
   cb = (cb + 1) & ~1;
 
-  memset (IPV4_F (frame), 0, 
+  memset (IPV4_F (frame), 0,
 	  sizeof (struct header_ipv4) + sizeof (struct header_udp));
 
   /* Ethernet frame header */
@@ -497,7 +497,7 @@ void udp_setup (struct ethernet_frame* frame,
     _checksum (&sum, rgb, 2);
     _checksum (&sum, &length, 2);
     UDP_F (frame)->checksum
-      = htons (_checksum (&sum, UDP_F (frame), 
+      = htons (_checksum (&sum, UDP_F (frame),
 			  sizeof (struct header_udp) + cb));
   }
 
@@ -510,7 +510,7 @@ void udp_setup (struct ethernet_frame* frame,
     + sizeof (struct header_ipv4)
     + sizeof (struct header_udp) + cb;
 }
-		
+
 
 #if defined (CONFIG_UDP_CHECKSUM)
 
@@ -529,17 +529,17 @@ int udp_checksum_verify (struct ethernet_frame* frame)
   _checksum (&sum, IPV4_F (frame)->source_ip, 8);
   _checksum (&sum, rgb, 2);
   _checksum (&sum, &length, 2);
-  printf ("cb %d  %x %x", cb, 
+  printf ("cb %d  %x %x", cb,
 	  UDP_F (frame)->checksum,
-	  htons (_checksum (&sum, UDP_F (frame), 
+	  htons (_checksum (&sum, UDP_F (frame),
 			    sizeof (struct header_udp) + cb)));
   return UDP_F (frame)->checksum
-    != htons (_checksum (&sum, UDP_F (frame), 
+    != htons (_checksum (&sum, UDP_F (frame),
 			 sizeof (struct header_udp) + cb));
 }
 
 #endif
-		
+
 
 /* ethernet_service
 
@@ -552,8 +552,8 @@ int udp_checksum_verify (struct ethernet_frame* frame)
 
 */
 
-int ethernet_service (struct descriptor_d* d, 
-		      int (*terminate) (void*), void* context) 
+int ethernet_service (struct descriptor_d* d,
+		      int (*terminate) (void*), void* context)
 {
   struct ethernet_frame* frame = ethernet_frame_allocate ();
   int result;
@@ -620,7 +620,7 @@ static void dump_receivers (void)
 {
   int i;
   for (i = 0; i < cReceivers; ++i)
-    printf ("receiver %d: %4d %p %p\n", 
+    printf ("receiver %d: %4d %p %p\n",
 	    i, receivers[i].priority, receivers[i].pfn, receivers[i].context);
 }
 #endif
@@ -635,10 +635,10 @@ static void dump_receivers (void)
 
    It returns zero on success, non-zero if the receiver cannot be
    added to the active receiver list.
-   
+
 */
 
-int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn, 
+int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
 				void* context)
 {
   if (cReceivers >= MAX_RECEIVERS)
@@ -648,7 +648,7 @@ int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
   receivers[cReceivers].pfn	 = pfn;
   receivers[cReceivers].context	 = context;
 
-  sort (receivers, ++cReceivers, sizeof (*receivers), 
+  sort (receivers, ++cReceivers, sizeof (*receivers),
 	compare_receivers, NULL);
 
 #if defined (DUMP_RECEIVERS)
@@ -666,7 +666,7 @@ int register_ethernet_receiver (int priority, pfn_ethernet_receiver pfn,
 
    It returns zero on success, non-zero if the requested receiver
    isn't found.
-   
+
 */
 
 int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
@@ -681,7 +681,7 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
   }
 
   if (i < cReceivers) {
-    sort (receivers, cReceivers--, sizeof (*receivers), 
+    sort (receivers, cReceivers--, sizeof (*receivers),
 	  compare_receivers, NULL);
 #if defined (DUMP_RECEIVERS)
     dump_receivers ();
@@ -718,7 +718,7 @@ int arp_terminate (void* pv)
 
 */
 
-const char* arp_resolve (struct descriptor_d* d, const char* ip_address, 
+const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
 			 int ms_timeout)
 {
   const char* hardware_address = arp_cache_lookup (ip_address);
@@ -739,7 +739,7 @@ const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
   ARP_F (frame)->hardware_address_length = 6;
   ARP_F (frame)->protocol_address_length = 4;
   ARP_F (frame)->opcode = HTONS (ARP_REQUEST);
-  
+
   memcpy (ARP_F (frame)->sender_hardware_address, host_mac_address, 6);
   memcpy (ARP_F (frame)->sender_protocol_address, host_ip_address, 4);
   memset (ARP_F (frame)->target_hardware_address, 0, 6);
@@ -755,8 +755,8 @@ const char* arp_resolve (struct descriptor_d* d, const char* ip_address,
     struct arp_terminate_context context;
 
     DBG (2, "transmitting arp request, %d bytes\n", frame->cb);
-    DBG (2, "d %p  d->driver %p  d->driver->write %p\n", 
-	 d, d->driver, d->driver->write);   
+    DBG (2, "d %p  d->driver %p  d->driver->write %p\n",
+	 d, d->driver, d->driver->write);
 
     d->driver->write (d, frame->rgb, frame->cb);
     ++tries;

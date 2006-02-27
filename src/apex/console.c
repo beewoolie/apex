@@ -172,4 +172,3 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 
   return parse_command (rgb, pargc, pargv);
 }
-

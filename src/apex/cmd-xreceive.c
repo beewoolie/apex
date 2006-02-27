@@ -56,12 +56,12 @@ int cmd_xreceive (int argc, const char** argv)
     d.driver->close (&d);
     return ERROR_OPEN;
   }
-  
+
   {
     int cbRead = xmodem_receive (&d);
     printf ("%d bytes received\n", cbRead);
   }
-  
+
   d.driver->close (&d);
 
   return 0;

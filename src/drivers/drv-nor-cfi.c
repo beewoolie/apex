@@ -162,7 +162,7 @@ static struct nor_chip chip_probed;
 static unsigned long phys_from_index (unsigned long index)
 {
 #if defined (NOR_1_PHYS)
-  return index 
+  return index
     + ((index < NOR_0_LENGTH) ? NOR_0_PHYS : (NOR_1_PHYS - NOR_0_LENGTH));
 #else
   return index + NOR_0_PHYS;
@@ -199,12 +199,12 @@ static void nor_write_one (unsigned long index, unsigned long v)
 
 static unsigned long nor_status (unsigned long index)
 {
-  unsigned long status; 
+  unsigned long status;
   unsigned long time = timer_read ();
   do {
     status = READ_ONE (index);
   } while (   (status & STAT (Ready)) != STAT (Ready)
-           && timer_delta (time, timer_read ()) < 6*1000);
+	   && timer_delta (time, timer_read ()) < 6*1000);
   return status;
 }
 
@@ -240,7 +240,7 @@ static unsigned long nor_unlock_page (unsigned long index)
   index &= ~ (nor_region (index)->size - 1);
 
   WRITE_ONE (index, CMD (ReadID));
-  PRINTF ("nor_unlock_page 0x%lx %x\n", index, 
+  PRINTF ("nor_unlock_page 0x%lx %x\n", index,
 	  REGA (index + (0x02 << WIDTH_SHIFT)));
   if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
     return STAT (Ready);
@@ -256,7 +256,7 @@ static void nor_init_chip (unsigned long phys)
   int i;
   unsigned long start;
 
-  PRINTF ("%s: probing %lx (%d %d)\n", __FUNCTION__, phys, 
+  PRINTF ("%s: probing %lx (%d %d)\n", __FUNCTION__, phys,
 	  NOR_WIDTH, NOR_CHIP_MULTIPLIER);
 
   REGA (phys) = CMD (ReadArray);
@@ -286,7 +286,7 @@ static void nor_init_chip (unsigned long phys)
 
   chip_probed.writebuffer_size
     = (1<<(   REGC (phys + (0x2a << WIDTH_SHIFT))
-           | (REGC (phys + (0x2b << WIDTH_SHIFT)) << 8)))
+	   | (REGC (phys + (0x2b << WIDTH_SHIFT)) << 8)))
     *NOR_CHIP_MULTIPLIER;
 
 	/* Discover erase regions.  Unfortunately, this has to be done
@@ -295,7 +295,7 @@ static void nor_init_chip (unsigned long phys)
   for (; i < chip_probed.regions; ++i) {
     int offset = (i - iRegionFirst)*4;
     PRINTF ("  ");
-    chip_probed.region[i].size 
+    chip_probed.region[i].size
       = 256*(   REGC (phys + ((0x2f + offset) << WIDTH_SHIFT))
 	     | (REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) << 8))
       *NOR_CHIP_MULTIPLIER;
@@ -333,9 +333,9 @@ static void nor_init (void)
   printf ("\nNOR flash ");
 
   if (chip) {
-    printf (" %ldMiB total", 
+    printf (" %ldMiB total",
 	    chip->total_size/(1024*1024));
-    printf (", %dB write buffer", 
+    printf (", %dB write buffer",
 	    chip->writebuffer_size);
     printf ("\n");
   }
@@ -346,9 +346,9 @@ static void nor_init (void)
   PRINTF ("\nNOR flash ");
 
   if (chip) {
-    PRINTF (" %ldMiB total", 
+    PRINTF (" %ldMiB total",
 	    chip->total_size/(1024*1024));
-    PRINTF (", %dB write buffer", 
+    PRINTF (", %dB write buffer",
 	    chip->writebuffer_size);
     PRINTF ("\n");
   }
@@ -368,21 +368,21 @@ static void nor_init (void)
 
     typical = REGC (NOR_0_PHYS + (0x1f << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x23 << WIDTH_SHIFT));
-    PRINTF ("single word write %d us (%d us)\n", 
+    PRINTF ("single word write %d us (%d us)\n",
 	    1<<typical, (1<<typical)*max);
     typical = REGC (NOR_0_PHYS + (0x20 << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x24 << WIDTH_SHIFT));
-    PRINTF ("write-buffer write %d us (%d us)\n", 
+    PRINTF ("write-buffer write %d us (%d us)\n",
 	    1<<typical, (1<<typical)*max);
     typical = REGC (NOR_0_PHYS + (0x21 << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x25 << WIDTH_SHIFT));
-    PRINTF ("block erase %d ms (%d ms)\n", 
+    PRINTF ("block erase %d ms (%d ms)\n",
 	    1<<typical, (1<<typical)*max);
-    
+
     typical = REGC (NOR_0_PHYS + (0x22 << WIDTH_SHIFT));
     max     = REGC (NOR_0_PHYS + (0x26 << WIDTH_SHIFT));
-    if (typical) 
-      PRINTF ("chip erase %d us (%d us)\n", 
+    if (typical)
+      PRINTF ("chip erase %d us (%d us)\n",
 	      1<<typical, (1<<typical)*max);
   }
 
@@ -439,8 +439,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     memcpy (pv, (void*) index, available);
 
     pv += available;
-  }    
-  
+  }
+
   return cbRead;
 }
 
@@ -501,11 +501,11 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 #endif
     status = nor_status (index & ~(NOR_WIDTH/8 - 1));
     if (!(status & Ready)) {
-      PRINTF ("nor_write failed program start 0x%lx (0x%x)\n", 
+      PRINTF ("nor_write failed program start 0x%lx (0x%x)\n",
 	      index & ~(NOR_WIDTH/8 - 1), status);
       goto fail;
     }
-    
+
     {
       int av = available + (index & (NOR_WIDTH/8 - 1));
 #if defined (NO_WRITE)
@@ -513,7 +513,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 	      /* *** FIXME for 32 bit  */
 	      av - av/2 - 1);
 #else
-      WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), 
+      WRITE_ONE (index & ~(NOR_WIDTH/8 - 1),
 	      /* *** FIXME for 32 bit  */
 		 av - av/2 - 1);
 #endif
@@ -537,7 +537,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       memcpy (rgb + (index & (NOR_WIDTH/8 - 1)), pv, available);
       for (i = 0; i < available + (index & 1); i += 2)
 #if defined (NO_WRITE)
-	printf ("0x%lx #= 0x%04x\n", 
+	printf ("0x%lx #= 0x%04x\n",
 		(index & ~(NOR_WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
 #else
 	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i,
@@ -664,7 +664,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
     unsigned long index = d->start + d->index;
     const struct nor_region* region = nor_region (index);
     unsigned long available = region->size - (index & (region->size - 1));
-    unsigned long status; 
+    unsigned long status;
 
     index = phys_from_index (index);
 
@@ -741,7 +741,7 @@ static void nor_report (void)
   for (i = 0; i < chip->regions; ++i)
     printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",
 	    i,
-	    chip->region[i].count, 
+	    chip->region[i].count,
 	    (chip->region[i].count > 1) ? 's' : ' ',
 	    chip->region[i].size, chip->region[i].size);
 }

@@ -32,7 +32,7 @@
      before the uart register macros as it will interfere with them.
      Yes, I could also put them in a shared header, I won't do that
      for the sake of a debug feature.
- 
+
 */
 
 #include <config.h>
@@ -81,7 +81,7 @@ void ixp42x_serial_init (void)
   _L(LED5);
 
   switch (baudrate) {
-  case 115200: 
+  case 115200:
     divisor_l = 8; break;
 
   default:
@@ -137,7 +137,7 @@ ssize_t ixp42x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t ixp42x_serial_write (struct descriptor_d* d, 
+ssize_t ixp42x_serial_write (struct descriptor_d* d,
 			      const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;
@@ -151,7 +151,7 @@ ssize_t ixp42x_serial_write (struct descriptor_d* d,
 
     ++cWrote;
   }
-  
+
 	/* Wait for completion */
   while (!(UART_LSR & UART_LSR_TEMT))
     ;

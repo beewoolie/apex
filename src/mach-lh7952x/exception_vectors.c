@@ -184,7 +184,7 @@ void __irq_handler irq_handler (void)
 	VIC_INTENCLEAR = (1<<irq);
       }
       break;
-    }    
+    }
   }
 
   VIC_VECTADDR = 0;
@@ -197,7 +197,7 @@ static void lh7952x_exception_init (void)
   RCPC_CTRL  &= ~RCPC_CTRL_UNLOCK;
 
 	/* Clear V for exception vectors at 0x0 */
-  { 
+  {
     unsigned long l;
     __asm volatile ("mrs %0, cpsr\n\t"
 		    "bic %0, %0, #(1<<13)\n\t"
@@ -218,7 +218,7 @@ static void lh7952x_exception_init (void)
 		    : "+r" (v), "+r" (p), "=&r" (t)
 		    : "r" (&APEX_VMA_VECTOR_END)
 		    : "cc"
-		  );		  
+		  );
   }
 
   VIC_INTENCLEAR = ~0;
@@ -256,10 +256,10 @@ static void lh7952x_exception_release (void)
 static void lh7952x_exception_report (void)
 {
   printf ("  except: select 0x%lx  enable 0x%lx  status 0x%lx  raw 0x%lx"
-	  "  itop 0x%lx\n", 
+	  "  itop 0x%lx\n",
 	  VIC_INTSELECT, VIC_INTENABLE, VIC_IRQSTATUS, VIC_RAWINTSR, VIC_ITOP);
-  printf ("          vectors %p %p, %d bytes\n", 
-	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END, 
+  printf ("          vectors %p %p, %d bytes\n",
+	  &APEX_VMA_VECTOR_START, &APEX_VMA_VECTOR_END,
 	  &APEX_VMA_VECTOR_END - &APEX_VMA_VECTOR_START);
 }
 

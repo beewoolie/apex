@@ -26,7 +26,7 @@
    DESCRIPTION
    -----------
 
-   This service module exists solely to initialize PCI. 
+   This service module exists solely to initialize PCI.
 
 */
 
@@ -48,8 +48,9 @@ static void pci_init (void)
 #define PCI_CLK_DISABLE (GPIO_CLKR &= ~GPIO_CLKR_MUX14)
 #define PCI_CLK_ENABLE  (GPIO_CLKR |=  GPIO_CLKR_MUX14)
 #define PCI_CLK_CONFIG\
+
   (GPIO_CLKR |= ((0xf << GPIO_CLKR_CLK0DC_SHIFT)\
-               | (0xf << GPIO_CLKR_CLK0TC_SHIFT)))
+	       | (0xf << GPIO_CLKR_CLK0TC_SHIFT)))
 
   PCI_RESET;
   PCI_CLK_DISABLE;
@@ -84,7 +85,7 @@ static void pci_init (void)
 
   PCI_ISR = PCI_ISR_PSE | PCI_ISR_PFE | PCI_ISR_PPE | PCI_ISR_AHBE;
   PCI_CSR = PCI_CSR_IC  | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;
-  PCI_CONFIG_WRITE16 (PCI_CFG_COMMAND, 
+  PCI_CONFIG_WRITE16 (PCI_CFG_COMMAND,
 		      PCI_CFG_COMMAND_MASTER | PCI_CFG_COMMAND_MEMORY);
 
   //  printf ("pci did/vid 0x%lx\n", PCI_CONFIG_READ32 (PCI_CFG_DIDVID));

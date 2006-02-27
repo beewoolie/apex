@@ -61,7 +61,7 @@ __env struct env_d e_cmdline = {
 		   " root=/dev/mtdblock1 rootfstype=jffs2"
 		   " mtdparts="
 		   "phys_mapped_flash:2m(boot)ro,-(root)"
-		   ";" 
+		   ";"
 //		   "lpd79524_nandflash:2m(boot)ro,-(root)"
 #endif
   ,
@@ -85,4 +85,3 @@ __env struct env_d e_cmdline = {
 };
 
 #endif
-

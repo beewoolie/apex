@@ -86,7 +86,7 @@ static int ping_terminate (void* pv)
 
 */
 
-int ping_receiver (struct descriptor_d* d, struct ethernet_frame* frame, 
+int ping_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
 		   void* context)
 {
   int l;
@@ -100,9 +100,9 @@ int ping_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
   if (   ETH_F (frame)->protocol != HTONS (ETH_PROTO_IP)
       || IPV4_F (frame)->protocol != IP_PROTO_ICMP)
     return 0;
-  
+
   l = htons (IPV4_F (frame)->length) - sizeof (struct header_ipv4);
-  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__, 
+  DBG (2,"%s: checksum %x  calc %x  over %d\n", __FUNCTION__,
 	  ICMP_F (frame)->checksum,
 	  checksum (ICMP_F (frame), l), l);
 
@@ -143,7 +143,7 @@ int cmd_ping (int argc, const char** argv)
     return result;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d)))
     return result;
 
   hardware_address = arp_resolve (&d, ip_address, 0);
@@ -165,7 +165,7 @@ int cmd_ping (int argc, const char** argv)
   IPV4_F (frame)->version_ihl = 4<<4 | 5;
   IPV4_F (frame)->length
     = htons (  sizeof (struct header_ipv4)
-	     + sizeof (struct header_icmp) 
+	     + sizeof (struct header_icmp)
 	     + sizeof (struct message_icmp_ping)
 	     + cbData);
   IPV4_F (frame)->ttl = 64;
@@ -193,8 +193,8 @@ int cmd_ping (int argc, const char** argv)
     ICMP_F (frame)->checksum = 0;
     ICMP_PING_F (frame)->sequence
       = htons (htons (ICMP_PING_F (frame)->sequence) + 1);
-    ICMP_F (frame)->checksum 
-      = htons (checksum (ICMP_F (frame), 
+    ICMP_F (frame)->checksum
+      = htons (checksum (ICMP_F (frame),
 			 sizeof (struct header_icmp)
 			 + sizeof (struct message_icmp_ping)
 			 + cbData));
@@ -213,7 +213,7 @@ int cmd_ping (int argc, const char** argv)
 
   ethernet_frame_release (frame);
 
-  close_descriptor (&d);  
+  close_descriptor (&d);
 
   return 0;
 }

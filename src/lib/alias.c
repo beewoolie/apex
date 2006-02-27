@@ -79,7 +79,7 @@ void* alias_enumerate (void* pv, const char** pszKey, const char** pszValue)
     entry = (struct entry*) ((unsigned char*) pv + entry->cb);
   }
 
-  for (; ((unsigned char*) entry - rgbAlias) < ibAlias; 
+  for (; ((unsigned char*) entry - rgbAlias) < ibAlias;
        entry = (struct entry*) ((unsigned char*) entry + entry->cb)) {
 
     if (!entry->rgb[0])
@@ -107,21 +107,21 @@ const char* alias_lookup (const char* szKey)
 int alias_set (const char* szKey, const char* szValue)
 {
   size_t cbKey = szKey ? strlen (szKey) : 0;
-  size_t cbValue = szValue ? strlen (szValue) : 0; 
+  size_t cbValue = szValue ? strlen (szValue) : 0;
   size_t cbEntry = (sizeof (struct entry)
 		    + cbKey + 1 + cbValue + 1 + 0x3) & ~0x3;
   struct entry* entry = (struct entry*) &rgbAlias[ibAlias];
-  
+
   if (cbKey == 0 || cbValue == 0)
     return ERROR_PARAM;
   if (ibAlias + cbEntry > SIZE_ALIAS_HEAP_MAX)
     return ERROR_OUTOFMEMORY;
-  
+
   memset (entry, 0, sizeof (struct entry));
   entry->cb = cbEntry;
   memcpy (entry->rgb, szKey, cbKey + 1);
   memcpy (entry->rgb + cbKey + 1, szValue, cbValue + 1);
-  
+
   ibAlias += cbEntry;
 
   return 0;
@@ -139,4 +139,3 @@ int alias_unset (const char* szKey)
     entry->rgb[0] = 0;		/* Delete */
   return entry ? 0 : ERROR_FALSE;
 }
-

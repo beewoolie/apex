@@ -69,14 +69,14 @@ int cmd_arp (int argc, const char** argv)
   int result;
 
   if (   (result = parse_descriptor (szNetDriver, &d))
-      || (result = open_descriptor (&d))) 
+      || (result = open_descriptor (&d)))
     return result;
 
   DBG (2,"%s: open %s -> %d\n", __FUNCTION__, szNetDriver, result);
 
   result = ethernet_service (&d, console_terminate, NULL);
 
-  close_descriptor (&d);  
+  close_descriptor (&d);
   return result ? ERROR_BREAK : 0;
 }
 

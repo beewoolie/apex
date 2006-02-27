@@ -41,11 +41,11 @@
      more exploration.
 
    o This driver can be complicated on platforms where access to the
-     CF device is challenged by the hardware design.  
+     CF device is challenged by the hardware design.
 
      o The LPD boards tend to require an IO_BARRIER after writes to
        latch the written data.  The need for an IO_BARRIER on read is
-       less clear.  
+       less clear.
 
      o The Sharp LH79524 has a feature where the address lines to 16
        bit accessed devices are shifted one, granting a larger address
@@ -67,7 +67,7 @@
 
      It is imperative that a timeout be implemented in the status
      read.  As the code stands, it will hang if the CF card
-     identifies, but the interface fails to show a ready status.   
+     identifies, but the interface fails to show a ready status.
 
 */
 
@@ -125,7 +125,7 @@
 #if defined (CF_IOBARRIER_PHYS)
 # define IOBARRIER_READ	(*(volatile unsigned char*) CF_IOBARRIER_PHYS)
 #else
-# define IOBARRIER_READ	
+# define IOBARRIER_READ
 #endif
 
 #define USE_LBA
@@ -166,7 +166,7 @@ struct cf_info {
   int sector;			/* Buffered sector */
 };
 
-static struct cf_info cf_d; 
+static struct cf_info cf_d;
 u8 drive_select;
 
 static unsigned char read8 (int reg)
@@ -182,7 +182,7 @@ static void write8 (int reg, unsigned char value)
 {
   unsigned short v;
   v = REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT);
-//  printf ("write8 0x%x -> 0x%x  ", 
+//  printf ("write8 0x%x -> 0x%x  ",
 //	  CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT, v);
   IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
@@ -204,7 +204,7 @@ static unsigned short read16 (int reg)
 static void write16 (int reg, unsigned short value)
 {
 //  IOBARRIER_READ;
-//  printf ("write16: 0x%x <- 0x%x\n", 
+//  printf ("write16: 0x%x <- 0x%x\n",
 //	  CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT, value);
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = value;
   IOBARRIER_READ;
@@ -220,13 +220,13 @@ static void ready_wait (void)
 
 static void select (int drive, int head)
 {
-  drive_select = (0xa0) 
+  drive_select = (0xa0)
 #if defined USE_LBA
     | (1<<6)		/* Enable LBA mode */
 #endif
     | (drive ? (1<<4) : 0);
 
-  write16 (IDE_SELECT, drive_select | (IDE_IDLE << 8)); 
+  write16 (IDE_SELECT, drive_select | (IDE_IDLE << 8));
 
   ready_wait ();
 }
@@ -242,7 +242,7 @@ static void seek (unsigned sector)
   head      = (sector >> 24) & 0xf;
   cylinder  = (sector >> 8) & 0xffff;
   sector   &= 0xff;
-#else  
+#else
   head     = sector/(cf_d.cylinders*cf_d.sectors_per_track);
   cylinder = (sector%(cf_d.cylinders*cf_d.sectors_per_track))
     /sectors_per_track;
@@ -261,7 +261,7 @@ static void seek (unsigned sector)
 #if defined (TALK)
 static void talk_registers (void)
 {
-  printf ("ide: sec %04x cyl %04x stat %04x data %04x\n", 
+  printf ("ide: sec %04x cyl %04x stat %04x data %04x\n",
 	  read16 (IDE_SECTORCOUNT),
 	  read16 (IDE_CYLINDER),
 	  read16 (IDE_SELECT),
@@ -377,7 +377,7 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
     cb = d->length - d->index;
 
   PRINTF ("%s: @ 0x%lx\n", __FUNCTION__, d->start + d->index);
-  
+
   while (cb) {
     unsigned long index = d->start + d->index;
     int availableMax = SECTOR_SIZE - (index & (SECTOR_SIZE - 1));
@@ -398,10 +398,10 @@ static ssize_t cf_read (struct descriptor_d* d, void* pv, size_t cb)
       ready_wait ();
       cf_d.sector = sector;
 
-      for (i = 0; i < SECTOR_SIZE/2; ++i) 
+      for (i = 0; i < SECTOR_SIZE/2; ++i)
 	*(unsigned short*) &cf_d.rgb[i*2] = read16 (IDE_DATA);
     }
-    
+
     memcpy (pv, cf_d.rgb + (index & (SECTOR_SIZE - 1)), available);
 
     d->index += available;
@@ -422,7 +422,7 @@ static void cf_report (void)
   if (cf_identify ())
     return;
 
-  printf ("  cf:     %d.%02dMiB, %s %s\n", 
+  printf ("  cf:     %d.%02dMiB, %s %s\n",
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
 	  cf_d.szFirmware, cf_d.szName);

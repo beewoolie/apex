@@ -11,12 +11,12 @@
  * Version:       $Id: xmodem.c,v 1.2 2002/01/06 19:02:29 erikm Exp $
  * Copyright:     Copyright (C) 2001, Hewlett-Packard Company
  * Author:        Christopher Hoover <ch@hpl.hp.com>
- * Description:   xmodem functionality for uploading of kernels 
+ * Description:   xmodem functionality for uploading of kernels
  *                and the like
  * Created at:    Thu Dec 20 01:58:08 PST 2001
  *-----------------------------------------------------------------------*/
 /*
- * xmodem.c: xmodem functionality for uploading of kernels and 
+ * xmodem.c: xmodem functionality for uploading of kernels and
  *            the like
  *
  * Copyright (C) 2001 Hewlett-Packard Laboratories
@@ -70,7 +70,7 @@ extern struct driver_d* console;
 static char __xbss(xmodem) rgbXmodem[1024];
 
 static inline void _send (char ch)
-{ 
+{
   console->write (NULL, &ch, 1);
 }
 
@@ -81,7 +81,7 @@ static inline void _read_flush (void)
     console->read (NULL, &ch, 1);
   }
 }
-  
+
 static int _receive (unsigned int timeout)
 {
   unsigned long timeStart = timer_read ();
@@ -120,7 +120,7 @@ int xmodem_receive (struct descriptor_d* d)
     blockBegin = _receive (MS_TIMEOUT);
     if (blockBegin < 0)
       goto timeout;
-    
+
     nak = NAK;
 
     switch (blockBegin) {
@@ -155,7 +155,7 @@ int xmodem_receive (struct descriptor_d* d)
 
     {
       int i;
-      
+
       for (i = 0; i < blockLength; i++) {
 	int ch = _receive (MS_TIMEOUT);
 	if (ch < 0)
@@ -168,7 +168,7 @@ int xmodem_receive (struct descriptor_d* d)
       crcHi = _receive (MS_TIMEOUT);
       if (crcHi < 0)
 	goto timeout;
-      
+
       crcLo = _receive (MS_TIMEOUT);
       if (crcLo < 0)
 	goto timeout;
@@ -184,7 +184,7 @@ int xmodem_receive (struct descriptor_d* d)
 			/* meta data. */
       goto next;
     } else if (blockNo != (wantBlockNo & 0xff)) {
-      ERROR ("unexpected block no, 0x%08x, expecting 0x%08x\n", 
+      ERROR ("unexpected block no, 0x%08x, expecting 0x%08x\n",
 	    blockNo, wantBlockNo);
       goto error;
     }
@@ -209,19 +209,19 @@ int xmodem_receive (struct descriptor_d* d)
 
       if ((crcHi != expectedCrcHi) ||
 	  (crcLo != expectedCrcLo)) {
-	ERROR ("crc error, expected 0x%02x 0x%02x, got 0x%02x 0x%02x\n", 
+	ERROR ("crc error, expected 0x%02x 0x%02x, got 0x%02x 0x%02x\n",
 	      expectedCrcHi, expectedCrcLo, crcHi, crcLo);
 	goto error;
       }
     } else {
       unsigned char expectedCksum = 0;
       int i;
-      
+
       for (i = 0; i < blockLength; i++)
 	expectedCksum += rgbXmodem[i];
 
       if (cksum != expectedCksum) {
-	ERROR ("checksum error, expected 0x%02x, got 0x%02x\n", 
+	ERROR ("checksum error, expected 0x%02x, got 0x%02x\n",
 	      expectedCksum, cksum);
 	goto error;
       }
@@ -236,7 +236,7 @@ int xmodem_receive (struct descriptor_d* d)
       goto error;
     }
 
-    
+
 
     {
       int i;
@@ -281,7 +281,7 @@ int xmodem_receive (struct descriptor_d* d)
       return -1;
     }
   }
-  
+
  done:
   return length;
 }

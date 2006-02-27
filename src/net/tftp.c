@@ -30,7 +30,7 @@
      tftp://host/path
    or
      tftp:/path using a default host of $server, perhaps.
-   
+
 
   NOTES
   -----
@@ -44,13 +44,13 @@
      reading files is to throttle the acknowlegements.  So, what it
      shall do is request the first block.  Let the next layer read
      data from the buffered data and wait for the whole block to be
-     consumed before acknowledging that the block was received.  
+     consumed before acknowledging that the block was received.
 
    o Performance may be improved by caching  data blocks and allowing
      there to be a sliding window of available data.  This could,
      potentially, allow for a reasonable overlap of requests and
      processing.  Especially if APEX is performing some sort of
-     transformation on the data, e.g. checksum or writing to 
+     transformation on the data, e.g. checksum or writing to
      flash.  For transfers to memory, there is probably little to be
      gained with a sliding window.  However, this driver doesn't know
      how the data will be used.
@@ -125,7 +125,7 @@ struct tftp_info {
   int mode;			/* reading or writing, uses an opcode */
   int block;			/* block number being read */
   int blockRec;			/* block number of last received block */
-  size_t cbRec; 		/* count of bytes received */
+  size_t cbRec;		/* count of bytes received */
   unsigned char rgb[BLOCK_LENGTH*BLOCKS_CACHED];
   struct ethernet_frame* frame;
   int cRetries;			/* Number of re-acks */
@@ -133,7 +133,7 @@ struct tftp_info {
 
 struct tftp_info tftp;
 
-static int tftp_receiver (struct descriptor_d* d, 
+static int tftp_receiver (struct descriptor_d* d,
 			  struct ethernet_frame* frame,
 			  void* context)
 {
@@ -150,9 +150,9 @@ static int tftp_receiver (struct descriptor_d* d,
 		   + sizeof (struct header_udp)
 		   + sizeof (struct message_tftp)))
     return 0;			/* runt */
-  if (ETH_F (frame)->protocol == HTONS (ETH_PROTO_IP) 
+  if (ETH_F (frame)->protocol == HTONS (ETH_PROTO_IP)
       && IPV4_F (frame)->protocol == IP_PROTO_UDP) {
-    DBG (2,"  dp %d  sp %d\n", 
+    DBG (2,"  dp %d  sp %d\n",
 	 htons (UDP_F (frame)->destination_port),
 	 htons (UDP_F (frame)->source_port));
   }
@@ -196,14 +196,14 @@ static int tftp_receiver (struct descriptor_d* d,
       break;
     }
 
-    cb = htons (UDP_F (frame)->length) - sizeof (struct header_udp) 
+    cb = htons (UDP_F (frame)->length) - sizeof (struct header_udp)
       - sizeof (struct message_tftp) - 2;
-    memcpy (&info->rgb[info->cbRec % sizeof (info->rgb)], 
+    memcpy (&info->rgb[info->cbRec % sizeof (info->rgb)],
 	    TFTP_F (frame)->data + 2, cb);
     ++info->blockRec;
     info->cbRec += cb;
     info->state = (cb == 512 ? stateBlockAvailable : stateBlockFinal);
-    DBG (1,"received %d of %d bytes  block %d (%d)\n", 
+    DBG (1,"received %d of %d bytes  block %d (%d)\n",
 	 cb, info->cbRec, info->blockRec, info->state);
     break;
   default:
@@ -267,7 +267,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	size_t cb = strlcpy (pch, d->pb[d->iRoot], 400) + 1;
 	strcpy (pch + cb, "octet");
 	cb += strlen (pch + cb) + 1;
-	udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port, 
+	udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port,
 		   tftp.source_port, sizeof (struct message_tftp) + cb);
       }
 
@@ -310,7 +310,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	  break;
 	}
 
-	if (   tftp.state != stateBlockAvailable 
+	if (   tftp.state != stateBlockAvailable
 	    && tftp.state != stateBlockFinal) {
 	  DBG (1, "%s: probably no file\n", __FUNCTION__);
 	  goto quit;		/* Terminate, probably no such file */
@@ -334,7 +334,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 
       if (available > cb)
 	available = cb;
-      memcpy (pv, tftp.rgb + (d->start + d->index)%sizeof (tftp.rgb), 
+      memcpy (pv, tftp.rgb + (d->start + d->index)%sizeof (tftp.rgb),
 	      available);
       d->index += available;
       cb -= available;
@@ -346,7 +346,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
       DBG (1, "acking %d\n", tftp.blockRec);
       TFTP_F (tftp.frame)->opcode = htons (TFTP_ACK);
       *(u16*) TFTP_F (tftp.frame)->data = htons (tftp.blockRec);
-      udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port, 
+      udp_setup (tftp.frame, tftp.server_ip, tftp.destination_port,
 		 tftp.source_port, sizeof (struct message_tftp) + 2);
       usleep (1000);
       tftp.d.driver->write (&tftp.d, tftp.frame->rgb, tftp.frame->cb);
@@ -379,17 +379,17 @@ static int tftp_open (struct descriptor_d* d)
   int result;
   extern const char szNetDriver[];
 
-  DBG (2,"%s: d->c %d d->iRoot %d '%s' '%s'\n", 
+  DBG (2,"%s: d->c %d d->iRoot %d '%s' '%s'\n",
 	  __FUNCTION__, d->c, d->iRoot, d->pb[0], d->pb[1]);
 
   if (UNCONFIGURED_IP)
     ERROR_RETURN (ERROR_FAILURE, "IP address not configured");
 
   if (d->c != 2)
-    ERROR_RETURN (ERROR_FILENOTFOUND, "invalid path"); 
+    ERROR_RETURN (ERROR_FILENOTFOUND, "invalid path");
   if (d->iRoot != 1)
-    ERROR_RETURN (ERROR_FILENOTFOUND, "server IP required"); 
-  
+    ERROR_RETURN (ERROR_FILENOTFOUND, "server IP required");
+
   memset (&tftp, 0, sizeof (tftp)); /* clobber transfer state */
 
   if ((result = parse_descriptor (szNetDriver, &tftp.d)))
@@ -402,7 +402,7 @@ static int tftp_open (struct descriptor_d* d)
   if (!arp_resolve (&tftp.d, tftp.server_ip, 0))
     ERROR_RETURN (ERROR_PARAM, "no route to host");
 
-  if ((result = open_descriptor (&tftp.d))) 
+  if ((result = open_descriptor (&tftp.d)))
     return result;
 
   register_ethernet_receiver (100, tftp_receiver, &tftp);
@@ -410,7 +410,7 @@ static int tftp_open (struct descriptor_d* d)
   return 0;
 }
 
- 
+
 static void tftp_close (struct descriptor_d* d)
 {
   if (tftp.frame) {
@@ -478,4 +478,3 @@ static __driver_6 struct driver_d tftp_driver = {
 //  .info = tftp_info,
 #endif
 };
-

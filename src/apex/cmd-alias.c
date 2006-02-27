@@ -44,7 +44,7 @@ static int cmd_alias (int argc, const char** argv)
     alias_set (argv[1], argv[2]);
     break;
   default:
-    return ERROR_PARAM; 
+    return ERROR_PARAM;
   }
 
   return 0;
@@ -66,7 +66,7 @@ static __command struct command_d c_alias = {
   COMMAND_HELP(
 "alias [KEY [VALUE]]\n"
 "  Show all aliases, the alias KEY or set an alias KEY to value VALUE.\n"
-"  Similar to the environment, aliases are run-time defined only.\n" 
+"  Similar to the environment, aliases are run-time defined only.\n"
   )
 };
 

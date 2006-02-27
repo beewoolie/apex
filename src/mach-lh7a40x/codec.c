@@ -25,14 +25,14 @@
    DESCRIPTION
    -----------
 
-   Test code for the AC97 audio codec. 
+   Test code for the AC97 audio codec.
 
    You can dump an 8 bit file with hexdump.  This command skips to the
    0x2c'th byte before dumping.
 
      hexdump -v -s 0x2c -n 32768 -e '8 1 "0x%02x, " "\n\t"' k3b_success1.wav
 
-   A 16 bit stereo file:   
+   A 16 bit stereo file:
 
      hexdump -v -s 0x108b0 -n 100000 -e '8 2 "0x%04x, " "\n\t"' track01.wav
 
@@ -41,7 +41,7 @@
 
   o There seems to be more at play in the signed versus unsigned
     arena.  The WAV format certainly uses signed integers for the
-    sample values. 
+    sample values.
 
 */
 
@@ -235,7 +235,7 @@ static u16 ac97_fetch (int reg)
     ;
 
   DBG (3,"rx terminal count %d\n", count);
-  
+
   usleep (US_FRAME);	/* 21.1.8: delay one frame before reading  */
 
   if (count)
@@ -267,7 +267,7 @@ static void ac97_store (int reg, u16 value)
 
   for (count = 1024; !(AC97_RGIS & AC97_ISR_SLOT1TXCMP) && count; --count)
     ;
-  
+
   if (reg == REG_RESET)
     wait_for_powerup ();
 }
@@ -305,10 +305,10 @@ static void codec_configure (int frequency, int sample_size)
   }
 
   DBG (2,"configuring codec for %d Hz with 0x%x\n", frequency, v);
-  
+
   ac97_store (REG_RATE_DAC_FRONT, v);
 
-  DBG (3, "sampling 0x%04x 0x%04x 0x%04x\n", 
+  DBG (3, "sampling 0x%04x 0x%04x 0x%04x\n",
        ac97_fetch (REG_RATE_DAC_FRONT),
        ac97_fetch (REG_RATE_DAC_SURR),
        ac97_fetch (REG_RATE_DAC_LFE));
@@ -348,13 +348,13 @@ static void codec_init (void)
 
   DBG (0, "%s: power-up\n", __FUNCTION__);
 
-  DBG (1, "%s: reset 0x%0x\n", __FUNCTION__, ac97_fetch (REG_RESET)); 
+  DBG (1, "%s: reset 0x%0x\n", __FUNCTION__, ac97_fetch (REG_RESET));
 #if TALK >= 1
   {
     u16 id1 = ac97_fetch (REG_VENDORID1);
     u16 id2 = ac97_fetch (REG_VENDORID2);
 
-    DBG (1, "%s: vendor id '%c%c%c%c' (0x%0x 0x%0x)\n", __FUNCTION__, 
+    DBG (1, "%s: vendor id '%c%c%c%c' (0x%0x 0x%0x)\n", __FUNCTION__,
 	 id1 >> 8, id1 & 0xff, id2 >> 8, (id2 & 0xff) + '0', id1, id2);
   }
 #endif
@@ -380,15 +380,15 @@ typedef unsigned char buffer_t;
 static buffer_t __attribute__((section(".pcm.xbss"))) buffer[128*1024];
 
 /* convert_source
-   
-   returns the number of samples used in the buffer. 
+
+   returns the number of samples used in the buffer.
 
 */
 
 static int convert_source (void)
 {
   int source_samples = C_SAMPLES;
-  int buffer_samples = sizeof (buffer)/sizeof (*buffer); 
+  int buffer_samples = sizeof (buffer)/sizeof (*buffer);
   sample_t* rgb = (sample_t*) rgbPCM;
   int is;
   int ib;
@@ -506,15 +506,15 @@ static int convert_source (void)
 error
 #endif
   }
-  
+
   return buffer_samples;
-} 
+}
 
 static void print_status (unsigned long v)
 {
-  printf (" 0x%04lx: b %ld  nb %ld  s (%ld)", 
+  printf (" 0x%04lx: b %ld  nb %ld  s (%ld)",
 	  v,
-	  (v >> 7) & 0x1f, 
+	  (v >> 7) & 0x1f,
 	  (v >> 6) & 1,
 	  (v >> 4) & 3);
   switch ((v >> 4) & 3) {
@@ -535,7 +535,7 @@ static void print_status (unsigned long v)
 static int cmd_codec_test (int argc, const char** argv)
 {
   int samples = convert_source ();
-  int loops = 
+  int loops =
 #if defined USE_LOOPS
       USE_LOOPS
 #else
@@ -562,7 +562,7 @@ static int cmd_codec_test (int argc, const char** argv)
 
    AC97_RXCR1 = 0;		/* Disable */
    AC97_TXCR1 = 0;
-   
+
 //   CSC_PWRCNT &= ~(CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN);
 //   usleep (100);
    CSC_PWRCNT |= CSC_PWRCNT_DMAC_M2P4_EN | CSC_PWRCNT_DMAC_M2P5_EN;
@@ -618,7 +618,7 @@ static int cmd_codec_test (int argc, const char** argv)
    print_status (DMAC_P_PSTATUS (DMAC_CHAN));
    printf ("\n");
 
-//   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__, 
+//   DBG (2, "%s: waiting for completion of %d %d %d\n", __FUNCTION__,
 //	count, index, length);
 
    index += count;
@@ -681,7 +681,7 @@ static int cmd_codec_test (int argc, const char** argv)
 
    {
      unsigned long status;
-     for (status = DMAC_P_PSTATUS (DMAC_CHAN); 
+     for (status = DMAC_P_PSTATUS (DMAC_CHAN);
 	  ((status >> 7) & 0x1f) & 0x3;
 	  status = DMAC_P_PSTATUS (DMAC_CHAN)) {
        AC97_TXCR1 = AC97_CR_EN

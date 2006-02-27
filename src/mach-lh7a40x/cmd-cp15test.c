@@ -59,7 +59,7 @@ static void cmd_cp15test (int argc, const char** argv)
     test &= ~TEST_ICACHE_STREAMING;
   if (strcmp (pch, "nois") == 0)
     test |=  TEST_ICACHE_STREAMING;
-  
+
   if (strcmp (pch, "df") == 0)
     test &= ~TEST_DCACHE_FILL;
   if (strcmp (pch, "nodf") == 0)
@@ -69,7 +69,7 @@ static void cmd_cp15test (int argc, const char** argv)
     test &= ~TEST_ICACHE_FILL;
   if (strcmp (pch, "noif") == 0)
     test |=  TEST_ICACHE_FILL;
-  
+
   if (strcmp (pch, "clear") == 0)
     test = 0;
 
@@ -77,7 +77,7 @@ static void cmd_cp15test (int argc, const char** argv)
 
   if (pch)
     __asm volatile ("mcr p15, 0, %0, c15, c0, 0" :: "r" (test));
-  
+
 }
 
 static __command struct command_d c_cp15test = {

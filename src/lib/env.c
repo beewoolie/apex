@@ -110,7 +110,7 @@ static char _env_locate (int i)
   char ch;
 
   while (_env_read (&ch, 1) == 1 && ch != ENV_END) {
-    if (!ENV_IS_DELETED (ch) && ENV_INDEX (ch) == i) 
+    if (!ENV_IS_DELETED (ch) && ENV_INDEX (ch) == i)
       return ch;
     do {
       _env_read (&ch, 1);
@@ -132,7 +132,7 @@ static char _env_locate (int i)
    0xffff.  We're modifying this code, conditionally, to check for at
    least 1K of 0xff's.  An ideal implementation would check all of the
    environment space, just before a write, just to make sure it is
-   clear. 
+   clear.
 
 */
 
@@ -148,7 +148,7 @@ int env_check_magic (void)
   if (s != 0xffff)
     return -1;
 
-#if defined (ENV_CHECK_LEN) 
+#if defined (ENV_CHECK_LEN)
   {
     int c = ENV_CHECK_LEN/2;
     while (--c) {
@@ -162,7 +162,7 @@ int env_check_magic (void)
 #endif
 
   return 1;
-} 
+}
 
 
 /* _env_find
@@ -191,7 +191,7 @@ static const char* _env_find (int i)
   return NULL;
 }
 
-static int _env_index (const char* sz) 
+static int _env_index (const char* sz)
 {
   int i;
 
@@ -236,12 +236,12 @@ static int _env_fetch (const char* szKey, const char** pszValue)
 
 */
 
-void* env_enumerate (void* pv, const char** pszKey, 
+void* env_enumerate (void* pv, const char** pszKey,
 		     const char** pszValue, int* pfDefault)
 {
   int i = (int) pv + 1;
 
-  if (i - 1 >= C_ENV_KEYS) 
+  if (i - 1 >= C_ENV_KEYS)
     return 0;
 
   *pszKey = ENVLIST(i - 1).key;
@@ -254,7 +254,7 @@ void* env_enumerate (void* pv, const char** pszKey,
     *pfDefault = 0;
 
   return (void*) i;
-} 
+}
 
 
 /* env_fetch
@@ -296,7 +296,7 @@ int env_fetch_int (const char* szKey, int valueDefault)
 
 /* env_erase
 
-   removes a key from the environment.  
+   removes a key from the environment.
 
    This function must not be called when the env_d descriptor is not
    open.
@@ -326,7 +326,7 @@ void env_erase (const char* szKey)
    adds a key/value pair to the environment.  An existing version of
    the key will be erased.  The return value is non-zero if the data
    cannot be written to flash.
- 
+
    This function must not be called when the env_d descriptor is not
    open.
 
@@ -375,7 +375,7 @@ int env_store (const char* szKey, const char* szValue)
 void env_erase_all (void)
 {
   _env_rewind ();
-  env_d.driver->erase (&env_d, env_d.length); 
+  env_d.driver->erase (&env_d, env_d.length);
 }
 
 #endif

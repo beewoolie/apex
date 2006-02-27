@@ -1,5 +1,4 @@
 /* hardware.h
-     $Id$
 
    written by Marc Singer
    14 Jan 2005

@@ -176,7 +176,7 @@ static int cmd_ads (int argc, const char** argv)
   {
     char ch;
     console->read (0, &ch, 1);
-  }      
+  }
 
   return 0;
 }
@@ -192,4 +192,3 @@ static __service_7 struct service_d ads7843_service = {
 //  .init = ads_init,
 //  .release = ads_release,
 };
-

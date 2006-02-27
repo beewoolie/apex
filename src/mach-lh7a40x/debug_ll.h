@@ -1,5 +1,4 @@
 /* debug_ll.h
-     $Id$
 
    written by Marc Singer
    10 Mar 2005
@@ -29,7 +28,7 @@
    normal serial includes.  Thus these macros are protected from being
    included when the uart macros have previously been included.
 
-   Do not include this header in source files.  Use 
+   Do not include this header in source files.  Use
 
       #include <debug_ll.h>
 
