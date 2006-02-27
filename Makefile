@@ -76,7 +76,7 @@ endif
 # In both cases the working directory must be the root of the kernel src.
 # 1) O=
 # Use "make O=dir/to/store/output/files/"
-# 
+#
 # 2) Set KBUILD_OUTPUT
 # Set the environment variable KBUILD_OUTPUT to point to the directory
 # where the output files shall be placed.
@@ -179,7 +179,7 @@ APEXRELEASE:=$(subst $(space),,$(APEXRELEASE))
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
 # line overrides the setting of ARCH below.  If a native build is happening,
-# then ARCH is assigned, getting whatever value it gets normally, and 
+# then ARCH is assigned, getting whatever value it gets normally, and
 # SUBARCH is subsequently ignored.
 
 SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
@@ -264,7 +264,7 @@ export KBUILD_CHECKSRC KBUILD_SRC KBUILD_EXTMOD
 #         cmd_cc_o_c       = $(CC) $(c_flags) -c -o $@ $<
 #
 # If $(quiet) is empty, the whole command will be printed.
-# If it is set to "quiet_", only the short version will be printed. 
+# If it is set to "quiet_", only the short version will be printed.
 # If it is set to "silent_", nothing wil be printed at all, since
 # the variable $(silent_cmd_cc_o_c) doesn't exist.
 #
@@ -362,7 +362,7 @@ CPPFLAGS        := -D__KERNEL__ $(LINUXINCLUDE)
 
 CFLAGS 		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
 	  	   -fno-strict-aliasing -fno-common \
-		   -fno-builtin-printf -g # -mthumb-interwork 
+		   -fno-builtin-printf -g # -mthumb-interwork
 AFLAGS		:= -D__ASSEMBLY__ # -mthumb-interwork
 
 export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION APEXRELEASE \
@@ -371,7 +371,7 @@ export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION LOCALVERSION APEXRELEASE \
 	HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
 export CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS LDFLAGS
-export CFLAGS CFLAGS_KERNEL CFLAGS_MODULE 
+export CFLAGS CFLAGS_KERNEL CFLAGS_MODULE
 export AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
@@ -401,7 +401,7 @@ scripts_basic:
 # catch them early, and hand them over to scripts/kconfig/Makefile
 # It is allowed to specify more targets when calling make, including
 # mixing *config targets and build targets.
-# For example 'make oldconfig all'. 
+# For example 'make oldconfig all'.
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
 
@@ -454,7 +454,7 @@ ifeq ($(config-targets),1)
 	@if [ -L include/mach ]; then rm include/mach ; fi
 	@if [ -L include/asm ]; then rm include/asm ; fi
 # This command would force defaults for new config options.  We're not
-# going to do it for now.   
+# going to do it for now.
 #	$(Q)$(MAKE) oldconfig < /dev/null
 
 %config: scripts_basic FORCE
@@ -490,14 +490,14 @@ every:
 	@if [ -e .config ]; then rm .config ; fi
 	@[ ! -d every ] || rm -rf every
 	@mkdir every
-	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do\
-	$(MAKE) clean ;\
-	$(MAKE) $$i ;\
+	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do \
+	$(MAKE) clean ; \
+	$(MAKE) $$i ; \
 	echo "  BUILD   $$i";\
-	$(MAKE) oldconfig < /dev/null >  makelog 2>&1;\
-	$(MAKE)                       >> makelog 2>&1;\
-	mkdir every/$$i ;\
-	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ;\
+	$(MAKE) oldconfig < /dev/null >  makelog 2>&1; \
+	$(MAKE)                       >> makelog 2>&1; \
+	mkdir every/$$i ; \
+	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ; \
 	done
 	@rm .config
 
@@ -668,7 +668,7 @@ quiet_cmd_apex__ ?= LD      $@
 ##	$(MAKE) $(build)=init
 
 # Generate System.map
-quiet_cmd_sysmap = SYSMAP 
+quiet_cmd_sysmap = SYSMAP
       cmd_sysmap = $(CONFIG_SHELL) $(srctree)/scripts/mksysmap
 
 # Link of apex
@@ -767,7 +767,7 @@ endif # ifdef CONFIG_KALLSYMS
 apex: $(apex-lds) $(apex-init) $(apex-main) $(kallsyms.o) FORCE
 	$(call if_changed_rule,apex__)
 
-# The actual objects are generated when descending, 
+# The actual objects are generated when descending,
 # make sure no implicit rule kicks in
 $(sort $(apex-init) $(apex-main)) $(apex-lds): $(apex-dirs) ;
 
@@ -854,7 +854,7 @@ export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 # Single targets
 # ---------------------------------------------------------------------------
 
-%.s: %.c FORCE # scripts 
+%.s: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
 %.i: %.c FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
@@ -995,7 +995,7 @@ modules modules_install: FORCE
 
 endif # CONFIG_MODULES
 
-# Generate asm-offsets.h 
+# Generate asm-offsets.h
 # ---------------------------------------------------------------------------
 
 define filechk_gen-asm-offsets
@@ -1036,7 +1036,7 @@ MRPROPER_FILES += .config .config.old include/asm .version \
 # tidy - Remove debris
 
 .PHONY: tidy
-tidy: 
+tidy:
 	@echo "  TIDY"
 	@find . $(RCS_FIND_IGNORE) \
 	 	\( -name '*~' -o -name '*.i' \) \
@@ -1313,7 +1313,7 @@ checkstack:
 	$(OBJDUMP) -d apex $$(find . -name '*.ko') | \
 	$(PERL) $(src)/scripts/checkstack.pl $(ARCH)
 
-# FIXME Should go into a make.lib or something 
+# FIXME Should go into a make.lib or something
 # ===========================================================================
 
 quiet_cmd_rmdirs = $(if $(wildcard $(rm-dirs)),CLEAN   $(wildcard $(rm-dirs)))

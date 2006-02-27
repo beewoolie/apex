@@ -50,7 +50,7 @@ static void pci_init (void)
 #define PCI_CLK_CONFIG\
 
   (GPIO_CLKR |= ((0xf << GPIO_CLKR_CLK0DC_SHIFT)\
-	       | (0xf << GPIO_CLKR_CLK0TC_SHIFT)))
+		 | (0xf << GPIO_CLKR_CLK0TC_SHIFT)));
 
   PCI_RESET;
   PCI_CLK_DISABLE;
