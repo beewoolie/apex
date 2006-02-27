@@ -1,5 +1,4 @@
 /* attributes.h
-     $Id$
 
    written by Marc Singer
    10 Feb 2005

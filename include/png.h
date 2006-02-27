@@ -1,5 +1,4 @@
 /* png.h
-     $Id$
 
    written by Marc Singer
    3 Mar 2005
@@ -52,12 +51,12 @@ struct png_header {
 
 //void*		     open_png (const void* pv, size_t cb);
 //int		     read_png_ihdr (void* pv, struct png_header* hdr);
-//const unsigned char* read_png_row (void* pv);  
+//const unsigned char* read_png_row (void* pv);
 //void		     close_png (void* pv);
 
 void*		     open_pngr (struct descriptor_d* d);
 int		     read_pngr_ihdr (void* pv, struct png_header* hdr);
-const unsigned char* read_pngr_row (void* pv);  
+const unsigned char* read_pngr_row (void* pv);
 void		     close_pngr (void* pv);
 int		     palette_pngr (void* pv, unsigned char** prgPalette);
 

@@ -1,5 +1,4 @@
 /* sort.h
-     $Id$
 
    written by Marc Singer
    17 May 2005

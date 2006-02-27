@@ -1,5 +1,4 @@
 /* command.h
-     $Id$
 
    written by Marc Singer
    3 Nov 2004
@@ -38,7 +37,7 @@
 /* ----- Types */
 
 typedef int (*command_func_t) (int argc, const char** argv);
- 
+
 struct command_d {
   const char* command;
   command_func_t func;
@@ -51,7 +50,7 @@ struct command_d {
 #if defined (CONFIG_ALLHELP)
 # define COMMAND_HELP(s) .help = s,
 #else
-# define COMMAND_HELP(s) 
+# define COMMAND_HELP(s)
 #endif
 
 #define __command __used __section(.command)

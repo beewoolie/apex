@@ -1,5 +1,4 @@
 /* alias.h
-     $Id$
 
    written by Marc Singer
    6 July 2005
@@ -34,7 +33,7 @@
 
 /* ----- Prototypes */
 
-void*       alias_enumerate (void* pv, const char** pszKey, 
+void*       alias_enumerate (void* pv, const char** pszKey,
 			     const char** pszValue);
 const char* alias_lookup (const char* szKey);
 int alias_set (const char* szKey, const char* szValue);

@@ -1,5 +1,4 @@
 /* driver.h
-     $Id$
 
    written by Marc Singer
    1 Nov 2004
@@ -46,8 +45,6 @@ struct descriptor_d {
   unsigned long length;
   size_t index;
 
-//  unsigned non_zero_length:1;	/* Set when the user specified a length */
-
 				/* Paths */
   unsigned char rgb[256];
   unsigned char* pb[32];
@@ -69,9 +66,9 @@ struct descriptor_d {
 #define DRIVER_NET	(1<<4)			/* May receive packets */
 #define DRIVER_PRESENT	(1<<8)
 //#define DRIVER_DESCRIP_REGION	(1<<9)		/* Uses region descriptors */
-#define DRIVER_DESCRIP_FS	(1<<10) 	/* Uses filesystem descript. */
-#define DRIVER_DESCRIP_STREAM	(1<<11) 	/* Uses stresam descriptors */
-#define DRIVER_DESCRIP_NET	(1<<12) 	/* Uses network descriptors */
+#define DRIVER_DESCRIP_FS	(1<<10)		/* Uses filesystem descript. */
+#define DRIVER_DESCRIP_STREAM	(1<<11)		/* Uses stresam descriptors */
+#define DRIVER_DESCRIP_NET	(1<<12)		/* Uses network descriptors */
 #define DRIVER_DESCRIP_SIMPLEPATH (1<<13)	/* Uses unparsed paths */
 #define DRIVER_WRITEPROGRESS_MASK (0xf)
 #define DRIVER_WRITEPROGRESS_SHIFT (24)

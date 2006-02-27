@@ -1,5 +1,4 @@
 /* ethernet.h
-     $Id$
 
    written by Marc Singer
    7 Jul 2005
@@ -45,7 +44,7 @@ struct ethernet_timeout_context {
   long ms_timeout;
 };
 
-typedef int (*pfn_ethernet_receiver) (struct descriptor_d*, 
+typedef int (*pfn_ethernet_receiver) (struct descriptor_d*,
 				      struct ethernet_frame*, void*);
 
 /* ----- Globals */
@@ -62,8 +61,8 @@ int udp_checksum_verify (struct ethernet_frame* frame);
 
 int ethernet_timeout (void*);
 
-int register_ethernet_receiver (int priority, 
-				pfn_ethernet_receiver pfn, 
+int register_ethernet_receiver (int priority,
+				pfn_ethernet_receiver pfn,
 				void* context);
 int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context);
 

@@ -1,5 +1,4 @@
 /* network.h
-     $Id$
 
    written by Marc Singer
    5 May 2005
@@ -189,7 +188,7 @@ struct addrinfo {
 			 (f->rgb\
 			  + sizeof (struct header_ethernet)\
 			  + sizeof (struct header_ipv4)\
-			  + sizeof (struct header_udp))) 
+			  + sizeof (struct header_udp)))
 
 
 extern char host_ip_address[];

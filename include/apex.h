@@ -1,5 +1,4 @@
 /* apex.h
-     $Id$
 
    written by Marc Singer
    3 Nov 2004

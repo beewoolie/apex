@@ -1,5 +1,4 @@
 /* environment.h
-     $Id$
 
    written by Marc Singer
    7 Nov 2004
@@ -51,7 +50,7 @@ const char* env_fetch (const char* szKey);
 int	    env_fetch_int (const char* szKey, int valueDefault);
 int	    env_store (const char* szKey, const char* szValue);
 void	    env_erase (const char* szKey);
-void*	    env_enumerate (void* pv, const char** pszKey, 
+void*	    env_enumerate (void* pv, const char** pszKey,
 			   const char** pszValue, int* fDefault);
 void        env_erase_all (void);
 int	    env_check_magic (void);
