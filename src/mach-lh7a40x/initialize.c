@@ -414,6 +414,7 @@ static void target_init (void)
   GPIO_PCD  |=  (1<<1);		/* Disable power until kernel driver init */
 # else
   GPIO_PCD  &= ~(1<<1);		/* Disable power until kernel driver init */
+//  GPIO_PCD  |=  (1<<1);		/* Enable power -- testing */
 # endif
 #endif
 }
