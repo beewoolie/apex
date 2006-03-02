@@ -407,6 +407,15 @@ static void target_init (void)
   GPIO_PCDD &= ~(1<<6);
   GPIO_PCD  |=  (1<<6);
 #endif
+
+#if defined (CONFIG_MACH_LPD7A404)
+  GPIO_PCDD &= ~(1<<1);		/* USB1_PWR_EN is an output*/
+# if defined (CONFIG_MACH_LPD7A404_80000258)
+  GPIO_PCD  |=  (1<<1);		/* Disable power until kernel driver init */
+# else
+  GPIO_PCD  &= ~(1<<1);		/* Disable power until kernel driver init */
+# endif
+#endif
 }
 
 

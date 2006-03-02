@@ -39,6 +39,19 @@ config MACH_TROUNCER
 
 endchoice
 
+config MACH_LPD7A404_80000258
+	bool "Support USB device control of the 80000258"
+	depends on MACH_LPD7A404
+	default n
+	help
+	  A early release of the LPD7A404, the -10 board, inverts the
+	  output of the USB_PWR_EN control line from the CPU.  The
+	  only way to drive it properly is to code the driver to do
+	  so.  There is no way to detect this older hardware revision.
+	  The part number on this older CardEngine is 80000258.  If
+	  you want proper USB device operation for the -10 board,
+	  choose this option.
+
 menu "Platform Setup"
 
 config ATAG_PHYS
