@@ -61,7 +61,7 @@ menu "Platform Setup"
 choice
 	prompt "CPU/Peripheral Clock"
 	default FREQ_52_52
-	depends on ARCH_LH79524
+	depends on ARCH_LH79524 || ARCH_LH79525
 
 config FREQ_51_51
 	bool "FCLK 51 MHz - HCLK 51 MHz"
