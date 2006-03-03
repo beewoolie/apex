@@ -1,5 +1,12 @@
 2006-03-02  Marc Singer  <elf@buici.com>
 
+	* Makefile: 1.3.19
+
+	* src/mach-lh7952x/lh79524.h (RCPC_CPUCLKPRE_V): Added support for
+	faster clocking of the LH79524.  It isn't, yet, compatible with
+	the Linux kernel.  However, this may help someone who is looking
+	for a little more speed.
+
 	* src/mach-lh7a40x/initialize.c (target_init): Added support for
 	the LPD7A404-10, PN 80000258, USB_PWR_EN.  The sense of this line
 	changed between the -10 and the -11 releases of the LPD7A404

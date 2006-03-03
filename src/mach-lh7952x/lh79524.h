@@ -366,17 +366,29 @@
 
 #define RCPC_CTRL_UNLOCK	(1<<9)
 #define RCPC_CORECONFIG_FASTBUS	(3)
+#define RCPC_CORECONFIG_SYNC	(1)
+#define RCPC_CORECONFIG_ASYNC	(0)
 #define RCPC_PCLKCTRL0_U2	(1<<2)
 #define RCPC_PCLKCTRL0_U1	(1<<1)
 #define RCPC_PCLKCTRL0_U0	(1<<0)
 
-#if 1 // run the CPU at 50.8032 MHz, and the bus at 50.8032 MHz
+#if defined (CONFIG_FREQ_51_51)
+		// run the CPU at 50.8032 MHz, and the bus at 50.8032 MHz
 # define RCPC_SYSPLLCNTL_V	(0x3049) /* 101.6064 MHz <= 11.2896 MHz * 9 */
 # define RCPC_SYSCLKPRE_V	(1)		/* HCLK = PLL/2 */
 # define RCPC_CPUCLKPRE_V	(1)		/* FCLK = PLL/2 */
-# define RCPC_CORECONFIG_V	(0)		/* Standard, async clocking */
+# define RCPC_CORECONFIG_V	RCPC_CORECONFIG_ASYNC
 # define HCLK			(50803200)	/* HCLK in Hz */
-#else // run...faster?
+
+#endif
+
+#if defined (CONFIG_FREQ_76_51)
+		// run the CPU at 76.2048 MHz, and the bus at 50.8032 MHz
+# define RCPC_SYSPLLCNTL_V	(0x305b) /* 304.8192 MHz <= 11.2896 MHz * 27 */
+# define RCPC_SYSCLKPRE_V	(3)		/* HCLK = PLL/6 */
+# define RCPC_CPUCLKPRE_V	(2)		/* FCLK = PLL/4 */
+# define RCPC_CORECONFIG_V	RCPC_CORECONFIG_ASYNC
+# define HCLK			(50803200)	/* HCLK in Hz */
 
 #endif
 

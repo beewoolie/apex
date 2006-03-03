@@ -58,6 +58,27 @@ endchoice
 
 menu "Platform Setup"
 
+choice
+	prompt "CPU/Peripheral Clock"
+	default FREQ_52_52
+	depends on ARCH_LH79524
+
+config FREQ_51_51
+	bool "FCLK 51 MHz - HCLK 51 MHz"
+	help
+	  This setting configures the PLL for 101.606MHz, HCLK and
+	  FCLK will be 50.8032 MHz.  This is the default setting and
+	  is known to work reliably on the LPD CardEngines.
+
+config FREQ_76_51
+	bool "FCLK 76 MHz - HCLK 51 MHz"
+	help
+	  This setting configures the PLL for 304.8192 MHz, HCLK will
+	  be 50.8032 MHz and FCLK will be 76.2048 MHz.  This setting
+	  may cause the system to run unreliably.
+
+endchoice 
+
 config ATAG_PHYS
 	hex "Physical address for ATAGs list"
 	default "0x20000100"
