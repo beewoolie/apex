@@ -149,6 +149,9 @@
 // The charging time should be at least 100ns.  Longer is OK as will be
 // the case for other HCLK frequencies.
 
+#define NS_TO_HCLK(ns)	((((ns)*((HCLK)/1000) + (1000000 - 1))/1000000))
+#define WST(ns) (NS_TO_HCLK((ns))-1)
+
 #define SDRAM_REFRESH_CHARGING	(10)		// HCLKs, 10 //100MHz -> 100ns
 #define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
 
@@ -159,18 +162,18 @@
 
 /* APEX oringinal  */
 //#define SMC_BCR0_V		(0x200002a0)	// Bootflash
-#define SMC_BCR1_V		((0x2<<28)|(0xe<<5)) // IOBarrier, 150ns delay
+#define SMC_BCR1_V	((0x2<<28)|(WST(150)<<5)|(0<<0)) // IOBarrier
 //#define SMC_BCR6_V		(0x100003e0)	// CompactFlash
 //#define SMC_BCR7_V		(0x100002c2)	// CPLD & Ethernet
 
 #if defined (CONFIG_MACH_TROUNCER)
-# define SMC_BCR0_V		(0x1000fce1)	// Bootflash
+# define SMC_BCR0_V	(0x1000fce1)	// Bootflash
 #endif
 
 #if defined (CONFIG_MACH_LPD7A40X)
-# define SMC_BCR0_V		((2<<28)|(14<<5)|(2<<0)) // Bootflash
-# define SMC_BCR6_V		((1<<28)|(17<<5)) // CompactFlash
-# define SMC_BCR7_V		(0x10000102)	// CPLD & Ethernet
+# define SMC_BCR0_V	((2<<28)|(WST(150)<<5)|(2<<0)) // Bootflash
+# define SMC_BCR6_V	((1<<28)|(WST(180)<<5)|(0<<0)) // CompactFlash
+# define SMC_BCR7_V	((1<<28)|(WST( 90)<<5)|(2<<0)) // CPLD & Ethernet
 #endif
 
 // LOLO timings (LH7A404).

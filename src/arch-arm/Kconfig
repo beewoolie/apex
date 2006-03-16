@@ -60,6 +60,9 @@ config ARCH_LH7A40X
 config ARCH_IXP42X
 	bool "Intel IXP42X"
 
+config ARCH_S3C2410
+	bool "Samsung S3C2410"
+
 endchoice
 
 config EXPERIMENTAL
@@ -197,6 +200,7 @@ endmenu
 source src/mach-lh7952x/Kconfig
 source src/mach-lh7a40x/Kconfig
 source src/mach-ixp42x/Kconfig
+source src/mach-s3c2410/Kconfig
 
 source src/apex/Kconfig
 
@@ -249,6 +253,7 @@ config ENV_MUTABLE
 config ENV_REGION
 	string "Environment region"
 	depends on ENV_MUTABLE
+	default "nor:128k+64k" if MACH_M7200
 	default "nor:128k+64k" if MACH_LPD7A40X
 	default "nor:128k+64k" if MACH_LPD79520
 	default "nor:128k+64k" if MACH_LNODE80
@@ -266,6 +271,7 @@ config ENV_STARTUP_KERNEL_COPY
 config ENV_REGION_KERNEL
 	string "Source region for kernel"
 	depends on ENV_STARTUP_KERNEL_COPY
+	default "nor:256k+1024k" if MACH_M7200
 	default "nor:256k+1024k" if MACH_LNODE80
 	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
 	default "nor:0x60010+0xffff0" if MACH_NSLU2
@@ -276,12 +282,14 @@ config ENV_REGION_KERNEL
 config ENV_STARTUP_RAMDISK_COPY
 	bool "Copy ramdisk to RAM at startup" 
 	default y if MACH_LNODE80
+	default y if MACH_M7200
 	default y if MACH_NSLU2
 	depends on USE_RAMDISK
 	
 config ENV_REGION_RAMDISK
 	string "Source region for ramdisk image"
 	depends on ENV_STARTUP_RAMDISK_COPY
+	default "nor:1280k+1536k" if MACH_M7200
 	default "nor:1280k+1536k" if MACH_LNODE80
 	default "nor:0x160010+0x69fff0" if MACH_NSLU2
 	help

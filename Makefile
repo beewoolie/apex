@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 3
-SUBLEVEL = 19
+SUBLEVEL = 20
 EXTRAVERSION =
 #NAME=Zonked Quokka
 
@@ -116,7 +116,7 @@ $(filter-out _all,$(MAKECMDGOALS)) _all:
 	$(if $(KBUILD_VERBOSE:1=),@)$(MAKE) -C $(KBUILD_OUTPUT)		\
 	KBUILD_SRC=$(CURDIR)	     KBUILD_VERBOSE=$(KBUILD_VERBOSE)	\
 	KBUILD_CHECK=$(KBUILD_CHECK) KBUILD_EXTMOD="$(KBUILD_EXTMOD)"	\
-        -f $(CURDIR)/Makefile $@
+	-f $(CURDIR)/Makefile $@
 
 # Leave processing to above invocation of make
 skip-makefile := 1
@@ -218,12 +218,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-HOSTCC  	= gcc
-HOSTCXX  	= g++
+HOSTCC	= gcc
+HOSTCXX	= g++
 HOSTCFLAGS	= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
 HOSTCXXFLAGS	= -O2
 
-# 	Decide whether to build built-in, modular, or both.
+#	Decide whether to build built-in, modular, or both.
 #	Normally, just do built-in.
 
 KBUILD_MODULES :=
@@ -301,21 +301,21 @@ export quiet Q KBUILD_VERBOSE
 # Usage: cflags-y += $(call gcc-option, -march=winchip-c6, -march=i586)
 
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
-             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+	     > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
 
 # For backward compatibility
 check_gcc = $(warning check_gcc is deprecated - use cc-option) \
-            $(call cc-option, $(1),$(2))
+	    $(call cc-option, $(1),$(2))
 
 # cc-option-yn
 # Usage: flag := $(call gcc-option-yn, -march=winchip-c6)
 cc-option-yn = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
-                > /dev/null 2>&1; then echo "y"; else echo "n"; fi;)
+		> /dev/null 2>&1; then echo "y"; else echo "n"; fi;)
 
 # cc-version
 # Usage gcc-ver := $(call cc-version $(CC))
 cc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-version.sh \
-              $(if $(1), $(1), $(CC)))
+	      $(if $(1), $(1), $(CC)))
 
 
 # Look for make include files relative to root of kernel src
@@ -356,12 +356,12 @@ NOSTDINC_FLAGS  = -nostdinc -iwithprefix include
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    := -Iinclude \
-                   $(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include)
+		   $(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include)
 
 CPPFLAGS        := -D__KERNEL__ $(LINUXINCLUDE)
 
-CFLAGS 		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
-	  	   -fno-strict-aliasing -fno-common \
+CFLAGS		:= -Wall -Wstrict-prototypes -Wno-trigraphs \
+		   -fno-strict-aliasing -fno-common \
 		   -fno-builtin-printf -g # -mthumb-interwork
 AFLAGS		:= -D__ASSEMBLY__ # -mthumb-interwork
 
@@ -420,12 +420,12 @@ ifneq ($(filter $(no-dot-config-targets), $(MAKECMDGOALS)),)
 endif
 
 ifeq ($(KBUILD_EXTMOD),)
-        ifneq ($(filter config %config,$(MAKECMDGOALS)),)
-                config-targets := 1
-                ifneq ($(filter-out config %config,$(MAKECMDGOALS)),)
-                        mixed-targets := 1
-                endif
-        endif
+	ifneq ($(filter config %config,$(MAKECMDGOALS)),)
+		config-targets := 1
+		ifneq ($(filter-out config %config,$(MAKECMDGOALS)),)
+			mixed-targets := 1
+		endif
+	endif
 endif
 
 ifeq ($(mixed-targets),1)
@@ -740,7 +740,7 @@ endef
 # Generate .S file with all kernel symbols
 quiet_cmd_kallsyms = KSYM    $@
       cmd_kallsyms = $(NM) -n $< | $(KALLSYMS) \
-                     $(if $(CONFIG_KALLSYMS_ALL),--all-symbols) > $@
+		     $(if $(CONFIG_KALLSYMS_ALL),--all-symbols) > $@
 
 .tmp_kallsyms1.o .tmp_kallsyms2.o .tmp_kallsyms3.o: %.o: %.S scripts FORCE
 	$(call if_changed_dep,as_o_S)
@@ -838,7 +838,7 @@ include/linux/config.h:
 include/envmagic.h: FORCE
 	$(Q)scripts/envmagic > include/envmagic.h_new
 	$(Q)if [ ! -f include/envmagic.h ] \
-                 || ! cmp -s include/envmagic.h_new include/envmagic.h ;\
+		 || ! cmp -s include/envmagic.h_new include/envmagic.h ;\
 	    then mv include/envmagic.h_new include/envmagic.h ;\
 	    else rm include/envmagic.h_new ; fi
 
@@ -869,7 +869,7 @@ export CPPFLAGS_apex.lds += -P -C -U$(ARCH)
 %.o: %.S FORCE # scripts
 	$(Q)$(MAKE) $(build)=$(@D) $@
 
-# 	FIXME: The asm symlink changes when $(ARCH) changes. That's
+#	FIXME: The asm symlink changes when $(ARCH) changes. That's
 #	hard to detect, but I suppose "make mrproper" is a good idea
 #	before switching between archs anyway.
 
@@ -878,7 +878,7 @@ include/asm:
 	$(Q)if [ ! -d include ]; then mkdir -p include; fi;
 	@ln -fsn asm-$(ARCH) $@
 
-# 	Split autoconf.h into include/linux/config/*
+#	Split autoconf.h into include/linux/config/*
 
 include/config/MARKER: include/linux/autoconf.h
 	@echo '  SPLIT   include/linux/autoconf.h -> include/config/*'
@@ -929,7 +929,7 @@ depend dep:
 
 ifdef CONFIG_MODULES
 
-# 	By default, build modules as well
+#	By default, build modules as well
 
 all: modules
 
@@ -1025,13 +1025,13 @@ endef
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
 CLEAN_FILES +=	apex System.map \
-                .tmp_kallsyms* .tmp_version .tmp_apex* .tmp_System.map
+		.tmp_kallsyms* .tmp_version .tmp_apex* .tmp_System.map
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include2
 MRPROPER_FILES += .config .config.old include/asm .version \
-                  include/linux/autoconf.h include/linux/version.h \
-                  Module.symvers tags TAGS cscope*
+		  include/linux/autoconf.h include/linux/version.h \
+		  Module.symvers tags TAGS cscope*
 
 # tidy - Remove debris
 
@@ -1039,7 +1039,7 @@ MRPROPER_FILES += .config .config.old include/asm .version \
 tidy:
 	@echo "  TIDY"
 	@find . $(RCS_FIND_IGNORE) \
-	 	\( -name '*~' -o -name '*.i' \) \
+		\( -name '*~' -o -name '*.i' \) \
 		-type f -print | xargs rm -f
 
 # clean - Delete most, but leave enough to build external modules
@@ -1056,7 +1056,7 @@ clean: archclean $(clean-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@find . $(RCS_FIND_IGNORE) \
-	 	\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
+		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \) \
 		-type f -print | xargs rm -f
 
@@ -1080,11 +1080,13 @@ mrproper: clean archmrproper $(mrproper-dirs)
 
 distclean: mrproper
 	@find $(srctree) $(RCS_FIND_IGNORE) \
-	 	\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
+		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
 		-o -name '*.bak' -o -name '#*#' -o -name '.*.orig' \
-	 	-o -name '.*.rej' -o -size 0 \
+		-o -name '.*.rej' -o -size 0 \
+		-o -name '*.map' -o -name '*.bin'\
 		-o -name '*%' -o -name '.*.cmd' -o -name 'core' \) \
 		-type f -print | xargs rm -f
+	@rm -f include/mach include/envmagic.h include/configfunc.h
 	@if [ -L config ] ; then rm config; fi
 
 # Packaging of the kernel to various formats
@@ -1217,7 +1219,7 @@ clean:	rm-dirs := $(MODVERDIR)
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)
 	@find $(KBUILD_EXTMOD) $(RCS_FIND_IGNORE) \
-	 	\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
+		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \) \
 		-type f -print | xargs rm -f
 
@@ -1264,7 +1266,7 @@ cscope: FORCE
 quiet_cmd_TAGS = MAKE   $@
 cmd_TAGS = $(all-sources) | etags -
 
-# 	Exuberant ctags works better with -I
+#	Exuberant ctags works better with -I
 
 quiet_cmd_tags = MAKE   $@
 define cmd_tags
@@ -1342,7 +1344,7 @@ endif
 
 # Execute command and generate cmd file
 if_changed = $(if $(strip $? \
-		          $(filter-out $(cmd_$(1)),$(cmd_$@))\
+			  $(filter-out $(cmd_$(1)),$(cmd_$@))\
 			  $(filter-out $(cmd_$@),$(cmd_$(1)))),\
 	@set -e; \
 	$(if $($(quiet)cmd_$(1)),echo '  $(subst ','\'',$($(quiet)cmd_$(1)))';) \
@@ -1353,7 +1355,7 @@ if_changed = $(if $(strip $? \
 # execute the command and also postprocess generated .d dependencies
 # file
 if_changed_dep = $(if $(strip $? $(filter-out FORCE $(wildcard $^),$^)\
-		          $(filter-out $(cmd_$(1)),$(cmd_$@))\
+			  $(filter-out $(cmd_$(1)),$(cmd_$@))\
 			  $(filter-out $(cmd_$@),$(cmd_$(1)))),\
 	$(Q)set -e; \
 	$(if $($(quiet)cmd_$(1)),echo '  $(subst ','\'',$($(quiet)cmd_$(1)))';) \
@@ -1367,9 +1369,9 @@ if_changed_dep = $(if $(strip $? $(filter-out FORCE $(wildcard $^),$^)\
 # and if so will execute $(rule_foo)
 
 if_changed_rule = $(if $(strip $? \
-		               $(filter-out $(cmd_$(1)),$(cmd_$(@F)))\
+			       $(filter-out $(cmd_$(1)),$(cmd_$(@F)))\
 			       $(filter-out $(cmd_$(@F)),$(cmd_$(1)))),\
-	               $(Q)$(rule_$(1)))
+		       $(Q)$(rule_$(1)))
 
 # If quiet is set, only print short version of command
 

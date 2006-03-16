@@ -48,12 +48,12 @@
 static int commandline_argc;
 static const char** commandline_argv;
 
+extern void build_atags (void);
+#endif
+
 #if !defined (CONFIG_ATAG_PHYS) || !defined (CONFIG_ATAG)
 # undef  CONFIG_ATAG_PHYS
 # define CONFIG_ATAG_PHYS 0
-#endif
-
-extern void build_atags (void);
 #endif
 
 #if defined (CONFIG_ARCH_NUMBER_FUNCTION)

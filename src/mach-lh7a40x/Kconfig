@@ -54,6 +54,51 @@ config MACH_LPD7A404_80000258
 
 menu "Platform Setup"
 
+choice
+	prompt "CPU/Peripheral Clock"
+	default FREQ_200_100_50 if !MACH_TROUNCER
+	default FREQ_200_66_33  if  MACH_TROUNCER
+
+config FREQ_200_100_50
+	bool "FCLK 200 MHz - HCLK 100 MHz - PCLK 50MHz"
+	help
+	  This setting configures the PLL GCLK frequency to 199.9872MHz.
+	  FCLK is GCLK; HCLK is FCLK/2; PCLK is HCLK/2.  This is the
+	  default setting and is known to work reliably on the LPD
+	  CardEngines.
+
+config FREQ_200_66_33
+	bool "FCLK 200 MHz - HCLK  66 MHz - PCLK 33MHz"
+	help
+	  This setting configures the PLL GCLK frequency to 199.9872MHz.
+	  FCLK is GCLK; HCLK is FCLK/3; PCLK is HCLK/2.  This is the
+	  default setting for the Trouncer which requires a slow PCLK
+	  for the sake of peripherals.
+
+config FREQ_240_120_60
+	bool "FCLK 240 MHz - HCLK 120 MHz - PCLK 60MHz"
+	help
+	  This setting configures the PLL GCLK frequency to 239.616MHz.
+	  FCLK is GCLK; HCLK is FCLK/2; PCLK is HCLK/2.  This is an
+	  overclocking confguration that may be unstable with
+	  unqualified parts.
+
+config FREQ_100_100_50
+	bool "FCLK 100 MHz - HCLK 100 MHz - PCLK 50MHz"
+	help
+	  This setting configures the PLL GCLK frequency to 99.9936MHz.
+	  FCLK is GCLK; HCLK is FCLK; PCLK is HCLK/2.  With this
+	  setting, the CPU will run in FastBus mode instead of
+	  Synchronous mode.
+
+config FREQ_150_75_37
+	bool "FCLK 150 MHz - HCLK  75 MHz - PCLK 37MHz"
+	help
+	  This setting configures the PLL GCLK frequency to 150.0891MHz.
+	  FCLK is GCLK; HCLK is FCLK/2; PCLK is HCLK/2.
+
+endchoice 
+
 config ATAG_PHYS
 	hex "Physical address for ATAGs list"
 	default "0xc0000100"

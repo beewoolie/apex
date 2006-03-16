@@ -1,3 +1,16 @@
+2006-03-15  Marc Singer  <elf@buici.com>
+
+	* Makefile: 1.3.20
+
+	* src/mach-lh7a40x/initialize.c: Adjusted the SMC controller
+	timing setup to be sensitive to HCLK as configured.
+
+	* src/mach-lh7a40x/lh7a40x.h: Kconfig selectable operating
+	frequencies.
+
+	* Adding support for new architecture, s3c2410, and new machine
+	m7200.
+
 2006-03-02  Marc Singer  <elf@buici.com>
 
 	* Makefile: 1.3.19

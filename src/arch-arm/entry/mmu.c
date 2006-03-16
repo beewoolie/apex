@@ -29,7 +29,7 @@
    can use the cache.
 
    Any target that wants to use this feature should define a macro
-   in mach-X/memory.h, 
+   in mach-X/memory.h,
 
      PROTECTION_FOR(p)
 
@@ -44,7 +44,7 @@
    o I-cache may be enabled without the MMU by setting the Icr bit in
      CP15.  Without the MMU, all instruction fetches are cacheable,
      addresses are linearly mapped, and no protection checks are
-     made. 
+     made.
    o D-cache can only be used with the MMU enabled as the
      cacheable/bufferable bits are defined in the MMU tables.
    o CP15/1 doesn't have a write-buffer enable bit.  Instead, the
@@ -58,7 +58,7 @@
 
    o Uses a different method for flushing caches than ARMV4.
 
-   
+
 */
 
 #include <config.h>
@@ -121,7 +121,7 @@ void mmu_init (void)
     if (protection == (Ctt | Btt))
       protection &= ~Btt;	/* Disable buffering of cached segments */
 #endif
-    ttbl[i] = (i<<20) 
+    ttbl[i] = (i<<20)
       | (3<<10)			/* AP(R/W) */
       | (0<<5)			/* domain(0) */
       | protection
@@ -144,9 +144,9 @@ void mmu_init (void)
 #endif
 
 	/* Enable MMU */
-  { 
+  {
     unsigned long l;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    /* D-cache, Write buffer, MMU enable */
 		    "orr %0, %0, #("
 #if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITETHROUGH_DCACHE)
@@ -173,7 +173,7 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
 	/* Convert address to table index/segment # */
   int i = (unsigned long) (pv) >> 20;
 
-  ttbl[i] = (i<<20) 
+  ttbl[i] = (i<<20)
     | (3<<10)			/* AP(R/W) */
     | (0<<5)			/* domain(0) */
     | (bufferable ? (1<<2) : 0)
@@ -199,7 +199,7 @@ void mmu_release (void)
 	/* Disable MMU */
   {
     unsigned long l;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t" 
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    /* D-cache, Write buffer, MMU disable */
 		    "bic %0, %0, #("
 #if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITHROUGH_DCACHE)
