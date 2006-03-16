@@ -152,7 +152,7 @@
 #define NS_TO_HCLK(ns)	((((ns)*((HCLK)/1000) + (1000000 - 1))/1000000))
 #define WST(ns) (NS_TO_HCLK((ns))-1)
 
-#define SDRAM_REFRESH_CHARGING	(10)		// HCLKs, 10 //100MHz -> 100ns
+#define SDRAM_REFRESH_CHARGING	(NS_TO_HCLK(100))
 #define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
 
 // SRAM devices
