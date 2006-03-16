@@ -150,7 +150,7 @@
 // the case for other HCLK frequencies.
 
 #define NS_TO_HCLK(ns)	((((ns)*((HCLK)/1000) + (1000000 - 1))/1000000))
-#define WST(ns) (NS_TO_HCLK((ns))-1)
+#define WST(ns)		(NS_TO_HCLK((ns))-1)
 
 #define SDRAM_REFRESH_CHARGING	(NS_TO_HCLK(100))
 #define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
