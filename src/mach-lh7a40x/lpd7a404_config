@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Mar  2 12:23:41 2006
+# Thu Mar 16 19:47:08 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -10,6 +10,7 @@ CONFIG_CPU_ARM922T=y
 # CONFIG_ARCH_LH7952X is not set
 CONFIG_ARCH_LH7A40X=y
 # CONFIG_ARCH_IXP42X is not set
+# CONFIG_ARCH_S3C2410 is not set
 # CONFIG_EXPERIMENTAL is not set
 # CONFIG_SMALL is not set
 
@@ -40,6 +41,13 @@ CONFIG_MACH_LPD7A404=y
 #
 # Platform Setup
 #
+CONFIG_FREQ_200_100_50=y
+# CONFIG_FREQ_200_66_33 is not set
+# CONFIG_FREQ_240_120_60 is not set
+# CONFIG_FREQ_250_125_63 is not set
+# CONFIG_FREQ_266_133_66 is not set
+# CONFIG_FREQ_100_100_50 is not set
+# CONFIG_FREQ_150_75_37 is not set
 CONFIG_ARCH_NUMBER_FUNCTION="determine_arch_number"
 CONFIG_SDRAM_CONTIGUOUS=y
 

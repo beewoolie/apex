@@ -105,7 +105,9 @@
 #endif
 
 #if defined (CONFIG_FREQ_240_120_60)
-# define CSC_CLKSET_V		(0x000095b9)
+/*  PS   PCLKDIV  MAINDIV2  MAINDIV1  PREDIV  HCLKDIV      GCLK		*/
+/*   0      0       0x12      0xb       0xe      1      239.616MHz	*/
+# define CSC_CLKSET_V		((0x12<<11)|(0xb<<7)|(0xe<<2)|(1<<0))
 # define HCLK			(119808000)
 # define CLOCKMODE		's'
 #endif
@@ -120,6 +122,22 @@
 # define CSC_CLKSET_V		(0x00048eb1)
 # define HCLK			(75044600)
 # define CLKMODE		's'
+#endif
+
+#if defined (CONFIG_FREQ_250_125_63)
+/*  PS   PCLKDIV  MAINDIV2  MAINDIV1  PREDIV  HCLKDIV      GCLK		*/
+/*   0      0       0x15       0xb     0x11      1      249.8991MHz	*/
+# define CSC_CLKSET_V		((0x15<<11)|(0xb<<7)|(0x11<<2)|(1<<0))
+# define HCLK			(124949557)
+# define CLOCKMODE		's'
+#endif
+
+#if defined (CONFIG_FREQ_266_133_66)
+/*  PS   PCLKDIV  MAINDIV2  MAINDIV1  PREDIV  HCLKDIV      GCLK		*/
+/*   0      0       0xa       0x1      0x0      1      265.4218 MHz	*/
+# define CSC_CLKSET_V		((0xb<<11)|(0xb<<7)|(0x8<<2)|(1<<0))
+# define HCLK			(132710400)
+# define CLOCKMODE		's'
 #endif
 
 
