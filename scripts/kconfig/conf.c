@@ -31,14 +31,14 @@ char *defconfig_file;
 static int indent = 1;
 static int valid_stdin = 1;
 static int conf_cnt;
-static signed char line[128];
+static char line[128];
 static struct menu *rootEntry;
 
-static char nohelp_text[] = "Sorry, no help available for this option yet.\n";
+static char nohelp_text[] = N_("Sorry, no help available for this option yet.\n");
 
-static void strip(signed char *str)
+static void strip(char *str)
 {
-	signed char *p = str;
+	char *p = str;
 	int l;
 
 	while ((isspace(*p)))
@@ -56,11 +56,25 @@ static void strip(signed char *str)
 static void check_stdin(void)
 {
 	if (!valid_stdin && input_mode == ask_silent) {
-		printf("aborted!\n\n");
-		printf("Console input/output is redirected. ");
-		printf("Run 'make oldconfig' to update configuration.\n\n");
+		printf(_("aborted!\n\n"));
+		printf(_("Console input/output is redirected. "));
+		printf(_("Run 'make oldconfig' to update configuration.\n\n"));
 		exit(1);
 	}
+}
+
+static char *fgets_check_stream(char *s, int size, FILE *stream)
+{
+	char *ret = fgets(s, size, stream);
+
+	if (ret == NULL && feof(stream)) {
+		printf(_("aborted!\n\n"));
+		printf(_("Console input is closed. "));
+		printf(_("Run 'make oldconfig' to update configuration.\n\n"));
+		exit(1);
+	}
+
+	return ret;
 }
 
 static void conf_askvalue(struct symbol *sym, const char *def)
@@ -82,6 +96,15 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 	}
 
 	switch (input_mode) {
+	case set_no:
+	case set_mod:
+	case set_yes:
+	case set_random:
+		if (sym_has_value(sym)) {
+			printf("%s\n", def);
+			return;
+		}
+		break;
 	case ask_new:
 	case ask_silent:
 		if (sym_has_value(sym)) {
@@ -91,7 +114,7 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 		check_stdin();
 	case ask_all:
 		fflush(stdout);
-		fgets(line, 128, stdin);
+		fgets_check_stream(line, 128, stdin);
 		return;
 	case set_default:
 		printf("%s\n", def);
@@ -347,7 +370,7 @@ static int conf_choice(struct menu *menu)
 			check_stdin();
 		case ask_all:
 			fflush(stdout);
-			fgets(line, 128, stdin);
+			fgets_check_stream(line, 128, stdin);
 			strip(line);
 			if (line[0] == '?') {
 				printf("\n%s\n", menu->sym->help ?
@@ -467,15 +490,14 @@ static void check_conf(struct menu *menu)
 		return;
 
 	sym = menu->sym;
-	if (sym) {
-		if (sym_is_changable(sym) && !sym_has_value(sym)) {
+	if (sym && !sym_has_value(sym)) {
+		if (sym_is_changable(sym) ||
+		    (sym_is_choice(sym) && sym_get_tristate_value(sym) == yes)) {
 			if (!conf_cnt++)
-				printf("*\n* Restart config...\n*\n");
+				printf(_("*\n* Restart config...\n*\n"));
 			rootEntry = menu_get_parent_menu(menu);
 			conf(rootEntry);
 		}
-		if (sym_is_choice(sym) && sym_get_tristate_value(sym) != mod)
-			return;
 	}
 
 	for (child = menu->list; child; child = child->next)
@@ -504,7 +526,7 @@ int main(int ac, char **av)
 			input_mode = set_default;
 			defconfig_file = av[i++];
 			if (!defconfig_file) {
-				printf("%s: No default config file specified\n",
+				printf(_("%s: No default config file specified\n"),
 					av[0]);
 				exit(1);
 			}
@@ -530,7 +552,7 @@ int main(int ac, char **av)
 	}
   	name = av[i];
 	if (!name) {
-		printf("%s: Kconfig file missing\n", av[0]);
+		printf(_("%s: Kconfig file missing\n"), av[0]);
 	}
 	conf_parse(name);
 	//zconfdump(stdout);
@@ -547,17 +569,38 @@ int main(int ac, char **av)
 		break;
 	case ask_silent:
 		if (stat(".config", &tmpstat)) {
-			printf("***\n"
+			printf(_("***\n"
 				"*** You have not yet configured your kernel!\n"
 				"***\n"
 				"*** Please run some configurator (e.g. \"make oldconfig\" or\n"
 				"*** \"make menuconfig\" or \"make xconfig\").\n"
-				"***\n");
+				"***\n"));
 			exit(1);
 		}
 	case ask_all:
 	case ask_new:
 		conf_read(NULL);
+		break;
+	case set_no:
+	case set_mod:
+	case set_yes:
+	case set_random:
+		name = getenv("KCONFIG_ALLCONFIG");
+		if (name && !stat(name, &tmpstat)) {
+			conf_read_simple(name);
+			break;
+		}
+		switch (input_mode) {
+		case set_no:	 name = "allno.config"; break;
+		case set_mod:	 name = "allmod.config"; break;
+		case set_yes:	 name = "allyes.config"; break;
+		case set_random: name = "allrandom.config"; break;
+		default: break;
+		}
+		if (!stat(name, &tmpstat))
+			conf_read_simple(name);
+		else if (!stat("all.config", &tmpstat))
+			conf_read_simple("all.config");
 		break;
 	default:
 		break;
@@ -576,7 +619,7 @@ int main(int ac, char **av)
 		check_conf(&rootmenu);
 	} while (conf_cnt);
 	if (conf_write(NULL)) {
-		fprintf(stderr, "\n*** Error during writing of the kernel configuration.\n\n");
+		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
 		return 1;
 	}
 	return 0;
