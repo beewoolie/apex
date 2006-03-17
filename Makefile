@@ -501,6 +501,15 @@ every:
 	done
 	@rm .config
 
+# every target builds all of the available configurations
+.PHONY: update-every
+update-every:
+	@for i in `find src/mach-*/ -name '*_config'` ; do \
+	cp $$i .config; \
+	$(MAKE) oldconfig; \
+	cp .config $$i; \
+	done
+
 ifeq ($(dot-config),1)
 ifeq "$(wildcard .config)" ""
 #dot-config := 0
