@@ -197,6 +197,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       }
       if (pl) {
 	*pl = simple_strtoul (sz + ib, &pchEnd, 0);
+//	printf ("convert %s -> %ld (%lx)\n", sz + ib, *pl, *pl);
 	ib = pchEnd - sz;
 	if (sz[ib] == 's' || sz[ib] == 'S') {
 	  *pl *= 512;
@@ -225,6 +226,8 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 
 size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
 {
+  //  printf ("seek_helper %d", ib);
+
   switch (whence) {
   case SEEK_SET:
     break;
@@ -236,12 +239,16 @@ size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
     break;
   }
 
+//  printf (", %d", ib);
+
   if (ib < 0)
     ib = 0;
   if (ib > d->length)
     ib = d->length;
 
   d->index = ib;
+
+  //  printf (", %d\n", ib);
 
   return (size_t) ib;
 }

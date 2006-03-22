@@ -43,10 +43,14 @@
    o The filesystem image starts with the superblock and is
      immediately followed by an array of block_group structures.
      These data are replicated in each block group.
-   o The first superblock begins in the first sector, or in the third,
+   o The first superblock is 1K of block 1.  We have to search for
+     this because we don't know the block size of the filesystem.
+     Presently, we support 1k and 4k block sizes.
+
      depending on how the filesystem was initialized.  This skipped
      1KiB only occurs for the first superblock and is never accounted
      for any place else.
+
    o Filesystem blocks are counted from zero starting at the beginning
      of the filesystem partition.
    o The bitmaps for the inodes and the used blocks are not
@@ -86,6 +90,8 @@
        file, we have to do the same effort as an open() call to handle
        info().  Needless repetition.  Either pull the partition code
        out, or get on the stick with chaining.
+   o report method should read the superblock so that the user knows
+     that whatever card is inserted will be used.
 
 */
 
@@ -149,7 +155,7 @@ struct superblock {
   __s32 s_log_frag_size;	/* Size of the fragments ?? */
   __u32 s_blocks_per_group;	/* Number of blocks in a block group */
   __u32 s_frags_per_group;	/* Number of fragments in a block group */
-  __u32 s_inodes_per_group;	/* Number of inodes inn a block group */
+  __u32 s_inodes_per_group;	/* Number of inodes in a block group */
   __u32 s_mtime;		/* Last filesystem modification time */
   __u32 s_wtime;		/* Last filesystem write time */
   __u16 s_mnt_count;		/* Count of filesystem mounts */
@@ -286,6 +292,7 @@ struct ext2_info {
   struct partition partition[4];
   struct superblock superblock;
   int block_size;
+  int first_data_block;		/* Computed offset to first data block */
   int rg_blocking[3];		/* Tier block counts */
 
   struct inode inode;		/* Current inode */
@@ -312,7 +319,6 @@ inline int group_from_inode (struct ext2_info* ext2, int inode)
   return (inode - 1)/ext2->superblock.s_inodes_per_group;
 }
 
-
 static inline unsigned long read_block_number (int i)
 {
   char* pb = &ext2.rgbCache[i*sizeof (long)];
@@ -322,12 +328,36 @@ static inline unsigned long read_block_number (int i)
        + (((unsigned long) pb[3]) << 24);
 }
 
-
 static int ext2_block_read (int block, void* pv, size_t cb)
 {
   PRINTF ("%s: %d\n", __FUNCTION__, block);
   ext2.d.driver->seek (&ext2.d, ext2.block_size*block, SEEK_SET);
   return ext2.d.driver->read (&ext2.d, pv, cb) != cb;
+}
+
+static int ext2_read_superblock (void)
+{
+  PRINTF ("reading superblock\n");
+
+  ext2.superblock.s_magic = 0;
+	/* Superblock is 1KiB long, 1KiB from the start of the filesystem */
+  ext2.d.driver->seek (&ext2.d, 1024, SEEK_SET);
+
+  if (ext2.d.driver->read (&ext2.d, &ext2.superblock,
+			   sizeof (ext2.superblock))
+      != sizeof (ext2.superblock)
+      || ext2.superblock.s_magic != MAGIC_EXT2)
+    return -1;
+
+	/* Precompute constants based on block size */
+  ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
+  ext2.first_data_block = (1 + ext2.superblock.s_first_data_block)
+    *ext2.block_size;
+  ext2.rg_blocking[0] = 12;
+  ext2.rg_blocking[1] = ext2.block_size/sizeof (long);
+  ext2.rg_blocking[2] = ext2.rg_blocking[1]*(ext2.block_size/sizeof (long));
+
+  return 0;
 }
 
 
@@ -428,6 +458,7 @@ static int ext2_update_block_cache (int block_index)
   }
 }
 
+
 /* ext2_find_inode
 
    reads an inode into the current inode structure.  The return value
@@ -448,7 +479,7 @@ int ext2_find_inode (int inode)
 
 	/* Fetch block_group structure for the inode  */
   ext2.d.driver->seek (&ext2.d,
-		       2*BLOCK_SIZE
+		       ext2.first_data_block
 		       + (sizeof (struct block_group)
 			  *((inode - 1)/ext2.superblock.s_inodes_per_group)),
 		       SEEK_SET);
@@ -462,7 +493,10 @@ int ext2_find_inode (int inode)
 		       + (sizeof (struct inode)
 			  *((inode - 1)%ext2.superblock.s_inodes_per_group)),
 		       SEEK_SET);
-//  PRINTF ("%s: seeked to 0x%x\n", __FUNCTION__, ext2.d.index);
+//  PRINTF ("%s: inode %d (%d %d} seeked to 0x%x of 0x%lx\n",
+//	  __FUNCTION__, inode,
+//	  ext2.block_size, group.bg_inode_table,
+//	  ext2.d.index, ext2.d.length);
   if (ext2.d.driver->read (&ext2.d, &ext2.inode, sizeof (struct inode))
       != sizeof (struct inode))
     return 1;
@@ -519,6 +553,7 @@ static int ext2_identify (void)
 
   return 0;
 }
+
 
 /* ext2_enum_directory
 
@@ -730,21 +765,10 @@ static int ext2_open (struct descriptor_d* d)
       || (result = open_descriptor (&ext2.d)))
     return result;
 
-	/* Default for superblock is 1 1KiB block into the partition */
-  ext2.d.driver->seek (&ext2.d, BLOCK_SIZE, SEEK_SET);
-  if (ext2.d.driver->read (&ext2.d, &ext2.superblock,
-			   sizeof (ext2.superblock))
-      != sizeof (ext2.superblock)
-      || ext2.superblock.s_magic != MAGIC_EXT2) {
+  if (ext2_read_superblock ()) {
     close_descriptor (&ext2.d);
     return -1;
   }
-
-	/* Precompute constants based on block size */
-  ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
-  ext2.rg_blocking[0] = 12;
-  ext2.rg_blocking[1] = ext2.block_size/sizeof (long);
-  ext2.rg_blocking[2] = ext2.rg_blocking[1]*(ext2.block_size/sizeof (long));
 
 #if 0
 	/* Read block group control structures */
@@ -918,21 +942,10 @@ static int ext2_info (struct descriptor_d* d)
       || (result = open_descriptor (&ext2.d)))
     return result;
 
-	/* Default for superblock is 1 1KiB block into the partition */
-  ext2.d.driver->seek (&ext2.d, BLOCK_SIZE, SEEK_SET);
-  if (ext2.d.driver->read (&ext2.d, &ext2.superblock,
-			   sizeof (ext2.superblock))
-      != sizeof (ext2.superblock)
-      || ext2.superblock.s_magic != MAGIC_EXT2) {
+  if (ext2_read_superblock ()) {
     close_descriptor (&ext2.d);
     return -1;
   }
-
-	/* Precompute constants based on block size */
-  ext2.block_size = 1 << (ext2.superblock.s_log_block_size + 10);
-  ext2.rg_blocking[0] = 12;
-  ext2.rg_blocking[1] = ext2.block_size/sizeof (long);
-  ext2.rg_blocking[2] = ext2.rg_blocking[1]*(ext2.block_size/sizeof (long));
 
 	/* Parse an inode number */
   if (*d->pb[d->iRoot] == '?' && (d->pb[d->iRoot])[1] == 'i') {

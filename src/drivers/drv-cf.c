@@ -218,6 +218,17 @@ static void ready_wait (void)
     ;
 }
 
+#if defined (TALK)
+static void talk_registers (void)
+{
+  printf ("ide: sec %04x cyl %04x stat %04x data %04x\n",
+	  read16 (IDE_SECTORCOUNT),
+	  read16 (IDE_CYLINDER),
+	  read16 (IDE_SELECT),
+	  read16 (IDE_DATA));
+}
+#endif
+
 static void select (int drive, int head)
 {
   drive_select = (0xa0)
@@ -236,7 +247,7 @@ static void seek (unsigned sector)
   unsigned head;
   unsigned cylinder;
 
-  PRINTF ("[%d", sector);
+  PRINTF ("[s %d", sector);
 
 #if defined (USE_LBA)
   head      = (sector >> 24) & 0xf;
@@ -245,8 +256,8 @@ static void seek (unsigned sector)
 #else
   head     = sector/(cf_d.cylinders*cf_d.sectors_per_track);
   cylinder = (sector%(cf_d.cylinders*cf_d.sectors_per_track))
-    /sectors_per_track;
-  sector  %= sectors_per_track;
+    /cf_d.sectors_per_track;
+  sector  %= cf_d.sectors_per_track;
 #endif
 
   select (0, head);
@@ -256,18 +267,11 @@ static void seek (unsigned sector)
   ready_wait ();
 
   PRINTF (" %d %d %d]\n", head, cylinder, sector);
-}
 
 #if defined (TALK)
-static void talk_registers (void)
-{
-  printf ("ide: sec %04x cyl %04x stat %04x data %04x\n",
-	  read16 (IDE_SECTORCOUNT),
-	  read16 (IDE_CYLINDER),
-	  read16 (IDE_SELECT),
-	  read16 (IDE_DATA));
-}
+  talk_registers ();
 #endif
+}
 
 static int cf_identify (void)
 {
@@ -336,10 +340,11 @@ static int cf_identify (void)
       ERROR_RETURN (ERROR_IOFAILURE, "unexpected data read from CF card");
     }
 
-    cf_d.cylinders         = rgs[1];
-    cf_d.heads		   = rgs[3];
-    cf_d.sectors_per_track = rgs[6];
-    cf_d.total_sectors	   = (rgs[7] << 16) + rgs[8];
+	/* Use current CF organization */
+    cf_d.cylinders         = rgs[54];
+    cf_d.heads		   = rgs[55];
+    cf_d.sectors_per_track = rgs[56];
+    cf_d.total_sectors	   = (rgs[58] << 16) + rgs[57];
 
     for (i = 23; i < 27; ++i) {
       cf_d.szFirmware[(i - 23)*2]     =  rgs[i] >> 8;
@@ -363,6 +368,8 @@ static int cf_open (struct descriptor_d* d)
 
   if ((result = cf_identify ()))
     return result;
+
+  PRINTF ("%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
 
   /* perform bounds check */
 
@@ -426,6 +433,11 @@ static void cf_report (void)
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
 	  cf_d.szFirmware, cf_d.szName);
+#if defined (TALK)
+  printf ("          cyl %d heads %d spt %d total %d\n",
+	  cf_d.cylinders, cf_d.heads, cf_d.sectors_per_track,
+	  cf_d.total_sectors);
+#endif
 }
 
 #endif

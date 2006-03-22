@@ -90,6 +90,7 @@ struct arp_entry {
 char host_ip_address[4];
 char server_ip_address[4];	/* Address of server that helped us along */
 char gw_ip_address[4];
+char netmask[4];		/* Required for gw routing */
 char host_mac_address[6];
 const char szNetDriver[] = "eth:";
 static const char broadcast_mac_address[6] = { 0xff, 0xff, 0xff,
@@ -145,7 +146,6 @@ u16 checksum (void* pv, int cb)
   return ~ ((sum & 0xffff) + (sum >> 16));
 }
 
-
 u16 port_allocate (void)
 {
   static u16 port;
@@ -170,7 +170,6 @@ struct ethernet_frame* ethernet_frame_allocate (void)
     }
   return NULL;
 }
-
 
 void ethernet_frame_release (struct ethernet_frame* frame)
 {
