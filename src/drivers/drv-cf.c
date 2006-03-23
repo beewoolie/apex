@@ -340,11 +340,23 @@ static int cf_identify (void)
       ERROR_RETURN (ERROR_IOFAILURE, "unexpected data read from CF card");
     }
 
-	/* Use current CF organization */
-    cf_d.cylinders         = rgs[54];
-    cf_d.heads		   = rgs[55];
-    cf_d.sectors_per_track = rgs[56];
-    cf_d.total_sectors	   = (rgs[58] << 16) + rgs[57];
+	/* Fetch CF organization */
+    if (rgs[53] & (1<<1)) {
+      cf_d.cylinders		= rgs[54];
+      cf_d.heads		= rgs[55];
+      cf_d.sectors_per_track	= rgs[56];
+      cf_d.total_sectors	= (rgs[58] << 16) + rgs[57];
+    }
+    else {
+      cf_d.cylinders		= rgs[1];
+      cf_d.heads		= rgs[3];
+      cf_d.sectors_per_track	= rgs[6];
+      cf_d.total_sectors	= (rgs[7] << 16) + rgs[8];
+    }
+
+//    printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
+//	    __FUNCTION__, rgs[49], rgs[51], rgs[53], rgs[64]);
+//    printf ("  pio_tran %x  pio_trans_iordy %x\n", rgs[67], rgs[68]);
 
     for (i = 23; i < 27; ++i) {
       cf_d.szFirmware[(i - 23)*2]     =  rgs[i] >> 8;

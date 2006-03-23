@@ -1,5 +1,7 @@
 2006-03-22  Marc Singer  <elf@buici.com>
 
+	* src/drivers-lh/drv-clcdc.c (VSW): Fixed error in the VSW macro.
+
 	* src/drivers/drv-ext2.c (ext2_find_inode): Fixed the computation
 	of the first block where the group descriptors are found.  This
 	allows APEX to read cards with block sizes other than 1K.

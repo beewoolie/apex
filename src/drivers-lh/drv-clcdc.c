@@ -159,8 +159,8 @@
 
 #define LEFT_MARGIN	(32)
 #define RIGHT_MARGIN	(800-32-640-96)
-#define TOP_MARGIN	(33)	/* 34 */
-#define BOTTOM_MARGIN	(540-33-480-2)
+#define TOP_MARGIN	(32)	/* 34 */
+#define BOTTOM_MARGIN	(540-32-480-2)
 #define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
 #define VSYNC_WIDTH	(2)	/* 2-?-34 lines */
 
@@ -219,7 +219,7 @@
 
 #define VBP(v)	(((v) & 0xff)<<24)
 #define VFP(v)	(((v) & 0xff)<<16)
-#define VSW(v)	((((v) - 1) & 0x3f)<<8)
+#define VSW(v)	((((v) - 1) & 0x3f)<<10)
 #define LPP(v)	(((v) - 1) & 0x3ff)
 
 #define BCD	(1<<26)		/* Bypass pixel clock divider */
