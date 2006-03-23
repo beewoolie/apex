@@ -54,7 +54,7 @@
 
 	* src/mach-lh7952x/init-lpd79524.c: Tighetened the CF region
 	timing as is done for the other targets.
- 
+
 	* src/mach-lh7952x/init-lpd79520.c: Adjusted to the CompactFlash
 	region timing to meet the CF spec.
 
@@ -92,7 +92,7 @@
 	chips are configured in a 32 bit bus.  Half of the SDRAM will idle
 	in this configuration, but we can test CPU performance with the 16
 	bit bus.
-	
+
 	* src/mach-lh7a40x/cmd-cp15test.c: Added a cp15 test register
 	manipulation function.
 
@@ -114,7 +114,7 @@
 	* src/mach-ixp42x/openslug_config: Openslug 3.1 no longer puts the
 	kernel in the jffs2 partition.  We default to reading the kernel
 	from flash.
- 
+
 	* src/arch-arm/entry/mmu.c (mmu_release): In order to support
 	XScale MMU (and caches) we need to customize the MMU disabling
 	code to cope with a different method of cleaning the data cache.
@@ -122,7 +122,7 @@
 	image.  The kernel is stored in a JFFS2 filesystem in flash for
 	compactness.  The faster we can read this data, the better.  Also,
 	reads from flash of ramdisk images benefits from caching.
-  
+
 2005-12-27  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/lib/relocate.c (relocate_apex): Improved the scarce
@@ -193,7 +193,7 @@
 	This makes the boot loader execute much faster than without.
 
 	* src/mach-lh7952x/serial.c (lh7952x_serial_release): Added a
-	release function so that serial data in the FIFO is flushed. 
+	release function so that serial data in the FIFO is flushed.
 
 	* src/mach-lh7a40x/serial.c (lh7a40x_serial_release): Added a
 	release function so that serial data in the FIFO is flushed.
@@ -207,7 +207,7 @@
 	synchronous bus mode as the default.
 
 	* src/mach-lh7a40x/lh7a40x.h: Added more explicit macros to handle
-	bus clocking modes. 
+	bus clocking modes.
 
 	* src/drivers/drv-mem.c: Added memlimit command so that we can
 	constrain the amount of memory that the Linux kernel sees.  It's a
@@ -217,7 +217,7 @@
 
 	* src/drivers/drv-nor-cfi.c: Added option to inhibit the NOR CFI
 	buffered write code, for lnode80.
- 
+
 	* src/mach-lh7952x/Kconfig: Added lnode80, patch from Dave Anders.
 
 2005-11-07  Marc Singer  <elf@buici.com>
@@ -233,7 +233,7 @@
 	* src/net/tftp.c (tftp_open): Reorganized the tftp open sequence
 	in case ARP for the TFTP server has yet to be achieved.  This was
 	a crash bug.
- 
+
 2005-10-07  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/Kconfig: Start of changes for the kev79525.
@@ -246,11 +246,11 @@
 	* src/mach-lh7a40x/initialize.c: Slowed the timing down for the
 	IOBARRIER.  Now, we're using the slowest timing because that's all
 	that seems to work.
- 
+
 	* src/arch-arm/entry/sdramboot.c (sdramboot_report): Unified
 	support for reporting when APEX is booted from SDRAM.  While only
 	informational, this will help explain to new users the difference
-	between booting from flash or SRAM and from SDRAM. 
+	between booting from flash or SRAM and from SDRAM.
 
 2005-09-29  Marc Singer  <elf@buici.com>
 
@@ -260,7 +260,7 @@
 2005-09-28  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/Makefile: architecture and tune features.  This
-	fixes a build problem with native compilers. 
+	fixes a build problem with native compilers.
 
 	* src/arch-arm/Kconfig: New configuration features to select the
 	right architecture.  Lack of this was the source of a nasty build
@@ -299,7 +299,7 @@
 	* src/arch-arm/entry/apex.lds.S: Reorganized the BSS sections.
 	Needed to put the BSS outside of the protected region so that the
 	memory scan finds all of memory correctly.  This change also
-	prevents some of the BSS memory from being zeroed. 
+	prevents some of the BSS memory from being zeroed.
 
 2005-08-15  Marc Singer  <elf@buici.com>
 
@@ -368,15 +368,15 @@
 
 	* src/apex/cmd-copy.c (cmd_copy): Fixed a long-standing bug in the
 	copy command where the din descriptor was being opened twice.
-	
+
 2005-07-28  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-smc91x.c: Implemented smc91x driver which is
 	available to both the lpd79520 and the lpd7a40x boards.
- 
+
 	* src/mach-lh7952x/init-lpd79520.c: Fixed the initialization of
 	the memory region where CF is found.  CF driver working again.
- 
+
 2005-07-11  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-dump.c (cmd_dump): Added dump display width to make
@@ -395,7 +395,7 @@
 
 	* src/arch-arm/entry/apex.lds.S: Neglected alignment caused a
 	crash when the data segment wasn't aligned.  The service data was
-	misaligned such that the service start addresses were wrong. 
+	misaligned such that the service start addresses were wrong.
 
 2005-07-06  Marc Singer  <elf@buici.com>
 
@@ -437,7 +437,7 @@
 	function is more efficient for larget files.
 	(jffs2_load_cache): Changed the logic for handling reversed
 	markers.  The previous code would prematurely terminate if a
-	reversed marker was found among the filesystem detritus. 
+	reversed marker was found among the filesystem detritus.
 	(jffs2_load_cache): Added a CRC check for inodes.
 	(jffs2_path_to_inode): Added a CRC check for filenames.
 
@@ -446,19 +446,19 @@
 	* src/apex/cmd-info.c: New command to query information about a
 	region from a driver.  It's used by the jffs2 driver to show the
 	contents of a directory.  Other filesystems ought to follow suit.
-    
+
 	* src/drivers/drv-jffs2.c: New jffs2 reading filesystem driver.
 
 2005-05-15  Marc Singer  <elf@buici.com>
 
 	* src/mach-ixp42x/pci.c (pci_init): Added IRQ setup for all of the
 	PCI interrupt pins.
-	
+
 2005-05-15  Marc Singer  <elf@cerise.buici.com>
 
 	* src/lib/spinner.c (spinner_clear): clearing LED spinner when the
 	user enters a command prompt.
- 
+
 	* src/mach-ixp42x/pci.c (pci_init): Proper PCI initialization
 	brings USB and ethernet online.  Woot.
 
@@ -468,14 +468,14 @@
 
 	* src/mach-ixp42x/initialize.c (target_init): Addition of dead
 	code to initialize GPIO for the Intel dev board.
- 
+
 	* src/mach-ixp42x/serial.c (ixp42x_serial_init): Enabled the
 	serial FIFO.
 
 2005-05-04  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-emac.c: Diagnostic code can be enabled from
-	the configuration. 
+	the configuration.
 
 	* src/apex/cmd-version.c (cmd_version): Display the length of apex
 	in bytes as well as hex.
@@ -500,7 +500,7 @@
 
 	* src/mach-lh7952x/drv-emac.c (emac_init): Fixed detection of the
 	PHY.  Needed to setup MUX to get the PHY to enable.
-	
+
 	* src/mach-ixp42x/coprocessor.h (COPROCESSOR_WAIT\): New headers
 	to define an instruction sequence to let the MMU/coprocessor catch
 	up when there are changes to the setup.
@@ -527,7 +527,7 @@
 2005-03-20  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/initialize.c (__section): initializing the SMC
-	control so that flash works correctly. 
+	control so that flash works correctly.
 
 	* Makefile (SUBLEVEL): Fixed the reset of the config hooks so that
 	the build is now optimal with respect to the configuration.
@@ -553,7 +553,7 @@
 	* src/mach-lh7a40x/initialize.c: Added hack to the lpd7a40x
 	initialization to enable PCMCIA.  May be a work-around for a NOR
 	flash problem.
- 
+
 	* src/drivers/drv-nor-cfi.c (nor_read): Eliminated (most)
 	references to nor chip length except when necessary.
 
@@ -575,7 +575,7 @@
 
 	* src/drivers/drv-mem.c (memory_scan): The memory scan function
 	needed to make sure not to write to BSS.  It now avoids the entire
-	memory image of APEX. 
+	memory image of APEX.
 
 2005-03-10  Marc Singer  <elf@buici.com>
 
@@ -584,8 +584,8 @@
 
 	* src/drivers/drv-cf.c: Moved Compact Flash code to live among
 	generic drivers.  Implemented CF for the 79520's.  Wrote code for
-	the 7a40x's, but it isn't working.  
-	
+	the 7a40x's, but it isn't working.
+
 	* src/drivers/drv-ext2.c (ext2_path_to_inode): Fixed dumb error in
 	the symlink traversal code.
 
@@ -638,11 +638,11 @@
 2005-03-04  Marc Singer  <elf@buici.com>
 
 	* scripts/envmagic: Removed undesirable paths from the find.
-	
+
 2005-03-03  Marc Singer  <elf@buici.com>
 
 	* src/lib/png.c (read_png_row): Decoder working properly with the
-	logo and with cc. 
+	logo and with cc.
 
 	* src/lib/zlib.c: Fixed the zlib declarations s.t. there is no
 	initialized, mutable data.
@@ -681,7 +681,7 @@
 
 	* src/mach-lh7952x/drv-emac.c: Cleanup of the driver.  Better
 	control over compile options.  Added help and report features.
- 
+
 2005-02-20  Marc Singer  <elf@buici.com>
 
 	* Makefile Revision in preparation for milestone2 release.
@@ -696,7 +696,7 @@
 
 	* src/arch-arm/lib/lib1funcs.S: Imported this file from kernel in
 	order to get general purpose integer divide and modulo functions.
-	
+
 2005-02-18  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/init-lpd79520.c: Fixed SDRAM init to comply
@@ -778,7 +778,7 @@
 
 	* src/apex/console-printf.c (printf): Automatic insertion of
 	carriage-returns before newlines.
- 
+
 2005-01-21  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-nor-cfi.c (nor_report): Added report
@@ -794,7 +794,7 @@
 	* src/mach-lh7952x/Makefile (obj-$(CONFIG_MACH_LPD79524)): Moved
 	adc to 79524 specific build.
 
-	* scripts/configtoh: Fixed the script to properly elide comments. 
+	* scripts/configtoh: Fixed the script to properly elide comments.
 
 2005-01-12  Marc Singer  <elf@buici.com>
 
@@ -847,4 +847,3 @@
 	the time being since it is smaller by about 260 bytes.
 
 	* First release, 1.0.
-
