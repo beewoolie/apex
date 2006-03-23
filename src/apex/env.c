@@ -1,5 +1,4 @@
 /* env.c
-     $Id$
 
    written by Marc Singer
    10 Nov 2004
