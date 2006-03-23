@@ -76,11 +76,13 @@ extern struct descriptor_d env_d;
 
 extern char APEX_ENV_START;
 extern char APEX_ENV_END;
-extern char APEX_VMA_START;
+extern char APEX_VMA_COPY_START;
+extern char APEX_VMA_COPY_END;
 
 static __section (.envlink) struct env_link env_link = {
   ENV_LINK_MAGIC,
-  &APEX_VMA_START,
+  &APEX_VMA_COPY_START,		/* Immutable portion of APEX */
+  &APEX_VMA_COPY_END,
   &APEX_ENV_START,
   &APEX_ENV_END,
   sizeof (struct env_d),

@@ -1,5 +1,8 @@
 2006-03-23  Marc Singer  <elf@buici.com>
 
+	* usr/printenv.cc (main): Application that reads APEX environment
+	from user-land.
+
 	* src/apex/env.c: added environment link support so that user-land
 	applications can read the APEX environment.
 
