@@ -68,7 +68,7 @@ void __naked __section (.reset) reset (void)
      and disable interrupts in the first few instructions.  Really,
      this cannot be done if we're not already in supervisor mode.  The
      important thing is that we want to disable interrupts.
-  */ 
+  */
   {
     unsigned long l;
     __asm volatile ("mov %0, #0xd3\n\t"
@@ -85,7 +85,7 @@ void __naked __section (.reset) reset (void)
      because: a preexisting bootloader fails to disable the MMU before
      calling other programs, the OS jumps to the bootloader to restart
      the machine, something else is screwy.  If the MMU mappings are
-     wonky, disabling the MMU may have dire consequences. 
+     wonky, disabling the MMU may have dire consequences.
 
      This is really much worse than that.  In the case of a system
      that doesn't disable the MMU, we need to perform a batch of CP15
@@ -151,7 +151,7 @@ void __naked __section (.reset) reset (void)
   PUTC_LL ('e');
 
 	/* Start loader proper which doesn't return */
-  __asm volatile ("mov pc, %0" :: "r" (&init)); 
+  __asm volatile ("mov pc, %0" :: "r" (&init));
 }
 
 
