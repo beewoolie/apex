@@ -11,9 +11,10 @@ ifneq "$(wildcard $(PKGBASE))" ""
 	-rm -rf $(PKGBASE)
 endif
 	svn export -q $(REPOS) $(PKGBASE)
-	tar zcf $(PKGBASE).tar.gz $(PKGBASE)\
+	tar zc\
 	 --exclude='cc-png.h'\
-	 --exclude='pcm*-*.h'
+	 --exclude='pcm*-*.h'\
+	 -f $(PKGBASE).tar.gz $(PKGBASE)
 	@rm -rf $(PKGBASE)
 
 help:
