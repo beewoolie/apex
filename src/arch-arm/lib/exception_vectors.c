@@ -48,32 +48,10 @@
 void __naked __section (.entry) entry (void)
 {
   /* Fallthrough to reset section.  Exception vectors are handled
-     differently.  This entry point exists to allow a platform to
-     override, if necessary, though there is probably no reason to do
-     so.  This facility doesn't cost anything.  */
+     differently.  This entry point exists for two reasons.  First,
+     it's used to tell the linker where to enter.  We use the symbol
+     entry() and the program entry point.  Second, this function
+     allows a target to override the first executed instruction in
+     case there is something it has to do.  The replacement function
+     should be naked and fall-through to the .reset section. */
 }
-
-#if 0
-
-extern void exception_error (void);
-
-void __naked __section (.entry) entry (void)
-{
-  __asm ("b reset\n\t"			/* reset */
-	 "b exception_error\n\t"	/* undefined instruction */
-	 "b exception_error\n\t"	/* software interrupt (SWI) */
-	 "b exception_error\n\t"	/* prefetch abort */
-	 "b exception_error\n\t"	/* data abort */
-	 "b exception_error\n\t"	/* (reserved) */
-	 "b exception_error\n\t"	/* irq (interrupt) */
-	 "b exception_error\n\t"	/* fiq (fast interrupt) */
-	 );
-}
-
-void __naked __section (.bootstrap) exception_error (void)
-{
-  while (1)
-    ;
-}
-#endif
-
