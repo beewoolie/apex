@@ -1,4 +1,4 @@
-/* entry.c
+/* reset.c
 
    written by Marc Singer
    28 October 2004
@@ -24,9 +24,10 @@
    DESCRIPTION
    -----------
 
-   Default entry for APEX loader on ARM.  Most of the symbols herein
-   are weak and may be overridden by target specific implementations.
-   Refer to the documentation for details.
+   True, default entry for APEX loader on ARM.  The real entry point
+   is entry () which is linked in ../lib/entry.c.  Most of the symbols
+   herein are weak and may be overridden by target specific
+   implementations.  Refer to the documentation for details.
 
 */
 

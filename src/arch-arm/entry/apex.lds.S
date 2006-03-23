@@ -10,15 +10,24 @@ SECTIONS
 	APEX_VMA_ENTRY = .;
 	APEX_VMA_START = .;
 	APEX_VMA_COPY_START = .;
-	.entry : {
+	.entry : {		/* Opportunity to inject code before reset */
 		*(.entry)
 	}
-	.reset : {
+	.reset : {		/* Reset handling code, usually first */
 		*(.reset)
 	}
-	.bootstrap : {
+	. = ALIGN (4);			/* should be redundant */
+	.envlink : {		/* Link to $env for user-land */
+		*(.envlink)
+	}
+	. = ALIGN (4);			/* should be redundant */
+	.bootstrap : {		/* Bootstrap initialzation */
 		*(.bootstrap)		
 	}		
+		/* Everything up to this point must fit in the first
+		   4K (determined by the CPU boot rom) of NAND flash
+		   so that we can bootstrap copy the loader from NAND
+		   to SDRAM. */
 	.vector : {	/* Exception vector support, if there is any */
 		APEX_VMA_VECTOR_START = .;
 		*(.vector.0)
