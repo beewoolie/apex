@@ -147,6 +147,9 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
       console->write (0, "\r\n", 2);
       break;
     case '\b':
+#if defined (CONFIG_DEL_IS_BS)
+    case '\x7f':		/* Allow DEL to be a synonym for BS */
+#endif
       if (cb) {
 	console->write (0, "\b \b", 3);
 	cb -= 2;

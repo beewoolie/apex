@@ -1,5 +1,10 @@
 2006-03-23  Marc Singer  <elf@buici.com>
 
+	* src/apex/console.c (read_command): Configuration option allows
+	DEL to be interpreted as BS.
+
+	* Makefile: 1.3.21
+
 	* usr/printenv.cc (main): Application that reads APEX environment
 	from user-land.
 

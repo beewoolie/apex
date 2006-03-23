@@ -18,6 +18,15 @@ config ALPHABETIZE_COMMANDS
          function, so it is automatically disabled when the SMALL
          configuration option is set.
  
+config DEL_IS_BS
+	bool "Use DEL as alias for Backspace"
+	default n
+	help
+	  Some folks use a terminal program that insists that the
+	  Backspace key send a DEL character.  This option allows them
+	  to maintain this assumption.  It is best to leave this
+	  option 'N' and fix your terminal program. 
+
 config CMD_ALIAS
         bool "Define Alias Commands"
 	default y
