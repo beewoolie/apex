@@ -297,8 +297,7 @@ int env_fetch_int (const char* szKey, int valueDefault)
 
    removes a key from the environment.
 
-   This function must not be called when the env_d descriptor is not
-   open.
+   This function requires that the env_d descriptor be open.
 
 */
 
@@ -326,8 +325,7 @@ void env_erase (const char* szKey)
    the key will be erased.  The return value is non-zero if the data
    cannot be written to flash.
 
-   This function must not be called when the env_d descriptor is not
-   open.
+   This function requires that the env_d descriptor be open.
 
 */
 

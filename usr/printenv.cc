@@ -16,6 +16,13 @@
    added by the user, the ENV_LINK_MAGIC number will change and this
    code will have to adapt.
 
+   This implementation isn't terribly robust.  It doesn't parse the
+   environment region very carefully.  It really only works when the
+   region is of the form "nor:start+length" where start and length of
+   decimal integers optinally followed by 'k' for a 1024 multiplier.
+   Generally, this will work, but it ought to allow for hexadecimal
+   values as well.
+
 */
 
 #include <stdio.h>
