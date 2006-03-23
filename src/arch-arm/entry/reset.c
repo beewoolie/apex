@@ -52,8 +52,8 @@ extern void init (void);
 
 /* reset
 
-   implements the reset exception vector.  All symbols but the init ()
-   call must not depend on a stack or any RAM whatsoever.
+   implements the reset exception vector.  All before init() MUST NOT
+   DEPEND on a stack or any RAM whatsoever.
 
 */
 

@@ -250,6 +250,17 @@ config ENV_MUTABLE
 	  environment data.  Without a changeable environment, only
 	  the default values will be available.
 
+config ENV_LINK
+	bool "Assist user-mode access to the environment"
+	depends on !CONFIG_SMALL
+	default y
+	help
+	  This option puts a marker and a string near the beginning of
+	  the APEX image to help user-mode applications find the
+	  environment.  See the same program show-apex-env for
+	  details.  It is safe to enable this feature even if it won't
+	  be used.
+
 config ENV_REGION
 	string "Environment region"
 	depends on ENV_MUTABLE

@@ -91,33 +91,33 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		       "subs %2, %2, #4\n\t"
 		       "bpl 0b\n\t"
 		       : "+r" (s),
-		         "+r" (d),	
+			 "+r" (d),
 			 "+r" (index),
 			 "=&r" (v)
 		       :: "cc"
-		    );		  
+		    );
 #elif defined (USE_SLOW_COPY)
   __asm volatile (
 	       "0: ldmia %0!, {r3}\n\t"
 		  "stmia %1!, {r3}\n\t"
 		  "cmp %1, %2\n\t"
 		  "bls 0b\n\t"
-		  : "+r" (s), 
+		  : "+r" (s),
 		    "+r" (d)
 		  :  "r" (&APEX_VMA_COPY_END)
 		  : "r3", "cc"
-		  );		  
+		  );
 #else
   __asm volatile (
 	       "0: ldmia %0!, {r3-r10}\n\t"
 		  "stmia %1!, {r3-r10}\n\t"
 		  "cmp %1, %2\n\t"
 		  "bls 0b\n\t"
-		  : "+r" (s), 
+		  : "+r" (s),
 		    "+r" (d)
 		  :  "r" (&APEX_VMA_COPY_END)
 		  : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
-		  );		  
+		  );
 #endif
   }
 
@@ -143,7 +143,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
     PUTC_LL ('I');
     PUTC_LL ('L');
     __asm volatile ("0: b 0b");
-  }  
+  }
 #endif
 
   PUTC_LL ('j');

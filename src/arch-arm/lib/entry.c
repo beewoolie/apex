@@ -1,4 +1,4 @@
-/* exception_vectors.c
+/* entry.c
      $Id$
 
    written by Marc Singer
@@ -25,20 +25,7 @@
    DESCRIPTION
    -----------
 
-   These exception vectors are the defaults for the platform.  A
-   machine implementation may override them by defining the
-   exception_vectors() function.
-
-   It turns out that we don't need or want vectors at the top of the
-   loader.  This is something copied from others and it has no value.
-   For the time being, this vestige remains as a NOP.  Should there be
-   a need for an exception vector table, it will be generated at
-   run-time.
-
-   Also note that a platform can still override this function to
-   create exception vectors of its own.  It's just that part of the
-   arm setup is in the way, the ATAGS, so we cannot execute at the
-   bottom of memory even if we wanted to.
+   Default loader entry point.
 
 */
 

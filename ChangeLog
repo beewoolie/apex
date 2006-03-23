@@ -1,3 +1,8 @@
+2006-03-23  Marc Singer  <elf@buici.com>
+
+	* src/apex/env.c: added environment link support so that user-land
+	applications can read the APEX environment.
+
 2006-03-22  Marc Singer  <elf@buici.com>
 
 	* src/drivers-lh/drv-clcdc.c (VSW): Fixed error in the VSW macro.

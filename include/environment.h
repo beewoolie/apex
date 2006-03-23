@@ -39,10 +39,20 @@ struct env_d {
   char* description;
 };
 
+struct env_link {
+  unsigned long magic;
+  void* apex_start;
+  void* env_start;
+  void* env_end;
+  unsigned long env_d_size;
+  const char region[];
+};
+
 #define __env  __used __section(.env)
 
 #define ENV_CB_MAX	(512)
 
+#define ENV_LINK_MAGIC	('A'<<0)|('E'<<8)|('L'<<16)|('0'<<24)
 
 /* ----- Prototypes */
 

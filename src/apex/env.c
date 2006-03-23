@@ -73,9 +73,28 @@ static __env struct env_d e_startup = {
 #if defined (CONFIG_ENV_REGION)
 extern struct descriptor_d env_d;
 
+# if defined (CONFIG_ENV_LINK)
+
+extern char APEX_ENV_START;
+extern char APEX_ENV_END;
+extern char APEX_VMA_START;
+
+static __section (.envlink) struct env_link env_link = {
+  ENV_LINK_MAGIC,
+  &APEX_VMA_START,
+  &APEX_ENV_START,
+  &APEX_ENV_END,
+  sizeof (struct env_d),
+  CONFIG_ENV_REGION };
+
+#  define ENV_REGION_STRING env_link.region
+# else
+#  define ENV_REGION_STRING CONFIG_ENV_REGION
+# endif
+
 static void env_init (void)
 {
-  if (parse_descriptor (CONFIG_ENV_REGION, &env_d))
+  if (parse_descriptor (ENV_REGION_STRING, &env_d))
     return;
   if (env_d.driver->open (&env_d))
     env_d.driver->close (&env_d);
