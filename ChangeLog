@@ -1,5 +1,9 @@
 2006-03-23  Marc Singer  <elf@buici.com>
 
+	* src/apex/cmd-version.c (cmd_version): Fixed the presentation of
+	the apex region for the case when the length is greater than four
+	hex digits.
+
 	* src/apex/console.c (read_command): Configuration option allows
 	DEL to be interpreted as BS.
 

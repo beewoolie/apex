@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := entry.o mmu-alloc.o
+obj-y := reset.o mmu-alloc.o
 obj-$(CONFIG_SDRAMBOOT_REPORT) += sdramboot.o
 obj-$(CONFIG_MMU) += mmu.o
 #lib-y += relocate.o

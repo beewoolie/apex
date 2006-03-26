@@ -39,6 +39,7 @@ extern char APEX_VMA_COPY_END;
 
 int cmd_version (int argc, const char** argv)
 {
+  char sz[40];
   printf (
 "\n\nAPEX Boot Loader " APEXRELEASE
 " -- Copyright (c) 2004,2005,2006 Marc Singer\n\n"
@@ -54,12 +55,11 @@ int cmd_version (int argc, const char** argv)
 "are welcome to redistribute it under certain circumstances.\n"
 "For details, refer to the file COPYING in the program source."
 "\n\n");
-  printf (
-"  apex => mem:0x%p+0x%lx   (%ld bytes)\n"
-	  ,
-	  (void*) &APEX_VMA_COPY_START,
-	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START),
-	  (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+  snprintf (sz, sizeof (sz), "mem:0x%p+0x%lx",
+	    (void*) &APEX_VMA_COPY_START,
+	    (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+  printf ("  apex => %s-21.21s   (%ld bytes)\n",
+	  sz, (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
 #if defined (CONFIG_CMD_SETENV)
   printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
   switch (env_check_magic ()) {
