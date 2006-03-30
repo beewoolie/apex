@@ -1,5 +1,4 @@
 /* init-lpd79524.c
-     $Id$
 
    written by Marc Singer
    28 Oct 2004
@@ -27,6 +26,13 @@
 
    Hardware initializations for the LPD79524.  Some initializations
    may be left to drivers, such as the serial interface and timer.
+
+   SDRAM Refresh
+
+     The datasheet for the SDRAM states that the memory requires 8192
+     refresh cycles very 64ms.  Which is a refresh cycle (AUTOREFRESH
+     command) every 64ms/8192 or 7.812us.  I assume that this is what
+     the SDRAM controller does when the refresh timer expires.
 
    CompactFlash Timing
 
@@ -277,7 +283,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNMCTRL    = (1<<1)|(1<<0)|(2<<7); /* PRECHARGE ALL*/
   EMC_DYNMREF     = NS_TO_HCLK(100)/16 + 1;
   usleep (250);
-  EMC_DYNMREF     = NS_TO_HCLK(7812)/16;
+  EMC_DYNMREF     = NS_TO_HCLK(7812)/16; /* See NOTES */
   EMC_DYNMCTRL    = (1<<1)|(1<<0)|(1<<7); /* MODE command */
 
   __REG (SDRAM_BANK0_PHYS + SDRAM_CHIP_MODE);

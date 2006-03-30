@@ -428,8 +428,9 @@
 #define IOCON_MUXCTL20_V	(0x0000)
 #endif
 
-		/* *** FIXME: works with 1:1 clock mode only */
-#define NS_TO_HCLK(ns)	((ns)*(HCLK/1000)/1000000)
+//#define NS_TO_HCLK(ns)	(((ns)*((HCLK + 999)/1000) + 999999)/1000000)
+#define NS_TO_HCLK(ns)	(((ns)*((HCLK + 500)/1000) + 500000)/1000000)
+//#define NS_TO_HCLK(ns)	(((ns)*((HCLK)/1000))/1000000)
 
 #define RTC_CR_EN	(1)
 

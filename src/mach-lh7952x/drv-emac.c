@@ -519,6 +519,21 @@ void emac_init (void)
   emac_setup ();		/* Prepare EMAC for IO */
 }
 
+void static emac_release (void)
+{
+  EMAC_NETCTL = 0;
+  EMAC_RXBQP = 0;
+  EMAC_TXBQP = 0;
+
+  RCPC_CTRL       |=  RCPC_CTRL_UNLOCK;
+  RCPC_AHBCLKCTRL |=  (1<<2);
+  RCPC_CTRL	  &= ~RCPC_CTRL_UNLOCK;
+
+#if defined (CPLD_CONTROL_WRLAN_ENABLE)
+  CPLD_CONTROL &= ~CPLD_CONTROL_WRLAN_ENABLE;
+#endif
+}
+
 #if !defined (CONFIG_SMALL)
 static void emac_report (void)
 {
@@ -1157,6 +1172,7 @@ static __driver_4 struct driver_d eth_driver = {
 
 static __service_6 struct service_d lh7952x_emac_service = {
   .init = emac_init,
+  .release = emac_release,
 #if !defined (CONFIG_SMALL)
   .report = emac_report,
 #endif

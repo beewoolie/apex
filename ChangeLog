@@ -1,3 +1,11 @@
+2006-03-30  Marc Singer  <elf@buici.com>
+
+	* src/mach-lh7952x/drv-emac.c (emac_release): added a release
+	function to the emac driver.  We were having problems with
+	spurrious corruption of kernel memory and it looks like the
+	problem was that the emac was in an indeterminate state as it was
+	being initialized.
+
 2006-03-23  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-version.c (cmd_version): Fixed the presentation of

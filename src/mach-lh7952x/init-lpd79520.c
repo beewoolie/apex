@@ -1,5 +1,4 @@
 /* init-lpd79520.c
-     $Id$
 
    written by Marc Singer
    14 Nov 2004
