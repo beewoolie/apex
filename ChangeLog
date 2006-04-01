@@ -1,5 +1,7 @@
 2006-04-01  Marc Singer  <elf@buici.com>
 
+	* Makefile: 1.3.22
+
 	* src/mach-lh7952x/drv-emac.c (cmd_emac): Moved static structure
 	to .rodata.
 
