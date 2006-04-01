@@ -27,6 +27,7 @@
 
 */
 
+#include <config.h>
 #include <stdarg.h>
 #include <driver.h>
 #include <linux/string.h>
@@ -136,11 +137,57 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 {
   static char __xbss(console) rgb[1024];	/* Command line buffer */
   int cb;
+#if defined CONFIG_ANSI_KEYS
+  int ansi = 0;
+#endif
+
+#if 0
+  {
+    extern int ibHistoryNext;
+    extern int ibHistoryScroll;
+    printf ("{%d %d}\n", ibHistoryNext, ibHistoryScroll);
+  }
+#endif
 
   puts (szPrompt);
 
   for (cb = 0; cb < sizeof (rgb) - 1 && (cb == 0 || rgb[cb - 1]); ++cb) {
     console->read (0, &rgb[cb], 1);
+
+#if defined (CONFIG_ANSI_KEYS)
+    switch (ansi) {
+    default:
+      if (rgb[cb] == '\x1b') {
+	++ansi;
+	--cb;
+      }
+      else
+	goto pass;
+      break;
+    case 2:
+      ansi = 0;
+      switch (rgb[cb]) {
+      case 'A':
+	rgb[cb] = '\x10';
+	goto pass;
+      case 'B':
+	rgb[cb] = '\x0e';
+	goto pass;
+      default:
+	--cb;
+	break;
+      }
+    case 1:
+      if (rgb[cb] == '[')
+	++ansi;
+      else
+	ansi = 0;
+      --cb;
+      break;
+    }
+    continue;
+  pass:
+#endif
     switch (rgb[cb]) {
     case '\r':
       rgb[cb] = 0;		/* Mark end of input */
@@ -162,6 +209,28 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 	console->write (0, "\b \b", 3);
       printf ("\r%s", szPrompt);
       break;
+#if defined (CONFIG_COMMAND_HISTORY)
+    case '\x10':		/* ^P */
+      if (history_retrieve (1, rgb, sizeof (rgb))) {
+	while (cb--)
+	  console->write (0, "\b \b", 3);
+	printf ("\r%s%s", szPrompt, rgb);
+	cb = strlen (rgb) - 1;
+      }
+      else
+	--cb;
+      break;
+    case '\x0e':		/* ^N */
+      if (history_retrieve (0, rgb, sizeof (rgb))) {
+	while (cb--)
+	  console->write (0, "\b \b", 3);
+	printf ("\r%s%s", szPrompt, rgb);
+	cb = strlen (rgb) - 1;
+      }
+      else
+	--cb;
+      break;
+#endif
     default:
       if (isprint (rgb[cb]))
 	console->write (0, &rgb[cb], 1);
@@ -172,6 +241,10 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
   }
 
   rgb[cb] = 0;			/* Redundant except for overflow */
+
+#if defined (CONFIG_COMMAND_HISTORY)
+  history_add (rgb);
+#endif
 
   return parse_command (rgb, pargc, pargv);
 }

@@ -36,7 +36,6 @@
 #include <command.h>
 #include <error.h>
 #include <linux/kernel.h>
-#include <config.h>
 #include <configfunc.h>
 #include <environment.h>
 #include <service.h>

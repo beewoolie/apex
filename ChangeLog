@@ -1,3 +1,11 @@
+2006-03-31  Marc Singer  <elf@buici.com>
+
+	* src/apex/console.c (read_command): Added (optional) support for
+	ANSI key sequences.
+
+	* src/apex/command-history.c: Added (optional) command history
+	recall.
+
 2006-03-30  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7952x/drv-emac.c (emac_release): added a release

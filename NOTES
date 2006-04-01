@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o Support for arrow keys
+    o I believe that the only hitch is that we need to cope with the
+      multi-byte-ness of the codes.
+    o Perhaps a simple state machine will do. 
+      ESC [ A
+    o The [ will be suppressed as will the next character.
+
   o If the loader is small, the relocation code performs adequately.
     I haven't measured the performance, but it seem to be reasonably
     quick to start.  
@@ -57,6 +64,7 @@ TODO:
     o Previous command is found by back tracing until the length of
       the previous command is zero or the length bypasses the pointer
       to the next available space in the buffer.
+    + Implemented
 
   o There is an error in the dump code.  It doesn't dump the CLCD
     registers correctly.  This is not excusable. 

@@ -33,6 +33,7 @@
 
 #include <stdarg.h>
 #include <linux/types.h>
+#include <config.h>
 
 /* ----- Types */
 
@@ -51,7 +52,7 @@ extern int putchar (int ch);
 extern int puts (const char * fmt);
 extern int snprintf(char * buf, size_t size, const char * fmt, ...);
 extern int sprintf(char * buf, const char * fmt, ...);
-extern int read_command (const char* szPrompt, 
+extern int read_command (const char* szPrompt,
 			 int* pargc, const char*** pargv);
 extern int parse_command (char* rgb, int* pargc, const char*** pargv);
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
@@ -60,11 +61,16 @@ extern void __attribute__((noreturn)) exec_monitor (void);
 
 extern unsigned long timer_read (void);
 extern unsigned long timer_delta (unsigned long, unsigned long);
-extern void usleep (unsigned long); 
+extern void usleep (unsigned long);
 #define udelay usleep		/* Just for convenience */
 
 #define dump(p,c,i) dumpw(p,c,i,0)
-extern void dumpw (const unsigned char* rgb, int cb, 
+extern void dumpw (const unsigned char* rgb, int cb,
 		   unsigned long index, int width);
+
+#if defined (CONFIG_COMMAND_HISTORY)
+void history_add (const char* sz);
+int history_retrieve (int backward, char* rgb, size_t cbMax);
+#endif
 
 #endif  /* __INIT_H__ */

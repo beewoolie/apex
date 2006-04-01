@@ -27,6 +27,19 @@ config DEL_IS_BS
 	  to maintain this assumption.  It is best to leave this
 	  option 'N' and fix your terminal program. 
 
+config ANSI_KEYS
+	bool "Interpret ANSI key sequences"
+	default !SMALL
+	help
+	  Enables interpretation of some ANSI key sequences.
+	 
+config COMMAND_HISTORY
+	bool "Allow retrieval of previously entered command"
+	default !SMALL
+	help
+	  This option enables command history recall.  Use ^P and ^N
+	  to scroll through the previous commands.
+
 config CMD_ALIAS
         bool "Define Alias Commands"
 	default y

@@ -22,6 +22,8 @@
 obj-y := init.o console.o console-printf.o env.o
 obj-y += command.o cmd-version.o cmd-help.o cmd-boot.o
 
+obj-$(CONFIG_COMMAND_HISTORY)   += command-history.o
+
 obj-$(CONFIG_CMD_CHECKSUM)	+= cmd-checksum.o
 obj-$(CONFIG_CMD_COMPARE)	+= cmd-compare.o
 obj-$(CONFIG_CMD_COPY)		+= cmd-copy.o
