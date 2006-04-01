@@ -46,6 +46,8 @@
 #include <linux/ctype.h>
 
 #include <apex.h>
+#include <command.h>
+
 #include <debug_ll.h>
 
 #define CB_HISTORY	(4*1024)
@@ -162,3 +164,15 @@ int history_retrieve (int backward, char* rgb, size_t cbMax)
   //  printf ("{%d %d}\n", ibHistoryNext, ibHistoryScroll);
   return 1;
 }
+
+static __command struct command_d c_help_commandhistory = {
+  .command = "command-history",
+  .description = "help on using the command history",
+  COMMAND_HELP(
+"command-history\n"
+"  Previously entered commands are available for reuse and editing.\n"
+"  Use ^P or the UP arrow (when ANSI key interpretation is enabled)\n"
+"  to scroll backward through the command history.  Use ^N or the DOWN\n"
+"  arrow to to scroll forward.\n"
+  )
+};

@@ -19,6 +19,7 @@
 #include <apex.h>
 #include <command.h>
 #include <mach/hardware.h>
+#include <console.h>
 
 #define TALK 1
 
@@ -132,7 +133,6 @@ static int cmd_ads (int argc, const char** argv)
   int i;
   int j;
   int v;
-  extern struct driver_d* console;
 
   request (1, ADS_CTRL_PD_IRQ);
   read ();

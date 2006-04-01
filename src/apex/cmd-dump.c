@@ -33,6 +33,7 @@
 #include <command.h>
 #include <driver.h>
 #include <error.h>
+#include <console.h>
 
 
 #define MORE_PAGE	(16*16)
@@ -98,7 +99,6 @@ int cmd_dump (int argc, const char** argv)
     index += cb;
 
     if (index >= more && index < d.start + d.length) {
-      extern struct driver_d* console;
       char ch;
 
       printf (" --More-- ");

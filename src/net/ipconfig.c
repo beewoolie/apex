@@ -39,6 +39,7 @@
 #include <error.h>
 #include <alias.h>
 #include <spinner.h>
+#include <console.h>
 
 #include <network.h>
 #include <ethernet.h>
@@ -113,7 +114,6 @@ static int ipconfig_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
-  extern struct driver_d* console;
 
   if (!context->time_start)
     context->time_start = timer_read ();

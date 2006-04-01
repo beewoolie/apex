@@ -65,6 +65,7 @@
 #include <ethernet.h>
 #include <alias.h>
 #include <sort.h>
+#include <console.h>
 
 //#define TALK 2
 //#define DUMP_RECEIVERS
@@ -694,7 +695,6 @@ int unregister_ethernet_receiver (pfn_ethernet_receiver pfn, void* context)
 int arp_terminate (void* pv)
 {
   struct arp_terminate_context* context = (struct arp_terminate_context*) pv;
-  extern struct driver_d* console;
 
   if (arp_cache_lookup (context->ip_address))
     return 1;

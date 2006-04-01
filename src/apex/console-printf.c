@@ -36,9 +36,9 @@
 #include <driver.h>
 #include <linux/string.h>
 #include <apex.h>
+#include <console.h>
 #include <debug_ll.h>
 
-extern struct driver_d* console;
 
 int printf (const char* fmt, ...)
 {

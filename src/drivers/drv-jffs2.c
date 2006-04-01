@@ -104,6 +104,7 @@
 #include <linux/stat.h>
 #include <zlib.h>
 #include <zlib-heap.h>
+#include <console.h>
 
 //#define TALK
 
@@ -473,7 +474,6 @@ static int jffs2_load_cache (void)
   size_t cbNode;
   union node node;
   int cEmpties = 0;		/* Count of consecutive empties */
-  extern struct driver_d* console;
   int result = 0;
 
   ENTRY (0);

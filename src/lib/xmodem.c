@@ -39,6 +39,7 @@
 
 #include <apex.h>
 #include <driver.h>
+#include <console.h>
 
 #define SOH (0x01)
 #define STX (0x02)
@@ -64,8 +65,6 @@ Cf:
 
 #define ERROR(...) do { } while (0)
 
-
-extern struct driver_d* console;
 
 static char __xbss(xmodem) rgbXmodem[1024];
 

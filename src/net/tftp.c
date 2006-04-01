@@ -85,6 +85,7 @@
 #include <error.h>
 #include <alias.h>
 #include <spinner.h>
+#include <console.h>
 
 #include <network.h>
 #include <ethernet.h>
@@ -227,7 +228,6 @@ static int ping_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
-  extern struct driver_d* console;
 
   /* *** FIXME: ouch */
   if (tftp.state != stateOpenWaiting && tftp.state != stateWaiting)

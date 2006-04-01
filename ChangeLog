@@ -1,3 +1,8 @@
+2006-04-01  Marc Singer  <elf@buici.com>
+
+	* src/apex/console.c: Added (optional) command
+	editing...finally...no kidding.
+
 2006-03-31  Marc Singer  <elf@buici.com>
 
 	* src/apex/console.c (read_command): Added (optional) support for

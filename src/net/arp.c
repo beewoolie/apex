@@ -39,6 +39,7 @@
 #include <driver.h>
 #include <error.h>
 //#include <spinner.h>
+#include <console.h>
 
 #include <network.h>
 #include <ethernet.h>
@@ -55,7 +56,6 @@
 
 int console_terminate (void* pv)
 {
-  extern struct driver_d* console;
   char ch;
 
   if (console->poll (0, 0))

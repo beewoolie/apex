@@ -35,8 +35,8 @@
 #include <error.h>
 #include <spinner.h>
 #include <driver.h>
+#include <console.h>
 
-extern struct driver_d* console;
 
 /* cmd_wait
 

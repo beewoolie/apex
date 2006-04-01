@@ -51,6 +51,7 @@
 #include <linux/string.h>
 #include <apex.h>
 #include <command.h>
+#include <console.h>
 #include "hardware.h"
 
 #define TALK 2
@@ -638,7 +639,6 @@ static int cmd_codec_test (int argc, const char** argv)
 //     static unsigned long vPrev = 0;
      while (((DMAC_P_PSTATUS (DMAC_CHAN) >> 4) & 0x3) == 0x3) {
 //       unsigned long v = DMAC_P_PSTATUS (DMAC_CHAN);
-       extern struct driver_d* console;
 //       v &= ~(0x1f << 7);
 //       if (v != vPrev) {
 //	 print_status (v);
@@ -665,7 +665,6 @@ static int cmd_codec_test (int argc, const char** argv)
 
 				/* Wait for stall */
    while ((DMAC_P_PSTATUS (DMAC_CHAN) & (1<<0)) == 0) {
-     extern struct driver_d* console;
      if (console->poll (0, 1)) {
        int ch;
        console->read (0, &ch, 1);
@@ -720,7 +719,6 @@ static int cmd_codec_test (int argc, const char** argv)
 
   {
     int j = 1;
-    extern struct driver_d* console;
 
 #if defined USE_LOOPS
     j = USE_LOOPS;

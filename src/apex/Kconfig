@@ -29,16 +29,30 @@ config DEL_IS_BS
 
 config ANSI_KEYS
 	bool "Interpret ANSI key sequences"
-	default !SMALL
+	depends on !SMALL
+	default y
 	help
 	  Enables interpretation of some ANSI key sequences.
 	 
 config COMMAND_HISTORY
-	bool "Allow retrieval of previously entered command"
-	default !SMALL
+	bool "Command History"
+	depends on !SMALL
+	default y
 	help
 	  This option enables command history recall.  Use ^P and ^N
-	  to scroll through the previous commands.
+	  or the up and down arrow keys, when ANSI_KEYS is enabled, to
+	  scroll through the previously entered commands.
+
+config COMMAND_EDITING
+	bool "Command Editing"
+	depends on !SMALL
+	default y
+	help
+	  This option enables in-place command editing using Emacs key
+	  bindings.  Arrow keys move among the characters of the
+	  command, typing inserts, and delete keys delete in the
+	  middle of the command string.  See the on-line help for a
+	  description of the available key sequences.
 
 config CMD_ALIAS
         bool "Define Alias Commands"

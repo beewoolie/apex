@@ -45,7 +45,10 @@ SECTIONS
 	}
 	. = ALIGN (4);
 	APEX_DATA_START = .;
-	.data . : {
+	/* Discard data because there *must* not be mutable,
+	   initialized data.  Use __rodata attribute for initialized
+	   data to move it into the text section. */
+	/DISCARD/ . : {
 		*(.data)
 	}
 	. = ALIGN (4);

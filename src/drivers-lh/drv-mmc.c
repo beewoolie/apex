@@ -34,8 +34,8 @@
 #include <apex.h>
 #include <command.h>
 #include <mach/hardware.h>
+#include <console.h>
 
-extern struct driver_d* console;
 extern char* strcat (char*, const char*);
 
 #define TALK 1
