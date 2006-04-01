@@ -1,5 +1,7 @@
 2006-04-01  Marc Singer  <elf@buici.com>
 
+	* include/attributes.h: Grooming.
+
 	* src/apex/console.c: Added (optional) command
 	editing...finally...no kidding.
 

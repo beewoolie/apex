@@ -40,16 +40,16 @@
 /* ----- Prototypes */
 
 
-#define __weak __attribute__((weak))
-#define __naked __attribute__((naked))
-# define __used __attribute_used__
-#define __section(s) __attribute__((section(#s)))
-#define __xbss(s)     __attribute__((section("." #s ".xbss")))
-#define __irq_handler __attribute__((interrupt ("IRQ")))
-#define __fiq_handler __attribute__((interrupt ("FIQ")))
-#define __swi_handler __attribute__((interrupt ("SWI")))
-#define __abort_handler __attribute__((interrupt ("ABORT")))
-#define __undef_handler __attribute__((interrupt ("UNDEF")))
-#define __rodata const __attribute__((section(".rodata")))
+#define __weak			__attribute__((weak))
+#define __naked			__attribute__((naked))
+#define __used			__attribute_used__
+#define __section(s)		__attribute__((section(#s)))
+#define __xbss(s)		__attribute__((section("." #s ".xbss")))
+#define __rodata	  const __section(.rodata)
+#define __irq_handler		__attribute__((interrupt ("IRQ")))
+#define __fiq_handler		__attribute__((interrupt ("FIQ")))
+#define __swi_handler		__attribute__((interrupt ("SWI")))
+#define __abort_handler		__attribute__((interrupt ("ABORT")))
+#define __undef_handler		__attribute__((interrupt ("UNDEF")))
 
 #endif  /* __ATTRIBUTES_H__ */
