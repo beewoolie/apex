@@ -60,6 +60,9 @@ static char* expand_variables (const char* rgbSrc)
 	state = 2;
 	pchKey = pch;		/* Mark start of key */
       }
+      if (*pchSrc == '\\') {
+	state = 21;
+      }
       break;
 
     case 1:			/* Mid-word */
@@ -87,6 +90,12 @@ static char* expand_variables (const char* rgbSrc)
     case 11:			/* Quoting */
       if (*pchSrc == '"')
 	state = 1;
+      break;
+
+    case 21:			/* Escaping */
+      state = 0;
+      --pch;			/* Drop the \ */
+      fChanged = 1;
       break;
     }
     *pch++ = *pchSrc;

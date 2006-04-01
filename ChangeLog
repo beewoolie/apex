@@ -1,5 +1,9 @@
 2006-04-01  Marc Singer  <elf@buici.com>
 
+	* src/apex/command.c (expand_variables): Allowing '\' escape of
+	'$' to prevent expansion of variables for the sake of storing them
+	in other environment strings, e.g. startup.
+
 	* include/attributes.h: Grooming.
 
 	* src/apex/console.c: Added (optional) command
