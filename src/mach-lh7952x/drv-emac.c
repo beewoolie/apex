@@ -604,7 +604,7 @@ static int cmd_emac (int argc, const char** argv)
 	int reg;
 	char label[5];
       };
-      static struct regs rgRegs[] = {
+      static struct regs __rodata rgRegs[] = {
 	{  0, "ctrl" },
 	{  1, "stat" },
 	{  2, "id1" },

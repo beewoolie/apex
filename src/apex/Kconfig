@@ -20,7 +20,8 @@ config ALPHABETIZE_COMMANDS
  
 config DEL_IS_BS
 	bool "Use DEL as alias for Backspace"
-	default n
+	depends on !SMALL
+	default y
 	help
 	  Some folks use a terminal program that insists that the
 	  Backspace key send a DEL character.  This option allows them
