@@ -1,3 +1,9 @@
+2006-04-03  Marc Singer  <elf@buici.com>
+
+	* Makefile: 1.3.23
+	* Additions to the kconfig directory so that make menuconfig
+	works again. 
+	
 2006-04-01  Marc Singer  <elf@buici.com>
 
 	* Makefile: 1.3.22
