@@ -59,5 +59,5 @@ void* alloc_uncached (size_t cb, size_t alignment)
   mmu_protsegment (pv, 0, 0);
 #endif
 
-  return pv;  
+  return pv;
 }

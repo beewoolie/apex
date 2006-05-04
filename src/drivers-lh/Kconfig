@@ -26,6 +26,17 @@ config DRIVER_LH_CLCDC
 	  This driver initializes the CLCD controller.  It is
 	  necessary if you want to show a splash screen. 
 
+config LCD_BGR
+	bool "Use BGR pel encoding"
+	depends on DRIVER_LH_CLCDC
+	default n
+	help
+	  The AMBA framebuffer device drives red from bits 0-4 in the
+	  TFT color value, and blue from bits 10-14.  Setting this
+	  option swaps these roles.  This may be important if the
+	  kernel requires that blue be in the least significant bits
+	  of each framebuffer pel.
+
 choice
 	prompt "LCD Panel"
 	depends on DRIVER_LH_CLCDC

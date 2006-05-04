@@ -242,6 +242,16 @@
 
 #define CB_BUFFER ((PEL_WIDTH*PEL_HEIGHT*BIT_DEPTH)/8)
 
+#if defined (CONFIG_LCD_BGR)
+# define RED_SHIFT	10
+# define GREEN_SHIFT	5
+# define BLUE_SHIFT	0
+#else
+# define RED_SHIFT	0
+# define GREEN_SHIFT	5
+# define BLUE_SHIFT	10
+#endif
+
 unsigned short* buffer;
 
 
@@ -329,7 +339,11 @@ static void clcdc_init (void)
     | PCD (PEL_CLOCK_DIV);
 
   CLCDC_UPBASE    = (unsigned long) buffer;
-  CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2;
+  CLCDC_CTRL      = WATERMARK | TFT | BITS_PER_PEL_2
+#if defined (CONFIG_LCD_BGR)
+    | BGR
+#endif
+    ;
 
 #if defined (CONFIG_ARCH_LH7952X)
   ALI_SETUP	  = 0x00000efd;
@@ -380,9 +394,20 @@ static void clcdc_release (void)
   DRV_CLCDC_RELEASE;
 }
 
+#if !defined (CONFIG_SMALL)
+static void clcdc_report (void)
+{
+  printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
+	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
+}
+#endif
+
 static __service_7 struct service_d lh7_clcdc_service = {
   .init    = clcdc_init,
   .release = clcdc_release,
+#if !defined (CONFIG_SMALL)
+  .report = clcdc_report,
+#endif
 };
 
 
@@ -430,9 +455,9 @@ int cmd_splash (const char* region)
 
       case 2:		/* RGB */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = ((pb[j*3    ] & 0xf8) >> 3) /* R */
-	    +   ((pb[j*3 + 1] & 0xf8) << 2) /* G */
-	    +   ((pb[j*3 + 2] & 0xf8) << 7) /* B */
+	  *ps = (((pb[j*3    ] & 0xf8) >> 3) << RED_SHIFT)
+	    +   (((pb[j*3 + 1] & 0xf8) >> 3) << GREEN_SHIFT)
+	    +   (((pb[j*3 + 2] & 0xf8) >> 3) << BLUE_SHIFT)
 	    ;
 	break;
 
@@ -447,9 +472,9 @@ int cmd_splash (const char* region)
 	case 8:
 	  for (j = 0; j < hdr.width; ++j, ++ps) {
 	    unsigned char* color = &rgbPalette[pb[j]*3];
-	    *ps = ((color[0] & 0xf8) >> 3)
-	      +   ((color[1] & 0xf8) << 2)
-	      +   ((color[2] & 0xf8) << 7)
+	    *ps = (((color[0] & 0xf8) >> 3) << RED_SHIFT)
+	      +   (((color[1] & 0xf8) >> 3) << GREEN_SHIFT)
+	      +   (((color[2] & 0xf8) >> 3) << BLUE_SHIFT)
 	    ;
 	  }
 	}
@@ -457,9 +482,9 @@ int cmd_splash (const char* region)
 
       case 6:		/* RGBA */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = ((pb[j*4    ] & 0xf8) >> 3)
-	    +   ((pb[j*4 + 1] & 0xf8) << 2)
-	    +   ((pb[j*4 + 2] & 0xf8) << 7);
+	  *ps = (((pb[j*4    ] & 0xf8) >> 3) << RED_SHIFT)
+	    +   (((pb[j*4 + 1] & 0xf8) >> 3) << GREEN_SHIFT)
+	    +   (((pb[j*4 + 2] & 0xf8) >> 3) << BLUE_SHIFT);
 
 	break;
       }
@@ -514,11 +539,11 @@ int cmd_clcdc (int argc, const char** argv)
       else if (i > 3*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = 0xffff;
       else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<10;
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<BLUE_SHIFT;
       else if (i > 1*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<5;
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<GREEN_SHIFT;
       else if (i > 0*(PEL_HEIGHT*PEL_WIDTH)/4)
-	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<0;
+	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<RED_SHIFT;
     }
     return 0;
   }
@@ -530,6 +555,26 @@ int cmd_clcdc (int argc, const char** argv)
     memset (buffer, 0, PEL_HEIGHT*PEL_WIDTH*(BIT_DEPTH/8));
     return 0;
   }
+# if (BIT_DEPTH==16)
+  if (strcmp (argv[1], "red") == 0) {
+    int i;
+    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
+      buffer[i] = 0x1f << RED_SHIFT;
+    return 0;
+  }
+  if (strcmp (argv[1], "green") == 0) {
+    int i;
+    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
+      buffer[i] = 0x1f << GREEN_SHIFT;
+    return 0;
+  }
+  if (strcmp (argv[1], "blue") == 0) {
+    int i;
+    for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
+      buffer[i] = 0x1f << BLUE_SHIFT;
+    return 0;
+  }
+# endif
 #endif
 
   if (strcmp (argv[1],"on") == 0) {
@@ -576,6 +621,11 @@ static __command struct command_d c_clcdc = {
 " bars       - draw color bars into frame buffer\n"
 " white      - draw white into frame buffer\n"
 " black      - draw black into frame buffer\n"
+# if BIT_DEPTH==16
+" red        - draw red into frame buffer\n"
+" green      - draw green into frame buffer\n"
+" blue       - draw blue into frame buffer\n"
+# endif
 #endif
 #if defined (CONFIG_CMD_CLCDC_SPLASH)
 " splash SRC - draw splash image (PNG) into frame buffer\n"
