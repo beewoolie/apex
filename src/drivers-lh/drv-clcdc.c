@@ -242,14 +242,31 @@
 
 #define CB_BUFFER ((PEL_WIDTH*PEL_HEIGHT*BIT_DEPTH)/8)
 
+/* The component shifters are an optimzation for the splash decoder.
+   We don't want to shift twice for every component, so we aggregate
+   the shifts and include the operator.  This make a big difference in
+   the ARM assembler. */
+
 #if defined (CONFIG_LCD_BGR)
-# define RED_SHIFT	10
-# define GREEN_SHIFT	5
-# define BLUE_SHIFT	0
+
+# define RED_SHIFT		10
+# define GREEN_SHIFT		5
+# define BLUE_SHIFT		0
+
+# define RED_SHIFT_COMP		<<7
+# define GREEN_SHIFT_COMP	<<2
+# define BLUE_SHIFT_COMP	>>3
+
 #else
-# define RED_SHIFT	0
-# define GREEN_SHIFT	5
-# define BLUE_SHIFT	10
+
+# define RED_SHIFT		0
+# define GREEN_SHIFT		5
+# define BLUE_SHIFT		10
+
+# define RED_SHIFT_COMP		>>3
+# define GREEN_SHIFT_COMP	<<2
+# define BLUE_SHIFT_COMP	<<7
+
 #endif
 
 unsigned short* buffer;
@@ -455,9 +472,9 @@ int cmd_splash (const char* region)
 
       case 2:		/* RGB */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = (((pb[j*3    ] & 0xf8) >> 3) << RED_SHIFT)
-	    +   (((pb[j*3 + 1] & 0xf8) >> 3) << GREEN_SHIFT)
-	    +   (((pb[j*3 + 2] & 0xf8) >> 3) << BLUE_SHIFT)
+	  *ps = ((pb[j*3    ] & 0xf8) RED_SHIFT_COMP)
+	    +   ((pb[j*3 + 1] & 0xf8) GREEN_SHIFT_COMP)
+	    +   ((pb[j*3 + 2] & 0xf8) BLUE_SHIFT_COMP)
 	    ;
 	break;
 
@@ -472,9 +489,9 @@ int cmd_splash (const char* region)
 	case 8:
 	  for (j = 0; j < hdr.width; ++j, ++ps) {
 	    unsigned char* color = &rgbPalette[pb[j]*3];
-	    *ps = (((color[0] & 0xf8) >> 3) << RED_SHIFT)
-	      +   (((color[1] & 0xf8) >> 3) << GREEN_SHIFT)
-	      +   (((color[2] & 0xf8) >> 3) << BLUE_SHIFT)
+	    *ps = ((color[0] & 0xf8) RED_SHIFT_COMP)
+	      +   ((color[1] & 0xf8) GREEN_SHIFT_COMP)
+	      +   ((color[2] & 0xf8) BLUE_SHIFT_COMP)
 	    ;
 	  }
 	}
@@ -482,10 +499,9 @@ int cmd_splash (const char* region)
 
       case 6:		/* RGBA */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = (((pb[j*4    ] & 0xf8) >> 3) << RED_SHIFT)
-	    +   (((pb[j*4 + 1] & 0xf8) >> 3) << GREEN_SHIFT)
-	    +   (((pb[j*4 + 2] & 0xf8) >> 3) << BLUE_SHIFT);
-
+	  *ps = ((pb[j*4    ] & 0xf8) RED_SHIFT_COMP)
+	    +   ((pb[j*4 + 1] & 0xf8) GREEN_SHIFT_COMP)
+	    +   ((pb[j*4 + 2] & 0xf8) BLUE_SHIFT_COMP);
 	break;
       }
     }
