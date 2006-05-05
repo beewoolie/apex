@@ -17,7 +17,7 @@ CONFIG_ARCH_LH7A40X=y
 #
 # General Setup
 #
-CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-"
+CONFIG_CROSS_COMPILE="/usr/gcc-3.4.4-glibc-2.3.5/arm-linux/bin/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
