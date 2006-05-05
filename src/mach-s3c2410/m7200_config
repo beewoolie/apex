@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sat Apr  1 13:50:22 2006
+# Fri May  5 12:12:38 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -43,6 +43,7 @@ CONFIG_MACH_M7200=y
 #
 # Platform Setup
 #
+CONFIG_RAMDISK_SIZE=0x00100000
 
 #
 # Commands
