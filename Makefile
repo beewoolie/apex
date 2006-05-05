@@ -486,7 +486,7 @@ endif # KBUILD_EXTMOD
 
 # every target builds all of the available configurations
 .PHONY: every
-every:
+every: distclean
 	@if [ -e .config ]; then rm .config ; fi
 	@[ ! -d every ] || rm -rf every
 	@mkdir every

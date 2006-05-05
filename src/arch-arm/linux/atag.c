@@ -52,7 +52,7 @@ struct tag* atag_header (struct tag* p)
 	memzero (&p->u.core, sizeof (p->u.core));
 
 	return tag_next (p);
-} 
+}
 
 struct tag* atag_end (struct tag* p)
 {
@@ -60,7 +60,7 @@ struct tag* atag_end (struct tag* p)
 	p->hdr.size = 0;
 
 	return tag_next (p);
-} 
+}
 
 
 static __atag_0 struct atag_d _atag_header = { atag_header };

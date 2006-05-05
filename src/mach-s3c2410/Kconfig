@@ -53,6 +53,18 @@ config RAMDISK_LMA
 	hex "Ramdisk load address"
 	default "0x30800000"
 	depends on USE_RAMDISK
+	help
+	  This option sets the physical load address for an initial
+	  ramdisk (a.k.a initrd).
+
+config RAMDISK_SIZE
+	hex "Ramdisk compressed size"
+	default "0x00100000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the size, in bytes, of the initial ramdisk
+	  (a.k.a. initrd).  This is the size of the compressed initrd
+	  image.
 
 config SDRAM_BANK0
 	bool "Enable SDRAM bank 0"
