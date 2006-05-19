@@ -22,10 +22,11 @@ config MACH_LPD7A404
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
-	select HAS_LH_ADC
 	select USES_SMC91X
-	select HAS_LH_CLCDC
 	select DRIVERS_LH
+	select HAS_LH_ADC
+	select HAS_LH_CLCDC
+	select HAS_LH_MMC
 
 config MACH_TROUNCER
 	bool "Interalia TROUNCER"
@@ -33,9 +34,9 @@ config MACH_TROUNCER
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
+	select DRIVERS_LH
 	select HAS_LH_ADC
 	select HAS_LH_MMC
-	select DRIVERS_LH
 
 endchoice
 

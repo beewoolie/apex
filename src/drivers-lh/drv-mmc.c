@@ -25,6 +25,53 @@
    DESCRIPTION
    -----------
 
+   Clocking
+   --------
+
+   The specification limits the clock frequency during identification
+   to 400KHz.  During I/O, the limit is 20MHz.
+
+   Responses Byte Ordering
+   -----------------------
+
+   On old hardware, rev -01 of the LH7A400, the response FIFO
+   half-word is byte swapped.
+
+      15     8 7      0
+     +--------+--------+
+     | BYTE 0 | BYTE 1 |	// Old hardware
+     +--------+--------+
+
+   The correct ordering puts the first byte in the low order bits.
+
+      15     8 7      0
+     +--------+--------+
+     | BYTE 1 | BYTE 0 |	// Correct layout
+     +--------+--------+
+
+
+   Response Bytes
+   --------------
+
+   The R3 type (and probably R1) emit their responses with a null byte
+   at the start.  This means that the first byte of the response
+   should be ignored and the real response data starts at byte one.
+
+   *** However, the standalone code has no such thing.  They skip a
+   *** single byte, which is the header of the response, when they
+   *** convert it to an OCR value.  Finding out why may be
+   *** interesting.
+
+   OCR_MAX
+   -------
+
+   The controller ought to be able to handle the full breadth of
+   voltages for the SD/MMC spec.  However, we have some cards that
+   either misreport their OCR, or don't play well.  So, the normal
+   default spread of voltages, 0x00ffff80 which is used in some of the
+   sample code, is reduced to 0x00ff0000 which seems to work well for
+   everyone.  The SD cards tested all use that spread in any case.
+
 */
 
 #include <config.h>
@@ -35,6 +82,18 @@
 #include <command.h>
 #include <mach/hardware.h>
 #include <console.h>
+
+//#define USE_SWAPPED_RESPONSE	/* Old hardware */
+#define USE_SD
+
+#if defined (COMPANION)
+# define GPIO_WP		PH1
+#endif
+
+#if defined (TROUNCER)
+# define GPIO_CARD_DETECT	PF6
+# define GPIO_WP		PC1
+#endif
 
 extern char* strcat (char*, const char*);
 
@@ -55,41 +114,41 @@ extern char* strcat (char*, const char*);
 /* Standard MMC commands (3.1)           type  argument     response */
    /* class 1 */
 #define	MMC_GO_IDLE_STATE         0   /* bc                          */
-#define MMC_SEND_OP_COND          1   /* bcr  [31:0] OCR         R3  */
+#define MMC_SEND_OP_COND          1   /* bcr  [31:0]  OCR        R3  */
 #define MMC_ALL_SEND_CID          2   /* bcr                     R2  */
 #define MMC_SET_RELATIVE_ADDR     3   /* ac   [31:16] RCA        R1  */
 #define MMC_SET_DSR               4   /* bc   [31:16] RCA            */
 #define MMC_SELECT_CARD           7   /* ac   [31:16] RCA        R1  */
 #define MMC_SEND_CSD              9   /* ac   [31:16] RCA        R2  */
 #define MMC_SEND_CID             10   /* ac   [31:16] RCA        R2  */
-#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0] dadr        R1  */
+#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0]  dadr       R1  */
 #define MMC_STOP_TRANSMISSION    12   /* ac                      R1b */
 #define MMC_SEND_STATUS	         13   /* ac   [31:16] RCA        R1  */
 #define MMC_GO_INACTIVE_STATE    15   /* ac   [31:16] RCA            */
 
   /* class 2 */
-#define MMC_SET_BLOCKLEN         16   /* ac   [31:0] block len   R1  */
-#define MMC_READ_SINGLE_BLOCK    17   /* adtc [31:0] data addr   R1  */
-#define MMC_READ_MULTIPLE_BLOCK  18   /* adtc [31:0] data addr   R1  */
+#define MMC_SET_BLOCKLEN         16   /* ac   [31:0]  block len  R1  */
+#define MMC_READ_SINGLE_BLOCK    17   /* adtc [31:0]  data addr  R1  */
+#define MMC_READ_MULTIPLE_BLOCK  18   /* adtc [31:0]  data addr  R1  */
 
   /* class 3 */
-#define MMC_WRITE_DAT_UNTIL_STOP 20   /* adtc [31:0] data addr   R1  */
+#define MMC_WRITE_DAT_UNTIL_STOP 20   /* adtc [31:0]  data addr  R1  */
 
   /* class 4 */
-#define MMC_SET_BLOCK_COUNT      23   /* adtc [31:0] data addr   R1  */
-#define MMC_WRITE_BLOCK          24   /* adtc [31:0] data addr   R1  */
+#define MMC_SET_BLOCK_COUNT      23   /* adtc [31:0]  data addr  R1  */
+#define MMC_WRITE_BLOCK          24   /* adtc [31:0]  data addr  R1  */
 #define MMC_WRITE_MULTIPLE_BLOCK 25   /* adtc                    R1  */
 #define MMC_PROGRAM_CID          26   /* adtc                    R1  */
 #define MMC_PROGRAM_CSD          27   /* adtc                    R1  */
 
   /* class 6 */
-#define MMC_SET_WRITE_PROT       28   /* ac   [31:0] data addr   R1b */
-#define MMC_CLR_WRITE_PROT       29   /* ac   [31:0] data addr   R1b */
-#define MMC_SEND_WRITE_PROT      30   /* adtc [31:0] wpdata addr R1  */
+#define MMC_SET_WRITE_PROT       28   /* ac   [31:0]  data addr  R1b */
+#define MMC_CLR_WRITE_PROT       29   /* ac   [31:0]  data addr  R1b */
+#define MMC_SEND_WRITE_PROT      30   /* adtc [31:0]  wpdata addr R1  */
 
   /* class 5 */
-#define MMC_ERASE_GROUP_START    35   /* ac   [31:0] data addr   R1  */
-#define MMC_ERASE_GROUP_END      36   /* ac   [31:0] data addr   R1  */
+#define MMC_ERASE_GROUP_START    35   /* ac   [31:0]  data addr  R1  */
+#define MMC_ERASE_GROUP_END      36   /* ac   [31:0]  data addr  R1  */
 #define MMC_ERASE                37   /* ac                      R1b */
 
   /* class 9 */
@@ -101,7 +160,7 @@ extern char* strcat (char*, const char*);
 
   /* class 8 */
 #define MMC_APP_CMD              55   /* ac   [31:16] RCA        R1  */
-#define MMC_GEN_CMD              56   /* adtc [0] RD/WR          R1b */
+#define MMC_GEN_CMD              56   /* adtc [0]     RD/WR      R1b */
 
 /* SD commands                           type  argument     response */
   /* class 8 */
@@ -109,9 +168,9 @@ extern char* strcat (char*, const char*);
 #define SD_SEND_RELATIVE_ADDR     3   /* ac                      R6  */
 
   /* Application commands */
-#define SD_APP_SET_BUS_WIDTH      6   /* ac   [1:0] bus width    R1  */
-#define SD_APP_OP_COND           41   /* bcr  [31:0] OCR         R3  */
-#define SD_APP_SEND_SCR          51   /* adtc                    R1  */
+#define SD_APP_SET_BUS_WIDTH      6   /* ac   [1:0]   bus width  R1	  */
+#define SD_APP_OP_COND           41   /* bcr  [31:0]  OCR        R1 (R4)  */
+#define SD_APP_SEND_SCR          51   /* adtc                    R1	  */
 
 /*
   MMC status in R1
@@ -220,7 +279,7 @@ struct _mmc_csd {
 #define MMC_VDD_33_34	0x00200000	/* VDD voltage 3.3 ~ 3.4 */
 #define MMC_VDD_34_35	0x00400000	/* VDD voltage 3.4 ~ 3.5 */
 #define MMC_VDD_35_36	0x00800000	/* VDD voltage 3.5 ~ 3.6 */
-#define MMC_CARD_BUSY	0x80000000	/* Card Power up status bit */
+#define MMC_CARD_READY	0x80000000	/* Card Power up status bit */
 
 /*
  * Card Command Classes (CCC)
@@ -254,17 +313,20 @@ struct _mmc_csd {
  * CSD field definitions
  */
 
-#define CSD_STRUCT_VER_1_0  0           /* Valid for system specification 1.0 - 1.2 */
-#define CSD_STRUCT_VER_1_1  1           /* Valid for system specification 1.4 - 2.2 */
-#define CSD_STRUCT_VER_1_2  2           /* Valid for system specification 3.1       */
+#define CSD_STRUCT_VER_1_0  0           /* Valid for system spec 1.0 - 1.2 */
+#define CSD_STRUCT_VER_1_1  1           /* Valid for system spec 1.4 - 2.2 */
+#define CSD_STRUCT_VER_1_2  2           /* Valid for system spec 3.1       */
 
-#define CSD_SPEC_VER_0      0           /* Implements system specification 1.0 - 1.2 */
-#define CSD_SPEC_VER_1      1           /* Implements system specification 1.4 */
-#define CSD_SPEC_VER_2      2           /* Implements system specification 2.0 - 2.2 */
-#define CSD_SPEC_VER_3      3           /* Implements system specification 3.1 */
+#define CSD_SPEC_VER_0      0           /* Implements system spec 1.0 - 1.2 */
+#define CSD_SPEC_VER_1      1           /* Implements system spec 1.4 */
+#define CSD_SPEC_VER_2      2           /* Implements system spec 2.0 - 2.2 */
+#define CSD_SPEC_VER_3      3           /* Implements system spec 3.1 */
 
 
 
+/* *** These clock values aren't used at the moment.  They should be
+   held as upper limits on the rate and determined from HCLK and the
+   predivisor. */
 #define CLOCK_DETECT		(300*1024)	 /* Clock rate during detect */
 #define CLOCK_DATA		(20*1024*1024)	 /* Clock rate during I/O */
 
@@ -308,19 +370,21 @@ struct _mmc_csd {
 #define MMC_CMDCON_RESPONSE_R2	 (2 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) // 136
 #define MMC_CMDCON_RESPONSE_R3	 (3 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //  48
 
+/*  HCLK is usually 99993600 */
 
-#define MMC_RATE_IO_V		(0)
-#define MMC_RATE_ID_V		(6)
+#define MMC_RATE_IO_V		(0)			/* 0 -> MCLK/1  */
+//#define MMC_RATE_ID_V		(6)			/* 6 -> MCLK/64 */
+#define MMC_RATE_ID_V		(5)			/* 5 -> MCLK/32 */
 //#define MMC_PREDIV_V		(4)
-#define MMC_PREDIV_V		(8)
-#define MMC_RES_TO_V		(0x3f)
-#define MMC_READ_TO_V		(0x7fff)
+#define MMC_PREDIV_V		(8)			/* HCLK/N */
+#define MMC_RES_TO_V		(0x7f)
+//#define MMC_RES_TO_V		(64)
+//#define MMC_READ_TO_V		(0x7fff)
+#define MMC_READ_TO_V		(0xffff)
 
-#define MMC_WAIT		udelay(1)
+#define MMC_WAIT		udelay (1)
 
-//#define MMC_OCR_ARG_V		(0x00ffc000)
-//#define MMC_OCR_ARG_V		(0x00ff8000)
-#define MMC_OCR_ARG_V		(0x00ff0000)
+#define MMC_OCR_ARG_MAX		(0x00ff0000)
 
 #define CMD_BIT_APP		 (1<<23)
 #define CMD_BIT_INIT		 (1<<22)
@@ -334,16 +398,23 @@ struct _mmc_csd {
 				 | ((r) << CMD_SHIFT_RESP)\
 				 )
 
-#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0) | CMD_BIT_INIT
-#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 3) | CMD_BIT_APP | CMD_BIT_INIT
-#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3) | CMD_BIT_INIT
-#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2) //| CMD_BIT_BUSY
+#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0)		 | CMD_BIT_INIT
+#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 1)    | CMD_BIT_APP
+#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3)		 | CMD_BIT_INIT
+#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2)
 
 struct mmc_info {
   char response[20];		/* Most recent response */
 };
 
 struct mmc_info mmc;
+
+static inline unsigned long response_ocr (void) {
+  return (((unsigned long) mmc.response[2]) << 24)
+    | (((unsigned long) mmc.response[3]) << 16)
+    | (((unsigned long) mmc.response[4]) << 8)
+    | (((unsigned long) mmc.response[5]) << 0);
+}
 
 static const char* report_status (unsigned long l)
 {
@@ -363,7 +434,7 @@ static const char* report_status (unsigned long l)
   if (l & MMC_STATUS_FIFO_EMPTY)
     strcat (sz, " FIFO_EMPTY");
   if (l & MMC_STATUS_CRC)
-    strcat (sz, " CRC");
+    strcat (sz, " CRCRESP");
   if (l & MMC_STATUS_CRCREAD)
     strcat (sz, " CRCREAD");
   if (l & MMC_STATUS_CRCWRITE)
@@ -380,6 +451,13 @@ static void start_clock (void)
 {
 //  ENTRY ();
 
+#if 1
+  MMC_CLKC = MMC_CLKC_START_CLK;
+  /* *** FIXME: this should be bounded */
+  while (MMC_STATUS & MMC_STATUS_CLK_DIS)
+    ;
+#else
+
   if (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
     return;
 
@@ -393,11 +471,18 @@ static void start_clock (void)
 
 //  while (MMC_STATUS & MMC_STATUS_CLK_DIS)
 //    MMC_WAIT;
+#endif
 }
 
 static void stop_clock (void)
 {
-  //  ENTRY ();
+//  ENTRY ();
+
+#if 1
+  MMC_CLKC = MMC_CLKC_STOP_CLK;
+  while (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
+    ;
+#else
 
   if (MMC_STATUS & MMC_STATUS_CLK_DIS)
     return;
@@ -414,6 +499,7 @@ static void stop_clock (void)
   while (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
     //    MMC_WAIT
     ;
+#endif
 }
 
 static void clear_fifo (void)
@@ -431,33 +517,49 @@ static void clear_fifo (void)
   MMC_WAIT;
 }
 
+static void clear_response_fifo (void)
+{
+  int i;
+
+  for (i = 16; i--; )
+    MMC_RES_FIFO;
+}
+
 static void clear_status (void)
 {
   MMC_EOI = (1<<5)|(1<<2)|(1<<1)|(1<<0);
   MMC_WAIT;
 }
 
+
 /* pull_response
 
    retrieves a command response.  The length is the length of the
    expected response, in bits.
+
+   See the NOTES for an explanation of the order of the data received
+   in the response FIFO.
+
+   We pull the full length of the response FIFO every time because we
+   can.  The MMC controller starts writing to the FIFO where it last
+   was read.  Pulling anew will pull from the position it started
+   writing to the FIFO.
 
 */
 
 static void pull_response (int length)
 {
   int i;
-  int c = 16; //length/8;
-  unsigned short result;
+//  int c = 16;
+  int c = length/8;
 
-  printf ("response ");
+  DBG (1, "%s: %d-%d  ", __FUNCTION__, length, c);
 
-#if 0
   for (i = 0; i < c; ) {
     unsigned short s = MMC_RES_FIFO;
-    if (i == 0)
-      result = s;
     printf (" [%04x]", s);
+
+#if defined (USE_SWAPPED_RESPONSE)
     *(unsigned short*) &mmc.response[i] = s;
     {
       unsigned char c = mmc.response[i];
@@ -466,22 +568,16 @@ static void pull_response (int length)
     }
     printf (" %02x %02x", mmc.response[i], mmc.response[i + 1]);
     i += 2;
-  }
-#endif
-#if 1
-  for (i = 0; i < c;) {
-    unsigned short s = MMC_RES_FIFO;
-    printf (" [%04x]", s);
-    if (i == 0)
-      result = s;
+#else
     mmc.response[i++] = (s >> 8) & 0xff;
     printf (" %02x", (s >> 8) & 0xff);
     if (i < c) {
       mmc.response[i++] = s & 0xff;
       printf (" %02x", s & 0xff);
     }
-  }
 #endif
+
+  }
 
   printf ("\n");
 }
@@ -491,13 +587,14 @@ static unsigned short wait_for_completion (void)
   unsigned short status_last = 0;
   unsigned short status;
 
+  DBG (1, "  ");
   udelay (1);
   do {
     MMC_WAIT;
     status = MMC_STATUS;
     MMC_WAIT;
     if (status != status_last)
-      printf (" %04x", status);
+      DBG (1, " %04x", status);
     status_last = status;
   } while ((status
 	    & (  MMC_STATUS_ENDRESP
@@ -509,16 +606,16 @@ static unsigned short wait_for_completion (void)
 	       | MMC_STATUS_CRCREAD
 		 ))
 	   == 0);
-  printf (" wait: %s %lx\n", report_status (status), MMC_INT_STATUS);
+  DBG (1, " => %s %lx\n", report_status (status), MMC_INT_STATUS);
   { int i; for (i = 0; i < 229743; i++); }
   stop_clock ();
 
-  return status_last;
+  return status;
 }
 
 static void report_command (void)
 {
-  DBG (1, "cmd 0x%lx (%ld) arg 0x%lx  cmdcon 0x%lx  rate 0x%lx/%ld\n",
+  DBG (1, "cmd 0x%02lx (%03ld) arg 0x%08lx  cmdcon 0x%04lx  rate 0x%02lx/%04ld\n",
        MMC_CMD, MMC_CMD, MMC_ARGUMENT, MMC_CMDCON, MMC_PREDIV, MMC_RATE);
 }
 
@@ -530,6 +627,9 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
 
  top:
   stop_clock ();
+
+  if (s)
+    DBG (1, "%s: state %d s 0x%x\n", __FUNCTION__, state, s);
 
   switch (state) {
 
@@ -551,32 +651,37 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
     MMC_CMD = MMC_APP_CMD;
     MMC_RATE = MMC_RATE_ID_V;
     MMC_ARGUMENT = 0;
-    MMC_CMDCON = MMC_CMDCON_RESPONSE_R1
+    MMC_CMDCON = 0
+    | MMC_CMDCON_RESPONSE_R1	/* Response is status */
       | ((cmd & CMD_BIT_INIT) ? MMC_CMDCON_INITIALIZE : 0);
     state = 0;
     break;
   }
 
-  clear_fifo ();
+//  clear_fifo ();
+  clear_response_fifo ();
   clear_status ();
   report_command ();
   start_clock ();
   s = wait_for_completion ();
 
+  /* We return an error if there is a timeout, even if we've fetched a
+     response */
   if (s & MMC_STATUS_TORES)
     return s;
 
-  switch (MMC_CMDCON & 0x3) {
-  case 0:
-    break;
-  case 1:
-  case 3:
-    pull_response (48);
-    break;
-  case 2:
-    pull_response (136);
-    break;
-  }
+  if (s & MMC_STATUS_ENDRESP)
+    switch (MMC_CMDCON & 0x3) {
+    case 0:
+      break;
+    case 1:
+    case 3:
+      pull_response (48);
+      break;
+    case 2:
+      pull_response (136);
+      break;
+    }
 
   goto top;
 }
@@ -585,6 +690,7 @@ static void mmc_probe (void)
 {
   unsigned short s;
   int tries;
+  unsigned long ocr;
 
   ENTRY ();
 
@@ -601,28 +707,35 @@ static void mmc_probe (void)
 //  MMC_CMDCON |= MMC_CMDCON_WIDE;
 
 #if 1
-  execute_command (CMD_IDLE, 0);
+  s = execute_command (CMD_IDLE, 0);
+  DBG (1, "%s: idle -> %x\n", __FUNCTION__, s);
 #endif
 
-#if 1
+#if defined (USE_SD)
   s = execute_command (CMD_SD_OP_COND, 0);
+  DBG (1, "%s: sd_op_cond -> %x\n", __FUNCTION__, s);
 
   if (s & MMC_STATUS_TORES) {
     printf ("failed to sd_op_cond\n");
     goto mmc_op_cond;
   }
 
-  s = execute_command (CMD_SD_OP_COND, MMC_OCR_ARG_V);
+  ocr = response_ocr ();
+  printf ("OCR: %08lx\n", ocr);
+  s = execute_command (CMD_SD_OP_COND, MMC_OCR_ARG_MAX & ocr);
+  DBG (1, "%s: sd_op_cond(arg) -> %x\n", __FUNCTION__, s);
 
   if (s & MMC_STATUS_TORES) {
     printf ("failed to sd_op_cond with arg\n");
     goto mmc_op_cond;
   }
-#endif
 
   goto cid;
 
  mmc_op_cond:
+
+#endif
+
 
 #if 1
   s = execute_command (CMD_MMC_OP_COND, 0);
@@ -632,7 +745,9 @@ static void mmc_probe (void)
     return;
   }
 
-  s = execute_command (CMD_MMC_OP_COND, MMC_OCR_ARG_V);
+  ocr = response_ocr ();
+  printf ("OCR: %08lx\n", ocr);
+  s = execute_command (CMD_MMC_OP_COND, MMC_OCR_ARG_MAX & ocr);
 
   if (s & MMC_STATUS_TORES) {
     printf ("failed to mmc_op_cond with arg\n");
@@ -641,15 +756,17 @@ static void mmc_probe (void)
 
 #endif
 
+#if defined (USE_SD)
  cid:
+#endif
 
-  tries = 3;
+  tries = 8;
   redo:
 
   s = execute_command (CMD_ALL_SEND_CID, 0);
 
   if ((s & MMC_STATUS_TORES) && tries--) {
-    udelay (1000);
+    udelay (10000);
     goto redo;
   }
 }
@@ -658,28 +775,47 @@ static void mmc_init (void)
 {
   ENTRY ();
 
+#if defined (MACH_TROUNCER)
   GPIO_PFDD |= (1<<6);		/* Enable card detect interrupt pin */
-
   return;
+#endif
 
+
+  MMC_PREDIV = 0;
+#if defined (ARCH_LH7A400)
+  MMC_SPI = 0;
+#endif
+
+  /*
   if (MMC_PREDIV & MMC_PREDIV_MMC_EN) {
     stop_clock ();
     MMC_PREDIV = 0;
     MMC_WAIT;
     udelay (1);
   }
+  */
 
   DBG (2, "%s: enabling MMC\n", __FUNCTION__);
 
-  MMC_PREDIV = MMC_PREDIV_MMC_EN | MMC_PREDIV_APB_RD_EN | MMC_PREDIV_V;
-  MMC_WAIT;
+  MMC_PREDIV = MMC_PREDIV_MMC_EN;
+  MMC_PREDIV |= MMC_PREDIV_APB_RD_EN | MMC_PREDIV_V;
+  //  MMC_WAIT;
   MMC_RATE = MMC_RATE_ID_V;
   MMC_WAIT;
   MMC_CMDCON = MMC_CMDCON_INITIALIZE; /* Init card */
   MMC_WAIT;
   MMC_RES_TO = MMC_RES_TO_V;
   MMC_WAIT;
-  MMC_INT_MASK = 0x3f;
+
+  MMC_NOB = 1;
+  //  MMC_INT_MASK = 0x3f;
+  MMC_INT_MASK = 0;		/* Mask all interrupts */
+  MMC_EOI = 0x27;		/* Clear all interrupts */
+
+#if defined (ARCH_LH7A400)
+  MMC_BUF_PART_FULL = 0;
+#endif
+
   MMC_WAIT;
   udelay (1);
   //  udelay (1);
@@ -697,7 +833,9 @@ static void mmc_init (void)
 
 static void mmc_report (void)
 {
+#if defined (MACH_TROUNCER)
   printf ("  mmc:    %s\n", (GPIO_PFD & (1<<6)) ? "no card" : "card present");
+#endif
 }
 
 static void mmc_setup (void)
@@ -753,8 +891,10 @@ static __service_6 struct service_d mmc_service = {
 
 static int cmd_mmc (int argc, const char** argv)
 {
+#if defined (MACH_TROUNCER)
   printf ("%s: card %s\n", __FUNCTION__,
 	  (GPIO_PFD & (1<<6)) ? "not inserted" : "inserted");
+#endif
 
   mmc_setup ();
 
