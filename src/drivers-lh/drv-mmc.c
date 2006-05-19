@@ -97,7 +97,7 @@
 
 extern char* strcat (char*, const char*);
 
-#define TALK 1
+//#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -392,6 +392,7 @@ inline void mdelay (int c) {
 #define CMD_BIT_APP		 (1<<23)
 #define CMD_BIT_INIT		 (1<<22)
 #define CMD_BIT_BUSY		 (1<<21)
+#define CMD_BIT_LS		 (1<<20) /* Low speed, used during acquire */
 #define CMD_MASK_RESP		 (3<<24)
 #define CMD_SHIFT_RESP		 (24)
 #define CMD_MASK_CMD		 (0xff)
@@ -401,16 +402,19 @@ inline void mdelay (int c) {
 				 | ((r) << CMD_SHIFT_RESP)\
 				 )
 
-#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0)		 | CMD_BIT_INIT
-#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 1)    | CMD_BIT_APP
-#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3)		 | CMD_BIT_INIT
-#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2)
+#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0) | CMD_BIT_LS	 | CMD_BIT_INIT
+#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 1)    | CMD_BIT_LS  | CMD_BIT_APP
+#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3)  | CMD_BIT_LS  | CMD_BIT_INIT
+#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2)  | CMD_BIT_LS
+#define CMD_MMC_SET_RCA	 CMD(MMC_SET_RELATIVE_ADDR, 1) | CMD_BIT_LS
+#define CMD_SD_SEND_RCA	 CMD(SD_SEND_RELATIVE_ADDR, 1) | CMD_BIT_LS
 
 struct mmc_info {
   char response[20];		/* Most recent response */
   char cid[16];			/* Acquired card */
   int acquire_time;		/* Count of delays to acquire card */
   int sd;			/* SD card detected */
+  int rca;			/* Relative address assigned to card */
 };
 
 struct mmc_info mmc;
@@ -544,9 +548,9 @@ static void pull_response (int length)
 
 static unsigned short wait_for_completion (void)
 {
+  unsigned short status;
 #if defined (TALk) && TALK > 0
   unsigned short status_last = 0;
-  unsigned short status;
 #endif
 
   DBG (3, "  ");
@@ -589,6 +593,8 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
 
  top:
   stop_clock ();
+
+  MMC_RATE = (cmd & CMD_BIT_LS) ? MMC_RATE_ID_V: MMC_RATE_IO_V;
 
   if (s)
     DBG (3, "%s: state %d s 0x%x\n", __FUNCTION__, state, s);
@@ -646,6 +652,17 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
   goto top;
 }
 
+
+/* mmc_acquire
+
+   detects cards on the bus and initializes them for IO.  It can
+   detect both SD and MMC card types.
+
+   It will only detect a single card and the first one will be the one
+   that is configured with an RCA and will be used by the driver.
+
+*/
+
 static void mmc_acquire (void)
 {
   unsigned short s;
@@ -656,20 +673,17 @@ static void mmc_acquire (void)
   unsigned long command = 0;
   int sd = 1;
 
-  ENTRY ();
-
   mmc.acquire_time = 0;
   memset (mmc.cid, 0, sizeof (mmc.cid));
 
   stop_clock ();
-  DBG (2, "CMDCON 0x%lx\n", MMC_CMDCON);
 
 //  MMC_CMDCON |= MMC_CMDCON_SDIO_EN;
 //  MMC_CMDCON |= MMC_CMDCON_WIDE;
 
   s = execute_command (CMD_IDLE, 0);
 
-  while (state < 100 && !card_acquired ()) {
+  while (state < 100) {
     switch (state) {
 
     case 0:			/* Setup for SD */
@@ -742,9 +756,16 @@ static void mmc_acquire (void)
       ++state;
       break;
 
-    case 6:
-    case 16:
-      state += 4;
+    case 6:			/* RCA send */
+      s = execute_command (CMD_SD_SEND_RCA, 0);
+      mmc.rca = (mmc.response[1] << 8) | mmc.response[2];
+      state = 100;
+      break;
+
+    case 16:			/* RCA assignment */
+      mmc.rca = 1;
+      s = execute_command (CMD_MMC_SET_RCA, mmc.rca<<16);
+      state = 100;
       break;
 
     case 9:
@@ -799,7 +820,7 @@ static void mmc_report (void)
   printf ("  mmc:    %s card acquired",
 	  card_acquired () ? (mmc.sd ? "sd" : "mmc") : "no");
   if (card_acquired ())
-    printf (" (%d ms)", mmc.acquire_time);
+    printf (" rca 0x%x (%d ms)", mmc.rca, mmc.acquire_time);
   printf ("\n");
 }
 
