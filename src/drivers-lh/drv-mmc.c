@@ -97,7 +97,7 @@
 
 extern char* strcat (char*, const char*);
 
-//#define TALK 3
+#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -393,6 +393,9 @@ inline void mdelay (int c) {
 #define CMD_BIT_INIT		 (1<<22)
 #define CMD_BIT_BUSY		 (1<<21)
 #define CMD_BIT_LS		 (1<<20) /* Low speed, used during acquire */
+#define CMD_BIT_DATA		 (1<<19)
+#define CMD_BIT_WRITE		 (1<<18)
+#define CMD_BIT_STREAM		 (1<<17)
 #define CMD_MASK_RESP		 (3<<24)
 #define CMD_SHIFT_RESP		 (24)
 #define CMD_MASK_CMD		 (0xff)
@@ -402,19 +405,33 @@ inline void mdelay (int c) {
 				 | ((r) << CMD_SHIFT_RESP)\
 				 )
 
-#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE, 0) | CMD_BIT_LS	 | CMD_BIT_INIT
-#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND, 1)    | CMD_BIT_LS  | CMD_BIT_APP
-#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND, 3)  | CMD_BIT_LS  | CMD_BIT_INIT
-#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID, 2)  | CMD_BIT_LS
-#define CMD_MMC_SET_RCA	 CMD(MMC_SET_RELATIVE_ADDR, 1) | CMD_BIT_LS
-#define CMD_SD_SEND_RCA	 CMD(SD_SEND_RELATIVE_ADDR, 1) | CMD_BIT_LS
+#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE,0) | CMD_BIT_LS	 | CMD_BIT_INIT
+#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND,1)      | CMD_BIT_LS | CMD_BIT_APP
+#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND,3)    | CMD_BIT_LS | CMD_BIT_INIT
+#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID,2)    | CMD_BIT_LS
+#define CMD_MMC_SET_RCA	 CMD(MMC_SET_RELATIVE_ADDR,1) | CMD_BIT_LS
+#define CMD_SD_SEND_RCA	 CMD(SD_SEND_RELATIVE_ADDR,1) | CMD_BIT_LS
+#define CMD_SEND_CSD	 CMD(MMC_SEND_CSD,2)
+#define CMD_SELECT_CARD	 CMD(MMC_SELECT_CARD,1)
+#define CMD_SET_BLOCKLEN CMD(MMC_SET_BLOCKLEN,1)
+#define CMD_READ_SINGLE  CMD(MMC_READ_SINGLE_BLOCK,1) | CMD_BIT_DATA
+#define CMD_READ_MULTIPLE CMD(MMC_READ_MULTIPLE_BLOCK,1)
 
 struct mmc_info {
   char response[20];		/* Most recent response */
-  char cid[16];			/* Acquired card */
+  char cid[16];			/* CID of acquired card  */
+  char csd[16];			/* CSD of acquired card */
   int acquire_time;		/* Count of delays to acquire card */
   int sd;			/* SD card detected */
   int rca;			/* Relative address assigned to card */
+
+  int c_size;
+  int c_size_mult;
+  int read_bl_len;
+  int mult;
+  int blocknr;
+  int block_len;
+  unsigned long device_size;
 };
 
 struct mmc_info mmc;
@@ -422,12 +439,25 @@ struct mmc_info mmc;
 static inline int card_acquired (void) {
   return mmc.cid[0] != 0; }
 
+static void mmc_report (void);
+
 static inline unsigned long response_ocr (void) {
   return (((unsigned long) mmc.response[1]) << 24)
     | (((unsigned long) mmc.response[2]) << 16)
     | (((unsigned long) mmc.response[3]) << 8)
     | (((unsigned long) mmc.response[4]) << 0);
 }
+
+static inline unsigned long csd_c_size (void) {
+  int v = (mmc.csd[6]<<16) | (mmc.csd[7]<<8) | mmc.csd[8];
+  return (v>>6) & 0xfff;
+}
+
+static inline unsigned long csd_c_size_mult (void) {
+  int v = (mmc.csd[9]<<8) | mmc.csd[10];
+  return (v>>7) & 0x7;
+}
+
 
 static const char* report_status (unsigned long l)
 {
@@ -467,8 +497,7 @@ static void start_clock (void)
 
   MMC_CLKC = MMC_CLKC_START_CLK;
 
-  /* *** FIXME: may be helpful to implement a timeout check.
-     *** Interestingly, the Sharp implementation doesn't wait at all. */
+  /* *** FIXME: may be good to implement a timeout check. */
 
 //  while (MMC_STATUS & MMC_STATUS_CLK_DIS)
 //    ;
@@ -546,24 +575,25 @@ static void pull_response (int length)
   DBG (3, "\n");
 }
 
-static unsigned short wait_for_completion (void)
+static unsigned short wait_for_completion (unsigned long bits)
 {
-  unsigned short status;
-#if defined (TALk) && TALK > 0
+  unsigned short status = 0;
+#if defined (TALK) && TALK > 0
   unsigned short status_last = 0;
 #endif
 
-  DBG (3, "  ");
+  DBG (3, " (%lx) ", bits);
   do {
     udelay (1);
     status = MMC_STATUS;
-#if defined (TALk) && TALK > 0
+#if defined (TALK) && TALK > 0
     if (status != status_last)
       DBG (3, " %04x", status);
     status_last = status;
 #endif
   } while ((status
-	    & (  MMC_STATUS_ENDRESP
+	    & ( bits
+//  MMC_STATUS_ENDRESP
 //	       | MMC_STATUS_DONE
 //	       | MMC_STATUS_TRANDONE
 //	       | MMC_STATUS_TORES
@@ -606,8 +636,12 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
     MMC_ARGUMENT = arg;
     MMC_CMDCON
       = ((cmd & CMD_MASK_RESP) >> CMD_SHIFT_RESP)
-      | ((cmd & CMD_BIT_INIT)  ? MMC_CMDCON_INITIALIZE : 0)
-      | ((cmd & CMD_BIT_BUSY)  ? MMC_CMDCON_BUSY : 0);
+      | ((cmd & CMD_BIT_INIT)	? MMC_CMDCON_INITIALIZE : 0)
+      | ((cmd & CMD_BIT_BUSY)	? MMC_CMDCON_BUSY	: 0)
+      | ((cmd & CMD_BIT_DATA)	? MMC_CMDCON_DATA_EN	: 0)
+      | ((cmd & CMD_BIT_WRITE)  ? MMC_CMDCON_WRITE	: 0)
+      | ((cmd & CMD_BIT_STREAM)	? MMC_CMDCON_STREAM	: 0)
+      ;
     ++state;
     break;
 
@@ -629,7 +663,7 @@ static unsigned short execute_command (unsigned long cmd, unsigned long arg)
   clear_status ();
   report_command ();
   start_clock ();
-  s = wait_for_completion ();
+  s = wait_for_completion (MMC_STATUS_ENDRESP);
 
   /* We return an error if there is a timeout, even if we've fetched a
      response */
@@ -759,12 +793,19 @@ static void mmc_acquire (void)
     case 6:			/* RCA send */
       s = execute_command (CMD_SD_SEND_RCA, 0);
       mmc.rca = (mmc.response[1] << 8) | mmc.response[2];
-      state = 100;
+      ++state;
       break;
 
     case 16:			/* RCA assignment */
       mmc.rca = 1;
-      s = execute_command (CMD_MMC_SET_RCA, mmc.rca<<16);
+      s = execute_command (CMD_MMC_SET_RCA, mmc.rca << 16);
+      ++state;
+      break;
+
+    case 7:
+    case 17:
+      s = execute_command (CMD_SEND_CSD, mmc.rca << 16);
+      memcpy (mmc.csd, mmc.response + 1, 16);
       state = 100;
       break;
 
@@ -780,8 +821,14 @@ static void mmc_acquire (void)
   }
 
   if (card_acquired ()) {
-    printf ("SD/MMC card acquired (%x) %dms\n", mmc.cid[0], mmc.acquire_time);
-    dump (mmc.cid, 16, 0);
+    mmc.c_size = csd_c_size ();
+    mmc.c_size_mult = csd_c_size_mult ();
+    mmc.read_bl_len = mmc.csd[5] & 0xf;
+    mmc.mult = 1<<(mmc.c_size_mult + 2);
+    mmc.block_len = 1<<mmc.read_bl_len;
+    mmc.blocknr = (mmc.c_size + 1)*mmc.mult;
+    mmc.device_size = mmc.blocknr*mmc.block_len;
+    mmc_report ();
   }
 }
 
@@ -819,19 +866,67 @@ static void mmc_report (void)
 #endif
   printf ("  mmc:    %s card acquired",
 	  card_acquired () ? (mmc.sd ? "sd" : "mmc") : "no");
-  if (card_acquired ())
-    printf (" rca 0x%x (%d ms)", mmc.rca, mmc.acquire_time);
+  if (card_acquired ()) {
+    printf (", rca 0x%x (%d ms)", mmc.rca, mmc.acquire_time);
+    printf (", %ld.%02ld MiB",
+	    mmc.device_size/(1024*1024),
+	    (((mmc.device_size/1024)%1024)*100)/1024);
+  }
   printf ("\n");
+}
+
+static int mmc_open (struct descriptor_d* d)
+{
+  return 0;
+}
+
+static ssize_t mmc_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  int ib = 0;
+  char rgb[512];
+  unsigned short s;
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
+  DBG (1, "%s: %d %ld %d\n", __FUNCTION__, d->index, d->length, cb);
+
+  execute_command (CMD_SELECT_CARD, mmc.rca<<16);
+  execute_command (CMD_SET_BLOCKLEN, 512);
+  execute_command (CMD_READ_SINGLE, d->index);
+
+  DBG (1, "issued read\n");
+  start_clock ();
+
+  DBG (1, "waiting for status\n");
+
+  s = wait_for_completion (MMC_STATUS_TRANDONE
+			   | MMC_STATUS_FIFO_FULL
+			   | MMC_STATUS_TOREAD);
+
+  printf ("status 0x%x\n", s);
+  {
+    int i;
+    for (i = 0; i < 512; ) {
+      unsigned short v = MMC_DATA_FIFO;
+      rgb[i++] = (v >> 8) & 0xff;
+      rgb[i++] = v & 0xff;
+    }
+  }
+
+  dump (rgb, 512, 0);
+
+  return 512;
 }
 
 static __driver_5 struct driver_d mmc_driver = {
   .name = "mmc-lh7a404",
   .description = "MMC/SD card driver",
-  //  .open = memory_open,
-  //  .close = close_helper,
-  //  .read = memory_read,
+  .open = mmc_open,
+  .close = close_helper,
+  .read = mmc_read,
   //  .write = memory_write,
-  //  .seek = seek_helper,
+  .seek = seek_helper,
 };
 
 static __service_6 struct service_d mmc_service = {
