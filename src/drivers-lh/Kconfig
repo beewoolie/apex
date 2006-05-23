@@ -12,11 +12,11 @@ config DRIVER_LH_ADC
 
 config DRIVER_LH_MMC
 	bool "MMC"
-	depends on HAS_LH_MMC && EXPERIMENTAL
+	depends on HAS_LH_MMC
 	default n
 	help
-	  This experimental driver supports the MMC/SD
-	  (MultiMediaCard/SecureDigital) interface. 
+	  This driver supports the MMC/SD
+	  (MultiMediaCard/SecureDigital) controller.
 
 config DRIVER_LH_CLCDC
 	bool "Color LCD"

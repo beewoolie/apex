@@ -5,6 +5,9 @@ APEX Boot Loader
 
 TODO:
 
+  o Need to allow the user to set the base device for fat and ext2
+    since we have to be able to select CF or MMC, for example.
+
   o Support for arrow keys
     o I believe that the only hitch is that we need to cope with the
       multi-byte-ness of the codes.

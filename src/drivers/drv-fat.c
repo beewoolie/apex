@@ -113,6 +113,9 @@
 #include <spinner.h>
 #include <linux/kernel.h>
 #include <error.h>
+#if defined (CONFIG_CMD_ALIAS)
+#include <alias.h>
+#endif
 
 //#define TALK
 
@@ -234,6 +237,16 @@ static inline unsigned long read_long (void* pv)
        + (((unsigned long) pb[3]) << 24);
 }
 
+static inline const char* block_driver (void)
+{
+#if defined (CONFIG_CMD_ALIAS)
+  const char* sz = alias_lookup ("fat-drv");
+  if (sz)
+    return sz;
+#endif
+  return szBlockDriver;
+}
+
 #if 0
 static void fat_init (void)
 {
@@ -257,7 +270,7 @@ static int fat_identify (void)
   char sz[128];
   struct descriptor_d d;
 
-  snprintf (sz, sizeof (sz), "%s:+1s", szBlockDriver);
+  snprintf (sz, sizeof (sz), "%s:+1s", block_driver ());
   if (   (result = parse_descriptor (sz, &d))
       || (result = open_descriptor (&d)))
     return result;
@@ -425,7 +438,7 @@ static int fat_open (struct descriptor_d* d)
 		/* Read just the partition table */
   if (d->c == 0) {
     snprintf (sz, sizeof (sz), "%s:%d+%d",
-	      szBlockDriver,
+	      block_driver (),
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
   }
@@ -437,7 +450,7 @@ static int fat_open (struct descriptor_d* d)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
-	      szBlockDriver,
+	      block_driver (),
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
 
@@ -586,7 +599,7 @@ static int fat_info (struct descriptor_d* d)
 		/* Read just the partition table */
   if (d->c == 0) {
     snprintf (sz, sizeof (sz), "%s:%d+%d",
-	      szBlockDriver,
+	      block_driver (),
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
   }
@@ -598,7 +611,7 @@ static int fat_info (struct descriptor_d* d)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
-	      szBlockDriver,
+	      block_driver (),
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
 
