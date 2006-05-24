@@ -109,11 +109,14 @@
 #if defined (TROUNCER)
 # define GPIO_CARD_DETECT	PF6
 # define GPIO_WP		PC1
+#else
+/* Only trouncer supports it right now */
+# undef USE_WIDE
 #endif
 
 extern char* strcat (char*, const char*);
 
-//#define TALK 3
+#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -226,50 +229,6 @@ extern char* strcat (char*, const char*);
 #define R1_CURRENT_STATE(x)	((x & 0x00001E00) >> 9)	/* sx, b (4 bits) */
 #define R1_READY_FOR_DATA	(1 << 8)	/* sx, a */
 #define R1_APP_CMD		(1 << 5)	/* sr, c */
-
-/* These are unpacked versions of the actual responses */
-
-struct _mmc_csd {
-	u8  csd_structure;
-	u8  spec_vers;
-	u8  taac;
-	u8  nsac;
-	u8  tran_speed;
-	u16 ccc;
-	u8  read_bl_len;
-	u8  read_bl_partial;
-	u8  write_blk_misalign;
-	u8  read_blk_misalign;
-	u8  dsr_imp;
-	u16 c_size;
-	u8  vdd_r_curr_min;
-	u8  vdd_r_curr_max;
-	u8  vdd_w_curr_min;
-	u8  vdd_w_curr_max;
-	u8  c_size_mult;
-	union {
-		struct { /* MMC system specification version 3.1 */
-			u8  erase_grp_size;
-			u8  erase_grp_mult;
-		} v31;
-		struct { /* MMC system specification version 2.2 */
-			u8  sector_size;
-			u8  erase_grp_size;
-		} v22;
-	} erase;
-	u8  wp_grp_size;
-	u8  wp_grp_enable;
-	u8  default_ecc;
-	u8  r2w_factor;
-	u8  write_bl_len;
-	u8  write_bl_partial;
-	u8  file_format_grp;
-	u8  copy;
-	u8  perm_write_protect;
-	u8  tmp_write_protect;
-	u8  file_format;
-	u8  ecc;
-};
 
 #define MMC_VDD_145_150	0x00000001	/* VDD voltage 1.45 - 1.50 */
 #define MMC_VDD_150_155	0x00000002	/* VDD voltage 1.50 - 1.55 */
