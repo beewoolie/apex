@@ -51,6 +51,9 @@
      in that we would force the user to do the erase by hand.
    - Use a strcasecmp instead of strcmp when looking for keys.
 
+   - *** Need to investigate why it fails to boot properly when the
+         environment region doesn't open, no nor flash driver.
+
 */
 
 #include <config.h>

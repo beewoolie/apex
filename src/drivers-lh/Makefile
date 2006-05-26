@@ -22,3 +22,4 @@
 obj-$(CONFIG_DRIVER_LH_ADC)	+= adc.o
 obj-$(CONFIG_DRIVER_LH_MMC)	+= drv-mmc.o
 obj-$(CONFIG_DRIVER_LH_CLCDC)	+= drv-clcdc.o
+obj-$(CONFIG_DRIVER_LH_I2C)	+= drv-i2c.o

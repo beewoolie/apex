@@ -160,6 +160,7 @@ struct cf_info {
   int heads;
   int sectors_per_track;
   int total_sectors;
+  int speed;			/* Timing value from CF info */
 
   /* *** FIXME: buffer should be in .xbss section */
   char rgb[SECTOR_SIZE];	/* Sector buffer */
@@ -354,6 +355,9 @@ static int cf_identify (void)
       cf_d.total_sectors	= (rgs[7] << 16) + rgs[8];
     }
 
+    cf_d.speed = rgs[67];
+    printf ("cf: 53 %x\n", rgs[53]);
+
 //    printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
 //	    __FUNCTION__, rgs[49], rgs[51], rgs[53], rgs[64]);
 //    printf ("  pio_tran %x  pio_trans_iordy %x\n", rgs[67], rgs[68]);
@@ -441,10 +445,10 @@ static void cf_report (void)
   if (cf_identify ())
     return;
 
-  printf ("  cf:     %d.%02dMiB, %s %s\n",
+  printf ("  cf:     %d.%02dMiB, %s %s (%d ns)\n",
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
-	  cf_d.szFirmware, cf_d.szName);
+	  cf_d.szFirmware, cf_d.szName, cf_d.speed);
 #if defined (TALK)
   printf ("          cyl %d heads %d spt %d total %d\n",
 	  cf_d.cylinders, cf_d.heads, cf_d.sectors_per_track,

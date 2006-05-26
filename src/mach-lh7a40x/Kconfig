@@ -38,6 +38,16 @@ config MACH_TROUNCER
 	select HAS_LH_ADC
 	select HAS_LH_MMC
 
+config MACH_COMPANION
+	bool "Synapse Companion"
+	select ARCH_LH7A404
+	select MACH_LPD7A40X
+	select DRIVERS_LH
+	select HAS_LH_ADC
+	select HAS_LH_CLCDC
+	select HAS_LH_MMC
+	select HAS_LH_I2C
+
 endchoice
 
 config MACH_LPD7A404_80000258

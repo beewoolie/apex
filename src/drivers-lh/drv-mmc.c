@@ -1018,7 +1018,6 @@ static __service_6 struct service_d mmc_service = {
 #endif
 };
 
-
 static int cmd_mmc (int argc, const char** argv)
 {
 #if defined (MACH_TROUNCER)
