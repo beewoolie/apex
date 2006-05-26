@@ -329,7 +329,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	   the LPD boards.  Apparently, the PCMCIA signals float when
 	   disabled which breaks the CPLD handling of chip
 	   selects. */
+#if defined (CONFIG_MACH_LPD7A40X)
   SMC_PCMCIACON |= 0x3;		/* Enable both PCMCIA slots */
+#endif
 
 #if defined (SMC_BCR0_V)
   SMC_BCR0 = SMC_BCR0_V;
