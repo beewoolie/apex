@@ -116,7 +116,7 @@
 
 extern char* strcat (char*, const char*);
 
-#define TALK 3
+//#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)

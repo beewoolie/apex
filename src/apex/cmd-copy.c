@@ -132,7 +132,7 @@ int cmd_copy (int argc, const char** argv)
       SPINNER_STEP;
       cbWrote = dout.driver->write (&dout, rgb, cb);
       if (cbWrote != cb) {
-	result = ERROR_FAILURE;
+	result = ERROR_RESULT (ERROR_FAILURE, "truncated write");
 	goto fail;
       }
 

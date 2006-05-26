@@ -64,6 +64,8 @@
 
 #define US_WRITE_DELAY		(10*1000)
 #define PAGE_SIZE		(128)
+#define WRITE_SIZE		(8)
+#define READ_SIZE		(8)
 
 #if 0
 
@@ -124,7 +126,7 @@
 #define BMI_SBICR_TOC_MASK	(0xfff)
 #define BMI_SBICR_RX_FDIS	(1<<11)
 #define BMI_SBICR_TX_FDIS	(1<<10)
-#define BMI_SBICR_DIVFACT_SHIFT	(1<<2)
+#define BMI_SBICR_DIVFACT_SHIFT	(2)
 #define BMI_SBICR_DIVFACT_MASK	(0xff)
 #define BMI_SBICR_FFLUSH	(1<<1)
 #define BMI_SBICR_SBI_EN	(1<<0)
@@ -159,73 +161,165 @@
 #define BMI_SBI_RTI		(1<<1)
 #define BMI_SBI_MTCI		(1<<0)
 
+static const char* report_status (unsigned long l)
+{
+  static char sz[256];
+
+  sprintf (sz, "[%04lx", l);
+
+  if (l & BMI_SBISR_SBH)
+    strcat (sz, " SLAVEH");
+  if (l & BMI_SBISR_CLT)
+    strcat (sz, " CLT");
+  if (l & BMI_SBISR_TXUE)
+    strcat (sz, " TXUE");
+  if (l & BMI_SBISR_RXOE)
+    strcat (sz, " RXOE");
+  if (l & BMI_SBISR_ACKFAIL)
+    strcat (sz, " ACKFAIL");
+  if (l & BMI_SBISR_RNW)
+    strcat (sz, " RNW");
+  if (l & BMI_SBISR_SLAVE)
+    strcat (sz, " SLAVE");
+  if (l & BMI_SBISR_MASTER)
+    strcat (sz, " MASTER");
+  if (l & BMI_SBISR_TXBUSY)
+    strcat (sz, " TXBUSY");
+  if (l & BMI_SBISR_TXFF)
+    strcat (sz, " TXFF");
+  if (l & BMI_SBISR_RXFF)
+    strcat (sz, " RXFF");
+  if (l & BMI_SBISR_TXFE)
+    strcat (sz, " TXFE");
+  if (l & BMI_SBISR_RXFE)
+    strcat (sz, " RXFE");
+
+  strcat (sz, "]");
+  return sz;
+}
+
+static void reset_io (void)
+{
+  ENTRY (1);
+
+  BMI_SBICR |= BMI_SBICR_FFLUSH;
+  udelay (10);
+  BMI_SBICR &= ~BMI_SBICR_FFLUSH;
+
+  BMI_SBRIEOI = 0xff;		/* Clear interrupts and status */
+
+  /* Flush receive FIFO */
+  while (!(BMI_SBISR & BMI_SBISR_RXFE))
+    BMI_SBIDR;
+}
+
 static void flush_read_fifo (void)
 {
   while (!(BMI_SBISR & BMI_SBISR_RXFE))
     BMI_SBIDR;
 }
 
-static void wait_for_idle (void)
+static int wait_for_idle (void)
 {
+  DBG (3, "idle_wait %s\n", report_status (BMI_SBISR));
   while (BMI_SBISR & (BMI_SBISR_TXBUSY))
     ;
+
+  DBG (3, "  done %s\n", report_status (BMI_SBISR));
+  return 0;
 }
 
-static void send_buffer (const void* pv, int cb)
+static int send_buffer (const void* pv, int cb)
 {
   //  dump (rgb, cb, 0);
 
+  DBG (2, "sending %d %s\n", cb, report_status (BMI_SBISR));
   while (cb--) {
     while (BMI_SBISR & BMI_SBISR_TXFF)
       ;
     BMI_SBIDR = *(unsigned char*) pv++;
   }
+
+  DBG (2, "done %s\n", report_status (BMI_SBISR));
+
+  return 0;
 }
 
 static void setup_count (int prefix, int repeat, int read)
 {
+  if (repeat + prefix < 31) {
+    prefix += repeat;
+    repeat = 0;
+  }
+
   BMI_SBICOUNT =
       (prefix << BMI_SBICOUNT_PRE_SHIFT)
     | (repeat << BMI_SBICOUNT_REP_SHIFT)
     | (read   << BMI_SBICOUNT_READ_SHIFT);
+  printf ("%s: %d %d %d -> 0x%lx\n", __FUNCTION__, prefix, repeat, read, BMI_SBICOUNT);
 }
 
-static void start_cmd_read_current (void)
+static int start_cmd_read_current (void)
 {
   char rgb[1] = { 0xa0 | 1 };
 
   wait_for_idle ();
   setup_count (1, 0, 1);
   send_buffer (rgb, sizeof (rgb));
+
+  return 0;
 }
 
-static void start_cmd_seek (unsigned long address)
+static int start_cmd_page_read (void* pv, int cb)
+{
+  char rgb[1] = { 0xa0 | 1 };
+
+  wait_for_idle ();
+  setup_count (sizeof (rgb), 0, cb);
+  send_buffer (rgb, sizeof (rgb));
+
+  while (cb--) {
+    while (BMI_SBISR & BMI_SBISR_RXFE)
+      ;
+    *(unsigned char*) pv++ = BMI_SBIDR & 0xff;
+  }
+
+  return 0;
+}
+
+static int start_cmd_seek (unsigned long address)
 {
   char rgb[3] = { 0xa0, (address >> 8) & 0xff, (address >> 0) & 0xff };
 
   wait_for_idle ();
-  setup_count (3, 0, 0);
+  setup_count (sizeof (rgb), 0, 0);
   send_buffer (rgb, sizeof (rgb));
+
+  return 0;
 }
 
-static void start_cmd_write (unsigned long address, char value)
+static int start_cmd_write (unsigned long address, char value)
 {
   char rgb[4] = { 0xa0, (address >> 8) & 0xff, (address >> 0) & 0xff, value };
 
   wait_for_idle ();
-  setup_count (4, 0, 0);
+  setup_count (sizeof (rgb), 0, 0);
   send_buffer (rgb, sizeof (rgb));
+
+  return 0;
 }
 
-static void start_cmd_page_write (unsigned long address,
+static int start_cmd_page_write (unsigned long address,
 				  const void* pv, int cb)
 {
   char rgb[3] = { 0xa0, (address >> 8) & 0xff, (address >> 0) & 0xff };
 
   wait_for_idle ();
-  setup_count (3 + cb, 0, 0);
+  setup_count (sizeof (rgb), cb, 0);
   send_buffer (rgb, sizeof (rgb));
   send_buffer (pv, cb);
+
+  return 0;
 }
 
 static void i2c_init (void)
@@ -243,22 +337,26 @@ static ssize_t i2c_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
 
-  start_cmd_seek (d->start + d->index);
-  wait_for_idle ();
+  reset_io ();
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  start_cmd_seek (d->start + d->index);
+
   while (cb > 0) {
-    start_cmd_read_current ();
+    unsigned int available = READ_SIZE;
+
+    if (available > cb)
+      available = cb;
+
     wait_for_idle ();
+    start_cmd_page_read (pv, available);
 
-    *(unsigned char*) pv = BMI_SBIDR;
-
-    ++d->index;
-    ++pv;
-    --cb;
-    ++cbRead;
+    d->index += available;
+    pv += available;
+    cb -= available;
+    cbRead += available;
   }
 
   return cbRead;
@@ -268,15 +366,25 @@ static ssize_t i2c_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   size_t cbWrote = 0;
 
+  reset_io ();
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
   while (cb > 0) {
     unsigned long index = d->start + d->index;
     int available = PAGE_SIZE - (index & (PAGE_SIZE - 1));
 
     if (available > cb)
       available = cb;
+    if (available > WRITE_SIZE)
+      available = WRITE_SIZE;
 
     wait_for_idle ();
-    start_cmd_page_write (index, pv, available);
+    if (available > 1)
+      start_cmd_page_write (index, pv, available);
+    else
+      start_cmd_write (index, *(unsigned char*) pv);
 
     SPINNER_STEP;
 
@@ -285,7 +393,7 @@ static ssize_t i2c_write (struct descriptor_d* d, const void* pv, size_t cb)
     d->index += available;
     pv += available;
     cb -= available;
-    cbWrote++;
+    cbWrote += available;
   }
 
   wait_for_idle ();
@@ -301,7 +409,7 @@ static void i2c_report (void)
 static __driver_5 struct driver_d i2c_driver = {
   .name = "i2c-lh7a40x",
   .description = "I2C EEPROM driver",
-  .flags = DRIVER_WRITEPROGRESS(1),
+  .flags = DRIVER_WRITEPROGRESS(1) | DRIVER_READPROGRESS(1),
   .open = i2c_open,
   .close = close_helper,
   .read = i2c_read,
@@ -323,6 +431,8 @@ static int cmd_i2c (int argc, const char** argv)
 
   switch (*argv[1]) {
   case 'r':
+    reset_io ();
+
     flush_read_fifo ();
 
     printf ("status at top is 0x%lx\n", BMI_SBISR);
@@ -342,6 +452,8 @@ static int cmd_i2c (int argc, const char** argv)
     break;
 
   case 'w':
+    reset_io ();
+
     start_cmd_write (0, 0xe5);
     wait_for_idle ();
 
@@ -349,6 +461,8 @@ static int cmd_i2c (int argc, const char** argv)
     break;
 
   case 's':
+    reset_io ();
+
     wait_for_idle ();
     printf ("status after idle is 0x%lx\n", BMI_SBISR);
     start_cmd_seek (0);
