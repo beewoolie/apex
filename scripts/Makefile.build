@@ -203,7 +203,7 @@ $(single-used-m): %.o: %.c FORCE
 quiet_cmd_cc_lst_c = MKLST   $@
       cmd_cc_lst_c = $(CC) $(c_flags) -g -c -o $*.o $< && \
 		     $(CONFIG_SHELL) $(srctree)/scripts/makelst $*.o \
-				     System.map $(OBJDUMP) > $@
+				     apex.map $(OBJDUMP) > $@
 
 %.lst: %.c FORCE
 	$(call if_changed_dep,cc_lst_c)
