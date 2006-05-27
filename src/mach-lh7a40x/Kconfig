@@ -168,6 +168,14 @@ config SDRAM_CONTIGUOUS
 	  option, but Windows/CE does.  Do not set this option unless
 	  you know what you are doing.
 
+config RELOCATE_COMPANION
+	bool "Use Synapse Companion APEX relocate in bootstrap"
+	depends on MACH_COMPANION
+	default n
+	help
+	  This implementation of the relocate_apex () function can
+	  copy the boot loader from SD/MMC or from I2C EEPROM.
+
 endmenu
 
 menu "Platform Drivers"

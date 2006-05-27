@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 3
-SUBLEVEL = 23
+SUBLEVEL = 24
 EXTRAVERSION =
 #NAME=Zonked Quokka
 
@@ -565,11 +565,14 @@ endif
 # *** FIXME: can we make the apex.bin and even apex targets be in asm-arm?
 all: scripts_basic include/config.h apex apex.bin
 
+CFLAGS_OPT := -O2
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-CFLAGS		+= -Os
-else
-CFLAGS		+= -O2
+CFLAGS_OPT := -Os
 endif
+ifdef CONFIG_CC_NO_OPTIMIZATION
+CFLAGS_OPT := -O0
+endif
+CFLAGS += $(CFLAGS_OPT)
 
 ifndef CONFIG_FRAME_POINTER
 CFLAGS		+= -fomit-frame-pointer

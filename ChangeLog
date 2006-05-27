@@ -1,3 +1,29 @@
+2006-05-27  Marc Singer  <elf@cerise.buici.com>
+
+	* Makefile (SUBLEVEL): New sub-level for the companion changes.
+	This will roll to a new patchlevel when we get the drivers going
+	for sure.
+
+	* src/mach-lh7a40x/relocate-companion.c: relocate-apex ()
+	implementation for the synapse companion.
+
+	* src/arch-arm/Kconfig: Added more configuration options for
+	compiler optimizations.
+
+	* src/drivers-lh/drv-i2c.c: i2c driver for reading/writing
+	EEPROM.
+
+	* src/drivers-lh/drv-mmc.c: Mmc driver, SD capable, bootstrap
+	capable
+
+	* include/mmc.h: Factored out the mmc header for the sake of
+	relocation from SD/MMC.
+
+	* src/arch-arm/entry/apex.lds.S: Special section for bootstrap
+	stack and bootstrap data.
+
+	* include/apex.h: Aide functions for mdelay and msleep. 
+
 2006-05-04  Marc Singer  <elf@buici.com>
 
 	* src/drivers-lh/drv-clcdc.c: Added support for BGR color format

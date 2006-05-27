@@ -97,12 +97,15 @@
 #include <mach/hardware.h>
 #include <console.h>
 
+#include <debug_ll.h>
+
 #include <mmc.h>
 
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
-#define USE_WIDE		/* Allow WIDE mode */
-//#define USE_SLOWCLOCK		/* Slow the transfer clock to 12MHz */
+//#define USE_WIDE		/* Allow WIDE mode */
+//#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
+//#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
 #define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
 
 #if defined (COMPANION)
@@ -128,7 +131,11 @@
 
 extern char* strcat (char*, const char*);
 
-//#define TALK 3
+//#define TALK 1
+
+#if defined (USE_MMC_BOOTSTRAP)
+# undef TALK
+#endif
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -297,6 +304,13 @@ static void SECTION set_clock (int speed)
 		  6<<MMC_PREDIV_MMC_PREDIV_SHIFT);
     MMC_RATE = 0;
 #endif
+#if defined (USE_WAYSLOW_CLOCK)
+    /* 195KHz */
+    MASK_AND_SET (MMC_PREDIV,
+		  MMC_PREDIV_MMC_PREDIV_MASK<<MMC_PREDIV_MMC_PREDIV_SHIFT,
+		  8<<MMC_PREDIV_MMC_PREDIV_SHIFT);
+    MMC_RATE = 6;
+#endif
   }
 }
 
@@ -341,6 +355,8 @@ static unsigned long SECTION wait_for_completion (unsigned long bits)
 #endif
 #if !defined (USE_MMC_BOOTSTRAP)
   unsigned long time_start = timer_read ();
+#else
+  int timeout_count = 100000;
 #endif
   int timed_out = 0;
 
@@ -356,6 +372,9 @@ static unsigned long SECTION wait_for_completion (unsigned long bits)
 
 #if !defined (USE_MMC_BOOTSTRAP)
     if (timer_delta (time_start, timer_read ()) >= MS_TIMEOUT)
+      timed_out = 1;
+#else
+    if (timeout_count-- <= 0)
       timed_out = 1;
 #endif
   } while ((status
@@ -492,46 +511,67 @@ void SECTION mmc_acquire (void)
 
   stop_clock ();
 
+//  PUTC_LL('I');
   s = execute_command (CMD_IDLE, 0, 0);
+//  PUTC_LL('i');
 
   while (state < 100) {
-    switch (state) {
+//    PUTHEX_LL (state);
+//    PUTC_LL (':');
 
-    case 0:			/* Setup for SD */
+    /* It would be great if I could use a switch statement here,
+       especially because the compile is very efficient about
+       converting it to a table.  However, the absolute PCs in the
+       table make that impossible when we use this code in the
+       bootstrap.  So, we're left with a cascading sequence of if's.
+    */
+
+//    switch (state) {
+
+//    case 0:			/* Setup for SD */
+    if (state == 0) {
       command = CMD_SD_OP_COND;
       tries = 10;		/* *** We're not sure we need to wait
 				   for the READY bit to be clear, but
 				   it should be in any case. */
       ++state;
-      break;
+//      break;
+    }
 
-    case 10:			/* Setup for MMC */
+    else if (state == 10) {
+//    case 10:			/* Setup for MMC */
       command = CMD_MMC_OP_COND;
       tries = 10;
       cmdcon_sd = 0;
       ++state;
-      break;
+//      break;
+    }
 
-    case 1:
-    case 11:
+    else if (state == 1 || state == 11) {
+//    case 1:
+//    case 11:
       s = execute_command (command, 0, 0);
       if (s & MMC_STATUS_TORES)
 	state += 8;		/* Mode unavailable */
       else
 	++state;
-      break;
+//      break;
+    }
 
-    case 2:			/* Initial OCR check  */
-    case 12:
+    else if (state == 2 || state == 12) {
+//    case 2:			/* Initial OCR check  */
+//    case 12:
       ocr = response_ocr ();
       if (ocr & OCR_ALL_READY)
 	++state;
       else
 	state += 2;
-      break;
+//      break;
+    }
 
-    case 3:			/* Initial wait for OCR clear */
-    case 13:
+    else if (state == 3 || state == 13) {
+//    case 3:			/* Initial wait for OCR clear */
+//    case 13:
       while ((ocr & OCR_ALL_READY) && --tries > 0) {
 	mdelay (MS_ACQUIRE_DELAY);
 	s = execute_command (command, 0, 0);
@@ -541,10 +581,12 @@ void SECTION mmc_acquire (void)
 	state += 6;
       else
 	++state;
-      break;
+//      break;
+    }
 
-    case 4:			/* Assign OCR */
-    case 14:
+    else if (state == 4 || state == 14) {
+//    case 4:			/* Assign OCR */
+//    case 14:
       tries = 200;
       ocr &= 0x00ff8000;	/* Mask for the bits we care about */
       do {
@@ -557,47 +599,62 @@ void SECTION mmc_acquire (void)
 	++state;
       else
 	state += 5;
-      break;
+//      break;
+    }
 
-    case 5:			/* CID polling */
-    case 15:
+    else if (state == 5 || state == 15) {
+//    case 5:			/* CID polling */
+//    case 15:
       mmc.cmdcon_sd = cmdcon_sd;
       s = execute_command (CMD_ALL_SEND_CID, 0, 0);
       memcpy (mmc.cid, mmc.response + 1, 16);
       ++state;
-      break;
+//      break;
+    }
 
-    case 6:			/* RCA send */
+    else if (state == 6) {
+//    case 6:			/* RCA send */
       s = execute_command (CMD_SD_SEND_RCA, 0, 0);
       mmc.rca = (mmc.response[1] << 8) | mmc.response[2];
       ++state;
-      break;
+//      break;
+    }
 
-    case 16:			/* RCA assignment */
+    else if (state == 16) {
+//    case 16:			/* RCA assignment */
       mmc.rca = 1;
       s = execute_command (CMD_MMC_SET_RCA, mmc.rca << 16, 0);
       ++state;
-      break;
+//      break;
+    }
 
-    case 7:
-    case 17:
+    else if (state == 7 || state == 17) {
+//    case 7:
+//    case 17:
       s = execute_command (CMD_SEND_CSD, mmc.rca << 16, 0);
       memcpy (mmc.csd, mmc.response + 1, 16);
       state = 100;
-      break;
-
-    case 9:
-      ++state;			/* Continue with MMC */
-      break;
-
-    case 19:
-    case 20:
-      state = 999;
-      break;			/* No cards */
+//      break;
     }
+
+    else if (state == 9) {
+//    case 9:
+      ++state;			/* Continue with MMC */
+//      break;
+    }
+
+    else if (state == 19 || state == 20) {
+//    case 19:
+//    case 20:
+      state = 999;
+//      break;			/* No cards */
+    }
+    else
+      break;
   }
 
   if (mmc_card_acquired ()) {
+    PUTC_LL ('A');
     mmc.c_size = csd_c_size ();
     mmc.c_size_mult = csd_c_size_mult ();
     mmc.read_bl_len = mmc.csd[5] & 0xf;
@@ -614,7 +671,6 @@ void SECTION mmc_init (void)
 
 #if defined (MACH_TROUNCER)
   GPIO_PFDD |= (1<<6);		/* Enable card detect interrupt pin */
-  return;
 #endif
 
   MMC_PREDIV = 0;
@@ -631,7 +687,8 @@ void SECTION mmc_init (void)
   MMC_INT_MASK = 0;		/* Mask all interrupts */
   MMC_EOI = 0x27;		/* Clear all interrupts */
 
-  mmc_acquire ();
+  mmc_clear ();
+  //  mmc_acquire ();
 }
 
 static void mmc_report (void)
@@ -673,28 +730,58 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
   ssize_t cbRead = 0;
   unsigned short s;
 
+#if 1
+  PUTHEX_LL (d->index);
+  PUTC_LL ('/');
+  PUTHEX_LL (d->start);
+  PUTC_LL ('/');
+  PUTHEX_LL (d->length);
+  PUTC_LL ('/');
+  PUTHEX_LL (cb);
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
+#endif
+
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
   //  DBG (1, "%s: %ld %ld %d; %ld\n",
   //       __FUNCTION__, d->start + d->index, d->length, cb, mmc.ib);
 
+ {
+   unsigned long sp;
+   __asm volatile ("mov %0, sp\n\t"
+		   : "=r" (sp));
+   PUTHEX_LL (sp);
+ }
+
   while (cb) {
     unsigned long index = d->start + d->index;
     int availableMax = MMC_SECTOR_SIZE - (index & (MMC_SECTOR_SIZE - 1));
     int available = cb;
 
+#if 0
+    PUTC_LL ('X');
+    PUTHEX_LL (index);
+    PUTC_LL ('/');
+    PUTHEX_LL (cbRead);
+    PUTC_LL ('\r');
+    PUTC_LL ('\n');
+#endif
+
     if (available > availableMax)
       available = availableMax;
 
+    DBG (1, "%ld %ld\n", mmc.ib, index);
+
     if (mmc.ib == -1
-	|| mmc.ib > index  + MMC_SECTOR_SIZE
-	|| index  > mmc.ib + MMC_SECTOR_SIZE) {
+	|| mmc.ib >= index  + MMC_SECTOR_SIZE
+	|| index  >= mmc.ib + MMC_SECTOR_SIZE) {
 
       mmc.ib = index & ~(MMC_SECTOR_SIZE - 1);
 
-      //      printf ("%s: read av %d  avM %d  ind %ld  cb %d\n", __FUNCTION__,
-      //	      available, availableMax, index, cb);
+      DBG (1, "%s: read av %d  avM %d  ind %ld  cb %d\n", __FUNCTION__,
+	   available, availableMax, index, cb);
 
       execute_command (CMD_SELECT_CARD, 0, 0);	      /* Deselect */
       execute_command (CMD_SELECT_CARD, mmc.rca<<16, 0);  /* Select card */
@@ -764,6 +851,7 @@ static int cmd_mmc (int argc, const char** argv)
 	  (GPIO_PFD & (1<<6)) ? "not inserted" : "inserted");
 #endif
 
+  mmc_init ();
   mmc_acquire ();
 
   return 0;

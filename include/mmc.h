@@ -16,6 +16,7 @@
 
 /* ----- Includes */
 
+#include "driver.h"
 
 /* ----- Constants */
 
@@ -249,8 +250,6 @@
 //#define MMC_READ_TO_V		(0x7fff)
 #define MMC_READ_TO_V		(0xffff)
 
-inline void mdelay (int c) {
-  while (c-- > 0) udelay (1000); }
 #define MS_ACQUIRE_DELAY	(10)
 
 
@@ -321,6 +320,7 @@ static inline int mmc_card_acquired (void) {
   return mmc.cid[0] != 0; }
 
 void mmc_init (void);
+void mmc_acquire (void);
 ssize_t mmc_read (struct descriptor_d* d, void* pv, size_t cb);
 
 #endif  /* __MMC_H__ */

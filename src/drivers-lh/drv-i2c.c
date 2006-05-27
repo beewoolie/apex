@@ -50,7 +50,7 @@
 #include <console.h>
 #include <spinner.h>
 
-#define TALK 3
+//#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -64,7 +64,7 @@
 
 #define US_WRITE_DELAY		(10*1000)
 #define PAGE_SIZE		(128)
-#define WRITE_SIZE		(8)
+#define WRITE_SIZE		(1)
 #define READ_SIZE		(8)
 
 #if 0
@@ -256,7 +256,8 @@ static void setup_count (int prefix, int repeat, int read)
       (prefix << BMI_SBICOUNT_PRE_SHIFT)
     | (repeat << BMI_SBICOUNT_REP_SHIFT)
     | (read   << BMI_SBICOUNT_READ_SHIFT);
-  printf ("%s: %d %d %d -> 0x%lx\n", __FUNCTION__, prefix, repeat, read, BMI_SBICOUNT);
+  DBG (1, "%s: %d %d %d -> 0x%lx\n",
+       __FUNCTION__, prefix, repeat, read, BMI_SBICOUNT);
 }
 
 static int start_cmd_read_current (void)

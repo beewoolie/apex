@@ -63,6 +63,10 @@ extern unsigned long timer_read (void);
 extern unsigned long timer_delta (unsigned long, unsigned long);
 extern void usleep (unsigned long);
 #define udelay usleep		/* Just for convenience */
+static inline void msleep (int c) {	/* Only way to guarantee the range */
+  while (c-- > 0) udelay (1000); }
+#define mdelay msleep
+
 
 #define dump(p,c,i) dumpw(p,c,i,0)
 extern void dumpw (const unsigned char* rgb, int cb,

@@ -108,10 +108,10 @@ SECTIONS
 	/* The next word is the location we'll be writing to when
 	   probing.  See note in drv-mem.c. */
 	APEX_VMA_STACKS_START = .;
-	. += 32768;
+	. += 32768;		/* Excessively large stack */
 	APEX_VMA_STACK_START = .;
 	. = ALIGN (4);
-	. += 4096;
+	. += 4096;		/* Interrupt stack, should be configurable */
 	APEX_VMA_IRQSTACK_START = .;
 	APEX_VMA_STACKS_END = .;
 	. = ALIGN (4);
@@ -130,7 +130,9 @@ SECTIONS
 		*(.*.xbss)	/* All other xbss sections */
 	}
 	APEX_VMA_END = .;
-	.bss_bootstrap 0xb0130000 (NOLOAD) : {		/* Bootstrap data */
+	.bss_bootstrap 0xb0013c00 (NOLOAD) : {		/* Bootstrap data */
+		APEX_VMA_BOOTSTRAP_STACK_START = .;
+		. += 4;			/* Leave a word for top of stack */
 		*(.bss_bootstrap)
 	}		
 }

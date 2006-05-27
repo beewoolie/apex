@@ -108,12 +108,30 @@ config CROSS_COMPILE
 	  environment variable CROSS_COMPILE.  The environment
 	  variable will override this configuration option.
 
+
+choice
+	prompt "Compiler Optimization"
+	default CC_OPTIMIZE_FOR_SIZE
+
 config CC_OPTIMIZE_FOR_SIZE
 	bool "Set compiler optimization for smallest code size"
 	default y
 	help
-	  This option sets the -Os compiler option.  Otherwise, the
-	  optimization option is -O2.  
+	  This option sets the -Os compiler option.
+
+config CC_OPTIMIZE_FOR_SPEED
+	bool "Set compiler optimization for the fastest execution"
+	default y
+	help
+	  This option sets the -Os compiler option.
+
+config CC_NO_OPTIMIZATION
+	bool "Disable optimization"
+	default y
+	help
+	  This option sets the -O0 compiler option.
+
+endchoice
 
 config DEBUG_LL
 	bool "Low-level debug support"

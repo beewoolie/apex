@@ -25,3 +25,4 @@ obj-$(CONFIG_CODEC)		+= codec.o
 obj-$(CONFIG_ADC)		+= adc.o
 obj-y				+= cmd-reset.o
 obj-$(CONFIG_CMD_ARM920_TEST)	+= cmd-cp15test.o
+obj-$(CONFIG_RELOCATE_COMPANION) += relocate-companion.o

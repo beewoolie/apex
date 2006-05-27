@@ -49,6 +49,7 @@ extern char APEX_VMA_STACK_START;
 extern char APEX_VMA_IRQSTACK_START;
 extern char APEX_VMA_BSS_START;
 extern char APEX_VMA_BSS_END;
+extern char APEX_VMA_BOOTSTRAP_STACK_START;
 
 /* ----- Prototypes */
 

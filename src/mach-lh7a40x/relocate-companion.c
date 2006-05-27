@@ -56,38 +56,94 @@
    that the loader is already all present and a simple copy from where
    it is desired.
 
+   Relocating APEX from SD/MMC
+   ---------------------------
+
+   Relocation of APEX from SD/MMC has several elements.  The first 4K
+   of the loader are copied from I2C memory to address 0xb0000000 by
+   the CPU Boot ROM.  The relocate_apex () implementation here is
+   guaranteed to be able to execute from that section of the program.
+
+   The relocator reads the partition table of the SD card.  If it
+   finds that the first partition is type 0, it reads 80K - 7K (4K
+   for the code from I2C, 2K for stack, and 1K for data), from that
+   partition to address 0xb0000000+4k and jumps to it.  This
+   guarantees that the loader, as read from SD/MMC, is able fully
+   initialize the system including SDRAM as needed.
+
+   If a larger boot loader is needed, the temporary stack may be
+   relocated to SDRAM, allowing for another 4K of boot loader code.
+
 */
 
 #include <config.h>
 #include <apex.h>
 #include <asm/bootstrap.h>
-#include "nand.h"
+#include <mmc.h>
 #include "hardware.h"
+
+#include <debug_ll.h>
 
 #define USE_MMC
 //#define USE_I2C
 
 //#define EMERGENCY
 
-
-/* wait_on_busy
-
-   wait for the flash device to become ready.
-
-*/
-
-static __naked __section (.bootstrap) void wait_on_busy (void)
-{
-#if defined CONFIG_NAND_LPD
-  while ((CPLD_FLASH & CPLD_FLASH_RDYnBSY) == 0)
-    ;
-#else
-  do {
-    NAND_CLE = Status;
-  } while ((NAND_DATA & Ready) == 0);
+#if defined (CONFIG_DEBUG_LL)
+//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+# define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
+# define USE_COPY_VERIFY
 #endif
-  __asm volatile ("mov pc, lr");
+
+#define MMC_BOOTLOADER_SIZE		((80 - 4 - 4 - 1)*1024)
+//#define MMC_BOOTLOADER_SIZE		(64*1024)
+//#define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
+#define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
+
+int relocate_apex_mmc (void)
+{
+  struct descriptor_d d;
+  size_t cb;
+  unsigned char rgb[16];	/* Partition table entry */
+
+  PUTC_LL ('M');
+
+  mmc_init ();
+  PUTC_LL ('1');
+  mmc_acquire ();
+  PUTC_LL ('2');
+
+  if (!mmc_card_acquired ())
+    return 0;
+
+  PUTC_LL ('a');
+
+  d.start = 512 - 2 - 4*16;
+  d.length = 16;
+  d.index = 0;
+  cb = mmc_read (&d, (void*) rgb, d.length);
+  if (cb != d.length)
+    return 0;
+
+  if (rgb[4] != 0)		/* Must be type 0 */
+    return 0;
+
+  d.start = *((unsigned long*) &rgb[8])*512;	/* Start of first partition */
+  d.length = MMC_BOOTLOADER_SIZE;
+  d.index = 0;
+
+  PUTHEX_LL (d.start);
+  PUTC_LL ('C');
+  cb = mmc_read (&d, (void*) MMC_BOOTLOADER_LOAD_ADDR, d.length);
+
+  PUTC_LL ('c');
+  PUTHEX_LL (cb);
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
+
+  return (cb == d.length) ? 1 : 0;
 }
+
 
 /* relocate_apex
 
@@ -105,6 +161,18 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 void __naked __section (.bootstrap) relocate_apex (void)
 {
   unsigned long lr;
+  unsigned long pc;		/* So we can detect the second stage */
+  extern unsigned long reloc;
+  unsigned long offset = (unsigned long) &reloc;
+
+  PUTC_LL ('R');
+
+	/* Setup bootstrap stack, trivially.  We do this so that we
+	   can perform some complex operations here in the bootstrap,
+	   e.g. copying from SD/MMC.  The C setup will move the stack
+	   into SDRAM just after this routine returns. */
+
+  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
 
 #if defined (EMERGENCY)
   IOCON_MUXCTL14 |=  (1<<8);
@@ -119,65 +187,86 @@ void __naked __section (.bootstrap) relocate_apex (void)
   IOCON_RESCTL7  |=  (0xa<<12);
 #endif
 
-  {
-    extern char reloc;
-    unsigned long offset = (unsigned long) &reloc;
-    __asm volatile ("mov %0, lr\n\t"
-		    "bl reloc\n\t"
-	     "reloc: subs %1, %1, lr\n\t"
-	     ".globl reloc\n\t"
-		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		    "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		    : "=r" (lr),
-		      "+r" (offset)
-		    :: "lr", "cc");
+  __asm volatile ("mov %0, lr\n\t"
+		  "bl reloc\n\t"
+	   "reloc: mov %2, lr\n\t"
+		  "subs %1, %1, lr\n\t"
+	   ".globl reloc\n\t"
+		  "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
+		  "add %0, %0, %1\n\t"   /* Adjust lr for function return */
+		  : "=r" (lr),
+		    "+r" (offset),
+		    "=r" (pc)
+		  :: "lr", "cc");
 
+  PUTC_LL ('c');
+
+  if (0) {
+    /* Dummy test so that the final clause can be an else */
   }
 
 #if defined (USE_MMC)
 
-  /* Read loader from SD/MMC starting at 0x4000, the start of the
-     first partition.  */
-
-	/* Setup stack, quite trivial. This is only needed for this
-	   routine and it's subroutine supports.  The C setup will be
-	   repreated once the loader is relocated.  Moreover, once we
-	   start copying the loader to SDRAM, the stack will be
-	   obliterated since we don't attempt to be careful.  In fact,
-	   we cannot be careful because the version in SD/MMC may be
-	   different, so the address won't match. */
-  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
-
-  if (relocate_mmc ())
-    ...
-#endif
-
-
-
-  {
-    int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
-    void* pv = &APEX_VMA_ENTRY;
-    int cAddr = NAM_DECODE (BOOT_PBC);
-
-    NAND_CLE = Reset;
-    wait_on_busy ();
-
-    NAND_CLE = Read1;
-    while (cAddr--)
-      NAND_ALE = 0;
-    wait_on_busy ();
-
-    while (cPages--) {
-      int cb;
-
-      NAND_CLE = Read1;
-      for (cb = 512; cb--; )
-	*((char*) pv++) = NAND_DATA;
-      for (cb = 16; cb--; )
-	NAND_DATA;
-      wait_on_busy ();
-    }
+	/* Read loader from SD/MMC only if we could be starting from I2C. */
+  else if ((pc >> 12) == (0xb0000000>>12) && relocate_apex_mmc ()) {
+    PUTC_LL ('m');
+    lr = MMC_BOOTLOADER_LOAD_ADDR;
   }
 
+#endif
+
+  /* *** FIXME: it might be good to allow this code to exist in a
+     subroutine so that we can, optionally, use it here.  The linkage
+     tricks preclude this at the moment, but hope is not lost. */
+
+      /* Relocate from current copy in memory, probably SRAM. */
+  else {
+    unsigned long d = (unsigned long) &APEX_VMA_COPY_START;
+    unsigned long s = (unsigned long) &APEX_VMA_COPY_START - offset;
+#if defined USE_LDR_COPY
+    unsigned long index
+      = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 3 - 4) & ~3;
+    unsigned long v;
+    PUTC_LL ('R');
+    __asm volatile (
+		    "0: ldr %3, [%0, %2]\n\t"
+		       "str %3, [%1, %2]\n\t"
+		       "subs %2, %2, #4\n\t"
+		       "bpl 0b\n\t"
+		       : "+r" (s),
+			 "+r" (d),
+			 "+r" (index),
+			 "=&r" (v)
+		       :: "cc"
+		    );
+#elif defined (USE_SLOW_COPY)
+    PUTC_LL ('R');
+  __asm volatile (
+	       "0: ldmia %0!, {r3}\n\t"
+		  "stmia %1!, {r3}\n\t"
+		  "cmp %1, %2\n\t"
+		  "bls 0b\n\t"
+		  : "+r" (s),
+		    "+r" (d)
+		  :  "r" (&APEX_VMA_COPY_END)
+		  : "r3", "cc"
+		  );
+#else
+    PUTC_LL ('R');
+  __asm volatile (
+	       "0: ldmia %0!, {r3-r10}\n\t"
+		  "stmia %1!, {r3-r10}\n\t"
+		  "cmp %1, %2\n\t"
+		  "bls 0b\n\t"
+		  : "+r" (s),
+		    "+r" (d)
+		  :  "r" (&APEX_VMA_COPY_END)
+		  : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
+		  );
+#endif
+  }
+
+				/* Return to SDRAM */
   __asm volatile ("mov pc, %0" : : "r" (lr));
+
 }
