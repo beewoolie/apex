@@ -165,6 +165,11 @@ config CMD_ETH_SMC91X
 	depends on DRIVER_SMC91X
 	default n
 
+config CMD_ETH_DM9000
+	bool "Define DM9000 diagnostic commands"
+	depends on USES_DM9000
+	default n
+
 config CMD_MEMLIMIT
 	bool "Define Memlimit Command"
 	default n

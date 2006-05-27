@@ -130,4 +130,7 @@ SECTIONS
 		*(.*.xbss)	/* All other xbss sections */
 	}
 	APEX_VMA_END = .;
+	.bss_bootstrap 0xb0130000 (NOLOAD) : {		/* Bootstrap data */
+		*(.bss_bootstrap)
+	}		
 }

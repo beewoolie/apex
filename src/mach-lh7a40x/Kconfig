@@ -46,6 +46,7 @@ config MACH_COMPANION
 	select HAS_LH_CLCDC
 	select HAS_LH_MMC
 	select HAS_LH_I2C
+	select USES_DM9000
 
 endchoice
 

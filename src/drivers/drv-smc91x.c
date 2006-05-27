@@ -1,5 +1,4 @@
 /* drv-smc91x.c
-     $Id$
 
    written by Marc Singer
    26 Jul 2005
