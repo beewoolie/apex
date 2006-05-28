@@ -212,6 +212,29 @@
 #define INVERT_VSYNC
 #endif
 
+#if defined (CONFIG_LCD_NL2432HC22_40A)
+	/* NEC QVGA */
+/* The full horozontal cycle (Th) is clock/?/256/?. */
+/* The full vertical   cycle (Tv) is line/?/324/?. */
+#define PANEL_NAME	"LCD 10.4\" VGA"
+#define PEL_CLOCK_EST	(5000000)     /* 5MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	(240)
+#define PEL_HEIGHT	(320)
+#define BIT_DEPTH	(16)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(8)
+#define RIGHT_MARGIN	(256-8-240-1)
+#define TOP_MARGIN	(2)			/* lines/?*/
+#define BOTTOM_MARGIN	(324-2-320-1)
+#define HSYNC_WIDTH	(8)			/* clocks/?/8/? */
+#define VSYNC_WIDTH	(1)			/* lines/?/1/? */
+//#define INVERT_HSYNC
+//#define INVERT_VSYNC
+#endif
+
+
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
 #define HFP(v)	((((v) - 1) & 0xff)<<16)
 #define HSW(v)	((((v) - 1) & 0xff)<<8)
@@ -272,13 +295,16 @@
 unsigned short* buffer;
 
 
-/* msleep
+/* *** FIXME: need to sort out msleep so that we properly cope with
+   *** the inline implementation. */
+
+/* _msleep
 
    only works after the timer has been initialized.
 
 */
 
-static void msleep (int ms)
+static void _msleep (int ms)
 {
   unsigned long time = timer_read ();
 
@@ -402,7 +428,7 @@ static void clcdc_release (void)
   DRV_CLCDC_BACKLIGHT_DISABLE;
 
   CLCDC_CTRL &= ~PWR;		/* Remove power */
-  msleep (20);			/* Wait 20ms */
+  _msleep (20);			/* Wait 20ms */
   CLCDC_CTRL &= ~LCDEN;		/* Disable CLCDC controller */
   DRV_CLCDC_DISABLE;
 
@@ -596,7 +622,7 @@ int cmd_clcdc (int argc, const char** argv)
   if (strcmp (argv[1],"on") == 0) {
     CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
     DRV_CLCDC_POWER_ENABLE;
-    msleep (20);		/* Wait 20ms for digital signals  */
+    _msleep (20);		/* Wait 20ms for digital signals  */
     CLCDC_CTRL      |= PWR;	/* Apply power */
 
     /* *** FIXME: this value is calculable based on the LCD controller
@@ -604,7 +630,7 @@ int cmd_clcdc (int argc, const char** argv)
        displays at 800x600 with a 25MHz pixel clock.  100ms was the
        shortest time found that gave a solid image when the backlight
        came on (with above parameters). */
-    msleep (100);		/* Wait for the display image to settle */
+    _msleep (100);		/* Wait for the display image to settle */
     DRV_CLCDC_BACKLIGHT_ENABLE;
     return 0;
   }
@@ -613,7 +639,7 @@ int cmd_clcdc (int argc, const char** argv)
     DRV_CLCDC_BACKLIGHT_DISABLE;
 
     CLCDC_CTRL &= ~PWR;		/* Remove power */
-    msleep (20);		/* Wait 20ms */
+    _msleep (20);		/* Wait 20ms */
     CLCDC_CTRL &= ~LCDEN;	/* Disable CLCDC controller */
     DRV_CLCDC_DISABLE;
 
