@@ -5,6 +5,16 @@ APEX Boot Loader
 
 TODO:
 
+  o Document that the initrd= command line option can be used to setup
+    the ramdisk location.  Unfortunately, the parser may not handle
+    hexadecimal.  Need to check on that.  It's 'initrd=start,size'.
+
+  o SD/MMC driver doesn't have timer_fetch() function because it
+    hasn't been initialized and the functions aren't in .bootstrap.
+    It might be worthwhile making this work.
+  o Add a 'show' function so that we can 'show drivers' and 'show
+    services' and maybe other things.
+
   o Need to allow the user to set the base device for fat and ext2
     since we have to be able to select CF or MMC, for example.
 

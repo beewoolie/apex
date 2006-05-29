@@ -19,9 +19,5 @@
 #   USA.
 #
 
-obj-yy=
-
 obj-$(CONFIG_ATAG) += atag.o
-obj-$(CONFIG_RAMDISK_LMA)$(CONFIG_RAMDISK_SIZE) += atag-initrd.o
-
-obj-y += $(obj-yy)
+obj-$(CONFIG_USE_RAMDISK) += atag-initrd.o

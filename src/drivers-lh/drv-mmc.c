@@ -103,10 +103,10 @@
 
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
-//#define USE_WIDE		/* Allow WIDE mode */
+#define USE_WIDE		/* Allow WIDE mode */
 //#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
 //#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
-#define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
+//#define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
 
 #if defined (COMPANION)
 # define GPIO_WP		PH1
@@ -392,7 +392,7 @@ static unsigned long SECTION wait_for_completion (unsigned long bits)
   stop_clock ();
 
   if (timed_out)
-    DBG (3, " => %s %lx\n", report_status (status), MMC_INT_STATUS);
+    DBG (1, " timedout => %s %lx\n", report_status (status), MMC_INT_STATUS);
 
   return status | (timed_out ? MMC_STATUS_TIMED_OUT : 0);
 }
@@ -772,7 +772,7 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
     if (available > availableMax)
       available = availableMax;
 
-    DBG (1, "%ld %ld\n", mmc.ib, index);
+    //    DBG (1, "%ld %ld\n", mmc.ib, index);
 
     if (mmc.ib == -1
 	|| mmc.ib >= index  + MMC_SECTOR_SIZE

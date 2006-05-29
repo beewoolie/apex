@@ -148,6 +148,37 @@ config KERNEL_LMA
 	hex "Kernel Load Address"
 	default "0xc0008000"
 
+config USE_RAMDISK
+	bool "Enable ramdisk options"
+	default y
+	help
+	  This option doesn't enable the ramdisk, per se.  It enables
+	  other configuration options that help setup a default
+	  ramdisk.  The kernel command line and the APEX startup
+	  commands may be overridden to perform the same steps.
+
+	  There is a separate option in the Environment section that
+	  controls whether or not APEX copies the ramdisk from flash
+	  into RAM at startup.  That is where the ramdisk region is
+	  defined.
+
+config RAMDISK_LMA
+	hex "Ramdisk load address"
+	default "0xc4000000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the physical load address for an initial
+	  ramdisk (a.k.a initrd).
+
+config RAMDISK_SIZE
+	hex "Ramdisk compressed size"
+	default "0x00300000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the size, in bytes, of the initial ramdisk
+	  (a.k.a. initrd).  This is the size of the compressed initrd
+	  image.
+
 config SDRAM_BANK0
 	bool "Enable SDRAM Bank 0"
 	default y

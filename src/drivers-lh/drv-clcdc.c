@@ -230,8 +230,9 @@
 #define BOTTOM_MARGIN	(324-2-320-1)
 #define HSYNC_WIDTH	(8)			/* clocks/?/8/? */
 #define VSYNC_WIDTH	(1)			/* lines/?/1/? */
-//#define INVERT_HSYNC
-//#define INVERT_VSYNC
+
+#define INVERT_HSYNC
+#define INVERT_VSYNC
 #endif
 
 
@@ -440,8 +441,17 @@ static void clcdc_release (void)
 #if !defined (CONFIG_SMALL)
 static void clcdc_report (void)
 {
+  unsigned long clk = HCLK/((CLCDC_TIMING2 & 0x1f) + 2);
   printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
 	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
+  printf ("          ctrl 0x%x\n", CLCDC_CTRL);
+  printf ("          timing0 0x%08lx  timing1 0x%08lx  timing2 0x%08lx\n",
+	  CLCDC_TIMING0, CLCDC_TIMING1, CLCDC_TIMING2);
+  if (clk < 1000000)
+    printf ("          clk %ldHz\n", clk);
+  else
+    printf ("          clk %ld.%03ldMHz\n",
+	    clk/(1000*1000), (clk/1000)%1000);
 }
 #endif
 

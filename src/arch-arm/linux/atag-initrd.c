@@ -33,6 +33,7 @@
 #include <atag.h>
 #include <linux/string.h>
 #include <config.h>
+#include <apex.h>
 
 struct tag* atag_initrd (struct tag* p)
 {
@@ -41,6 +42,9 @@ struct tag* atag_initrd (struct tag* p)
 
        p->u.initrd.start = CONFIG_RAMDISK_LMA;
        p->u.initrd.size  = CONFIG_RAMDISK_SIZE;
+
+       printf ("ATAG_INITRD2: start 0x%08x  size 0x%08x\n",
+	       p->u.initrd.start, p->u.initrd.size);
 
        return tag_next (p);
 }
