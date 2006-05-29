@@ -96,6 +96,7 @@
 #include <command.h>
 #include <mach/hardware.h>
 #include <console.h>
+#include <error.h>
 
 #include <debug_ll.h>
 
@@ -103,21 +104,21 @@
 
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
-#define USE_WIDE		/* Allow WIDE mode */
+//#define USE_WIDE		/* Allow WIDE mode */
 //#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
 //#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
 //#define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
+#define USE_MULTIBLOCK_READ	/* Use multiblock read implementation */
 
 #if defined (COMPANION)
 # define GPIO_WP		PH1
+# define USE_WIDE
 #endif
 
 #if defined (TROUNCER)
 # define GPIO_CARD_DETECT	PF6
 # define GPIO_WP		PC1
-#else
-/* Only trouncer supports it right now */
-# undef USE_WIDE
+# define USE_WIDE
 #endif
 
 #if defined USE_MMC_BOOTSTRAP
@@ -131,7 +132,7 @@
 
 extern char* strcat (char*, const char*);
 
-//#define TALK 1
+//#define TALK 3
 
 #if defined (USE_MMC_BOOTSTRAP)
 # undef TALK
@@ -147,9 +148,16 @@ extern char* strcat (char*, const char*);
 #define DBG(l,f...)		do {} while (0)
 #endif
 
-struct mmc_info SECTIOND mmc;
+#if defined (USE_MULTIBLOCK_READ)
+# define CB_CACHE	(2*MMC_SECTOR_SIZE)
+#else
+# define CB_CACHE	(MMC_SECTOR_SIZE)
+#endif
 
-#define MS_TIMEOUT 2000
+struct mmc_info SECTIOND mmc;
+unsigned char SECTIOND mmc_rgb[CB_CACHE];
+
+#define MS_TIMEOUT 1000
 
 #if defined (USE_MMC_BOOTSTRAP)
 
@@ -347,7 +355,19 @@ static void SECTION pull_response (int length)
   DBG (3, "\n");
 }
 
-static unsigned long SECTION wait_for_completion (unsigned long bits)
+static void SECTION pull_data (void* pv)
+{
+  int i;
+  //  ENTRY (3);
+  //  DBG (3, "%s: %p %p\n", __FUNCTION__, pv, mmc_rgb);
+  for (i = 0; i < MMC_SECTOR_SIZE/2; ++i) {
+    unsigned short v = MMC_DATA_FIFO;
+    *(unsigned char*) pv++ = (v >> 8) & 0xff;
+    *(unsigned char*) pv++ = v & 0xff;
+  }
+}
+
+static unsigned long SECTION wait_for_completion (short bits)
 {
   unsigned short status = 0;
 #if defined (TALK) && TALK > 0
@@ -371,8 +391,10 @@ static unsigned long SECTION wait_for_completion (unsigned long bits)
 #endif
 
 #if !defined (USE_MMC_BOOTSTRAP)
-    if (timer_delta (time_start, timer_read ()) >= MS_TIMEOUT)
+    if (timer_delta (time_start, timer_read ()) >= MS_TIMEOUT) {
+      printf ("\nbailing at timeout 0x%x 0x%x\n", status, bits);
       timed_out = 1;
+    }
 #else
     if (timeout_count-- <= 0)
       timed_out = 1;
@@ -408,23 +430,24 @@ static void report_command (void)
 # define report_command(v)
 #endif
 
-static unsigned short SECTION execute_command (unsigned long cmd,
-					       unsigned long arg,
-					       unsigned short wait_status)
+static int SECTION execute_command (unsigned long cmd,
+				    unsigned long arg,
+				    unsigned short wait_status)
 {
   int state = (cmd & CMD_BIT_APP) ? 99 : 0;
-  unsigned short s = 0;
+  int status = 0;
 
   if (!wait_status)
-    wait_status = MMC_STATUS_ENDRESP;
+    wait_status = ((cmd >> CMD_SHIFT_RESP) & CMD_MASK_RESP)
+		   ? MMC_STATUS_ENDRESP : MMC_STATUS_TRANDONE;
 
  top:
   stop_clock ();
 
   set_clock ((cmd & CMD_BIT_LS) ? 400*1024 : 20*1024*1024);
 
-  if (s)
-    DBG (3, "%s: state %d s 0x%x\n", __FUNCTION__, state, s);
+  if (status)
+    DBG (3, "%s: state %d s 0x%x\n", __FUNCTION__, state, status);
 
   switch (state) {
 
@@ -432,7 +455,7 @@ static unsigned short SECTION execute_command (unsigned long cmd,
     MMC_CMD = ((cmd & CMD_MASK_CMD) >> CMD_SHIFT_CMD);
     MMC_ARGUMENT = arg;
     MMC_CMDCON
-      = ((cmd & CMD_MASK_RESP) >> CMD_SHIFT_RESP)
+      = ((cmd >> CMD_SHIFT_RESP) & CMD_MASK_RESP)
       | ((cmd & CMD_BIT_INIT)  ? MMC_CMDCON_INITIALIZE : 0)
       | ((cmd & CMD_BIT_BUSY)  ? MMC_CMDCON_BUSY       : 0)
       | ((cmd & CMD_BIT_DATA)  ? (MMC_CMDCON_DATA_EN
@@ -448,7 +471,7 @@ static unsigned short SECTION execute_command (unsigned long cmd,
     break;
 
   case 1:
-    return s;
+    return status;
 
   case 99:			/* APP prefix */
     MMC_CMD = MMC_APP_CMD;
@@ -463,14 +486,14 @@ static unsigned short SECTION execute_command (unsigned long cmd,
   clear_all ();
   report_command ();
   start_clock ();
-  s = wait_for_completion (wait_status);
+  status = wait_for_completion (wait_status);
 
   /* We return an error if there is a timeout, even if we've fetched a
      response */
-  if (s & MMC_STATUS_TORES)
-    return s;
+  if (status & MMC_STATUS_TORES)
+    return status;
 
-  if (s & MMC_STATUS_ENDRESP)
+  if (status & MMC_STATUS_ENDRESP)
     switch (MMC_CMDCON & 0x3) {
     case 0:
       break;
@@ -499,7 +522,7 @@ static unsigned short SECTION execute_command (unsigned long cmd,
 
 void SECTION mmc_acquire (void)
 {
-  unsigned short s;
+  int status;
   int tries = 0;
   unsigned long ocr = 0;
   unsigned long r;
@@ -512,7 +535,7 @@ void SECTION mmc_acquire (void)
   stop_clock ();
 
 //  PUTC_LL('I');
-  s = execute_command (CMD_IDLE, 0, 0);
+  status = execute_command (CMD_IDLE, 0, MMC_STATUS_ENDRESP);
 //  PUTC_LL('i');
 
   while (state < 100) {
@@ -550,8 +573,8 @@ void SECTION mmc_acquire (void)
     else if (state == 1 || state == 11) {
 //    case 1:
 //    case 11:
-      s = execute_command (command, 0, 0);
-      if (s & MMC_STATUS_TORES)
+      status = execute_command (command, 0, 0);
+      if (status & MMC_STATUS_TORES)
 	state += 8;		/* Mode unavailable */
       else
 	++state;
@@ -574,7 +597,7 @@ void SECTION mmc_acquire (void)
 //    case 13:
       while ((ocr & OCR_ALL_READY) && --tries > 0) {
 	mdelay (MS_ACQUIRE_DELAY);
-	s = execute_command (command, 0, 0);
+	status = execute_command (command, 0, 0);
 	ocr = response_ocr ();
       }
       if (ocr & OCR_ALL_READY)
@@ -592,7 +615,7 @@ void SECTION mmc_acquire (void)
       do {
 	mdelay (MS_ACQUIRE_DELAY);
 	mmc.acquire_time += MS_ACQUIRE_DELAY;
-	s = execute_command (command, ocr, 0);
+	status = execute_command (command, ocr, 0);
 	r = response_ocr ();
       } while (!(r & OCR_ALL_READY) && --tries > 0);
       if (r & OCR_ALL_READY)
@@ -606,7 +629,7 @@ void SECTION mmc_acquire (void)
 //    case 5:			/* CID polling */
 //    case 15:
       mmc.cmdcon_sd = cmdcon_sd;
-      s = execute_command (CMD_ALL_SEND_CID, 0, 0);
+      status = execute_command (CMD_ALL_SEND_CID, 0, 0);
       memcpy (mmc.cid, mmc.response + 1, 16);
       ++state;
 //      break;
@@ -614,7 +637,7 @@ void SECTION mmc_acquire (void)
 
     else if (state == 6) {
 //    case 6:			/* RCA send */
-      s = execute_command (CMD_SD_SEND_RCA, 0, 0);
+      status = execute_command (CMD_SD_SEND_RCA, 0, 0);
       mmc.rca = (mmc.response[1] << 8) | mmc.response[2];
       ++state;
 //      break;
@@ -623,7 +646,7 @@ void SECTION mmc_acquire (void)
     else if (state == 16) {
 //    case 16:			/* RCA assignment */
       mmc.rca = 1;
-      s = execute_command (CMD_MMC_SET_RCA, mmc.rca << 16, 0);
+      status = execute_command (CMD_MMC_SET_RCA, mmc.rca << 16, 0);
       ++state;
 //      break;
     }
@@ -631,7 +654,7 @@ void SECTION mmc_acquire (void)
     else if (state == 7 || state == 17) {
 //    case 7:
 //    case 17:
-      s = execute_command (CMD_SEND_CSD, mmc.rca << 16, 0);
+      status = execute_command (CMD_SEND_CSD, mmc.rca << 16, 0);
       memcpy (mmc.csd, mmc.response + 1, 16);
       state = 100;
 //      break;
@@ -714,6 +737,10 @@ static void mmc_report (void)
 static int mmc_open (struct descriptor_d* d)
 {
   DBG (2,"%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
+
+  if (!mmc_card_acquired ())
+    ERROR_RETURN (ERROR_IOFAILURE, "no card");
+
   return 0;
 }
 
@@ -728,7 +755,7 @@ static int mmc_open (struct descriptor_d* d)
 ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
-  unsigned short s;
+  int status;
 
 #if 1
   PUTHEX_LL (d->index);
@@ -757,7 +784,7 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
 
   while (cb) {
     unsigned long index = d->start + d->index;
-    int availableMax = MMC_SECTOR_SIZE - (index & (MMC_SECTOR_SIZE - 1));
+    int availableMax = CB_CACHE - (index & (CB_CACHE - 1));
     int available = cb;
 
 #if 0
@@ -775,49 +802,67 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
     //    DBG (1, "%ld %ld\n", mmc.ib, index);
 
     if (mmc.ib == -1
-	|| mmc.ib >= index  + MMC_SECTOR_SIZE
-	|| index  >= mmc.ib + MMC_SECTOR_SIZE) {
+	|| mmc.ib >= index  + CB_CACHE
+	|| index  >= mmc.ib + CB_CACHE) {
 
-      mmc.ib = index & ~(MMC_SECTOR_SIZE - 1);
+      mmc.ib = index & ~(CB_CACHE - 1);
 
       DBG (1, "%s: read av %d  avM %d  ind %ld  cb %d\n", __FUNCTION__,
 	   available, availableMax, index, cb);
 
-      execute_command (CMD_SELECT_CARD, 0, 0);	      /* Deselect */
-      execute_command (CMD_SELECT_CARD, mmc.rca<<16, 0);  /* Select card */
+      status = execute_command (CMD_DESELECT_CARD, 0,
+				MMC_STATUS_ENDRESP | MMC_STATUS_TRANDONE);
+      status = execute_command (CMD_SELECT_CARD, mmc.rca<<16, 0);
 
 #if defined (USE_WIDE)
       if (mmc.cmdcon_sd)
 	execute_command (CMD_SD_SET_WIDTH, 2, 0);	/* SD, 4 bit width */
 #endif
-      execute_command (CMD_SET_BLOCKLEN, MMC_SECTOR_SIZE, 0);
+      status = execute_command (CMD_SET_BLOCKLEN, MMC_SECTOR_SIZE, 0);
       MMC_BLK_LEN = MMC_SECTOR_SIZE;
-      s = execute_command (CMD_READ_SINGLE, mmc.ib,
-			       MMC_STATUS_TRANDONE
-			       | MMC_STATUS_FIFO_FULL
-			       | MMC_STATUS_TOREAD);	/* Perform read */
+      MMC_NOB = CB_CACHE/MMC_SECTOR_SIZE;
 
-//  DBG (1, "issued read\n");
-//      start_clock ();
-
-//  DBG (1, "waiting for status\n");
-
-//      s = wait_for_completion ();
-
-      //      printf ("status 0x%x\n", s);
-
-	/* Pull data from FIFO */
+		/* Fill the sector cache */
       {
-	int i;
-	for (i = 0; i < MMC_SECTOR_SIZE; ) {
-	  unsigned short v = MMC_DATA_FIFO;
-	  mmc.rgb[i++] = (v >> 8) & 0xff;
-	  mmc.rgb[i++] = v & 0xff;
+	int i = 0;
+	for (i = 0; i < CB_CACHE/MMC_SECTOR_SIZE; ++i) {
+	  if (i == 0) {
+	    DBG (3, "%s: first sector\n", __FUNCTION__);
+	    status = execute_command (
+#if defined (USE_MULTIBLOCK_READ)
+				 CMD_READ_MULTIPLE
+#else
+				 CMD_READ_SINGLE
+#endif
+				 , mmc.ib,
+				 MMC_STATUS_TRANDONE
+				 | MMC_STATUS_FIFO_FULL
+				 | MMC_STATUS_TOREAD);
+	  }
+	  else {
+	    DBG (3, "%s: next sector\n", __FUNCTION__);
+	    start_clock ();
+	    status = wait_for_completion (  MMC_STATUS_TRANDONE
+					  | MMC_STATUS_FIFO_FULL
+					  | MMC_STATUS_TOREAD);
+	  }
+
+	  if (status & MMC_STATUS_FIFO_FULL)
+	    pull_data (mmc_rgb + i*MMC_SECTOR_SIZE);
+	  else if (status & (MMC_STATUS_TOREAD | MMC_STATUS_TIMED_OUT)) {
+	    printf ("\nstatus %x\n", status);
+	    ERROR_RETURN (ERROR_TIMEOUT, "timeout on read");
+	  }
 	}
       }
+
+//      status = wait_for_completion (MMC_STATUS_TRANDONE);
+//      printf ("\nstatus %x\n", status);
+//      if (status & MMC_STATUS_TIMED_OUT)
+//	ERROR_RETURN (ERROR_TIMEOUT, "timeout on trandone");
     }
 
-    memcpy (pv, mmc.rgb + (index & (MMC_SECTOR_SIZE - 1)), available);
+    memcpy (pv, mmc_rgb + (index & (CB_CACHE - 1)), available);
     d->index += available;
     cb -= available;
     cbRead += available;
@@ -830,6 +875,7 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
 static __driver_5 struct driver_d mmc_driver = {
   .name = "mmc-lh7a404",
   .description = "MMC/SD card driver",
+  .flags = DRIVER_READPROGRESS(2),
   .open = mmc_open,
   .close = close_helper,
   .read = mmc_read,

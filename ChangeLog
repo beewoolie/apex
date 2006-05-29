@@ -1,3 +1,17 @@
+2006-05-28  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: The bootstrap data location is
+	properly calculated.
+
+	* src/drivers-lh/drv-mmc.c: MMC driver can read multiple blocks.
+	Well, two to be precise, but at least we know it works.  The
+	status returned from wait_for_status it more than 16 bits because
+	of the timeout.  All of the reference to status are widened to
+	int's to make this easier.
+	(execute_command): Default wait_for status is not better tuned to
+	the command being executed.  The driver gets a nice, smooth data
+	stream from the card.
+
 2006-05-27  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile (SUBLEVEL): New sub-level for the companion changes.

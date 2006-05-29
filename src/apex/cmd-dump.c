@@ -90,6 +90,9 @@ int cmd_dump (int argc, const char** argv)
     char rgb[16];
     int cb = d.driver->read (&d, rgb, sizeof (rgb));
 
+    if (cb < 0)
+      goto fail;
+
     if (cb == 0) {
       result = ERROR_RESULT (ERROR_FAILURE, "premature end of input");
       goto fail;

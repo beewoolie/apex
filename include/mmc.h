@@ -32,7 +32,8 @@
 #define MMC_SELECT_CARD           7   /* ac   [31:16] RCA        R1  */
 #define MMC_SEND_CSD              9   /* ac   [31:16] RCA        R2  */
 #define MMC_SEND_CID             10   /* ac   [31:16] RCA        R2  */
-#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0]  dadr       R1  */
+/* Deprecated */
+//#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0]  dadr       R1  */
 #define MMC_STOP_TRANSMISSION    12   /* ac                      R1b */
 #define MMC_SEND_STATUS	         13   /* ac   [31:16] RCA        R1  */
 #define MMC_GO_INACTIVE_STATE    15   /* ac   [31:16] RCA            */
@@ -262,7 +263,7 @@
 #define CMD_BIT_DATA		 (1<<19)
 #define CMD_BIT_WRITE		 (1<<18)
 #define CMD_BIT_STREAM		 (1<<17)
-#define CMD_MASK_RESP		 (3<<24)
+#define CMD_MASK_RESP		 (3)
 #define CMD_SHIFT_RESP		 (24)
 #define CMD_MASK_CMD		 (0xff)
 #define CMD_SHIFT_CMD		 (0)
@@ -278,11 +279,13 @@
 #define CMD_MMC_SET_RCA	 CMD(MMC_SET_RELATIVE_ADDR,1) | CMD_BIT_LS
 #define CMD_SD_SEND_RCA	 CMD(SD_SEND_RELATIVE_ADDR,1) | CMD_BIT_LS
 #define CMD_SEND_CSD	 CMD(MMC_SEND_CSD,2)
+#define CMD_DESELECT_CARD CMD(MMC_SELECT_CARD,0)
 #define CMD_SELECT_CARD	 CMD(MMC_SELECT_CARD,1)
 #define CMD_SET_BLOCKLEN CMD(MMC_SET_BLOCKLEN,1)
 #define CMD_READ_SINGLE  CMD(MMC_READ_SINGLE_BLOCK,1) | CMD_BIT_DATA
-#define CMD_READ_MULTIPLE CMD(MMC_READ_MULTIPLE_BLOCK,1)
+#define CMD_READ_MULTIPLE CMD(MMC_READ_MULTIPLE_BLOCK,1) | CMD_BIT_DATA
 #define CMD_SD_SET_WIDTH CMD(SD_APP_SET_BUS_WIDTH,1)| CMD_BIT_APP
+#define CMD_STOP	 CMD(MMC_STOP_TRANSMISSION,1) | CMD_BIT_BUSY
 
 #define MMC_SECTOR_SIZE 512	/* *** FIXME: should come from card */
 
@@ -305,8 +308,8 @@ struct mmc_info {
   unsigned long device_size;
 
 		/* *** FIXME: should be in .xbss section */
-  char rgb[512];		/* Sector buffer */
-  unsigned long ib;		/* Index of cached sector */
+//  char rgb[512*2];		/* Sector buffer(s) */
+  unsigned long ib;		/* Index of cached data */
 };
 
 /* ----- Globals */
