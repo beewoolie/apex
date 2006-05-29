@@ -150,7 +150,7 @@ config KERNEL_LMA
 
 config USE_RAMDISK
 	bool "Enable ramdisk options"
-	default y
+	default n
 	help
 	  This option doesn't enable the ramdisk, per se.  It enables
 	  other configuration options that help setup a default
