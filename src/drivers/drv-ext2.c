@@ -93,6 +93,11 @@
    o report method should read the superblock so that the user knows
      that whatever card is inserted will be used.
 
+   o The info code uses some of the same logic as the normal open and
+     this needs to be fixed.  There is some work there to detect
+     partition changes and it is dumb to reproduce this code, even
+     though it is small.
+
 */
 
 #include <config.h>
@@ -295,6 +300,7 @@ struct ext2_info {
   int first_data_block;		/* Computed offset to first data block */
   int rg_blocking[3];		/* Tier block counts */
 
+  int current_partition;
   struct inode inode;		/* Current inode */
   int inode_number;		/* Number of current inode */
   int blockCache;		/* Number of first block in cache */
@@ -312,6 +318,12 @@ inline int block_groups (struct ext2_info* ext2)
   return (ext2->superblock.s_blocks_count
 	  + ext2->superblock.s_blocks_per_group - 1)
     /ext2->superblock.s_blocks_per_group;
+}
+
+inline void flush_cache (void)
+{
+  ext2.blockCache = 0;
+  ext2.inode_number = 0;
 }
 
 inline int group_from_inode (struct ext2_info* ext2, int inode)
@@ -744,6 +756,11 @@ static int ext2_open (struct descriptor_d* d)
 		      || ext2.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
+    if (ext2.current_partition != partition) {
+      ext2.current_partition = partition;
+      flush_cache ();
+    }
+
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
 	      szBlockDriver,
 	      ext2.partition[partition].start,
@@ -920,6 +937,11 @@ static int ext2_info (struct descriptor_d* d)
     if (partition < 0 || partition > 3
 		      || ext2.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
+
+    if (ext2.current_partition != partition) {
+      ext2.current_partition = partition;
+      flush_cache ();
+    }
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
 	      szBlockDriver,

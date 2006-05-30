@@ -1,3 +1,9 @@
+2006-05-29  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-ext2.c (ext2_info): Fixed the way that
+	partitions are detected so that changing partitions will properly
+	flush cache information about the filesystem.
+
 2006-05-28  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): Rolled to 1.3.25 for the MMC driver fixes.
