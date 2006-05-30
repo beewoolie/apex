@@ -104,7 +104,7 @@
 
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
-//#define USE_WIDE		/* Allow WIDE mode */
+#define USE_WIDE		/* Allow WIDE mode */
 //#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
 //#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
 //#define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
@@ -291,10 +291,10 @@ static void SECTION clear_all (void)
 static void SECTION set_clock (int speed)
 {
   if (speed < 1024*1024) {
-    /* 195KHz */
+    /* 312KHz */
     MASK_AND_SET (MMC_PREDIV,
 		  MMC_PREDIV_MMC_PREDIV_MASK<<MMC_PREDIV_MMC_PREDIV_SHIFT,
-		  8<<MMC_PREDIV_MMC_PREDIV_SHIFT);
+		  5<<MMC_PREDIV_MMC_PREDIV_SHIFT);
     MMC_RATE = 6;
   }
 
@@ -302,14 +302,14 @@ static void SECTION set_clock (int speed)
     /* 20MHz */
     MASK_AND_SET (MMC_PREDIV,
 		  MMC_PREDIV_MMC_PREDIV_MASK<<MMC_PREDIV_MMC_PREDIV_SHIFT,
-		  8<<MMC_PREDIV_MMC_PREDIV_SHIFT);
+		  5<<MMC_PREDIV_MMC_PREDIV_SHIFT);
     MMC_RATE = 0;
 
 #if defined (USE_SLOW_CLOCK)
     /* 12MHz */
     MASK_AND_SET (MMC_PREDIV,
 		  MMC_PREDIV_MMC_PREDIV_MASK<<MMC_PREDIV_MMC_PREDIV_SHIFT,
-		  6<<MMC_PREDIV_MMC_PREDIV_SHIFT);
+		  8<<MMC_PREDIV_MMC_PREDIV_SHIFT);
     MMC_RATE = 0;
 #endif
 #if defined (USE_WAYSLOW_CLOCK)
@@ -392,7 +392,7 @@ static unsigned long SECTION wait_for_completion (short bits)
 
 #if !defined (USE_MMC_BOOTSTRAP)
     if (timer_delta (time_start, timer_read ()) >= MS_TIMEOUT) {
-      printf ("\nbailing at timeout 0x%x 0x%x\n", status, bits);
+      printf ("\nbailing at timeout status 0x%x bits 0x%x\n", status, bits);
       timed_out = 1;
     }
 #else
