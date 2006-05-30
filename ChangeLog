@@ -2,7 +2,7 @@
 
 	* src/drivers/drv-ext2.c (ext2_info): Fixed the way that
 	partitions are detected so that changing partitions will properly
-	flush cache information about the filesystem.
+	flush cached information about the filesystem.
 
 2006-05-28  Marc Singer  <elf@buici.com>
 
