@@ -147,6 +147,8 @@ int relocate_apex_mmc (void)
   PUTC_LL ('\r');
   PUTC_LL ('\n');
 
+  PUTC ((cb == d.length) ? '+' : '-');
+
   return (cb == d.length) ? 1 : 0;
 }
 
