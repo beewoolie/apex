@@ -115,19 +115,16 @@ choice
 
 config CC_OPTIMIZE_FOR_SIZE
 	bool "Set compiler optimization for smallest code size"
-	default y
 	help
 	  This option sets the -Os compiler option.
 
 config CC_OPTIMIZE_FOR_SPEED
 	bool "Set compiler optimization for the fastest execution"
-	default y
 	help
 	  This option sets the -Os compiler option.
 
 config CC_NO_OPTIMIZATION
 	bool "Disable optimization"
-	default y
 	help
 	  This option sets the -O0 compiler option.
 
