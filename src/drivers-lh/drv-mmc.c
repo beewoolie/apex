@@ -86,6 +86,15 @@
    The data FIFO is reading out in MSB order even though the
    BIG_ENDIAN_BIT isn't set in the CMD_CON register.
 
+   Card Acquisition
+   ----------------
+
+   The present state of the card acqusition logic is weak.  We acquire
+   a card with the system initializes.  If the card goes offline, we
+   have no way to detect and correct it.  What should happen is the
+   read code ought to detect that the card has changed, probably
+   because the select fails, and perform the acquire at that time.
+
 */
 
 #include <config.h>
@@ -718,7 +727,8 @@ void SECTION mmc_init (void)
   MMC_EOI = 0x27;		/* Clear all interrupts */
 
   mmc_clear ();
-  //  mmc_acquire ();
+
+  mmc_acquire ();
 }
 
 static void mmc_report (void)
@@ -908,7 +918,9 @@ static int cmd_mmc (int argc, const char** argv)
 #endif
 
   mmc_init ();
-  mmc_acquire ();
+
+  mmc_acquire ();		/* *** FIXME: the read and report code
+				   should do this */
 
   return 0;
 }

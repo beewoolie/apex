@@ -112,9 +112,7 @@ int __section (.bootstrap) relocate_apex_mmc (void)
   PUTC ('M');			/* Feedback */
 
   mmc_init ();
-  PUTC_LL ('1');
-  mmc_acquire ();
-  PUTC_LL ('2');
+  PUTC_LL ('i');
 
   if (!mmc_card_acquired ()) {
     PUTC ('0');
@@ -142,11 +140,10 @@ int __section (.bootstrap) relocate_apex_mmc (void)
   d.index = 0;
 
   PUTHEX_LL (d.start);
-  PUTC_LL ('C');
+  PUTC_LL ('p');
   PUTC ('r');
   cb = mmc_read (&d, (void*) MMC_BOOTLOADER_LOAD_ADDR, d.length);
 
-  PUTC_LL ('c');
   PUTHEX_LL (cb);
   PUTC_LL ('\r');
   PUTC_LL ('\n');

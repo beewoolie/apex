@@ -1,5 +1,8 @@
 2006-06-01  Marc Singer  <elf@buici.com>
 
+	* src/mach-lh7a40x/relocate-companion.c: Fixed the section of the
+	relocation function.  Added console feedback for the bootstrap.
+
 	* src/drivers-lh/drv-mmc.c: Added proper configuration checks for
 	the companion relocation.
 
