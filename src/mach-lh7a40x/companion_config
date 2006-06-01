@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Jun  1 14:32:41 2006
+# Thu Jun  1 16:26:14 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -84,7 +84,7 @@ CONFIG_CMD_INFO=y
 # CONFIG_CMD_PAUSE is not set
 CONFIG_CMD_WAIT=y
 CONFIG_CMD_XRECEIVE=y
-CONFIG_CMD_ETH_DM9000=y
+# CONFIG_CMD_ETH_DM9000 is not set
 CONFIG_CMD_MEMLIMIT=y
 CONFIG_CMD_CLCDC_SPLASH=y
 CONFIG_CMD_CLCDC_TEST=y
