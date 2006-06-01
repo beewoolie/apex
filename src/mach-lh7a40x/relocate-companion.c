@@ -95,7 +95,10 @@
 # define USE_COPY_VERIFY
 #endif
 
-#define MMC_BOOTLOADER_SIZE		((80 - 4 - 4 - 1)*1024)
+#define MMC_BOOTLOADER_SIZE		((80\
+		/* 4k from EEPROM */	  - 4\
+		/* 4k stack */		  - 4\
+		/* 4k bootstrap data */	  - 4)*1024)
 //#define MMC_BOOTLOADER_SIZE		(64*1024)
 //#define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
 #define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
@@ -174,7 +177,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
   extern unsigned long reloc;
   unsigned long offset = (unsigned long) &reloc;
 
-  PUTC_LL ('R');
+  PUTC ('>');
 
 	/* Setup bootstrap stack, trivially.  We do this so that we
 	   can perform some complex operations here in the bootstrap,
