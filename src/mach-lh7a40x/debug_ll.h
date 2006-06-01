@@ -102,7 +102,7 @@
 
 #endif
 
-#define PUTC_LL(c)	({ UART_DATA = c; \
+#define PUTC(c)		({ UART_DATA = c; \
 			   while (UART_STATUS & UART_STATUS_BUSY) ; })
 
 #endif  /* __DEBUG_LL_H__ */

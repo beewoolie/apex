@@ -33,16 +33,24 @@
 
 #include <config.h>
 
-#if defined (CONFIG_DEBUG_LL)
+#if defined (CONFIG_STARTUP_UART)
 # include <mach/debug_ll.h>
 
-# define PUTHEX_LL(value) ({ unsigned long v = (unsigned long) (value); \
+# define PUTHEX(value)	 ({ unsigned long v = (unsigned long) (value); \
 			     int i; unsigned char ch; \
 			     for (i = 8; i--; ) {\
 			     ch = ((v >> (i*4)) & 0xf);\
 			     ch += (ch >= 10) ? 'a' - 10 : '0';\
-			     PUTC_LL (ch); }})
+			     PUTC (ch); }})
+#else
+# define PUTC(c) do {} while (0)
+# define PUTHEX(v) do {} while (0)
 
+#endif
+
+#if defined (CONFIG_DEBUG_LL)
+# define PUTHEX_LL(value) PUTHEX(value)
+# define PUTC_LL(c) PUTC(c)
 #else
 # define PUTC_LL(c) do {} while (0)
 # define PUTHEX_LL(v) do {} while (0)

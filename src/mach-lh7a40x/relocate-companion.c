@@ -89,7 +89,7 @@
 
 //#define EMERGENCY
 
-#if defined (CONFIG_DEBUG_LL)
+#if defined (CONFIG_STARTUP_UART)
 //# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
 # define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
 # define USE_COPY_VERIFY
@@ -106,15 +106,17 @@ int relocate_apex_mmc (void)
   size_t cb;
   unsigned char rgb[16];	/* Partition table entry */
 
-  PUTC_LL ('M');
+  PUTC ('>');			/* Feedback */
 
   mmc_init ();
   PUTC_LL ('1');
   mmc_acquire ();
   PUTC_LL ('2');
 
-  if (!mmc_card_acquired ())
+  if (!mmc_card_acquired ()) {
+    PUTC ('0');
     return 0;
+  }
 
   PUTC_LL ('a');
 
@@ -122,11 +124,15 @@ int relocate_apex_mmc (void)
   d.length = 16;
   d.index = 0;
   cb = mmc_read (&d, (void*) rgb, d.length);
-  if (cb != d.length)
+  if (cb != d.length) {
+    PUTC ('1');
     return 0;
+  }
 
-  if (rgb[4] != 0)		/* Must be type 0 */
+  if (rgb[4] != 0) {		/* Must be type 0 */
+    PUTC ('2');
     return 0;
+  }
 
   d.start = *((unsigned long*) &rgb[8])*512;	/* Start of first partition */
   d.length = MMC_BOOTLOADER_SIZE;
@@ -174,19 +180,6 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
   __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
 
-#if defined (EMERGENCY)
-  IOCON_MUXCTL14 |=  (1<<8);
-  GPIO_MN_PHYS &= ~(1<<0);
-  IOCON_MUXCTL7  &= ~(0xf<<12);
-
-  /* Boot ROM uses 0xf. If I set this to 0xf, I can read nothing from
-     NAND. */
-
-  IOCON_MUXCTL7  |=  (0xa<<12);
-  IOCON_RESCTL7  &= ~(0xf<<12);
-  IOCON_RESCTL7  |=  (0xa<<12);
-#endif
-
   __asm volatile ("mov %0, lr\n\t"
 		  "bl reloc\n\t"
 	   "reloc: mov %2, lr\n\t"
@@ -208,8 +201,9 @@ void __naked __section (.bootstrap) relocate_apex (void)
 #if defined (USE_MMC)
 
 	/* Read loader from SD/MMC only if we could be starting from I2C. */
-  else if ((pc >> 12) == (0xb0000000>>12) && relocate_apex_mmc ()) {
-    PUTC_LL ('m');
+  else if (       (pc >> 12) == (0xb0000000>>12)
+	   && (   PUTC ('M')
+	       && relocate_apex_mmc ())) {
     lr = MMC_BOOTLOADER_LOAD_ADDR;
   }
 

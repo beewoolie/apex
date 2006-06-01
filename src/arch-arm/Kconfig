@@ -130,9 +130,20 @@ config CC_NO_OPTIMIZATION
 
 endchoice
 
+config STARTUP_UART
+	bool "Support for UART output during the boot/bootstrap process"
+	default n
+	help
+	  This option is similar to DEBUG_LL in that it initializes a
+	  UART as soon as possible and provides functions PUTC and
+	  PUTHEX to write to the UART.  It is intended to allow
+	  low-level  bootstrap code to communicate with the user in
+	  the event that something has gone awry.
+
 config DEBUG_LL
 	bool "Low-level debug support"
 	default n
+	select STARTUP_UART
 	help
 	  Setting this option enables extra debug code in the bool
 	  loader startup.

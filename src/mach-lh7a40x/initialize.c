@@ -273,13 +273,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-#if defined (CONFIG_DEBUG_LL)
+#if defined (CONFIG_STARTUP_UART)
   UART_BRCON = 0x3;
   UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
   UART_INTEN = 0x00; /* Mask interrupts */
   UART_CON = UART_CON_ENABLE;
 
-  PUTC_LL('A');
+  PUTC('A');
 #endif
 
 	/* Set the running clock speed.  This will increase the HCLK
