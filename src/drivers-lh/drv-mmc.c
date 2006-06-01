@@ -107,8 +107,15 @@
 #define USE_WIDE		/* Allow WIDE mode */
 //#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
 //#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
-//#define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
-#define USE_MULTIBLOCK_READ	/* Use multiblock read implementation */
+/* *** While multiblock read kinda works, it seems to put the
+   interface in an odd state.  Since we don't care about this now,
+   we're disabling the feature until we have time to look at it.  */
+//#define USE_MULTIBLOCK_READ	/* Use multiblock read implementation */
+
+#if defined (CONFIG_RELOCATE_COMPANION)
+# define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
+# undef USE_MULTIBLOCK_READ	/* ...just in case */
+#endif
 
 #if defined (COMPANION)
 # define GPIO_WP		PH1
@@ -853,6 +860,9 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
 	    printf ("\nstatus %x\n", status);
 	    ERROR_RETURN (ERROR_TIMEOUT, "timeout on read");
 	  }
+#if defined (USE_MULTIBLOCK_READ)
+	  status = execute_command (CMD_STOP, 0, MMC_STATUS_DONE);
+#endif
 	}
       }
 

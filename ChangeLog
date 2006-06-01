@@ -1,5 +1,8 @@
 2006-06-01  Marc Singer  <elf@buici.com>
 
+	* src/drivers-lh/drv-mmc.c: Added proper configuration checks for
+	the companion relocation.
+
 	* Many changes to the environment handling so that the environment
 	is present, and usable, even if the commands to manipulate it are
 	not.

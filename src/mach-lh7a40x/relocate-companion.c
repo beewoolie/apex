@@ -89,7 +89,7 @@
 
 //#define EMERGENCY
 
-#if defined (CONFIG_STARTUP_UART)
+#if defined (CONFIG_DEBUG_LL)
 //# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
 # define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
 # define USE_COPY_VERIFY
@@ -100,13 +100,13 @@
 //#define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
 #define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
 
-int relocate_apex_mmc (void)
+int __section (.bootstrap) relocate_apex_mmc (void)
 {
   struct descriptor_d d;
   size_t cb;
   unsigned char rgb[16];	/* Partition table entry */
 
-  PUTC ('>');			/* Feedback */
+  PUTC ('M');			/* Feedback */
 
   mmc_init ();
   PUTC_LL ('1');
@@ -140,6 +140,7 @@ int relocate_apex_mmc (void)
 
   PUTHEX_LL (d.start);
   PUTC_LL ('C');
+  PUTC ('r');
   cb = mmc_read (&d, (void*) MMC_BOOTLOADER_LOAD_ADDR, d.length);
 
   PUTC_LL ('c');
@@ -203,9 +204,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 #if defined (USE_MMC)
 
 	/* Read loader from SD/MMC only if we could be starting from I2C. */
-  else if (       (pc >> 12) == (0xb0000000>>12)
-	   && (   PUTC ('M')
-	       && relocate_apex_mmc ())) {
+  else if ((pc >> 12) == (0xb0000000>>12) && relocate_apex_mmc ()) {
     lr = MMC_BOOTLOADER_LOAD_ADDR;
   }
 
@@ -223,7 +222,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
     unsigned long index
       = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 3 - 4) & ~3;
     unsigned long v;
-    PUTC_LL ('R');
+    PUTC ('R');
     __asm volatile (
 		    "0: ldr %3, [%0, %2]\n\t"
 		       "str %3, [%1, %2]\n\t"
@@ -236,7 +235,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		       :: "cc"
 		    );
 #elif defined (USE_SLOW_COPY)
-    PUTC_LL ('R');
+    PUTC ('R');
   __asm volatile (
 	       "0: ldmia %0!, {r3}\n\t"
 		  "stmia %1!, {r3}\n\t"
@@ -248,7 +247,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  : "r3", "cc"
 		  );
 #else
-    PUTC_LL ('R');
+    PUTC ('R');
   __asm volatile (
 	       "0: ldmia %0!, {r3-r10}\n\t"
 		  "stmia %1!, {r3-r10}\n\t"
