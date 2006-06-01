@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Jun  1 14:13:59 2006
+# Thu Jun  1 14:32:41 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -124,9 +124,11 @@ CONFIG_DRIVERS_LH=y
 # Environment
 #
 CONFIG_ENV=y
-# CONFIG_AUTOBOOT is not set
+CONFIG_AUTOBOOT=y
+CONFIG_AUTOBOOT_DELAY=20
 # CONFIG_ENV_MUTABLE is not set
 CONFIG_ENV_LINK=y
 CONFIG_ENV_STARTUP_KERNEL_COPY=y
 CONFIG_ENV_REGION_KERNEL="ext2://2/zImage"
-# CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE is not set
+CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
+CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/nfs ip=rarp"
