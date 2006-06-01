@@ -347,6 +347,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #if defined (SMC_BCR1_V)
   SMC_BCR1 = SMC_BCR1_V;
 #endif
+#if defined (SMC_BCR2_V)
+  SMC_BCR2 = SMC_BCR2_V;
+#endif
 #if defined (SMC_BCR6_V)
   SMC_BCR6 = SMC_BCR6_V;
 #endif
