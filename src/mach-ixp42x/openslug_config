@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sat Apr  1 13:50:21 2006
+# Thu Jun  1 12:46:58 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -18,6 +18,8 @@ CONFIG_ARCH_IXP42X=y
 #
 CONFIG_CROSS_COMPILE="/usr/armv5b-softfloat-linux/gcc-3.4.4-glibc-2.3.5/bin/armv5b-softfloat-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+# CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
+# CONFIG_CC_NO_OPTIMIZATION is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
@@ -91,6 +93,7 @@ CONFIG_USES_PATHNAME_PARSER=y
 #
 # Environment
 #
+CONFIG_ENV=y
 CONFIG_NOR_BOOT=y
 # CONFIG_NAND_BOOT is not set
 CONFIG_AUTOBOOT=y

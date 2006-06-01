@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sat Apr  1 13:50:22 2006
+# Thu Jun  1 12:47:07 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -19,6 +19,8 @@ CONFIG_ARCH_LH7A40X=y
 #
 CONFIG_CROSS_COMPILE="/usr/gcc-3.4.4-glibc-2.3.5/arm-linux/bin/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+# CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
+# CONFIG_CC_NO_OPTIMIZATION is not set
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
@@ -28,6 +30,7 @@ CONFIG_SDRAMBOOT_REPORT=y
 CONFIG_ATAG_PHYS=0xc0000100
 CONFIG_APEX_VMA=0xc0200000
 CONFIG_KERNEL_LMA=0xc0008000
+# CONFIG_USE_RAMDISK is not set
 CONFIG_SDRAM_BANK0=y
 # CONFIG_SDRAM_BANK1 is not set
 # CONFIG_CODEC is not set
@@ -35,6 +38,7 @@ CONFIG_MACH="lh7a40x"
 CONFIG_MACH_LPD7A400=y
 # CONFIG_MACH_LPD7A404 is not set
 # CONFIG_MACH_TROUNCER is not set
+# CONFIG_MACH_COMPANION is not set
 
 #
 # Platform Setup
@@ -126,6 +130,7 @@ CONFIG_USE_ETHERNET=y
 #
 # Environment
 #
+CONFIG_ENV=y
 CONFIG_NOR_BOOT=y
 # CONFIG_NAND_BOOT is not set
 # CONFIG_AUTOBOOT is not set

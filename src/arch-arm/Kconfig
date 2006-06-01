@@ -231,6 +231,7 @@ menu "Environment"
 
 config ENV
 	bool "Enable environment"
+	default y
 	help
 	  This option enable the environment which is, by itself, not
 	  very expensive.  This will allow the environment variables
