@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Jun  1 12:47:17 2006
+# Thu Jun  1 14:13:59 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -21,6 +21,7 @@ CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set
+CONFIG_STARTUP_UART=y
 # CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
