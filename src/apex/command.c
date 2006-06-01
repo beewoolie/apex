@@ -39,7 +39,7 @@
 
 const char* error_description;
 
-#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_CMD_ENV)
+#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_ENV)
 
 static char* expand_variables (const char* rgbSrc)
 {
@@ -112,7 +112,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
   char* pb;
   int cb;
 
-#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_CMD_ENV)
+#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_ENV)
   pb = expand_variables (rgb);
   if (pb) {
     rgb = pb;

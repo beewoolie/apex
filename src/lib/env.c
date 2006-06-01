@@ -52,7 +52,7 @@
    - Use a strcasecmp instead of strcmp when looking for keys.
 
    - *** Need to investigate why it fails to boot properly when the
-         environment region doesn't open, no nor flash driver.
+	 environment region doesn't open, no nor flash driver.
 
 */
 
@@ -85,12 +85,12 @@ extern char APEX_VMA_END;
 
 struct descriptor_d env_d;	/* Environment storage region */
 
-#if defined (CONFIG_CMD_SETENV)
-
 static ssize_t _env_read (void* pv, size_t cb)
 {
   return env_d.driver->read (&env_d, pv, cb);
 }
+
+#if defined (CONFIG_CMD_SETENV)
 
 static ssize_t _env_write (const void* pv, size_t cb)
 {
@@ -101,6 +101,8 @@ static void _env_back (void)
 {
   env_d.driver->seek (&env_d, -1, SEEK_CUR);
 }
+
+#endif
 
 static void _env_rewind (void)
 {
@@ -221,12 +223,12 @@ static int _env_fetch (const char* szKey, const char** pszValue)
   return i;
 }
 
-#else
-
-#define _env_find(i) NULL
-#define _env_fetch(s,p) -1
-
-#endif
+//#else
+//
+//#define _env_find(i) NULL
+//#define _env_fetch(s,p) -1
+//
+//#endif
 
 /* env_enumerate
 

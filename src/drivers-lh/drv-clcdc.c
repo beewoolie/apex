@@ -213,7 +213,7 @@
 #endif
 
 #if defined (CONFIG_LCD_NL2432HC22_40A)
-	/* NEC QVGA */
+	/* NEC QVGA 2432HC22-40A 320x240 8.9cm*/
 /* The full horozontal cycle (Th) is clock/?/256/?. */
 /* The full vertical   cycle (Tv) is line/?/324/?. */
 #define PANEL_NAME	"LCD 10.4\" VGA"

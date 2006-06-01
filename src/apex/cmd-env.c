@@ -77,6 +77,13 @@
 
 extern struct descriptor_d env_d;
 
+/* cmd_printenv
+
+   show the contents of the environment.  This command is defined if
+   any of the environment commands are enabled.
+
+*/
+
 int cmd_printenv (int argc, const char** argv)
 {
   void* pv = 0;
@@ -95,7 +102,6 @@ int cmd_printenv (int argc, const char** argv)
   return 0;
 }
 
-#if defined (CONFIG_CMD_SETENV)
 static __command struct command_d c_printenv = {
   .command = "printenv",
   .description = "show the environment",
@@ -108,6 +114,8 @@ static __command struct command_d c_printenv = {
 "  denotes a variable set to the default value.\n"
   )
 };
+
+#if defined (CONFIG_CMD_SETENV)
 
 static int cmd_setenv (int argc, const char** argv)
 {

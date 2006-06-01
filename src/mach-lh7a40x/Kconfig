@@ -191,13 +191,13 @@ config SDRAM_BANK1
 config SDRAM_CONTIGUOUS
 	bool "Initialize SDRAM to be contiguous"
 	depends on SDRAM_BANK0
-	default n
+	default y
 	help
 	  This option initializes the SDRAM controller to map each
 	  SDRAM into a contiguous bank, SROMLL.  Normally, SDRAM is
 	  sparse in the address space.  Linux does not need this
-	  option, but Windows/CE does.  Do not set this option unless
-	  you know what you are doing.
+	  option, but Windows/CE does.  It should be safe to set
+	  this option. 
 
 config RELOCATE_COMPANION
 	bool "Use Synapse Companion APEX relocate in bootstrap"

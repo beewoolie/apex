@@ -95,11 +95,12 @@ config CMD_DUMP
 
 config CMD_ENV
 	bool "Define Environment Commands"
+	depends on ENV
 	default y
 
 config CMD_ERASEENV
 	bool "Define Erase Environment Command"
-	depends on CMD_ENV=y && ENV_MUTABLE=y
+	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
 	default n
 	help
 	  Experimental feature that allows safe, complete erasure of
@@ -107,7 +108,7 @@ config CMD_ERASEENV
 
 config CMD_SETENV
 	bool "Define Set/unset Environment Variable Commands"
-	depends on CMD_ENV=y && ENV_MUTABLE=y
+	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
 	default y
 
 config CMD_ERASE

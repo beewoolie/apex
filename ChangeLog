@@ -1,3 +1,13 @@
+2006-06-01  Marc Singer  <elf@buici.com>
+
+	* Many changes to the environment handling so that the environment
+	is present, and usable, even if the commands to manipulate it are
+	not.
+
+	* src/apex/cmd-env.c: Fixed a stupid error in the environment
+	command code that required the setenv command in order to use the
+	printenv command.
+
 2006-05-29  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-ext2.c (ext2_info): Fixed the way that

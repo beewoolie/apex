@@ -185,10 +185,10 @@ config DISABLE_MMU_AT_BOOT
 	help
 	  Generally, it isn't necessary to disable the MMU when APEX
 	  starts.  It is off when the CPU resets.  However, when
-	  bootstrapping from one boot loader into APEX, it is
-	  sometimes necessary to disable the MMU because the previous
-	  loader fails to do so.  It is safe to leave this feature
-	  enabled.
+	  bootstrapping from one boot loader into APEX, it may be
+	  necessary to disable the MMU because the previous loader
+	  fails to do so.  It is safe, and prudent, to leave this
+	  feature enabled.
 
 	  Believe it or not, this option is independent of the MMU
 	  enable option which activates the MMU for running APEX and
@@ -229,8 +229,24 @@ source src/net/Kconfig
 
 menu "Environment"
 
+config ENV
+	bool "Enable environment"
+	help
+	  This option enable the environment which is, by itself, not
+	  very expensive.  This will allow the environment variables
+	  to take on the default values and be used in substitutions.
+	  In order for the user to be able to change the environment
+	  at runtime, set the CONFIG_ENV_OPTION.
+
+	  Also note that the environment isn't explicitly visible from
+	  the APEX command without enabling environment commands.
+
+	  Unless you are trying to shrink APEX to it's smallest
+	  possible size, it is best to set this option Y.
+
 choice
 	prompt "Bootflash"
+	depends on USES_NOR_BOOTFLASH || USES_NAND_BOOTFLASH
 	default NOR_BOOT
 
 config NOR_BOOT
@@ -249,6 +265,7 @@ endchoice
 
 config AUTOBOOT
 	bool "Automatically boot operating system"
+	depends on ENV
 	default n
 
 config AUTOBOOT_DELAY
@@ -261,6 +278,7 @@ config AUTOBOOT_DELAY
 
 config ENV_MUTABLE
 	bool "Allow runtime changes to the environment"
+	depends on ENV
 	default y
 	help
 	  This option enables a runtime, user changeable environment.
@@ -270,7 +288,7 @@ config ENV_MUTABLE
 
 config ENV_LINK
 	bool "Assist user-mode access to the environment"
-	depends on !CONFIG_SMALL
+	depends on ENV && !CONFIG_SMALL
 	default y
 	help
 	  This option puts a marker and a string near the beginning of
@@ -295,29 +313,31 @@ config ENV_REGION
 
 config ENV_STARTUP_KERNEL_COPY
 	bool "Copy Linux kernel to RAM at startup" 
+	depends on ENV
 	default y
 	
 config ENV_REGION_KERNEL
 	string "Source region for kernel"
-	depends on ENV_STARTUP_KERNEL_COPY
+	depends on ENV && ENV_STARTUP_KERNEL_COPY
 	default "nor:256k+1024k" if MACH_M7200
 	default "nor:256k+1024k" if MACH_LNODE80
 	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
 	default "nor:0x60010+0xffff0" if MACH_NSLU2
 	default "nor:128k+1536k" if MACH_KEV79524
+	default "ext2://2/zImage" if MACH_COMPANION
 	help
 	  At startup, APEX copies this region to the kernel start address.
 
 config ENV_STARTUP_RAMDISK_COPY
 	bool "Copy ramdisk to RAM at startup" 
+	depends on ENV && USE_RAMDISK
 	default y if MACH_LNODE80
 	default y if MACH_M7200
 	default y if MACH_NSLU2
-	depends on USE_RAMDISK
 	
 config ENV_REGION_RAMDISK
 	string "Source region for ramdisk image"
-	depends on ENV_STARTUP_RAMDISK_COPY
+	depends on ENV && ENV_STARTUP_RAMDISK_COPY
 	default "nor:1280k+1536k" if MACH_M7200
 	default "nor:1280k+1536k" if MACH_LNODE80
 	default "nor:0x160010+0x69fff0" if MACH_NSLU2
@@ -327,6 +347,7 @@ config ENV_REGION_RAMDISK
 
 config ENV_DEFAULT_CMDLINE_OVERRIDE
 	bool "Override the target default kernel command line"
+	depends on ENV
 	default false
 	help
 	  Set this option so that you can override the target's
@@ -335,7 +356,7 @@ config ENV_DEFAULT_CMDLINE_OVERRIDE
 
 config ENV_DEFAULT_CMDLINE
 	string "Default kernel command line"
-	depends on ENV_DEFAULT_CMDLINE_OVERRIDE
+	depends on ENV && ENV_DEFAULT_CMDLINE_OVERRIDE
 	help
 	  Setting this option will override the default command line
 	  for the target.  One of these is used when there is no user
