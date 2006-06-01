@@ -217,19 +217,19 @@
 /* The full horozontal cycle (Th) is clock/?/256/?. */
 /* The full vertical   cycle (Tv) is line/?/324/?. */
 #define PANEL_NAME	"LCD 10.4\" VGA"
-#define PEL_CLOCK_EST	(5000000)     /* 5MHz */
+#define PEL_CLOCK_EST	(5*1000*1000)     /* 5MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(240)
 #define PEL_HEIGHT	(320)
 #define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(8)
-#define RIGHT_MARGIN	(256-8-240-1)
-#define TOP_MARGIN	(2)			/* lines/?*/
+#define LEFT_MARGIN	(4)
+#define RIGHT_MARGIN	(256-8-240-4)
+#define TOP_MARGIN	(1)			/* lines/?*/
 #define BOTTOM_MARGIN	(324-2-320-1)
 #define HSYNC_WIDTH	(8)			/* clocks/?/8/? */
-#define VSYNC_WIDTH	(1)			/* lines/?/1/? */
+#define VSYNC_WIDTH	(2)			/* lines/?/1/? */
 
 #define INVERT_HSYNC
 #define INVERT_VSYNC
