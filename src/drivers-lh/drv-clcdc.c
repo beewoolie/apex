@@ -444,7 +444,7 @@ static void clcdc_report (void)
   unsigned long clk = HCLK/((CLCDC_TIMING2 & 0x1f) + 2);
   printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
 	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
-  printf ("          ctrl 0x%x\n", CLCDC_CTRL);
+  printf ("          ctrl 0x%lx\n", CLCDC_CTRL);
   printf ("          timing0 0x%08lx  timing1 0x%08lx  timing2 0x%08lx\n",
 	  CLCDC_TIMING0, CLCDC_TIMING1, CLCDC_TIMING2);
   if (clk < 1000000)
