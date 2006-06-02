@@ -402,6 +402,26 @@ static ssize_t i2c_write (struct descriptor_d* d, const void* pv, size_t cb)
   return cbWrote;
 }
 
+
+static void i2c_erase (struct descriptor_d* d, size_t cb)
+{
+  char rgb[128];
+  memset (rgb, 0xff, sizeof (rgb));
+
+  while (cb) {
+    int available = sizeof (rgb);
+    if (available > cb)
+      available = cb;
+
+    if (i2c_write (d, rgb, available) != available)
+      return;
+
+    d->index += available;
+    cb -= available;
+  }
+}
+
+
 static void i2c_report (void)
 {
   printf ("  i2c:    -\n");
@@ -415,6 +435,7 @@ static __driver_5 struct driver_d i2c_driver = {
   .close = close_helper,
   .read = i2c_read,
   .write = i2c_write,
+  .erase = i2c_erase,
   .seek = seek_helper,
 };
 

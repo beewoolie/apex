@@ -1,5 +1,4 @@
 /* drv-nor-cfi.c
-     $Id$
 
    written by Marc Singer
    13 Nov 2004
