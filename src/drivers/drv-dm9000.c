@@ -25,6 +25,12 @@
    DESCRIPTION
    -----------
 
+   Optimization
+   ------------
+
+   This code is somewhat wasteful.  We should be able to recover some
+   space in the loader through use herein.
+
 */
 
 #include <apex.h>
@@ -194,8 +200,8 @@ static __command struct command_d c_eth = {
   COMMAND_HELP(
 "eth [SUBCOMMAND [PARAMETER]]\n"
 "  Commands for the Ethernet MAC and PHY devices.\n"
-"  Without a SUBCOMMAND, it displays diagnostics about the EMAC\n"
-"    and PHY devices.  This information is for debugging the hardware.\n"
+"  Without a SUBCOMMAND, it displays info about the chip\n"
+"    This information is for debugging the hardware.\n"
 //"  clear - reset the EMAC.\n"
 //"  anen  - restart auto negotiation.\n"
 //"  send  - send a test packet.\n"
@@ -220,18 +226,9 @@ static void dm9000_init (void)
 {
   u16 rgs[3];
 
-  DM_INDEX = DM9000_VIDL;
-  dm9000.vendor |= DM_DATA;
-  DM_INDEX = DM9000_VIDH;
-  dm9000.vendor |= (DM_DATA << 8);
-
-  DM_INDEX = DM9000_PIDL;
-  dm9000.product |= DM_DATA;
-  DM_INDEX = DM9000_PIDH;
-  dm9000.product |= (DM_DATA << 8);
-
-  DM_INDEX = DM9000_CHIPR;
-  dm9000.chip |= DM_DATA;
+  dm9000.vendor  = read_reg (DM9000_VIDL) | (read_reg (DM9000_VIDH) << 8);
+  dm9000.product = read_reg (DM9000_PIDL) | (read_reg (DM9000_PIDH) << 8);
+  dm9000.chip	 = read_reg (DM9000_CHIPR);
 
   if (dm9000.vendor != 0xa46 || dm9000.product != 0x9000)
     return;
