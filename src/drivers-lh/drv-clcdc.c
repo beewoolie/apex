@@ -436,6 +436,12 @@ static void clcdc_release (void)
   DRV_CLCDC_POWER_DISABLE;
 
   DRV_CLCDC_RELEASE;
+
+  /* Make it clear to the anyone looking that the LCD controller is no
+     longer initialized. */
+  CLCDC_TIMING0 = CLCDC_TIMING1 = CLCDC_TIMING2 = 0;
+  CLCDC_UPBASE    = 0;
+  CLCDC_CTRL      = 0;
 }
 
 #if !defined (CONFIG_SMALL)

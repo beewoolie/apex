@@ -1,5 +1,4 @@
 /* drv-clcdc.h
-     $Id$
 
    written by Marc Singer
    24 Dec 2005
