@@ -1,3 +1,7 @@
+2006-06-02  Marc Singer  <elf@cerise.buici.com>
+
+	* Makefile: Release 1.3.27.  Version for companion as well.
+
 2006-06-01  Marc Singer  <elf@buici.com>
 
 	* src/mach-lh7a40x/relocate-companion.c: Fixed the section of the
