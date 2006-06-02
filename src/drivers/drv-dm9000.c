@@ -39,6 +39,8 @@
 
 #include <dm9000.h>
 
+#include <mach/drv-dm9000.h>
+
 #define TALK 3
 
 #if defined (TALK)
@@ -51,253 +53,136 @@
 #define DBG(l,f...)		do {} while (0)
 #endif
 
-#define DM_PHYS		(0x10000000)
-#define DM_INDEX	__REG16 (DM_PHYS)
-#define DM_DATA		__REG16 (DM_PHYS + 4)
+#if DM_WIDTH == 16
+# define DM_INDEX	__REG16 (DM_PHYS_INDEX)
+# define DM_DATA	__REG16 (DM_PHYS_DATA)
+#endif
+
+struct dm9000 {
+  int present;
+  unsigned short vendor;
+  unsigned short product;
+  unsigned short chip;
+};
+
+struct dm9000 dm9000;
+
+static u16 rgs_eeprom[64/2];	/* Data copied from the eeprom */
+
+static void write_reg (int index, u16 value)
+{
+  DM_INDEX = index;
+  DM_DATA = value;
+}
+
+static u16 read_reg (int index)
+{
+  DM_INDEX = index;
+  return DM_DATA;
+}
+
+static u16 read_eeprom (int index)
+{
+  u16 v;
+
+  write_reg (DM9000_EPAR, index);
+  write_reg (DM9000_EPCR, EPCR_ERPRR);
+  mdelay (10);	/* according to the datasheet 200us should be enough,
+		   but it doesn't work */
+  write_reg (DM9000_EPCR, 0x0);
+
+  v = read_reg (DM9000_EPDRL) & 0xff;
+  v |= (read_reg (DM9000_EPDRH) & 0xff) << 8;
+  return v;
+}
+
+static void write_eeprom (int index, u16 value)
+{
+  write_reg (DM9000_EPAR, index);
+  write_reg (DM9000_EPDRH, (value >> 8) & 0xff);
+  write_reg (DM9000_EPDRL,  value       & 0xff);
+  write_reg (DM9000_EPCR, EPCR_WEP | EPCR_ERPRW);
+  mdelay (10);
+  write_reg (DM9000_EPCR, 0);
+}
+
+static void dm9000_read_eeprom (void)
+{
+  int i;
+  for (i = 0; i < sizeof (rgs_eeprom)/sizeof (u16); ++i)
+    rgs_eeprom[i] = read_eeprom (i);
+}
+
 
 #if defined (CONFIG_CMD_ETH_DM9000)
+
+  /* *** FIXME: this shouldn't be in the command conditional */
+#if defined (CONFIG_ETHERNET)
+extern char host_mac_address[];
+#else
+static char host_mac_address[6];
+#endif
 
 static int cmd_eth (int argc, const char** argv)
 {
   int result = 0;
 
+  if (!dm9000.present)
+    ERROR_RETURN (ERROR_FAILURE, "dm9000 device not present");
+
   if (argc == 1) {
-    unsigned short vendor = 0;
-    unsigned short product = 0;
-    unsigned short chip = 0;
-
-    DM_INDEX = DM9000_VIDL;
-    vendor |= DM_DATA;
-    DM_INDEX = DM9000_VIDH;
-    vendor |= (DM_DATA << 8);
-
-    DM_INDEX = DM9000_PIDL;
-    product |= DM_DATA;
-    DM_INDEX = DM9000_PIDH;
-    product |= (DM_DATA << 8);
-
-    DM_INDEX = DM9000_CHIPR;
-    chip |= DM_DATA;
-
     printf ("dm9000: vendor 0x%x  product 0x%x  chip 0x%x\n",
-	    vendor, product, chip);
-  }
-
-#if 0
-
-  if (argc == 1) {>
-    {
-      unsigned i;
-      struct regs {
-	int reg;
-	char label[5];
-      };
-      static struct regs __rodata rgRegs[] = {
-	{  0, "ctrl" },
-	{  1, "stat" },
-	{  2, "id1" },
-	{  3, "id2" },
-	{  4, "anadv" },
-	{  5, "anpar" },
-	{  6, "anexp" },
-	{  7, "anpag" },
-
-#if 1
-	{ 16, "cfg1" },
-	{ 17, "cfg2" },
-	{ 18, "int" },
-	{ 19, "mask" },
-#endif
-#if 0
-	/* Altima */
-	{ 16, "btic" },
-	{ 17, "intr" },
-	{ 18, "diag" },
-	{ 19, "loop" },
-	{ 20, "cable" },
-	{ 21, "rxer" },
-	{ 22, "power" },
-	{ 23, "oper" },
-	{ 24, "rxcrc" },
-	{ 28|(1<<8)|(0<<12), "mode" },
-	{ 29|(1<<8)|(0<<12), "test" },
-	{ 29|(1<<8)|(1<<12), "blnk" },
-	{ 30|(1<<8)|(1<<12), "l0s1" },
-	{ 31|(1<<8)|(1<<12), "l0s2" },
-	{ 29|(1<<8)|(2<<12), "l1s1" },
-	{ 30|(1<<8)|(2<<12), "l1s2" },
-	{ 31|(1<<8)|(2<<12), "l2s1" },
-	{ 29|(1<<8)|(3<<12), "l2s2" },
-	{ 30|(1<<8)|(3<<12), "l3s1" },
-	{ 31|(1<<8)|(3<<12), "l3s2" },
-#endif
-#if 0
-	/* NatSemi */
-	{ 16, "phsts" },
-	{ 20, "fcscr" },
-	{ 21, "recr" },
-	{ 22, "pcsr" },
-	{ 25, "phctl" },
-	{ 26, "100sr" },
-	{ 27, "cdtst" },
-#endif
-      };
-#if 1
-#define WIDE 5
-#define ROWS (sizeof (rgRegs)/sizeof (rgRegs[0]) + WIDE - 1)/WIDE
-#define COUNT ROWS*WIDE
-      for (i = 0; i < COUNT; ++i) {
-	int index = (i%WIDE)*ROWS + i/WIDE;
-	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
-	  continue;
-	if (i && (i % WIDE) == 0)
-	  printf ("\n");
-	if (rgRegs[index].reg & (1<<8))
-	  smc91x_phy_write (phy_address, 28,
-			  (smc91x_phy_read (phy_address, 28) & 0x0fff)
-			  | (rgRegs[index].reg & 0xf000));
-	printf ("%5s-%-2d %04x  ",
-		rgRegs[index].label, rgRegs[index].reg & 0xff,
-		smc91x_phy_read (phy_address, rgRegs[index].reg & 0xff));
-      }
-#else
-      for (i = 0; i < 2*(((sizeof (rgRegs)/sizeof (rgRegs[0])) + 0x7)&~7);
-	   ++i) {
-	unsigned index = (i & 7) | ((i >> 1) & ~7);
-	if (index >= sizeof (rgRegs)/sizeof (rgRegs[0]))
-	  continue;
-	//	printf ("i %d (%x) index %d (%x)\n", i, i, index, index);
-	if (i & (1<<3)) {
-	  if (i && (index & 0x7) == 0)
-	    printf ("\n");
-	  if (rgRegs[index].reg & (1<<8))
-	    smc91x_phy_write (phy_address, 28,
-			    (smc91x_phy_read (phy_address, 28) & 0x0fff)
-			    | (rgRegs[index].reg & 0xf000));
-	  printf ("%04x    ", smc91x_phy_read (phy_address,
-					     rgRegs[index].reg & 0xff));
-	}
-	else {
-	  if (i && (index & 0x7) == 0)
-	    printf ("\n\n");
-	  printf ("%s-%-2d ", rgRegs[index].label, rgRegs[index].reg & 0xff);
-	}
-      }
-#endif
-
-      printf ("\n");
-    }
-    {
-      unsigned long l;
-//      int i;
-      l = smc91x_phy_read (phy_address, 0);
-      PRINTF ("phy_control 0x%lx\n", l);
-      l = smc91x_phy_read (phy_address, 1);
-      PRINTF ("phy_status 0x%lx", l);
-      if (l&PHY_STATUS_ANEN_COMPLETE)
-	PRINTF (" anen_complete");
-      if (l&PHY_STATUS_LINK)
-	PRINTF (" link");
-      if (l&PHY_STATUS_100FULL)
-	PRINTF (" cap100F");
-      if (l&PHY_STATUS_100HALF)
-	PRINTF (" cap100H");
-      if (l&PHY_STATUS_10FULL)
-	PRINTF (" cap10F");
-      if (l&PHY_STATUS_10HALF)
-	PRINTF (" cap10H");
-      printf ("\n");
-      //      l = smc91x_phy_read (phy_address, 4);
-      //      PRINTF ("phy_advertisement 0x%lx\n", l);
-      l = smc91x_phy_read (phy_address, 5);
-      PRINTF ("phy_partner 0x%lx", l);
-      if (l & (1<<9))
-	PRINTF ("  100Base-T4");
-      if (l & (1<<8))
-	PRINTF ("  100Base-TX-full");
-      if (l & (1<<7))
-	PRINTF ("  100Base-TX");
-      if (l & (1<<6))
-	PRINTF ("  10Base-T-full");
-      if (l & (1<<5))
-	PRINTF ("  10Base-T");
-      PRINTF ("\n");
-      l = smc91x_phy_read (phy_address, 6);
-      PRINTF ("phy_autoneg_expansion 0x%lx", l);
-      if (l & (1<<4))
-	PRINTF (" parallel-fault");
-      if (l & (1<<1))
-	PRINTF (" page-received");
-      if (l & (1<<0))
-	PRINTF (" partner-ANEN-able");
-      PRINTF ("\n");
-      //      l = smc91x_phy_read (phy_address, 7);
-      //      PRINTF ("phy_autoneg_nextpage 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 16);
-      //      PRINTF ("phy_bt_interrupt_level 0x%lx\n", l);
-      l = smc91x_phy_read (phy_address, 17);
-      PRINTF ("phy_interrupt_control 0x%lx", l);
-      if (l & (1<<4))
-	PRINTF (" parallel_fault");
-      if (l & (1<<2))
-	PRINTF (" link_not_ok");
-      if (l & (1<<0))
-	PRINTF (" anen_complete");
-      PRINTF ("\n");
-      l = smc91x_phy_read (phy_address, 18);
-      PRINTF ("phy_diagnostic 0x%lx", l);
-      if (l & (1<<12))
-	PRINTF (" force 100TX");
-      if (l & (1<<13))
-	PRINTF (" force 10BT");
-      PRINTF ("\n");
-      //      l = smc91x_phy_read (phy_address, 19);
-      //      PRINTF ("phy_power_loopback 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 20);
-      //      PRINTF ("phy_cable 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 21);
-      //      PRINTF ("phy_rxerr 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 22);
-      //      PRINTF ("phy_power_mgmt 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 23);
-      //      PRINTF ("phy_op_mode 0x%lx\n", l);
-      //      l = smc91x_phy_read (phy_address, 24);
-      //      PRINTF ("phy_last_crc 0x%lx\n", l);
-
-    }
-    select_bank (0);
-    PRINT_REG;
-    select_bank (1);
-    PRINT_REG;
-    select_bank (2);
-    PRINT_REG;
-    select_bank (3);
-    PRINT_REG;
+	    dm9000.vendor, dm9000.product, dm9000.chip);
   }
   else {
-    if (strcmp (argv[1], "en") == 0) {
-      smc91x_phy_configure ();
-    }
-    if (strcmp (argv[1], "an") == 0) {
-      int v;
-      smc91x_phy_write (phy_address, PHY_ANEG_ADV,
-			0
-			| (1<<8)
-			| (1<<7)
-			| (1<<6)
-			| (1<<5)
-			| (1<<0));
-      smc91x_phy_read (phy_address, PHY_ANEG_ADV);
-      v = smc91x_phy_read (phy_address, PHY_CONTROL);
-      printf ("restarting anen\n");
-      v |= PHY_CONTROL_ANEN_ENABLE | PHY_CONTROL_RESTART_ANEN;
-      printf ("Writing PHY_CONTROL 0x%x\n", v);
-      smc91x_phy_write (phy_address, PHY_CONTROL, v);
-      v = smc91x_phy_read (phy_address, PHY_CONTROL);
-      printf ("Read back PHY_CONTROL 0x%x\n", v);
-    }
-  }
+	/* Set mac address */
+    if (strcmp (argv[1], "mac") == 0) {
+      unsigned char rgb[6];
+      if (argc != 3)
+	return ERROR_PARAM;
+
+      {
+	int i;
+	char* pb = (char*) argv[2];
+	for (i = 0; i < 6; ++i) {
+	  if (!*pb)
+	    ERROR_RETURN (ERROR_PARAM, "mac address too short");;
+	  rgb[i] = simple_strtoul (pb, &pb, 16);
+	  if (*pb)
+	    ++pb;
+	}
+	if (*pb)
+	  ERROR_RETURN (ERROR_PARAM, "mac address too long");;
+      }
+
+      memcpy (host_mac_address, rgb, 6); /* For networking layer */
+
+#if 0
+      EMAC_SPECAD1BOT
+	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
+      EMAC_SPECAD1TOP
+	= (rgb[5]<<8)|(rgb[4]<<0);
+      printf ("emac: mac address\n");
+      dump (rgb, 6, 0);
 #endif
+    }
+
+    if (strcmp (argv[1], "save") == 0) {
+      u16 rgs[3];
+      rgs[0] = host_mac_address[0] | (host_mac_address[1] << 8);
+      rgs[1] = host_mac_address[2] | (host_mac_address[3] << 8);
+      rgs[2] = host_mac_address[4] | (host_mac_address[5] << 8);
+      write_eeprom (0, rgs[0]);
+      write_eeprom (1, rgs[1]);
+      write_eeprom (2, rgs[2]);
+    }
+
+    if (strcmp (argv[1], "re") == 0) {
+      dm9000_read_eeprom ();
+      dump ((void*) rgs_eeprom, sizeof (rgs_eeprom), 0);
+    }
+
+  }
 
   return result;
 }
@@ -330,3 +215,65 @@ static __command struct command_d c_eth = {
 };
 
 #endif
+
+static void dm9000_init (void)
+{
+  u16 rgs[3];
+
+  DM_INDEX = DM9000_VIDL;
+  dm9000.vendor |= DM_DATA;
+  DM_INDEX = DM9000_VIDH;
+  dm9000.vendor |= (DM_DATA << 8);
+
+  DM_INDEX = DM9000_PIDL;
+  dm9000.product |= DM_DATA;
+  DM_INDEX = DM9000_PIDH;
+  dm9000.product |= (DM_DATA << 8);
+
+  DM_INDEX = DM9000_CHIPR;
+  dm9000.chip |= DM_DATA;
+
+  if (dm9000.vendor != 0xa46 || dm9000.product != 0x9000)
+    return;
+
+  dm9000.present = 1;
+
+  rgs[0] = read_eeprom (0);
+  rgs[1] = read_eeprom (1);
+  rgs[2] = read_eeprom (2);
+
+  host_mac_address[0] =  rgs[0]       & 0xff;
+  host_mac_address[1] = (rgs[0] >> 8) & 0xff;
+  host_mac_address[2] =  rgs[1]       & 0xff;
+  host_mac_address[3] = (rgs[1] >> 8) & 0xff;
+  host_mac_address[4] =  rgs[2]       & 0xff;
+  host_mac_address[5] = (rgs[2] >> 8) & 0xff;
+}
+
+
+#if !defined (CONFIG_SMALL)
+static void dm9000_report (void)
+{
+  if (dm9000.present) {
+    printf ("  dm9000: phy_addr %d  phy_id 0x%lx"
+	    "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    -1, (unsigned long)-1,
+	    host_mac_address[0],
+	    host_mac_address[1],
+	    host_mac_address[2],
+	    host_mac_address[3],
+	    host_mac_address[4],
+	    host_mac_address[5]
+	    );
+  }
+}
+#endif
+
+
+static __service_6 struct service_d dm9000_service = {
+  .init = dm9000_init,
+  //  .release = dm9000_release,
+#if !defined (CONFIG_SMALL)
+  .report = dm9000_report,
+#endif
+};
