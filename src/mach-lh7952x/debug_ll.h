@@ -117,7 +117,7 @@
 
 #endif
 
-#define PUTC_LL(c)	({ while (UART_FR & UART_FR_TXFF) ; \
+#define PUTC(c)		({ while (UART_FR & UART_FR_TXFF) ; \
 			   UART_DR = c; \
 			   while (UART_FR & UART_FR_BUSY) ; })
 

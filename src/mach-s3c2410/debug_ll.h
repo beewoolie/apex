@@ -62,7 +62,7 @@
 
 #endif
 
-#define PUTC_LL(c)	({ while ( (UART0_CTRL_OUTRSTAT & UTRSTAT_TX_EMPTY)\
+#define PUTC(c)		({ while ( (UART0_CTRL_OUTRSTAT & UTRSTAT_TX_EMPTY)\
 			    == UART0_CTRL_OUTRSTAT) ; \
 			    UART0_CTRL_UTXHL = c; })
 

@@ -255,6 +255,8 @@ struct ethernet_header {
   unsigned short protocol;
 };
 
+#if 0
+  /* This should be (adequately) defined in a header. */
 static void msleep (int ms)
 {
   unsigned long time = timer_read ();
@@ -262,6 +264,7 @@ static void msleep (int ms)
   do {
   } while (timer_delta (time, timer_read ()) < ms);
 }
+#endif
 
 #endif
 

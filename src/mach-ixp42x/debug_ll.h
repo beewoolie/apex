@@ -88,7 +88,7 @@
 
 #endif
 
-#define PUTC_LL(c)	({ UART_DR = c; \
+#define PUTC(c)		({ UART_DR = c; \
 			   while ((UART_LSR & UART_LSR_TEMT) == 0) ; })
 
 #endif  /* __DEBUG_LL_H__ */
