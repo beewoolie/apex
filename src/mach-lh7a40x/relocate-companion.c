@@ -74,6 +74,16 @@
    If a larger boot loader is needed, the temporary stack may be
    relocated to SDRAM, allowing for another 4K of boot loader code.
 
+   Loading APEX to SRAM
+   --------------------
+
+   The best method is to load the copy of APEX from SD/MMC into SRAM
+   at 0xb0000000+4k, but there is some question as to whether or not
+   this will work.  An initial test of the loader showed that it does
+   work, but just after this successful test and after writing to the
+   EEPROM, the board is no longer able to boot and nor will it respond
+   to JTAG.
+
 */
 
 #include <config.h>
@@ -95,13 +105,13 @@
 # define USE_COPY_VERIFY
 #endif
 
-#define MMC_BOOTLOADER_SIZE		((80\
+#define MMC_BOOTLOADER_SIZE		(1024*(80\
 		/* 4k from EEPROM */	  - 4\
 		/* 4k stack */		  - 4\
-		/* 4k bootstrap data */	  - 4)*1024)
+		/* 4k bootstrap data */	  - 4))
 //#define MMC_BOOTLOADER_SIZE		(64*1024)
-//#define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
-#define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
+#define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
+//#define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
 
 int __section (.bootstrap) relocate_apex_mmc (void)
 {
