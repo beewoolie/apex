@@ -272,6 +272,7 @@ void __naked __section (.bootstrap) relocate_apex (void)
   }
 
 				/* Return to SDRAM */
+  PUTC ('@');			/* Let 'em know we're jumping */
   __asm volatile ("mov pc, %0" : : "r" (lr));
 
 }

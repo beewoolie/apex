@@ -456,6 +456,8 @@ ifeq ($(config-targets),1)
 # This command would force defaults for new config options.  We're not
 # going to do it for now.
 #	$(Q)$(MAKE) oldconfig < /dev/null
+	@echo "Copied configuration $@ to .config"
+	@echo "Ready to run 'make'"
 
 %config: scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
