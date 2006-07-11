@@ -33,15 +33,23 @@
 extern char APEX_VMA_STACKS_START;
 extern char APEX_VMA_STACK_START;
 
+/* stacklimit_report
+
+   probes the stack to determine how much of the allocated stack space
+   has been used.
+
+*/
+
 void stacklimit_report (void)
 {
   int i;
   unsigned max = &APEX_VMA_STACK_START - &APEX_VMA_STACKS_START;
-  for (i = 0; i < max; i += 4)
+  for (i = 4; i < max; i += 4)
     if (((unsigned long*)&APEX_VMA_STACKS_START)[i] != 0xe5e5e5e5)
       break;
 
-  printf ("   stack: %d/%d bytes\n", max - i, max);
+  printf ("   stack: %d free (%d) %p %p\n",
+	  i, max, &APEX_VMA_STACKS_START, &APEX_VMA_STACK_START);
 }
 
 static __service_0 struct service_d stacklimit_service = {
