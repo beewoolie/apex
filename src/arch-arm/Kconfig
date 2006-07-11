@@ -417,4 +417,5 @@ config ALIGNMENT_TRAP
 config CLEAR_STACKS
 	bool
 
-
+config ALIASES
+	bool

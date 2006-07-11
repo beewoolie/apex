@@ -39,7 +39,7 @@
 
 const char* error_description;
 
-#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_ENV)
+#if defined (CONFIG_ALIAS) || defined (CONFIG_ENV)
 
 static char* expand_variables (const char* rgbSrc)
 {
@@ -74,9 +74,15 @@ static char* expand_variables (const char* rgbSrc)
       if (isalpha (*pchSrc) || *pchSrc == '_')
 	break;
       *pch = 0;
-      value = alias_lookup (pchKey + 1);
+      value = 0;
+#if defined (CONFIG_ALIASES)
+      if (!value)
+	value = alias_lookup (pchKey + 1);
+#endif
+#if defined (CONFIG_ENV)
       if (!value)
 	value = env_fetch (pchKey + 1);
+#endif
       if (value) {
 	if (pch + strlen (value) + 1 >= rgb + sizeof (rgb) - 1)
 	  return 0;		/* Simple failure on overflow */
@@ -112,7 +118,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
   char* pb;
   int cb;
 
-#if defined (CONFIG_CMD_ALIAS) || defined (CONFIG_ENV)
+#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
   pb = expand_variables (rgb);
   if (pb) {
     rgb = pb;

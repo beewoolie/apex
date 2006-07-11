@@ -1,5 +1,4 @@
 /* alias.c
-     $Id$
 
    written by Marc Singer
    14 Jun 2005
@@ -40,9 +39,9 @@
 //#include <driver.h>
 #include <error.h>
 
-#define SIZE_ALIAS_HEAP_MAX	(4*1024)
+#define CB_ALIAS_HEAP_MAX	(4*1024)
 
-static unsigned char __xbss(alias) rgbAlias[SIZE_ALIAS_HEAP_MAX];
+static unsigned char __xbss(alias) rgbAlias[CB_ALIAS_HEAP_MAX];
 
 size_t ibAlias;
 
