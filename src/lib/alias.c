@@ -113,7 +113,7 @@ int alias_set (const char* szKey, const char* szValue)
 
   if (cbKey == 0 || cbValue == 0)
     return ERROR_PARAM;
-  if (ibAlias + cbEntry > SIZE_ALIAS_HEAP_MAX)
+  if (ibAlias + cbEntry > CB_ALIAS_HEAP_MAX)
     return ERROR_OUTOFMEMORY;
 
   memset (entry, 0, sizeof (struct entry));
