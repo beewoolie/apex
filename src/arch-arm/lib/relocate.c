@@ -1,5 +1,4 @@
 /* relocate.c
-     $Id$
 
    written by Marc Singer
    9 Nov 2004

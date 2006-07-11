@@ -221,6 +221,16 @@ config SDRAMBOOT_REPORT
 	  SDRAM.  This is purely informational, but is very helpful to
 	  users who are new to using APEX.
 
+config STACKLIMIT
+	bool "Report how much stack has been used"
+	default n
+	depends on !SMALL && EXPERIMENTAL
+	select CLEAR_STACKS
+	help
+ 	  This option enables a message in the service report
+	  describing how much of the stack has been used.  It isn't
+	  guaranteed to be correct, but it should be an approximation.
+
 endmenu
 
 source src/mach-lh7952x/Kconfig
@@ -391,3 +401,8 @@ config ALIGNMENT_TRAP
 	bool
 	default y
 	depends INTERRUPTS
+
+config CLEAR_STACKS
+	bool
+
+

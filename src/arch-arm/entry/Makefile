@@ -19,9 +19,10 @@
 #   USA.
 #
 
-obj-y := reset.o mmu-alloc.o
-obj-$(CONFIG_SDRAMBOOT_REPORT) += sdramboot.o
-obj-$(CONFIG_MMU) += mmu.o
+obj-y 				:= reset.o mmu-alloc.o
+obj-$(CONFIG_SDRAMBOOT_REPORT)	+= sdramboot.o
+obj-$(CONFIG_STACKLIMIT)	+= stacklimit.o
+obj-$(CONFIG_MMU)		+= mmu.o
 #lib-y += relocate.o
 
 CPPFLAGS_apex.lds += -DAPEX_VMA=$(CONFIG_APEX_VMA)
