@@ -43,13 +43,14 @@ extern char APEX_VMA_STACK_START;
 void stacklimit_report (void)
 {
   int i;
-  unsigned max = &APEX_VMA_STACK_START - &APEX_VMA_STACKS_START;
-  for (i = 4; i < max; i += 4)
-    if (((unsigned long*)&APEX_VMA_STACKS_START)[i] != 0xe5e5e5e5)
+  unsigned long* p = (unsigned long*) &APEX_VMA_STACKS_START;
+  unsigned max = (&APEX_VMA_STACK_START - &APEX_VMA_STACKS_START)/4;
+  for (i = 1; i < max; ++i)
+    if (p[i] != 0xe5e5e5e5)
       break;
 
-  printf ("   stack: %d free (%d) %p %p\n",
-	  i, max, &APEX_VMA_STACKS_START, &APEX_VMA_STACK_START);
+  printf ("   stack: %d used (%d)\n",
+	  (max - i)*4, max*4);
 }
 
 static __service_0 struct service_d stacklimit_service = {

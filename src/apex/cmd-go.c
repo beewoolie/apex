@@ -60,8 +60,8 @@ int cmd_go (int argc, const char** argv)
 
 static __command struct command_d c_go = {
   .command = "go",
-  .description = "execute program at address",
   .func = cmd_go,
+  COMMAND_DESCRIPTION ("execute program at address")
   COMMAND_HELP(
 "go ADDRESS\n"
 "  Transfer execution to the program at ADDRESS.\n"

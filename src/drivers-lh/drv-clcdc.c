@@ -668,8 +668,8 @@ int cmd_clcdc (int argc, const char** argv)
 
 static __command struct command_d c_clcdc = {
   .command = "clcdc",
-  .description = "commands for controlling the color LCD controller",
   .func = cmd_clcdc,
+  COMMAND_DESCRIPTION ("commands for controlling the color LCD controller")
   COMMAND_HELP(
 "clcdc [SUBCOMMAND [PARAMETER]]\n"
 " Without a SUBCOMMAND, it displays the LCD setup parameters.\n"

@@ -41,7 +41,9 @@ typedef int (*command_func_t) (int argc, const char** argv);
 struct command_d {
   const char* command;
   command_func_t func;
+#if !defined (CONFIG_NOHELP)
   const char* description;
+#endif
 #if defined (CONFIG_ALLHELP)
   const char* help;
 #endif
@@ -51,6 +53,12 @@ struct command_d {
 # define COMMAND_HELP(s) .help = s,
 #else
 # define COMMAND_HELP(s)
+#endif
+
+#if defined (CONFIG_NOHELP)
+# define COMMAND_DESCRIPTION(s)
+#else
+# define COMMAND_DESCRIPTION(s) .description = s,
 #endif
 
 #define __command __used __section(.command)

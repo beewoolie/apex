@@ -95,7 +95,7 @@ int cmd_copy (int argc, const char** argv)
 #endif
 
   {
-    char rgb[1024];
+    char rgb[512];
     ssize_t cb;
     int report_last = -1;
     int step = DRIVER_PROGRESS (&din, &dout);
@@ -113,17 +113,17 @@ int cmd_copy (int argc, const char** argv)
 
 #if defined (USE_COPY_VERIFY)
       if (verify) {
-	char rgbVerify[1024];
+	char rgbVerify[512];
 	ssize_t cbVerify = din_v.driver->read (&din_v, rgbVerify,
 					       sizeof (rgbVerify));
 	if (cbVerify != cb) {
 	  printf ("\rVerify failed: reread of input %d, expected %d, at"
-		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 1024);
+		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 512);
 	  return ERROR_FAILURE;
 	}
 	if (memcmp (rgb, rgbVerify, cb)) {
 	  printf ("\rVerify failed: reread input compare at 0x%x+0x%x\n",
-		  cbCopy, 1024);
+		  cbCopy, 512);
 	  return ERROR_FAILURE;
 	}
       }
@@ -138,17 +138,17 @@ int cmd_copy (int argc, const char** argv)
 
 #if defined (USE_COPY_VERIFY)
       if (verify) {
-	char rgbVerify[1024];
+	char rgbVerify[512];
 	ssize_t cbVerify = dout_v.driver->read (&dout_v, rgbVerify,
 						sizeof (rgbVerify));
 	if (cbVerify != cb) {
 	  printf ("\rVerify failed: reread of output %d, expected %d, at"
-		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 1024);
+		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 512);
 	  return ERROR_FAILURE;
 	}
 	if (memcmp (rgb, rgbVerify, cb)) {
 	  printf ("\rVerify failed: reread output compare at 0x%x+0x%x\n",
-		  cbCopy, 1024);
+		  cbCopy, 512);
 	  return ERROR_FAILURE;
 	}
       }
@@ -187,8 +187,8 @@ int cmd_copy (int argc, const char** argv)
 
 static __command struct command_d c_copy = {
   .command = "copy",
-  .description = "copy data between devices",
   .func = cmd_copy,
+  COMMAND_DESCRIPTION ("copy data between devices")
   COMMAND_HELP(
 "copy"
 _USE_COPY_VERIFY(

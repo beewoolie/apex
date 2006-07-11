@@ -69,8 +69,8 @@ int cmd_xreceive (int argc, const char** argv)
 
 static __command struct command_d c_xreceive = {
   .command = "xreceive",
-  .description = "receive data over the serial line",
   .func = cmd_xreceive,
+  COMMAND_DESCRIPTION ("receive data over the serial line")
   COMMAND_HELP(
 "xreceive REGION\n"
 "  Receive binary data via the console using Xmodem protocol.\n"

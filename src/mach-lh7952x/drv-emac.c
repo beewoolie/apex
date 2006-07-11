@@ -887,8 +887,8 @@ static int cmd_emac (int argc, const char** argv)
 
 static __command struct command_d c_emac = {
   .command = "emac",
-  .description = "manage ethernet MAC address",
   .func = cmd_emac,
+  COMMAND_DESCRIPTION ("manage ethernet MAC address")
   COMMAND_HELP(
 "emac [SUBCOMMAND [PARAMETER]]\n"
 "  Commands for the Ethernet MAC and PHY devices.\n"

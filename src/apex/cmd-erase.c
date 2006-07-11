@@ -68,8 +68,8 @@ int cmd_erase (int argc, const char** argv)
 
 static __command struct command_d c_erase = {
   .command = "erase",
-  .description = "erase device region",
   .func = cmd_erase,
+  COMMAND_DESCRIPTION ("erase device region")
   COMMAND_HELP(
 "erase DST\n"
 "  Erases the DST region.  The default length is 1 which will\n"

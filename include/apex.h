@@ -35,6 +35,18 @@
 #include <linux/types.h>
 #include <config.h>
 
+/* ----- Constants */
+
+#if defined (CONFIG_SMALL)
+# define C_ARG_MAX  (20)	/* Maximum number of command line word */
+# define CB_COMMAND_MAX (80*2)
+# define CB_PRINTF_MAX (80*2)
+#else
+# define C_ARG_MAX  (64)	/* Maximum number of command line word */
+# define CB_COMMAND_MAX (1024)
+# define CB_PRINTF_MAX (2*1024)
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

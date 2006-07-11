@@ -42,7 +42,7 @@
 
 int printf (const char* fmt, ...)
 {
-  static char __xbss(console) rgb[2*1024];
+  static char __xbss(console) rgb[CB_PRINTF_MAX];
   ssize_t cb;
   va_list ap;
   extern ssize_t console_write (struct descriptor_d* d,

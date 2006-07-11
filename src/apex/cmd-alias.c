@@ -61,8 +61,8 @@ static int cmd_unalias (int argc, const char** argv)
 
 static __command struct command_d c_alias = {
   .command = "alias",
-  .description = "show or set aliases",
   .func = cmd_alias,
+  COMMAND_DESCRIPTION ("show or set aliases")
   COMMAND_HELP(
 "alias [KEY [VALUE]]\n"
 "  Show all aliases, the alias KEY or set an alias KEY to value VALUE.\n"
@@ -72,8 +72,8 @@ static __command struct command_d c_alias = {
 
 static __command struct command_d c_unalias = {
   .command = "unalias",
-  .description = "remove an alias",
   .func = cmd_unalias,
+  COMMAND_DESCRIPTION ("remove an alias")
   COMMAND_HELP(
 "unalias KEY\n"
 "  Remove alias KEY.\n"

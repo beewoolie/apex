@@ -80,6 +80,7 @@ config SMALL
 	  removes unnecessary strings and selects smallest command and
 	  driver implementations when available.  Selecting this
 	  option may make APEX difficult for novice users to operate.
+
 config THUMB
 	bool "Use Thumb instructions"
 	default n
@@ -220,6 +221,17 @@ config SDRAMBOOT_REPORT
 	  was executed from SDRAM and, therefore, could not initialize
 	  SDRAM.  This is purely informational, but is very helpful to
 	  users who are new to using APEX.
+
+config STACK_SIZE
+	hex "Size of C runtime stack"
+	default "0x1000"
+	help
+	  APEX uses a C runtime stack that can generally be small. A
+	  4KiB (0x1000) stack should be adequate.  You may want to
+	  reduce the stack size to 2KiB if your system has no SDRAM
+	  and you will be running from SRAM.  If you want to know
+	  exactly how much stack is being used, enable the STACKLIMIT
+	  option.
 
 config STACKLIMIT
 	bool "Report how much stack has been used"

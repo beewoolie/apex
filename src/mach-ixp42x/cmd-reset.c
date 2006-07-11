@@ -54,6 +54,6 @@ static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
 
 static __command struct command_d c_reset = {
   .command = "reset",
-  .description = "reset target",
   .func = cmd_reset,
+  COMMAND_DESCRIPTION ("reset target")
 };

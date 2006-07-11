@@ -44,7 +44,7 @@ const char* error_description;
 static char* expand_variables (const char* rgbSrc)
 {
   const char* pchSrc;
-  static char __xbss(command) rgb[1024];
+  static char __xbss(command) rgb[CB_COMMAND_MAX];
   char* pch = rgb;
   char* pchKey = NULL;
   int state = 0;
@@ -108,7 +108,7 @@ static char* expand_variables (const char* rgbSrc)
 
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
-  static const char* __xbss(command) argv[64];	/* Command words */
+  static const char* __xbss(command) argv[C_ARG_MAX];	/* Command words */
   char* pb;
   int cb;
 
@@ -223,10 +223,15 @@ int call_command (int argc, const char** argv)
 
 void exec_monitor (void)
 {
-  const char* szStartup;
+  const char* szStartup
+#if defined (CONFIG_ENV)
+    = env_fetch ("startup")
+#else
+    = NULL
+#endif
+    ;
 
 //  printf ("exec_monitor\n");
-  szStartup = env_fetch ("startup");
 //  printf (" startup %s\n", szStartup);
 
   if (szStartup) {

@@ -55,7 +55,7 @@ int cmd_checksum (int argc, const char** argv)
     int index = 0;
     unsigned long crc = 0;
     while (index < d.length) {
-      char rgb[1024];
+      char rgb[512];
       int cb = d.driver->read (&d, rgb, sizeof (rgb));
       if (cb < 0) {
 	result = cb;
@@ -78,8 +78,8 @@ int cmd_checksum (int argc, const char** argv)
 
 static __command struct command_d c_checksum = {
   .command = "checksum",
-  .description = "compute crc32 checksum",
   .func = cmd_checksum,
+  COMMAND_DESCRIPTION ("compute crc32 checksum")
   COMMAND_HELP(
 "checksum REGION\n"
 "  Calculate a CRC32 checksum over REGION.\n"

@@ -7,6 +7,20 @@ config ALLHELP
 	help
 	  Setting this option will include all help text for APEX commands.
 
+config NOHELP
+	bool "Suppress command descriptions"
+	default n
+	depends on SMALL && !ALLHELP
+	help
+	  When you are squeezing bytes from APEX, you may choose this
+	  option to eliminate the short command descriptions from the
+	  command help display.  This won't save much space, but it
+	  could be a of the few bytes you need to fix APEX into the
+	  small space available.  
+
+	  Note that you'll need to understand APEX quite well if
+	  you choose this option.
+
 config ALPHABETIZE_COMMANDS
        bool "Sort commands alphabetically in help"
        default y

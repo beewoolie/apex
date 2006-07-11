@@ -79,8 +79,8 @@ int cmd_wait (int argc, const char** argv)
 
 static __command struct command_d c_wait = {
   .command = "wait",
-  .description = "wait before continuing",
   .func = cmd_wait,
+  COMMAND_DESCRIPTION ("wait before continuing")
   COMMAND_HELP(
 "wait TIMEOUT MESSAGE\n"
 "  Pauses to let the user interrupt an automated process.\n"

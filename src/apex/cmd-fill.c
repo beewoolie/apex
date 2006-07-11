@@ -94,8 +94,8 @@ int cmd_fill (int argc, const char** argv)
 
 static __command struct command_d c_fill = {
   .command = "fill",
-  .description = "fill a region with a byte",
   .func = cmd_fill,
+  COMMAND_DESCRIPTION ("fill a region with a byte")
   COMMAND_HELP(
 "fill VALUE DST\n"
 "  Fills the DST region with the byte value VALUE.  This command\n"

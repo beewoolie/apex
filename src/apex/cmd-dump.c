@@ -136,8 +136,8 @@ int cmd_dump (int argc, const char** argv)
 
 static __command struct command_d c_dump = {
   .command = "dump",
-  .description = "dump data to the console",
   .func = cmd_dump,
+  COMMAND_DESCRIPTION ("dump data to the console")
   COMMAND_HELP(
 "dump [-1|-2|-4] SRC\n"
 "  Display SRC region data on the console.\n"

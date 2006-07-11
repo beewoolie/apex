@@ -195,8 +195,8 @@ static int cmd_eth (int argc, const char** argv)
 
 static __command struct command_d c_eth = {
   .command = "eth",
-  .description = "dm9000 diagnostics",
   .func = cmd_eth,
+  COMMAND_DESCRIPTION ("dm9000 diagnostics")
   COMMAND_HELP(
 "eth [SUBCOMMAND [PARAMETER]]\n"
 "  Commands for the Ethernet MAC and PHY devices.\n"

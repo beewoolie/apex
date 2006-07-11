@@ -104,8 +104,8 @@ int cmd_printenv (int argc, const char** argv)
 
 static __command struct command_d c_printenv = {
   .command = "printenv",
-  .description = "show the environment",
   .func = cmd_printenv,
+  COMMAND_DESCRIPTION ("show the environment")
   COMMAND_HELP(
 "printenv\n"
 "  Display the environment.\n"
@@ -157,8 +157,8 @@ static int cmd_setenv (int argc, const char** argv)
 
 static __command struct command_d c_setenv = {
   .command = "setenv",
-  .description = "set environment variable",
   .func = cmd_setenv,
+  COMMAND_DESCRIPTION ("set environment variable")
   COMMAND_HELP(
 "setenv KEY VALUE\n"
 "  Set environment variable KEY to value VALUE.\n"
@@ -183,8 +183,8 @@ static int cmd_unsetenv (int argc, const char** argv)
 
 static __command struct command_d c_unsetenv = {
   .command = "unsetenv",
-  .description = "restore environment variable to default",
   .func = cmd_unsetenv,
+  COMMAND_DESCRIPTION ("restore environment variable to default")
   COMMAND_HELP(
 "unsetenv KEY\n"
 "  Restore environment variable KEY to the default value.\n\n"
@@ -209,8 +209,8 @@ static int cmd_eraseenv (int argc, const char** argv)
 
 static __command struct command_d c_eraseenv = {
   .command = "eraseenv",
-  .description = "Erase environment",
   .func = cmd_eraseenv,
+  COMMAND_DESCRIPTION ("Erase environment")
   COMMAND_HELP(
 "eraseenv\n"
 "  Erase the region that stores the environment.\n"

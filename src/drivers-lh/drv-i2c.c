@@ -503,6 +503,6 @@ static int cmd_i2c (int argc, const char** argv)
 
 static __command struct command_d c_i2c = {
   .command = "i2c",
-  .description = "test i2c interface",
   .func = cmd_i2c,
+  COMMAND_DESCRIPTION ("test i2c interface")
 };

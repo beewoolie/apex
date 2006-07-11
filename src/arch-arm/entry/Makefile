@@ -25,6 +25,15 @@ obj-$(CONFIG_STACKLIMIT)	+= stacklimit.o
 obj-$(CONFIG_MMU)		+= mmu.o
 #lib-y += relocate.o
 
-CPPFLAGS_apex.lds += -DAPEX_VMA=$(CONFIG_APEX_VMA)
+CPPFLAGS_apex.lds +=\
+ -DAPEX_VMA=$(CONFIG_APEX_VMA)\
+ -DSTACK_SIZE=$(CONFIG_STACK_SIZE)
+
+ifeq ('$(CONFIG_MMU)','y')
+CPPFLAGS_apex.lds += -DCONFIG_MMU
+endif
+ifeq ('$(CONFIG_INTERRUPTS)','y')
+CPPFLAGS_apex.lds += -DCONFIG_INTERRUPTS
+endif
 
 extra-y=apex.lds

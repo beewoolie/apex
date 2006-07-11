@@ -52,8 +52,8 @@ static int cmd_drvinfo (int argc, const char** argv)
 
 static __command struct command_d c_drvinfo = {
   .command = "drvinfo",
-  .description = "list available drivers",
   .func = cmd_drvinfo,
+  COMMAND_DESCRIPTION ("list available drivers")
   COMMAND_HELP(
 "drvinfo\n"
 "  Lists available drivers\n"

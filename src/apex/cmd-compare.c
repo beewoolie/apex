@@ -90,8 +90,8 @@ int cmd_compare (int argc, const char** argv)
   dout.length = cbTotal;
 
   while (cbCompare < cbTotal && count) {
-    char rgbIn [1024];
-    char rgbOut[1024];
+    char rgbIn [512];
+    char rgbOut[512];
     ssize_t cbIn;
     ssize_t cbOut;
     ssize_t cb;
@@ -130,9 +130,9 @@ int cmd_compare (int argc, const char** argv)
 
 static __command struct command_d c_compare = {
   .command = "compare",
-  .description = "compare regions",
   .func = cmd_compare,
-COMMAND_HELP(
+  COMMAND_DESCRIPTION ("compare regions")
+  COMMAND_HELP(
 "compare [-c COUNT] REGION1 REGION2\n"
 "  Compare regions and report the differences.\n"
 "  The optional COUNT argument specifies a maxmimum number of\n"

@@ -104,8 +104,13 @@ int cmd_help (int argc, const char** argv)
       continue;
     }
 #endif
+#if defined (CONFIG_NOHELP)
+    printf (" %-*.*s\n", 16, 16, rgc[i]->command);
+#else
     printf (" %-*.*s - %s\n", 16, 16, rgc[i]->command,
 	    rgc[i]->description ? rgc[i]->description : "?");
+#endif
+
   }
 
   return 0;
@@ -113,8 +118,8 @@ int cmd_help (int argc, const char** argv)
 
 static __command struct command_d c_help = {
   .command = "help",
-  .description = "list available commands",
   .func = cmd_help,
+  COMMAND_DESCRIPTION ("list available commands")
   COMMAND_HELP(
 "help [. | COMMAND]\n"
 "  Display help.\n"
@@ -131,7 +136,7 @@ static __command struct command_d c_help = {
 
 static __command struct command_d c_help_region = {
   .command = "region",
-  .description = "help on regions",
+  COMMAND_DESCRIPTION ("help on regions")
   COMMAND_HELP(
 "region [DRIVER:][[@]START][+LENGTH]\n"
 "       [DRIVER:][[//LOCATION][/PATH]][[@START][+LENGTH]]\n"
@@ -167,7 +172,7 @@ static __command struct command_d c_help_region = {
 
 static __command struct command_d c_help_commandline = {
   .command = "command-line",
-  .description = "help on the APEX command line",
+  COMMAND_DESCRIPTION ("help on the APEX command line")
   COMMAND_HELP(
 "command-line\n"
 "  The command line interpreter is simple.  Commands are separated\n"

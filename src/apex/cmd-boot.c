@@ -60,7 +60,14 @@ extern void build_atags (void);
 
 int cmd_boot (int argc, const char** argv)
 {
-  unsigned long address = env_fetch_int ("bootaddr", 0xffffffff);
+  unsigned long address
+#if defined (CONFIG_ENV)
+    = env_fetch_int ("bootaddr", 0xffffffff)
+#else
+    = CONFIG_KERNEL_LMA		/* There can be, only one.  */
+#endif
+    ;
+
   int arch_number = -1;
 
   if (argc > 2 && strcmp (argv[1], "-g") == 0) {
@@ -119,8 +126,8 @@ int cmd_boot (int argc, const char** argv)
 
 static __command struct command_d c_boot = {
   .command = "boot",
-  .description = "boot Linux",
   .func = cmd_boot,
+  COMMAND_DESCRIPTION ("boot Linux")
   COMMAND_HELP(
 "boot [-g ADDRESS] [COMMAND_LINE]\n"
 "  Boot the Linux kernel.\n"
@@ -137,8 +144,9 @@ static __command struct command_d c_boot = {
 #if defined (CONFIG_ATAG)
 struct tag* atag_commandline (struct tag* p)
 {
-  const char* szEnv = env_fetch ("cmdline");
-
+#if defined (CONFIG_ENV)
+  const char* szCommand = env_fetch ("cmdline");
+#endif
   int cb = 0;
   p->u.cmdline.cmdline[0] = '\0';
 
@@ -157,10 +165,12 @@ struct tag* atag_commandline (struct tag* p)
 
     cb = pb - p->u.cmdline.cmdline;
   }
-  else if (szEnv) {
-    strlcpy (p->u.cmdline.cmdline, szEnv, COMMAND_LINE_SIZE);
-    cb = strlen (szEnv) + 1;
+#if defined (CONFIG_ENV)
+  else if (szCommand) {
+    strlcpy (p->u.cmdline.cmdline, szCommand, COMMAND_LINE_SIZE);
+    cb = strlen (szCommand) + 1;
   }
+#endif
 
   if (cb) {
 //    printf ("cmdline '%s'\n", p->u.cmdline.cmdline);

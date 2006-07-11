@@ -82,8 +82,8 @@ static void cmd_cp15test (int argc, const char** argv)
 
 static __command struct command_d c_cp15test = {
   .command = "cp15test",
-  .description = "cp15test [OP]",
   .func = (command_func_t) cmd_cp15test,
+  COMMAND_DESCRIPTION ("cp15test [OP]")
   COMMAND_HELP(
 "test\n"
 "  Modify the CP15 test register.  Beware, these are dangerous features.\n"

@@ -927,6 +927,6 @@ static int cmd_mmc (int argc, const char** argv)
 
 static __command struct command_d c_mmc = {
   .command = "mmc",
-  .description = "test MMC controller",
   .func = cmd_mmc,
+  COMMAND_DESCRIPTION ("test MMC controller")
 };

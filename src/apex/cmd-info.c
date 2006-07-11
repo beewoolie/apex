@@ -72,8 +72,8 @@ int cmd_info (int argc, const char** argv)
 
 static __command struct command_d c_info = {
   .command = "info",
-  .description = "display information about a region descriptor",
   .func = cmd_info,
+  COMMAND_DESCRIPTION ("display information about a region descriptor")
   COMMAND_HELP(
 "info"
 " SRC\n"

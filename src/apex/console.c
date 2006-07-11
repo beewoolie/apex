@@ -144,7 +144,7 @@ void backspaces (int c)
 
 int read_command (const char* szPrompt, int* pargc, const char*** pargv)
 {
-  static char __xbss(console) rgb[1024];	/* Command line buffer */
+  static char __xbss(console) rgb[CB_COMMAND_MAX]; /* Command line buffer */
   int cb;
 #if defined (CONFIG_ANSI_KEYS)
   int ansi = 0;
@@ -393,10 +393,10 @@ int read_command (const char* szPrompt, int* pargc, const char*** pargv)
   return parse_command (rgb, pargc, pargv);
 }
 
-#if defined (CONFIG_COMMAND_EDITING)
+#if defined (CONFIG_COMMAND_EDITING) && defined (CONFIG_ALLHELP)
 static __command struct command_d c_help_commandediting = {
   .command = "command-editing",
-  .description = "help on edting APEX command lines",
+  COMMAND_DESCRIPTION ("help on edting APEX command lines")
   COMMAND_HELP(
 "command-editing\n"
 "  APEX support some Emacs bindings for command line editing.  If the ANSI\n"

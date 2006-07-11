@@ -108,11 +108,14 @@ SECTIONS
 	/* The next word is the location we'll be writing to when
 	   probing.  See note in drv-mem.c. */
 	APEX_VMA_STACKS_START = .;
-	. += 32768;		/* Excessively large stack */
+	. += STACK_SIZE;
+	. = ALIGN (4);
 	APEX_VMA_STACK_START = .;
+#if defined (CONFIG_INTERRUPTS)
 	. = ALIGN (4);
 	. += 4096;		/* Interrupt stack, should be configurable */
 	APEX_VMA_IRQSTACK_START = .;
+#endif
 	APEX_VMA_STACKS_END = .;
 	. = ALIGN (4);
 	.bss . : {		/* Normal, zeroed BSS */
@@ -123,11 +126,13 @@ SECTIONS
 		APEX_VMA_BSS_END = .;
 	}
 	.xbss (NOLOAD) : {	/* Special BSS, non-zeroed */
-		*(.pcm.xbss)
+		. = ALIGN (4);
+		*(.*.xbss)	/* Misc xbss sections */
+		*(.pcm.xbss)    /* Audio xbss data */
+#if defined (CONFIG_MMU)
 		. = ALIGN (16384);
 		*(.ttbl.xbss)   /* MMU translation table */
-		. = ALIGN (4);
-		*(.*.xbss)	/* All other xbss sections */
+#endif
 	}
 	APEX_VMA_END = .;
 						/* Bootstrap data */
