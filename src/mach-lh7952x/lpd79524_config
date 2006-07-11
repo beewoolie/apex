@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jul 10 20:44:06 2006
+# Mon Jul 10 22:43:44 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -30,6 +30,7 @@ CONFIG_MMU=y
 CONFIG_DISABLE_MMU_AT_BOOT=y
 # CONFIG_INTERRUPTS is not set
 CONFIG_SDRAMBOOT_REPORT=y
+CONFIG_STACK_SIZE=0x1000
 CONFIG_STACKLIMIT=y
 # CONFIG_MACH_LNODE80 is not set
 # CONFIG_MACH_LPD79520 is not set
