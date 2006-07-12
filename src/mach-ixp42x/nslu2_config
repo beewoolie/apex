@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jul 10 22:43:37 2006
+# Mon Jul 10 23:06:16 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -108,3 +108,4 @@ CONFIG_ENV_REGION_RAMDISK="nor:0x160010+0x69fff0"
 # CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE is not set
 CONFIG_USES_NOR_BOOTFLASH=y
 CONFIG_BIGENDIAN=y
+CONFIG_ALIASES=y

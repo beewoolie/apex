@@ -146,6 +146,19 @@ void __naked __section (.reset) reset (void)
   PUTC_LL ('E');
   PUTC_LL ('r');
   relocate_apex ();
+  /* This early executed code can be very temperamental. The
+     relocate_apex() function will tend to clobber some of the
+     registers.  Even with careful coding, it will clobber r4 and
+     could affect r5.  The PUTC_LL macro instructions may be split
+     across the relocate_apex () call such that a load before
+     relocate_apex() is lost by the time the value is needed.  So, the
+     work-around is to force the compiler to place those constants in
+     higher numbered registers.  That way, relocate_apex () won't
+     stomp the needed register.  Also note that the symptom of this
+     error was difficult to trace as it became a write to a random
+     memory location.  In one case, this was the address of the
+     console driver. */
+  __asm__ __volatile__ ("" : : : "r3", "r4", "r5");
   PUTC_LL ('s');
   setup_c ();			/* Setups before executing C code */
 

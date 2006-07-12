@@ -1,3 +1,8 @@
+2006-07-11  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/reset.c: Fix for register being clobbered in
+	apex_relocate() and messing with PUTC_LL().
+
 2006-07-10  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-help.c (cmd_help): Added option to suppress the

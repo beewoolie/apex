@@ -126,13 +126,13 @@ SECTIONS
 		APEX_VMA_BSS_END = .;
 	}
 	.xbss (NOLOAD) : {	/* Special BSS, non-zeroed */
-		. = ALIGN (4);
-		*(.*.xbss)	/* Misc xbss sections */
-		*(.pcm.xbss)    /* Audio xbss data */
 #if defined (CONFIG_MMU)
 		. = ALIGN (16384);
 		*(.ttbl.xbss)   /* MMU translation table */
 #endif
+		. = ALIGN (4);
+		*(.*.xbss)	/* Misc xbss sections */
+		*(.pcm.xbss)    /* Audio xbss data */
 	}
 	APEX_VMA_END = .;
 						/* Bootstrap data */

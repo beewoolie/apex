@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jul 10 22:43:47 2006
+# Mon Jul 10 23:06:16 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -136,3 +136,4 @@ CONFIG_ENV_STARTUP_KERNEL_COPY=y
 CONFIG_ENV_REGION_KERNEL="ext2://2/zImage"
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/nfs ip=rarp"
+CONFIG_ALIASES=y

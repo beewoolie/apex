@@ -84,7 +84,8 @@ void init (void)
   PUTC_LL ('I');
   init_services ();
 
-#if defined (CONFIG_CMD_ALIAS)
+
+#if defined (CONFIG_ALIASES)
   {
     extern char APEX_VMA_COPY_START;
     extern char APEX_VMA_COPY_END;

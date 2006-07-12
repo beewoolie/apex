@@ -49,7 +49,7 @@ int printf (const char* fmt, ...)
 				const void* pv, size_t cb);
 
 
-//  PUTC_LL ('P');
+  //  PUTC_LL ('P');
 
   if (console == NULL)
     return 0;
@@ -63,7 +63,7 @@ int printf (const char* fmt, ...)
   va_end (ap);
   rgb[cb] = 0;
 
-//  PUTC_LL ('P');
+  //  PUTC_LL ('P');
 
   {
     char* pb = rgb;
@@ -74,7 +74,7 @@ int printf (const char* fmt, ...)
     }
   }
 
-//  PUTC_LL ('_');
+  //  PUTC_LL ('_');
 
   return cb;
 }
