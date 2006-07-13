@@ -40,7 +40,7 @@
 #endif
 extern int cmd_version (int, const char**);
 
-static void init_services (void)
+void init_services (void)
 {
   extern char APEX_SERVICE_START;
   extern char APEX_SERVICE_END;
