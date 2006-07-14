@@ -1339,7 +1339,7 @@ every-update:
 
 .PHONY: every-release
 every-release: every
-
+	cp every/*.zip ~ftp/pub/apex
 
 # FIXME Should go into a make.lib or something
 # ===========================================================================
