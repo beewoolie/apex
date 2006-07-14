@@ -16,7 +16,7 @@ CONFIG_ARCH_IXP42X=y
 #
 # General Setup
 #
-CONFIG_CROSS_COMPILE="/usr/armv5b-softfloat-linux/gcc-3.4.4-glibc-2.3.5/bin/armv5b-softfloat-linux-"
+CONFIG_CROSS_COMPILE="/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set

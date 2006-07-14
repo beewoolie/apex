@@ -405,8 +405,9 @@ scripts_basic:
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
 
-no-dot-config-targets := clean mrproper distclean tidy complete_release\
-			 cscope TAGS tags help %docs check% every
+no-dot-config-targets := clean mrproper distclean tidy complete-release\
+			 cscope TAGS tags help %docs check% \
+			 every every-update every-release
 
 
 config-targets := 0
@@ -486,31 +487,6 @@ libs-y		:= src/lib/
 core-y		:= # usr/
 endif # KBUILD_EXTMOD
 
-# every target builds all of the available configurations
-.PHONY: every
-every: distclean
-	@if [ -e .config ]; then rm .config ; fi
-	@[ ! -d every ] || rm -rf every
-	@mkdir every
-	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do \
-	$(MAKE) clean ; \
-	$(MAKE) $$i ; \
-	echo "  BUILD   $$i";\
-	$(MAKE) oldconfig < /dev/null >  makelog 2>&1; \
-	$(MAKE)                       >> makelog 2>&1; \
-	mkdir every/$$i ; \
-	mv apex src/arch-arm/rom/apex.bin makelog every/$$i ; \
-	done
-	@rm .config
-
-# every target builds all of the available configurations
-.PHONY: update-every
-update-every:
-	@for i in `find src/mach-*/ -name '*_config'` ; do \
-	cp $$i .config; \
-	$(MAKE) oldconfig; \
-	cp .config $$i; \
-	done
 
 ifeq ($(dot-config),1)
 ifeq "$(wildcard .config)" ""
@@ -1108,7 +1084,7 @@ distclean: mrproper
 # rpm target kept for backward compatibility
 package-dir	:= $(srctree)/scripts/package
 
-.PHONY: %-pkg rpm tgz complete_release
+.PHONY: %-pkg rpm tgz complete-release
 
 %pkg: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
@@ -1117,7 +1093,7 @@ rpm: FORCE
 tgz: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 
-complete_release: tgz FORCE
+complete-release: tgz every-release FORCE
 	cp apex-$(APEXRELEASE).tar.gz ~ftp/pub/apex
 	svn cp -m "$(APEXRELEASE)" \
 	  file:///svn/tools/trunk/apex \
@@ -1328,6 +1304,42 @@ endif #ifeq ($(mixed-targets),1)
 checkstack:
 	$(OBJDUMP) -d apex $$(find . -name '*.ko') | \
 	$(PERL) $(src)/scripts/checkstack.pl $(ARCH)
+
+# every target builds all of the available configurations
+.PHONY: every
+every: distclean
+	@if [ -e .config ]; then rm .config ; fi
+	@[ ! -d every ] || rm -rf every
+	@mkdir every
+	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do \
+	 o=apex-$(APEXRELEASE)-`echo $$i | sed -s 's/_config//'`; \
+	 $(MAKE) clean ; \
+	 $(MAKE) $$i ; \
+	 echo "  BUILD   $$i ($$o)";\
+	 $(MAKE) oldconfig       < /dev/null >  makelog 2>&1 || /bin/false ; \
+	 $(MAKE)                             >> makelog 2>&1 || /bin/false ; \
+	 $(MAKE) apex.srec apex.elf apex.bin >> makelog 2>&1 || /bin/false ; \
+	 mkdir every/$$o ; \
+	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
+	 cp .config every/$$o/config ; \
+	 echo $(APEXRELEASE) > every/$$o/APEXVERSION ; \
+	 cp README_every every/$$o/README ; \
+	 (cd every ; zip -rq $$o.zip $$o ) ; \
+	done
+	@rm .config
+
+# every target builds all of the available configurations
+.PHONY: every-update
+every-update:
+	@for i in `find src/mach-*/ -name '*_config'` ; do \
+	cp $$i .config; \
+	$(MAKE) oldconfig; \
+	cp .config $$i; \
+	done
+
+.PHONY: every-release
+every-release: every
+
 
 # FIXME Should go into a make.lib or something
 # ===========================================================================

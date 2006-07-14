@@ -47,8 +47,8 @@ CFLAGS+= -mthumb-interwork
 AFLAGS+= -mthumb-interwork
 endif
 
-init-y += src/arch-arm/entry/ 
-core-y += src/mach-$(CONFIG_MACH)/ 
+init-y += src/arch-arm/entry/
+core-y += src/mach-$(CONFIG_MACH)/
 core-y += src/drivers/ src/net/ src/arch-arm/linux/
 core-$(CONFIG_DRIVERS_LH) +=  src/drivers-lh/
 libs-y += src/arch-arm/lib/
@@ -57,5 +57,6 @@ libs-y += src/arch-arm/lib/
 
 rom := src/arch-arm/rom
 
-apex.bin apex.srec : include/config.h apex
+apex.bin apex.elf apex.srec : include/config.h apex
 	$(Q)$(MAKE) $(build)=$(rom) $(rom)/$@
+
