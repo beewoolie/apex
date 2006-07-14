@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 3
-SUBLEVEL = 28
+SUBLEVEL = 29
 EXTRAVERSION =
 #NAME=Zonked Quokka
 
@@ -1316,9 +1316,9 @@ every: distclean
 	 $(MAKE) clean ; \
 	 $(MAKE) $$i ; \
 	 echo "  BUILD   $$i ($$o)";\
-	 $(MAKE) oldconfig       < /dev/null >  makelog 2>&1 || /bin/false ; \
-	 $(MAKE)                             >> makelog 2>&1 || /bin/false ; \
-	 $(MAKE) apex.srec apex.elf apex.bin >> makelog 2>&1 || /bin/false ; \
+	 $(MAKE) oldconfig       < /dev/null >  makelog 2>&1 || exit 1 ; \
+	 $(MAKE)                             >> makelog 2>&1 || exit 1 ; \
+	 $(MAKE) apex.srec apex.elf apex.bin >> makelog 2>&1 || exit 1 ; \
 	 mkdir every/$$o ; \
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
 	 cp .config every/$$o/config ; \
@@ -1339,7 +1339,8 @@ every-update:
 
 .PHONY: every-release
 every-release: every
-	cp every/*.zip ~ftp/pub/apex
+	mkdir -p ~ftp/pub/apex/apex-$(APEXRELEASE)
+	cp every/*.zip ~ftp/pub/apex/apex-$(APEXRELEASE)
 
 # FIXME Should go into a make.lib or something
 # ===========================================================================

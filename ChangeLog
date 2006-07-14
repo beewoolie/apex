@@ -1,3 +1,8 @@
+2006-07-14  Marc Singer  <elf@buici.com>
+
+	* Makefile: added logic to the build to archive prebuilt binaries
+	for each configuration.
+
 2006-07-11  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/reset.c: Fix for register being clobbered in
