@@ -20,8 +20,8 @@
 	* src/apex/cmd-boot.c (cmd_boot): Boot address may not come from
 	the environment.
 	(atag_commandline): Simplified the command line from environment
-	code such that there is no code to read fro environment when there
-	is no environment.
+	code such that there is no code to read from environment when
+	there is no environment.
 
 2006-06-02  Marc Singer  <elf@buici.com>
 

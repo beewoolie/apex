@@ -356,7 +356,7 @@ static int cf_identify (void)
     }
 
     cf_d.speed = rgs[67];
-    printf ("cf: 53 %x\n", rgs[53]);
+    //    printf ("cf: 53 %x\n", rgs[53]);
 
 //    printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
 //	    __FUNCTION__, rgs[49], rgs[51], rgs[53], rgs[64]);
