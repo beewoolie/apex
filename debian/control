@@ -1,0 +1,21 @@
+Source: apexbootloader
+Section: admin
+Priority: optional
+Maintainer: Marc Singer <sanvila@debian.org>
+Standards-Version: 3.6.1
+
+Package: apexbootloader
+Architecture: arm
+Depends:
+Description: Boot Loader for Embedded Systems
+ The APEX Boot Loader is a modular and retargetable firmware loader
+ suitable for embedded systems.  It may be used for the first (and
+ only) stage of the boot process, or as a second stage when it is
+ desirable to retain the manufacturers boot loader.
+ . 
+ The APEX command line offers a comfortable (e.g. command line editing
+ and history) and extensible platform for development and production
+ uses.
+ .
+ <http://wiki.buici.com/wiki/Apex_Bootloader>
+Tag: admin::boot, interface::shell, interface::text-mode, hardware::embedded
