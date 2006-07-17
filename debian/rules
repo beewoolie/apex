@@ -50,6 +50,8 @@ binary-arch:	checkroot build
 #	$(MAKE) INSTALL_PROGRAM="$(INSTALL_PROGRAM)" \
 #		prefix=$$(pwd)/debian/tmp/boot install
 	install -d debian/tmp/boot
+###   Need to emit a header, 16 bytes, the first four are the length
+###   in MSB order. 
 	cp apex.bin $$(pwd)/debian/tmp/boot
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
