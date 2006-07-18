@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jul 10 23:06:16 2006
+# Tue Jul 18 15:45:44 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -44,7 +44,9 @@ CONFIG_ENV_STARTUP=""
 CONFIG_MACH="ixp42x"
 CONFIG_MACH_NSLU2=y
 # CONFIG_MACH_AVILA2347 is not set
+# CONFIG_USER_DEFAULTENDIAN is not set
 CONFIG_USER_BIGENDIAN=y
+# CONFIG_USER_LITTLEENDIAN is not set
 
 #
 # Platform Setup
