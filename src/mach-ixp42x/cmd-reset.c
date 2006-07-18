@@ -50,6 +50,8 @@ static int cmd_reset (int argc, const char** argv)
   OST_WDOG_ENAB = 0
     | OST_WDOG_ENAB_RESET
     | OST_WDOG_ENAB_CNT_EN;
+
+  return 0;			/* Control will never reach this point */
 }
 
 static __command struct command_d c_reset = {
