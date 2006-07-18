@@ -409,6 +409,9 @@ config RELOCATE_NAND
 config BIGENDIAN
 	bool
 
+config LITTLEENDIAN
+	bool
+
 config ALIGNMENT_TRAP
 	bool
 	default y

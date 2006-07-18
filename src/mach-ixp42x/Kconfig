@@ -19,9 +19,18 @@ config MACH_AVILA2347
 
 endchoice
 
+choice
+	prompt "CPU endian-ness"
+	default USER_BIGENDIAN
+
+config USER_DEFAULTENDIAN
+	bool "Default Endian-ness"
+	help
+	  Use the endian-ness as set by the CPU on reset, or by the
+	  first stage boot loader when APEX is the second stage.
+
 config USER_BIGENDIAN
-	bool "Big-Endian Mode"
-	default y
+	bool "Big-Endian"
 	select BIGENDIAN
 	help
 	  The endian-ness of the CPU is selectable at runtime.  Intel
@@ -38,7 +47,21 @@ config USER_BIGENDIAN
 	  successfully integrates the version 1.5 library into the
 	  Linux kernel, you may be able to use little-endian mode.
 
-	  If you are in doubt, choose Y.
+config USER_LITTLEENDIAN
+	bool "Little-Endian"
+	select LITTLEENDIAN
+	help
+	  The endian-ness of the CPU is selectable at runtime.  Intel
+	  has traditionally configured their XScale CPUs to use
+	  big-ending byte ordering.
+
+	  The CPU will default to little-endian mode, so this option
+	  is usually not needed.  However, if APEX is a second-stage
+	  loader and the first stage sets the CPU in big-endian mode
+	  then this option is necessary to put the CPU back into
+	  little-endian mode.
+
+endchoice
 
 menu "Platform Setup"
 

@@ -127,6 +127,19 @@ void __naked __section (.reset) reset (void)
   }
 #endif
 
+#if defined (CONFIG_LITTLEENDIAN)
+
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
+    COPROCESSOR_WAIT;
+    /* *** FIXME: the redboot code performed a read from the ttb
+       register as a delay.  Not sure why. */
+  }
+#endif
+
   /* *** This fragment exists to help locate problems with code
      jumping into the wrong place and other bothersome errors.  In
      general, the loader should be free of alignment issues, so we
