@@ -1,11 +1,11 @@
-Source: apexbootloader
+Source: apex-nslu2
 Section: admin
 Priority: optional
-Maintainer: Marc Singer <sanvila@debian.org>
+Maintainer: Marc Singer <elf@debian.org>
 Standards-Version: 3.6.1
 
-Package: apexbootloader
-Architecture: arm
+Package: apex-nslu2
+Architecture: arm armeb
 Depends:
 Description: Boot Loader for Embedded Systems
  The APEX Boot Loader is a modular and retargetable firmware loader

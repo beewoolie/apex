@@ -9,7 +9,7 @@
 #
 # The script attempts to detect that there already a header on the file.
 # It could use an option to force a new header or to overwrite an
-# existing header. 
+# existing header.
 #
 
 sub usage {
@@ -21,7 +21,7 @@ usage: headerize ENDIAN FILE
     e.g.  headerize b apex.bin
 EOF
 ;
-    exit 0;
+    exit 1;
 }
 
 usage () if scalar ($#ARGV) != 1;
@@ -48,7 +48,7 @@ if ($v != 0 && $a == 0 && $b == 0 && $c == 0) {
     exit 1;
 }
 
-# emit new file, including header 
+# emit new file, including header
 my $size = (stat($file))[7];
 print (OUT pack "${packendian}4", $size, 0, 0, 0);
 system ("cat $file >> $tmpfile") == 0 || die "unable to cat";

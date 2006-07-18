@@ -7,21 +7,21 @@
 # paternity under the Copyright, Designs and Patents Act 1988.)
 # This file may have to be extensively modified
 
-package = apexbootloader
+package = apex-nslu2
 docdir = debian/tmp/usr/share/doc/$(package)
+
+DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+CONFIG         := debian-nslu2-$(DEB_BUILD_ARCH)_config
 
 CC = gcc
 CFLAGS = -g -Wall
 INSTALL_PROGRAM = install
 
-DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_HOST)
 
-CONFIG = debian-nslu2-$(DEB_BUILD_ARCH)_config
-
-ifeq ("arm",$(DEB_BUILD_ARCH))
+ifeq (arm,$(DEB_BUILD_ARCH))
  ENDIAN:=l
 endif
-ifeq ("armeb",$(DEB_BUILD_ARCH))
+ifeq (armeb,$(DEB_BUILD_ARCH))
  ENDIAN:=b
 endif
 
@@ -59,8 +59,8 @@ binary-arch:	checkroot build
 #	$(MAKE) INSTALL_PROGRAM="$(INSTALL_PROGRAM)" \
 #		prefix=$$(pwd)/debian/tmp/boot install
 	install -d debian/tmp/boot
-	debian/headerize $(ENDIAN) apex.bin
-	cp apex.bin $$(pwd)/debian/tmp/boot
+	cp apex.bin $$(pwd)/debian/tmp/boot/apex.flash
+	debian/headerize $(ENDIAN) $$(pwd)/debian/tmp/boot/apex.flash
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
 	cp -a debian/copyright $(docdir)
