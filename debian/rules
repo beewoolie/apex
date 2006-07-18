@@ -10,11 +10,20 @@
 package = apexbootloader
 docdir = debian/tmp/usr/share/doc/$(package)
 
-CONFIG = debian-nslu2_config
-
 CC = gcc
 CFLAGS = -g -Wall
 INSTALL_PROGRAM = install
+
+DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_HOST)
+
+CONFIG = debian-nslu2-$(DEB_BUILD_ARCH)_config
+
+ifeq ("arm",$(DEBBIAN_BUILD_ARCH))
+ ENDIAN:=l
+endif
+ifeq ("armeb",$(DEBBIAN_BUILD_ARCH))
+ ENDIAN:=b
+endif
 
 # We must not change the build options.
 #ifeq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -50,8 +59,7 @@ binary-arch:	checkroot build
 #	$(MAKE) INSTALL_PROGRAM="$(INSTALL_PROGRAM)" \
 #		prefix=$$(pwd)/debian/tmp/boot install
 	install -d debian/tmp/boot
-###   Need to emit a header, 16 bytes, the first four are the length
-###   in MSB order. 
+	debian/headerize $(ENDIAN) apex.bin
 	cp apex.bin $$(pwd)/debian/tmp/boot
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
