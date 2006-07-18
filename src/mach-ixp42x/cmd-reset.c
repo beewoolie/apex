@@ -39,7 +39,7 @@
 #define OST_WDOG_ENAB_RESET	(1<<0) /* Allow watchdog to reset CPU */
 #define OST_WDOG_ENAB_CNT_EN	(1<<2) /* Enable watchdog countdown */
 
-static int  __attribute__((noreturn)) cmd_reset (int argc, const char** argv)
+static int cmd_reset (int argc, const char** argv)
 {
   printf ("Performing watchdog reset\n");
 

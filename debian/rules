@@ -18,10 +18,10 @@ DEB_BUILD_ARCH := $(shell dpkg-architecture -qDEB_BUILD_HOST)
 
 CONFIG = debian-nslu2-$(DEB_BUILD_ARCH)_config
 
-ifeq ("arm",$(DEBBIAN_BUILD_ARCH))
+ifeq ("arm",$(DEB_BUILD_ARCH))
  ENDIAN:=l
 endif
-ifeq ("armeb",$(DEBBIAN_BUILD_ARCH))
+ifeq ("armeb",$(DEB_BUILD_ARCH))
  ENDIAN:=b
 endif
 
