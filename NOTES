@@ -5,6 +5,12 @@ APEX Boot Loader
 
 TODO:
 
+  o We've implemented alias/environment variables for the block
+    drivers for the filesystem and partition drivers.  This may mean
+    that we need to move these drivers such that the init's follow the
+    environment initialization.  At the moment, this isn't the case
+    since none of them do anything at init time. 
+
   o Implement uniform driver basis in environment.  There is no reason
     not to use an environment variable for the default driver for each
     of the higher level drivers.  This means we can, for now,
@@ -12,6 +18,7 @@ TODO:
     will make it more obvious to the user how to change the underlying
     driver for each of those systems.  *And* we can then create a DOS
     partition driver....maybe.
+    o Environment/alias part is done.
 
   o Document that the initrd= command line option can be used to setup
     the ramdisk location.  Unfortunately, the parser may not handle

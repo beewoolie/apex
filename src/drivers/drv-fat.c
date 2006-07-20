@@ -1,5 +1,4 @@
 /* drv-fat.c
-     $Id$
 
    written by Marc Singer
    7 Feb 2005
@@ -113,9 +112,8 @@
 #include <spinner.h>
 #include <linux/kernel.h>
 #include <error.h>
-#if defined (CONFIG_CMD_ALIAS)
-#include <alias.h>
-#endif
+#include <environment.h>
+#include <lookup.h>
 
 //#define TALK
 
@@ -134,8 +132,6 @@
 #define FAT_VOLUME	(1<<3)
 #define FAT_DIRECTORY	(1<<4)
 #define FAT_ARCHIVE	(1<<5)
-
-#define DRIVER_NAME	"fatfs"
 
 #define SECTOR_SIZE	512
 
@@ -218,8 +214,6 @@ struct fat_info {
 static struct fat_info fat;
 
 //struct driver_d* fs_driver;	/* *** FIXME: underlying driver link hack */
-static const char szBlockDriver[]  /* Underlying block driver */
-  = CONFIG_DRIVER_FAT_BLOCKDEVICE;
 
 static inline unsigned short read_short (void* pv)
 {
@@ -237,14 +231,17 @@ static inline unsigned long read_long (void* pv)
        + (((unsigned long) pb[3]) << 24);
 }
 
-static inline const char* block_driver (void)
-{
-#if defined (CONFIG_CMD_ALIAS)
-  const char* sz = alias_lookup ("fat-drv");
-  if (sz)
-    return sz;
+#if defined (CONFIG_ENV)
+static __env struct env_d e_fat_drv = {
+  .key = "fat-drv",
+  .default_value = CONFIG_DRIVER_FAT_BLOCKDEVICE,
+  .description = "Block device region for FAT filesystem driver",
+};
 #endif
-  return szBlockDriver;
+
+static const char* block_driver (void)
+{
+  return lookup_alias_or_env ("fat-drv", CONFIG_DRIVER_FAT_BLOCKDEVICE);
 }
 
 #if 0
@@ -746,7 +743,7 @@ static void fat_report (void)
 #endif
 
 static __driver_6 struct driver_d fat_driver = {
-  .name = DRIVER_NAME,
+  .name = "fatfs",
   .description = "FAT filesystem driver",
   .flags = DRIVER_DESCRIP_FS,
   .open = fat_open,

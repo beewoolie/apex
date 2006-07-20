@@ -38,13 +38,13 @@
 #include <config.h>
 #include <apex.h>
 #include <driver.h>
-#include <alias.h>
-#include <environment.h>
 #include <service.h>
 #include <linux/string.h>
 #include <spinner.h>
 #include <asm/reg.h>
 #include <error.h>
+#include <environment.h>
+#include <lookup.h>
 
 struct fis_descriptor {
   char name[16];		/* Image name, null terminated */
@@ -64,25 +64,13 @@ struct fis_descriptor {
 static __env struct env_d e_fis_drv = {
   .key = "fis-drv",
   .default_value = CONFIG_DRIVER_FIS_BLOCKDEVICE,
-  .description = "Block device region for FIS driver",
+  .description = "Block device region for FIS partition driver",
 };
 #endif
 
-static const char* block_driver (void)
+static inline const char* block_driver (void)
 {
-  const char* sz;
-#if defined (CONFIG_CMD_ALIAS)
-  sz = alias_lookup ("fis-drv");
-  if (sz)
-    return sz;
-#endif
-#if defined (CONFIG_ENV)
-  sz = env_fetch ("fis-drv");
-  if (sz)
-    return sz;
-#endif
-  sz = CONFIG_DRIVER_FIS_BLOCKDEVICE;
-  return sz;
+  return lookup_alias_or_env ("fis-drv", CONFIG_DRIVER_FIS_BLOCKDEVICE);
 }
 
 static int end_of_table (struct fis_descriptor* descriptor)

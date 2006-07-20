@@ -1,5 +1,4 @@
 /* drv-jffs2.c
-     $Id$
 
    written by Marc Singer
    16 May 2005
@@ -105,6 +104,8 @@
 #include <zlib.h>
 #include <zlib-heap.h>
 #include <console.h>
+#include <environment.h>
+#include <lookup.h>
 
 //#define TALK
 
@@ -276,9 +277,18 @@ static struct inode_cache __attribute__((section(".jffs2.xbss")))
 int cDirentCache;
 int cInodeCache;
 
-static const char szBlockDriver[]  /* Underlying block driver */
-  = CONFIG_DRIVER_JFFS2_BLOCKDEVICE;
+#if defined (CONFIG_ENV)
+static __env struct env_d e_jffs2_drv = {
+  .key = "jffs2-drv",
+  .default_value = CONFIG_DRIVER_JFFS2_BLOCKDEVICE,
+  .description = "Block device region for JFFS2 filesystem driver",
+};
+#endif
 
+static inline const char* block_driver (void)
+{
+  return lookup_alias_or_env ("jffs2-drv", CONFIG_DRIVER_JFFS2_BLOCKDEVICE);
+}
 
 static inline void read_node (void* pv, size_t ib, size_t cb)
 {
@@ -795,7 +805,7 @@ static int jffs2_identify (void)
   if (jffs2.fCached)
     return 0;
 
-  if (   (result = parse_descriptor (szBlockDriver, &d))
+  if (   (result = parse_descriptor (block_driver (), &d))
       || (result = open_descriptor (&d)))
     return result;
 

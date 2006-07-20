@@ -1,5 +1,4 @@
 /* drv-ext2.c
-     $Id$
 
    written by Marc Singer
    22 Feb 2005
@@ -109,6 +108,8 @@
 #include <spinner.h>
 #include <linux/kernel.h>
 #include <error.h>
+#include <environment.h>
+#include <lookup.h>
 
 //#define TALK
 //#define TALK_DIR
@@ -310,8 +311,19 @@ struct ext2_info {
 };
 
 static struct ext2_info ext2;
-static const char szBlockDriver[] /* Underlying block driver */
-  = CONFIG_DRIVER_EXT2_BLOCKDEVICE;
+
+#if defined (CONFIG_ENV)
+static __env struct env_d e_ext2_drv = {
+  .key = "ext2-drv",
+  .default_value = CONFIG_DRIVER_EXT2_BLOCKDEVICE,
+  .description = "Block device region for EXT2 filesystem driver",
+};
+#endif
+
+static inline const char* block_driver (void)
+{
+  return lookup_alias_or_env ("ext2-drv", CONFIG_DRIVER_EXT2_BLOCKDEVICE);
+}
 
 inline int block_groups (struct ext2_info* ext2)
 {
@@ -537,7 +549,7 @@ static int ext2_identify (void)
   char sz[128];
   struct descriptor_d d;
 
-  snprintf (sz, sizeof (sz), "%s:+1s", szBlockDriver);
+  snprintf (sz, sizeof (sz), "%s:+1s", block_driver ());
   if (   (result = parse_descriptor (sz, &d))
       || (result = open_descriptor (&d))) {
     PRINTF ("%s: unable to open block driver '%s'\n", __FUNCTION__, sz);
@@ -762,7 +774,7 @@ static int ext2_open (struct descriptor_d* d)
     }
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
-	      szBlockDriver,
+	      block_driver (),
 	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
   }
@@ -944,7 +956,7 @@ static int ext2_info (struct descriptor_d* d)
     }
 
     snprintf (sz, sizeof (sz), "%s:%lds+%lds",
-	      szBlockDriver,
+	      block_driver (),
 	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
   }

@@ -1,9 +1,9 @@
-/* alias.h
+/* lookup.c
 
    written by Marc Singer
-   6 July 2005
+   20 Jul 2006
 
-   Copyright (C) 2005 Marc Singer
+   Copyright (C) 2006 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -26,17 +26,26 @@
 
 */
 
-#if !defined (__ALIAS_H__)
-#    define   __ALIAS_H__
+#include <config.h>
+#include <apex.h>
+#include <lookup.h>
 
-/* ----- Types */
+#include <environment.h>
+#include <alias.h>
 
-/* ----- Prototypes */
-
-void*       alias_enumerate (void* pv, const char** pszKey,
-			     const char** pszValue);
-const char* alias_lookup (const char* szKey);
-int	    alias_set (const char* szKey, const char* szValue);
-int	    alias_unset (const char* szKey);
-
-#endif  /* __ALIAS_H__ */
+const char* lookup_alias_or_env (const char* szKey,
+				 const char* szDefault)
+{
+  const char* sz = NULL;
+#if defined (CONFIG_ALIASES)
+  if (!sz)
+    sz = alias_lookup (szKey);
+#endif
+#if defined (CONFIG_ENV)
+  if (!sz)
+    sz = env_fetch (szKey);
+#endif
+  if (!sz)
+    sz = szDefault;
+  return sz;
+}

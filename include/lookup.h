@@ -1,9 +1,9 @@
-/* alias.h
+/* lookup.h
 
    written by Marc Singer
-   6 July 2005
+   20 Jul 2006
 
-   Copyright (C) 2005 Marc Singer
+   Copyright (C) 2006 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -26,17 +26,17 @@
 
 */
 
-#if !defined (__ALIAS_H__)
-#    define   __ALIAS_H__
+#if !defined (__LOOKUP_H__)
+#    define   __LOOKUP_H__
+
+/* ----- Includes */
 
 /* ----- Types */
 
+/* ----- Globals */
+
 /* ----- Prototypes */
 
-void*       alias_enumerate (void* pv, const char** pszKey,
-			     const char** pszValue);
-const char* alias_lookup (const char* szKey);
-int	    alias_set (const char* szKey, const char* szValue);
-int	    alias_unset (const char* szKey);
+const char* lookup_alias_or_env (const char* szKey, const char* szDefault);
 
-#endif  /* __ALIAS_H__ */
+#endif  /* __LOOKUP_H__ */

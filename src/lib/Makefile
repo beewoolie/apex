@@ -33,6 +33,7 @@ lib-y += zlib.o zlib-heap.o
 lib-y += pngr.o
 lib-y += sort.o
 lib-$(CONFIG_ALIASES) += alias.o
+lib-y += lookup.o
 
 ifneq ($(CONFIG_THUMB),)
 CFLAGS_vsprintf.o	+= -mthumb

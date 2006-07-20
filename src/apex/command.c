@@ -35,7 +35,7 @@
 #include <environment.h>
 #include <spinner.h>
 #include <sort.h>
-#include <alias.h>
+#include <lookup.h>
 
 const char* error_description;
 
@@ -74,15 +74,7 @@ static char* expand_variables (const char* rgbSrc)
       if (isalpha (*pchSrc) || *pchSrc == '_')
 	break;
       *pch = 0;
-      value = 0;
-#if defined (CONFIG_ALIASES)
-      if (!value)
-	value = alias_lookup (pchKey + 1);
-#endif
-#if defined (CONFIG_ENV)
-      if (!value)
-	value = env_fetch (pchKey + 1);
-#endif
+      value = lookup_alias_or_env (pchKey + 1, 0);
       if (value) {
 	if (pch + strlen (value) + 1 >= rgb + sizeof (rgb) - 1)
 	  return 0;		/* Simple failure on overflow */
