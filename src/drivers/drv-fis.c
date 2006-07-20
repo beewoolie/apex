@@ -88,6 +88,8 @@ static void fis_report (void)
   int result;
   struct descriptor_d d;
 
+  printf (" (fis block driver %s\n", block_driver ());
+
   if (   (result = parse_descriptor (block_driver (), &d))
       || (result = open_descriptor (&d)))
     return;
