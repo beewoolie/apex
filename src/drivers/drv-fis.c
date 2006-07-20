@@ -100,12 +100,18 @@ static int fis_open (struct descriptor_d* d)
     if (strnicmp (d->pb[0], descriptor.name, sizeof (descriptor.name)))
       continue;
 
+    if (d->start >= descriptor.length) {
+      close_descriptor (&fis_d);
+      ERROR_RETURN (ERROR_OPEN, "region exceeds partition size");
+    }
+
     descriptor.start += d->start;
     descriptor.length -= d->start;
     if (d->length && d->length < descriptor.length)
       descriptor.length = d->length;
-
     close_helper (d);
+
+    /* Construct a memory descriptor for the FIS partition */
     parse_descriptor ("mem:", d);
     d->start = descriptor.start;
     d->length = descriptor.length;

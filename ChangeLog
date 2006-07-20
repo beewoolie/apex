@@ -1,5 +1,7 @@
 2006-07-20  Marc Singer  <elf@buici.com>
 
+	* Makefile: Release 1.3.30.  Debianized.  New FIS driver.
+
 	* src/apex/command.c (expand_variables): Using new lookup function
 	to resolve variable/macro references in command expansion.
 
