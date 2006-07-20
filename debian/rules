@@ -59,7 +59,7 @@ binary-arch:	checkroot build
 #	$(MAKE) INSTALL_PROGRAM="$(INSTALL_PROGRAM)" \
 #		prefix=$$(pwd)/debian/tmp/boot install
 	install -d debian/tmp/boot
-	cp apex.bin $$(pwd)/debian/tmp/boot/apex.flash
+	cp src/arch-arm/rom/apex.bin $$(pwd)/debian/tmp/boot/apex.flash
 	debian/headerize $(ENDIAN) $$(pwd)/debian/tmp/boot/apex.flash
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
