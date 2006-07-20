@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 18 15:45:48 2006
+# Thu Jul 20 11:29:36 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -85,6 +85,7 @@ CONFIG_CMD_GO=y
 # CONFIG_DRIVER_FAT is not set
 # CONFIG_DRIVER_EXT2 is not set
 # CONFIG_DRIVER_JFFS2 is not set
+# CONFIG_DRIVER_FIS is not set
 # CONFIG_DRIVER_NOR_CFI is not set
 CONFIG_USES_NOR_CFI=y
 

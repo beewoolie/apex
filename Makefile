@@ -1306,19 +1306,24 @@ checkstack:
 	$(PERL) $(src)/scripts/checkstack.pl $(ARCH)
 
 # every target builds all of the available configurations
+# NOTE; we force the compiler to a little-endian ARM compiler,
+#       overriding the default in the configuration.  We do this so
+#       that the debian configurations can build.  It's a hack until
+#       there is a better way to determine which compiler to use.
 .PHONY: every
 every: distclean
 	@if [ -e .config ]; then rm .config ; fi
 	@[ ! -d every ] || rm -rf every
 	@mkdir every
-	@for i in `find src/mach-*/ -name '*_config' -printf ' %f'` ; do \
+	@for i in `find src/mach-*/ \
+		   -name '*_config' -printf ' %f'` ; do \
 	 o=apex-$(APEXRELEASE)-`echo $$i | sed -s 's/_config//'`; \
 	 $(MAKE) clean ; \
 	 $(MAKE) $$i ; \
 	 echo "  BUILD   $$i ($$o)";\
 	 $(MAKE) oldconfig       < /dev/null >  makelog 2>&1 || exit 1 ; \
-	 $(MAKE)                             >> makelog 2>&1 || exit 1 ; \
-	 $(MAKE) apex.srec apex.elf apex.bin >> makelog 2>&1 || exit 1 ; \
+	 $(MAKE) CROSS_COMPILE=/usr/arm-linux/gcc3/arm-linux- \
+	         apex.srec apex.elf apex.bin >> makelog 2>&1 || exit 1 ; \
 	 mkdir every/$$o ; \
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
 	 cp .config every/$$o/config ; \
