@@ -1,3 +1,9 @@
+2006-07-18  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/reset.c: Added code to support forcing the
+	CPU into LITTLEENDIAN mode.  This is necessary for running the
+	NSLU2 is LE mode for Debian without replacing the Redboot loader.
+
 2006-07-14  Marc Singer  <elf@buici.com>
 
 	* Makefile: added logic to the build to archive prebuilt binaries

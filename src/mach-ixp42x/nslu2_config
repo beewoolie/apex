@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 18 15:45:38 2006
+# Wed Jul 19 19:35:47 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -88,9 +88,12 @@ CONFIG_CMD_XRECEIVE=y
 # CONFIG_DRIVER_FAT is not set
 # CONFIG_DRIVER_EXT2 is not set
 # CONFIG_DRIVER_JFFS2 is not set
+CONFIG_DRIVER_FIS=y
+CONFIG_DRIVER_FIS_BLOCKDEVICE="nor:0x7e0000+4k"
 CONFIG_DRIVER_NOR_CFI=y
 # CONFIG_DRIVER_NOR_CFI_NO_BUFFERED is not set
 CONFIG_USES_NOR_CFI=y
+CONFIG_USES_PATHNAME_PARSER=y
 
 #
 # Environment

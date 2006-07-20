@@ -17,7 +17,6 @@ config DRIVER_FAT_BLOCKDEVICE
 	  here.  A later update to the filesystem code will let the
 	  user specify this region dynamically. 
 	
-
 config DRIVER_EXT2
 	bool "EXT2 Filesystem"
 	select USES_PATHNAME_PARSER
@@ -54,6 +53,21 @@ config DRIVER_JFFS2_BLOCKDEVICE
 	  user specify this region dynamically. 
 
 
+config DRIVER_FIS
+	bool "FIS Partition"
+	select USES_PATHNAME_PARSER
+	default n
+	help
+	  This driver implements a FIS partition driver.
+
+config DRIVER_FIS_BLOCKDEVICE
+	string "Underlying driver region"
+	depends on DRIVER_FIS
+	help
+	  Set this option to the default region holding the FIS
+	  partition.  The region may also be set at runtime as an
+	  alias or as an environment variable called 'fis-drv'.
+	
 config DRIVER_NOR_CFI
 	bool "CFI NOR Flash"
 	depends on USES_NOR_CFI=y

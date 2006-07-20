@@ -5,6 +5,14 @@ APEX Boot Loader
 
 TODO:
 
+  o Implement uniform driver basis in environment.  There is no reason
+    not to use an environment variable for the default driver for each
+    of the higher level drivers.  This means we can, for now,
+    circumvent the need for layering drivers with regions.  Also, this
+    will make it more obvious to the user how to change the underlying
+    driver for each of those systems.  *And* we can then create a DOS
+    partition driver....maybe.
+
   o Document that the initrd= command line option can be used to setup
     the ramdisk location.  Unfortunately, the parser may not handle
     hexadecimal.  Need to check on that.  It's 'initrd=start,size'.

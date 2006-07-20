@@ -1,5 +1,4 @@
 /* drv-cf.c
-     $Id$
 
    written by Marc Singer
    7 Feb 2005
