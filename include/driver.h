@@ -46,7 +46,7 @@ struct descriptor_d {
   size_t index;
 
 				/* Paths */
-  unsigned char rgb[256];
+  unsigned char rgb[256];	/* *** FIXME: contributes to stack bloat */
   unsigned char* pb[32];
   int c;		/* Total elements in path */
   int iRoot;		/* Index of root element */
