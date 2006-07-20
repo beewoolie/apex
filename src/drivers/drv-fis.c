@@ -58,8 +58,6 @@ struct fis_descriptor {
   unsigned long cksum_image;	/* Checksum over image data */
 };
 
-#define DRIVER_NAME	"fis-part"
-
 #if defined (CONFIG_ENV)
 static __env struct env_d e_fis_drv = {
   .key = "fis-drv",
@@ -118,6 +116,7 @@ static int fis_open (struct descriptor_d* d)
   ERROR_RETURN (ERROR_BADPARTITION, "partition not found");
 }
 
+#if !defined (CONFIG_SMALL)
 static void fis_report (void)
 {
   int result;
@@ -142,9 +141,10 @@ static void fis_report (void)
 
   close_descriptor (&d);
 }
+#endif
 
 static __driver_6 struct driver_d fis_driver = {
-  .name		= DRIVER_NAME,
+  .name		= "fis-part",
   .description	= "FIS partition driver",
   .flags	= DRIVER_DESCRIP_FS,
   .open		= fis_open,

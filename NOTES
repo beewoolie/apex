@@ -23,6 +23,8 @@ TODO:
       would allow a safe environment erase function, or perhaps a flag
       to the erase function to handle this case.
 
+  o Must implement safe flash region erase.  Must must must. (see above)
+
   o We've implemented alias/environment variables for the block
     drivers for the filesystem and partition drivers.  This may mean
     that we need to move these drivers such that the init's follow the
