@@ -5,6 +5,24 @@ APEX Boot Loader
 
 TODO:
 
+  o Driver enhacements
+
+    o Query infrastructure.  There presently isn't a way to ask a
+      driver anything.  A query infrastructure could help, but it must
+      be very light weight.
+    o Query for the base address.  This would be used to convert FIS
+      regions into nor: regions.  At the moment, FIS regions are
+      mapped to mem: regions which means two things.  First, it is
+      possible that the flash is not in READARRAY state.   This turns
+      out not to be true, but it *could* be.  Second, we cannot write
+      or erase the FIS partition which would be a convenience.  Having
+      a way to query the start of flash would mean that we could
+      return a valid nor: region.
+    o Query for block size.  This would allow us to detect erases
+      operations that don't request erasure of the whole block.  This
+      would allow a safe environment erase function, or perhaps a flag
+      to the erase function to handle this case.
+
   o We've implemented alias/environment variables for the block
     drivers for the filesystem and partition drivers.  This may mean
     that we need to move these drivers such that the init's follow the
@@ -29,9 +47,6 @@ TODO:
     It might be worthwhile making this work.
   o Add a 'show' function so that we can 'show drivers' and 'show
     services' and maybe other things.
-
-  o Need to allow the user to set the base device for fat and ext2
-    since we have to be able to select CF or MMC, for example.
 
   o Support for arrow keys
     o I believe that the only hitch is that we need to cope with the

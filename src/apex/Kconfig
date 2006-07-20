@@ -115,11 +115,12 @@ config CMD_ENV
 
 config CMD_ERASEENV
 	bool "Define Erase Environment Command"
-	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
+	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y && EXPERIMENTAL
 	default n
 	help
-	  Experimental feature that allows safe, complete erasure of
-	  the environment.
+	  Experimental (unimplemented) feature that allows safe,
+	  complete erasure of the environment even when the erase
+	  block of the environment is shared with other data.
 
 config CMD_SETENV
 	bool "Define Set/unset Environment Variable Commands"
