@@ -59,6 +59,32 @@ extern void init (void);
 
 void __naked __section (.reset) reset (void)
 {
+#if defined (CONFIG_BIGENDIAN)
+
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
+    COPROCESSOR_WAIT;
+    /* *** FIXME: the redboot code performed a read from the ttb
+       register as a delay.  Not sure why. */
+  }
+#endif
+
+#if defined (CONFIG_LITTLEENDIAN)
+
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
+    COPROCESSOR_WAIT;
+    /* *** FIXME: the redboot code performed a read from the ttb
+       register as a delay.  Not sure why. */
+  }
+#endif
+
 #if 0
   /* Like most code that seems like a good idea, this isn't used
      because it cannot make a difference.  The only way it is valid for
@@ -112,32 +138,6 @@ void __naked __section (.reset) reset (void)
 
   CACHE_FLUSH;
 
-#endif
-
-#if defined (CONFIG_BIGENDIAN)
-
-  {
-    unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
-    COPROCESSOR_WAIT;
-    /* *** FIXME: the redboot code performed a read from the ttb
-       register as a delay.  Not sure why. */
-  }
-#endif
-
-#if defined (CONFIG_LITTLEENDIAN)
-
-  {
-    unsigned long v;
-    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
-    COPROCESSOR_WAIT;
-    /* *** FIXME: the redboot code performed a read from the ttb
-       register as a delay.  Not sure why. */
-  }
 #endif
 
   /* *** This fragment exists to help locate problems with code
