@@ -49,3 +49,43 @@ the descriptor may still be modified by a @START or +LENGTH modifier,
 filenames may not contain '@' or '+'.
 
 
+Filesystem Drivers
+------------------
+
+The filesystem drivers such as ext2 and fat support the pathname
+region form.
+
+  [DRIVER:][[//LOCATION][/PATH]][[@START][+LENGTH]]
+
+The LOCATION field is the MSDOS partition number, numbered from 1.
+Typical usage looks like the following:
+
+  ext2://1/boot/zImage
+
+The START and LENGTH fields are optional and may be used to qualify
+the region.  Without them, the region describes the whole file.
+
+  ext2://1/boot/zImage@1k+32k
+
+This refers to 32KiB of the file /boot/zImage in the first partition
+starting 1KiB from the start of the file.
+
+
+Partition Drivers
+-----------------
+
+The partition drivers, of which there is only the fis driver,
+translate a partition name or number into a region on the source
+medium.  These drivers make this translation when the region is
+opened.
+
+The FIS driver takes an underlying region covering the FIS partition
+table.  The LOCATION field of an fis region is the case insensitive
+name of the partition.
+
+  fis://kernel
+
+Like the filesystem drivers, the START and LENGTH fields are optional
+and may be used to qualify the region.  Without then, the region
+describes the whole partition.
+
