@@ -812,7 +812,7 @@ static int cmd_emac (int argc, const char** argv)
   else {
 	/* Set mac address */
     if (strcmp (argv[1], "mac") == 0) {
-      unsigned char rgb[6];
+      char rgb[6];
       if (argc != 3)
 	return ERROR_PARAM;
 

@@ -81,7 +81,7 @@ static inline void msleep (int c) {	/* Only way to guarantee the range */
 
 
 #define dump(p,c,i) dumpw(p,c,i,0)
-extern void dumpw (const unsigned char* rgb, int cb,
+extern void dumpw (const char* rgb, int cb,
 		   unsigned long index, int width);
 
 #if defined (CONFIG_COMMAND_HISTORY)

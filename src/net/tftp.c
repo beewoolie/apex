@@ -263,7 +263,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 
       TFTP_F (tftp.frame)->opcode = htons (tftp.mode);
       {
-	char* pch = TFTP_F(tftp.frame)->data;
+	char* pch = (char*) TFTP_F(tftp.frame)->data;
 	size_t cb = strlcpy (pch, d->pb[d->iRoot], 400) + 1;
 	strcpy (pch + cb, "octet");
 	cb += strlen (pch + cb) + 1;

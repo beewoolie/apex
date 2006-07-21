@@ -331,7 +331,7 @@ static int verify_crc (void* pv, size_t cb, u32 crc)
 
 */
 
-const int find_cached_inode (u32 inode, size_t ib)
+static int find_cached_inode (u32 inode, size_t ib)
 {
   int min = 0;
   int max = cInodeCache;
@@ -372,7 +372,7 @@ const int find_cached_inode (u32 inode, size_t ib)
 
 */
 
-const int find_cached_directory_inode (u32 inode)
+static int find_cached_directory_inode (u32 inode)
 {
   int max = cDirentCache;
   int i;
@@ -385,7 +385,7 @@ const int find_cached_directory_inode (u32 inode)
   return -1;
 }
 
-const int find_cached_parent_inode (u32 inode)
+static int find_cached_parent_inode (u32 inode)
 {
   int min = 0;
   int max = cDirentCache;

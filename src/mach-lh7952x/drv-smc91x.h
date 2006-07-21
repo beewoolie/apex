@@ -22,17 +22,19 @@
 
 static inline u16 SMC_inw (unsigned long base, int r)
 {
-  u16 v;
-  v = *(volatile u16*) (base + r);
+  u16 v = *(volatile u16*) (base + r);
+  SMC_IOBARRIER;
   return v;
 }
 
 static inline void SMC_insw (unsigned long base, int r,
-			     unsigned char* pv, int l)
+			     void* pv, int l)
 {
   u16* ps = (u16*) pv;
-  while (l-- > 0)
+  while (l-- > 0) {
     *ps++ = *(volatile u16*) (base + r);
+    SMC_IOBARRIER;
+  }
 }
 
 static inline void SMC_outw (unsigned long base, int r, u16 v)
@@ -42,9 +44,9 @@ static inline void SMC_outw (unsigned long base, int r, u16 v)
 }
 
 static inline void SMC_outsw (unsigned long base, int r,
-			      const unsigned char* p, int l)
+			      const void* p, int l)
 {
-  unsigned short* ps = (unsigned short*) p;
+  const unsigned short* ps = (const unsigned short*) p;
   while (l-- > 0) {
     *(volatile u16*) (base + r) = *ps++;
     SMC_IOBARRIER;

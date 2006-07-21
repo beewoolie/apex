@@ -34,7 +34,7 @@
 #include <driver.h>
 #include <error.h>
 
-void dumpw (const unsigned char* rgb, int cb, unsigned long index, int width)
+void dumpw (const char* rgb, int cb, unsigned long index, int width)
 {
   int i;
 

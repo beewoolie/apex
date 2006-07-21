@@ -47,7 +47,7 @@ size_t ibAlias;
 
 struct entry {
   unsigned short cb;		/* Length of this whole node. */
-  unsigned char rgb[];
+  char rgb[];
 };
 
 static struct entry* _alias_find (const char* szKey)

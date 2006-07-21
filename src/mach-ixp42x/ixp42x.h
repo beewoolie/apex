@@ -164,7 +164,15 @@
   (((i) > 7) ? (GPIO_IT2R |= (v) << (((i) - 8)*3))\
 	     : (GPIO_IT1R |= (v) << ( (i)     *3)))
 
-#define GPIO_INT_TYPE(i,v) ( GPIO_INT_TYPE_MASK (i), GPIO_INT_TYPE_SET (i,v) )
+#define GPIO_INT_TYPE(i,v) \
+	({ GPIO_INT_TYPE_MASK (i); GPIO_INT_TYPE_SET (i,v); })
+
+#define IXP4XX_INTC_PHYS	(0xc8003000)
+#define	IXP4XX_NPEA_PHYS	(0xc8006000)
+#define IXP4XX_NPEB_PHYS	(0xc8007000)
+#define IXP4XX_NPEC_PHYS	(0xc8008000)
+#define IXP4XX_ETHB_PHYS	(0xc8009000)
+#define IXP4XX_ETHC_PHYS	(0xc800a000)
 
 #define PCI_PHYS	(0xc0000000)
 #define PCI_NP_AD	__REG(PCI_PHYS + 0x00)

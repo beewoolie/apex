@@ -56,7 +56,7 @@
 
 int console_terminate (void* pv)
 {
-  char ch;
+//  char ch;
 
   if (console->poll (0, 0))
     return 1;

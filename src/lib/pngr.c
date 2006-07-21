@@ -166,7 +166,7 @@ static ssize_t pngr_read (struct png* png, void* pv, size_t cb)
 
 static long read_long (const void* pv)
 {
-  const unsigned char* pb = (const char*) pv;
+  const unsigned char* pb = (const unsigned char*) pv;
   return (pb[0] << 24)
     + (pb[1] << 16)
     + (pb[2] << 8)
@@ -285,7 +285,7 @@ void* open_pngr (struct descriptor_d* d)
 
 int palette_pngr (void* pv, unsigned char** prgb)
 {
-  *prgb = ((struct png*) pv)->rgbPalette;
+  *prgb = (unsigned char*) ((struct png*) pv)->rgbPalette;
   return ((struct png*) pv)->cPalette;
 }
 
@@ -296,7 +296,7 @@ int read_pngr_ihdr (void* pv, struct png_header* hdr)
   return 0;
 }
 
-static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
+static ssize_t read_pngr_idat (void* pv, char* rgb, size_t cb)
 {
   struct png* png = pv;
   int result;
@@ -316,7 +316,7 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
       return -1;
   }
 
-  png->z.next_out = rgb;
+  png->z.next_out = (Bytef*) rgb;
   png->z.avail_out = cb;
   while (png->z.avail_out) {
     if (!png->z.avail_in) {
@@ -339,7 +339,7 @@ static ssize_t read_pngr_idat (void* pv, unsigned char* rgb, size_t cb)
 	if (result)		/* Unable to read next chunk */
 	  return -1;
       }
-      png->z.next_in = rgbDecode;
+      png->z.next_in = (Bytef*) rgbDecode;
       png->z.avail_in = pngr_read (png, rgbDecode, sizeof (rgbDecode));
 //      printf ("%s: pngr_read %d\n", __FUNCTION__, png->z.avail_in);
     }
@@ -445,7 +445,7 @@ const unsigned char* read_pngr_row (void* pv)
     png->pbPrev = pbSwap;
   }
 
-  return pb + 1;
+  return (unsigned char*) pb + 1;
 }
 
 void close_pngr (void* pv)

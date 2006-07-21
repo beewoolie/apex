@@ -174,8 +174,8 @@ static int rarp_receiver (struct descriptor_d* d,
       break;
     memcpy (host_ip_address, ARP_F (frame)->target_protocol_address, 4);
 		/* Add ARP entry for the server */
-    arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address,
+    arp_cache_update ((char*) ARP_F (frame)->sender_hardware_address,
+		      (char*) ARP_F (frame)->sender_protocol_address,
 		      1);
     memcpy (server_ip_address, ARP_F (frame)->sender_protocol_address, 4);
     memcpy (gw_ip_address, ARP_F (frame)->sender_protocol_address, 4);

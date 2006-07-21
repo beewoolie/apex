@@ -51,6 +51,11 @@
      verification code didn't work the first time and I didn't want to
      keep working on it.
 
+   o Casting.  The underlying structures use u8, u16 and u32, but the
+     rest of APEX uses the simpler forms, char, short, and long.
+     Understandably, this could cause problems with porting.  Instead
+     of percolating these types up, I choose to cast to squash them.
+
 */
 
 #include <config.h>
@@ -289,7 +294,7 @@ static const char* arp_cache_lookup (const char* protocol_address)
     if (memcmp (arp_table[i].ip, protocol_address, 4) == 0) {
       if (memcmp (arp_table[i].address, broadcast_mac_address, 6) == 0)
 	return NULL;
-      return arp_table[i].address;
+      return (char*) arp_table[i].address;
     }
 
   return NULL;
@@ -347,8 +352,8 @@ int arp_receiver (struct descriptor_d* d, struct ethernet_frame* frame,
     break;
 
   case HTONS (ARP_REPLY):
-    arp_cache_update (ARP_F (frame)->sender_hardware_address,
-		      ARP_F (frame)->sender_protocol_address,
+    arp_cache_update ((char*) ARP_F (frame)->sender_hardware_address,
+		      (char*) ARP_F (frame)->sender_protocol_address,
 		      0);
     break;
   }
@@ -466,7 +471,7 @@ void udp_setup (struct ethernet_frame* frame,
   if (addr)
     memcpy (ETH_F (frame)->destination_address, addr, 6);
   else
-    memcmp (ETH_F (frame)->destination_address, broadcast_mac_address, 6);
+    memcpy (ETH_F (frame)->destination_address, broadcast_mac_address, 6);
   memcpy (ETH_F (frame)->source_address, host_mac_address, 6);
   ETH_F (frame)->protocol = HTONS (ETH_PROTO_IP);
 
