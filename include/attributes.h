@@ -52,4 +52,6 @@
 #define __abort_handler		__attribute__((interrupt ("ABORT")))
 #define __undef_handler		__attribute__((interrupt ("UNDEF")))
 
+#define __aligned		__attribute__((aligned (32)))
+
 #endif  /* __ATTRIBUTES_H__ */

@@ -95,7 +95,7 @@ int cmd_copy (int argc, const char** argv)
 #endif
 
   {
-    char rgb[512];
+    char __aligned rgb[512];
     ssize_t cb;
     int report_last = -1;
     int step = DRIVER_PROGRESS (&din, &dout);
@@ -113,7 +113,7 @@ int cmd_copy (int argc, const char** argv)
 
 #if defined (USE_COPY_VERIFY)
       if (verify) {
-	char rgbVerify[512];
+	char __aligned rgbVerify[512];
 	ssize_t cbVerify = din_v.driver->read (&din_v, rgbVerify,
 					       sizeof (rgbVerify));
 	if (cbVerify != cb) {

@@ -529,7 +529,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     }
     else {
       int i;
-      char rgb[chip->writebuffer_size];
+      char __aligned rgb[chip->writebuffer_size];
       rgb[0] = 0xff;						/* First */
       rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);

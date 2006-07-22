@@ -201,7 +201,7 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-#if 0
+#if 1
   /* *** Larger version of the memory read function which serves to
      properly read from memories (e.g. broken CF interfaces) where the
      chip select must toggle for every access.  This is a lowest

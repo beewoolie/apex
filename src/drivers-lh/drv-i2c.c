@@ -405,7 +405,7 @@ static ssize_t i2c_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 static void i2c_erase (struct descriptor_d* d, size_t cb)
 {
-  char rgb[128];
+  char __aligned rgb[128];
   memset (rgb, 0xff, sizeof (rgb));
 
   while (cb) {

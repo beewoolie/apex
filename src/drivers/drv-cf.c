@@ -298,7 +298,7 @@ static int cf_identify (void)
       index += 2*CF_ADDR_MULT;
       {
 	int i;
-	unsigned char rgb[128];
+	char __aligned rgb[128];
 	for (i = 0; i < s; ++i) {
 	  rgb[i] = REG (CF_PHYS + index + i*2*CF_ADDR_MULT);
 	  IOBARRIER_READ;

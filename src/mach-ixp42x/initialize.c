@@ -197,9 +197,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   COPROCESSOR_WAIT;
 
 
-  PUTHEX_LL (EXP_TIMING_CS0);
-  PUTC_LL ('\r');PUTC_LL ('\n');
-
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
      *** flash.  Moreover, I'd rather make it fast instead of slow. */
@@ -216,11 +213,14 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | EXP_CS_EN
     ;
 
-  PUTHEX_LL (EXP_TIMING_CS0);
+  PUTC_LL ('\r');PUTC_LL ('\n');
+  PUTHEX_LL (*(unsigned long *) 0x50000000);
+  PUTC_LL ('\r');PUTC_LL ('\n');
+  PUTHEX_LL (EXP_CNFG0);
+  PUTC_LL ('\r');PUTC_LL ('\n');
+  PUTHEX_LL (EXP_CNFG1);
   PUTC_LL ('\r');PUTC_LL ('\n');
 
-  PUTHEX_LL (EXP_TIMING_CS1);
-  PUTC_LL ('\r');PUTC_LL ('\n');
 
 	  /* Exit now if executing in SDRAM */
   if (EXP_CNFG0 & (1<<31)) {

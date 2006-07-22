@@ -597,7 +597,7 @@ static int jffs2_load_cache (void)
 
 static int jffs2_decompress_node (int index)
 {
-  unsigned char rgb[BLOCK_SIZE_MAX + sizeof (struct inode_node)];
+  char __aligned rgb[BLOCK_SIZE_MAX + sizeof (struct inode_node)];
   struct inode_node* node = (struct inode_node*) rgb;
   size_t dsize;
   size_t csize;
@@ -727,7 +727,7 @@ static int jffs2_path_to_inode (int inode, struct descriptor_d* d)
 
     for (; index < cDirentCache; ++index) {
 		/* Short-circuit for name length mismatch */
-      char rgb[512];
+      char __aligned rgb[512];
       size_t cbNode;
       struct dirent_node* dirent = (struct dirent_node*) rgb;
 
@@ -981,7 +981,7 @@ static int jffs2_info (struct descriptor_d* d)
   if (S_ISDIR (node.i.mode) || inode == 1) {
     i = find_cached_parent_inode (inode);
     for (; i != -1 && i < cDirentCache && dirent_cache[i].pino == inode; ++i) {
-      char rgb[512];
+      char __aligned rgb[512];
       struct dirent_node* dirent = (struct dirent_node*) rgb;
 
       if (dirent_cache[i].ino == 0)

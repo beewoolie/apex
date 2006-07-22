@@ -55,7 +55,7 @@ int cmd_checksum (int argc, const char** argv)
     int index = 0;
     unsigned long crc = 0;
     while (index < d.length) {
-      char rgb[512];
+      char __aligned rgb[512];
       int cb = d.driver->read (&d, rgb, sizeof (rgb));
       if (cb < 0) {
 	result = cb;

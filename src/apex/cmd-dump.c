@@ -87,7 +87,7 @@ int cmd_dump (int argc, const char** argv)
      *** we're just showing it to the user.  */
 
   while (index < d.start + d.length) {
-    char rgb[16];
+    char __aligned rgb[16];
     int cb = d.driver->read (&d, rgb, sizeof (rgb));
 
     if (cb < 0)

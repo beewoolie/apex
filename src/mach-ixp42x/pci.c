@@ -36,6 +36,16 @@
 
 #include "hardware.h"
 
+/* pci_init
+
+   performs essential boot-time PCI controller initializations.  This
+   may not be necessary as the kernel (since 2.6.17 or so) has been
+   doing this initialization as well.  Earlier kernels requires this
+   code, so it stays in.  It isn't large, doesn't take much time, it
+   it doesn't hurt.
+
+*/
+
 static void pci_init (void)
 {
 #if defined (CONFIG_MACH_NSLU2)
@@ -84,7 +94,11 @@ static void pci_init (void)
   PCI_CONFIG_WRITE32 (PCI_CFG_BAR_5, 0x90000000); /*  out of reach */
 
   PCI_ISR = PCI_ISR_PSE | PCI_ISR_PFE | PCI_ISR_PPE | PCI_ISR_AHBE;
-  PCI_CSR = PCI_CSR_IC  | PCI_CSR_ABE | PCI_CSR_PDS | PCI_CSR_ADS;
+  PCI_CSR = PCI_CSR_IC  | PCI_CSR_ABE
+#if defined CONFIG_BIGENDIAN
+    | PCI_CSR_PDS | PCI_CSR_ADS
+#endif
+    ;
   PCI_CONFIG_WRITE16 (PCI_CFG_COMMAND,
 		      PCI_CFG_COMMAND_MASTER | PCI_CFG_COMMAND_MEMORY);
 

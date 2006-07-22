@@ -90,8 +90,8 @@ int cmd_compare (int argc, const char** argv)
   dout.length = cbTotal;
 
   while (cbCompare < cbTotal && count) {
-    char rgbIn [512];
-    char rgbOut[512];
+    char __aligned rgbIn [512];
+    char __aligned rgbOut[512];
     ssize_t cbIn;
     ssize_t cbOut;
     ssize_t cb;
