@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Marc Singer <elf@debian.org>
 Standards-Version: 3.6.1
-Build-Depends: perl
+Build-Depends: perl, srecord
 
 Package: apex-nslu2
 Architecture: arm armeb

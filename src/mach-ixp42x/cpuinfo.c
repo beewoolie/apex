@@ -28,23 +28,47 @@
 */
 
 
-#include <apex.h>
 #include <config.h>
+#include <apex.h>
+#include <linux/string.h>
 #include "hardware.h"
 #include <service.h>
 
 #if !defined (CONFIG_SMALL)
 
+static const char* cp15_ctrl (unsigned long ctrl)
+{
+  static const char bits[] = "vizfrsbldpwcam";
+  const int cbits = sizeof (bits) - 1;
+  static char sz[sizeof (bits)];
+  int i;
+
+  strcpy (sz, bits);
+
+  for (i = 0; i < cbits; ++i)
+    if (ctrl & (1<<(cbits - i - 1)))
+      sz[i] += 'A' - 'a';
+  return sz;
+}
+
 static void cpuinfo_report (void)
 {
   unsigned long id;
+  unsigned long cache;
   unsigned long ctrl;
+  unsigned long ttbl;
+  unsigned long domain;
   unsigned long cpsr;
 
-  __asm volatile ("mrc p15,0,%0,c0,c0": "=r" (id));
-  __asm volatile ("mrc p15,0,%0,c1,c0": "=r" (ctrl));
+  __asm volatile ("mrc p15, 0, %0, c0, c0": "=r" (id));
+  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
+  __asm volatile ("mrc p15, 0, %0, c1, c0": "=r" (ctrl));
+  __asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbl));
+  __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
   __asm volatile ("mrs %0, cpsr": "=r" (cpsr));
-  printf ("  cpu: id 0x%lx  ctrl 0x%lx  cpsr 0x%lx\n", id, ctrl, cpsr);
+  printf ("  cpu: id 0x%lx  ctrl 0x%lx (%s)  cpsr 0x%lx\n"
+	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n",
+	  id, ctrl, cp15_ctrl (ctrl), cpsr, ttbl, domain, cache);
 }
 
 static __service_7 struct service_d cpuinfo_service = {

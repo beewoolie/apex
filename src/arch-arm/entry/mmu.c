@@ -215,6 +215,8 @@ void mmu_release (void)
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
   COPROCESSOR_WAIT;
+
+  __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
 }
 
 static __service_1 struct service_d mmu_service = {
