@@ -175,15 +175,15 @@ static __command struct command_d c_help_commandline = {
   COMMAND_DESCRIPTION ("help on the APEX command line")
   COMMAND_HELP(
 "command-line\n"
-"  The command line interpreter is simple.  Commands are separated\n"
-"  into words and passed to a command interpreting function.\n"
-"  Quoting is not yet supported.  Command words are delimited by\n"
-"  whitespace.  Command lines may be edited with ^H and DEL to erase the\n"
-"  previous character and ^U to clobber the whole line.  There is no \n"
-"  command history.\n\n"
+"  The command line interpreter separates commands into works and passes\n"
+"  then to the command interpreting function.  Sequences of characters\n"
+"  may be enclosed with double quotes (\") to include whitespace in a \n"
+"  command word.  Otherwise, command words are delimited by whitespace.\n"
+"  Command lines may be edited with ^H and DEL to erase the previous\n"
+"  character and ^U to clobber the whole line.\n"
 //"  Multiple commands may be submitted in a single line when separated by\n"
 //"  a semicolon.\n\n"
-"  The interpreter is forgiving.  When matching commands it is case\n"
+"  The interpreter is forgiving.  When matching commands, it is case\n"
 "  insensitive.  It will accept a command from on an unambiguous prefix.\n"
 "  Thus 'h' is sufficient to invoke help.\n"
   )

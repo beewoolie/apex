@@ -1,3 +1,23 @@
+2006-07-22    <elf@scarlet.buici.com>
+
+	* src/drivers/drv-mem.c (memory_read): Checks the width field and
+	performs IO accordingly.
+
+	* src/apex/cmd-help.c: Revised command line help. 
+
+	* include/driver.h: New descriptor field specifies the IO width.
+	This allows, in particular, the memory driver to tailor the I/O to
+	a specific width.  Some regions must be read as words (CPU
+	registers), others as bytes (CF).
+
+	* src/apex/cmd-dump.c (cmd_dump): Here, and elsewhere, added
+	alignment attributes so that byte arrays on the stack are word
+	aligned.  I had thought that this was a given but the 4.x
+	compilers no longer make this true.
+   
+	* src/drivers/drv-nor-cfi.c (nor_report): Code to detect endian
+	mismatch.  A debugging aid for nslu2.
+
 2006-07-21  Marc Singer  <elf@buici.com>
 
 	* Many: Modified several source files to cope with GCC 4.1.  Found

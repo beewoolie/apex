@@ -25,7 +25,7 @@ $(obj)/apex.bin: apex FORCE
 	$(call if_changed,objcopy)
 
 $(obj)/apex.bin_swap: $(obj)/apex.bin FORCE
-	@echo "     SWAP $@"
+	@echo "  SWAP    $@"
 	@cat $< | perl -e 'while (sysread(STDIN,$$d,4)){print pack("N",unpack("V",$$d));}' > $@
 
 # *** FIXME: there may need to be an adjustment to the start address

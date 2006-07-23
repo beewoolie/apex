@@ -5,6 +5,24 @@ APEX Boot Loader
 
 TODO:
 
+  o Alignment trap handler would be a good thing.
+    o We could catch errors instead of failing completely.
+    o Not worth too much code.
+
+  o descriptor_d.width
+    o annotates a descriptor, telling the driver what width the caller
+      would like used.  
+    o Force 1 byte width for CF interfaces.
+    o Force 2 byte width for 16 bit only access
+    o Force 4 byte width for unforgiving CPU registers, e.g. IXP
+    o This needs to propagate to dump and fill so that we can control
+      the access to some regions.
+    o We could annotate memory, for a given target, so that the memory
+      driver does the right thing.
+
+  o Need to fix the envmagic script because it it a significant
+    portion of the time it takes to build on the nslu2. 
+
   o Driver enhacements
 
     o Query infrastructure.  There presently isn't a way to ask a

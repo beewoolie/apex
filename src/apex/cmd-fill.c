@@ -43,13 +43,13 @@
 int cmd_fill (int argc, const char** argv)
 {
   struct descriptor_d dout;
-  unsigned char value;
+  char __aligned rgb[4];
   int result = 0;
 
   if (argc != 3)
     return ERROR_PARAM;
 
-  value = simple_strtoul (argv[1], NULL, 0);
+  rgb[0] = simple_strtoul (argv[1], NULL, 0);
 
   if (   (result = parse_descriptor (argv[2], &dout))
       || (result = open_descriptor (&dout))) {
@@ -74,10 +74,12 @@ int cmd_fill (int argc, const char** argv)
     if (step)
       step += 10;
 
+    printf ("%s: writing\n", __FUNCTION__);
+
     while (cb--) {
       size_t cbWrote;
       SPINNER_STEP;
-      cbWrote = dout.driver->write (&dout, &value, 1);
+      cbWrote = dout.driver->write (&dout, rgb, 1);
       if (!cbWrote) {
 	result = ERROR_FAILURE;
 	goto fail;

@@ -77,6 +77,8 @@ int cmd_dump (int argc, const char** argv)
   if ((result = open_descriptor (&d)))
     goto fail;
 
+  d.width = width;		/* Request I/O of the same width as display */
+
   index = d.start;
   more = index + MORE_PAGE;
 

@@ -69,6 +69,8 @@
 //#define TALK
 //#define NOISY
 
+#define USE_DETECT_ENDIAN_MISMATCH
+
 #if defined TALK
 # define PRINTF(v...)	printf (v)
 #else
@@ -157,6 +159,9 @@ struct nor_chip {
 
 const static struct nor_chip* chip;
 static struct nor_chip chip_probed;
+#if defined (USE_DETECT_ENDIAN_MISMATCH)
+int endian_error;
+#endif
 
 static unsigned long phys_from_index (unsigned long index)
 {
@@ -260,6 +265,21 @@ static void nor_init_chip (unsigned long phys)
 
   REGA (phys) = CMD (ReadArray);
   REGA (phys + (0x55 << WIDTH_SHIFT)) = CMD (ReadQuery);
+
+  printf ("nor phys %p %x %x %x %x\n", (void*) phys,
+	  REGA (phys + (0x10 << WIDTH_SHIFT)),
+	  REGA (phys + (0x11 << WIDTH_SHIFT)),
+	  REGA (phys + (0x12 << WIDTH_SHIFT)),
+	  REGA (phys + (0x13 << WIDTH_SHIFT)));
+
+#if defined (USE_DETECT_ENDIAN_MISMATCH)
+  if (   REGA (phys + (0x11 << WIDTH_SHIFT)) == QRY('Q')
+      || REGA (phys + (0x10 << WIDTH_SHIFT)) == QRY('R')
+      || REGA (phys + (0x13 << WIDTH_SHIFT)) == QRY('Y')) {
+    endian_error = 1;
+    return;
+  }
+#endif
 
   if (   REGA (phys + (0x10 << WIDTH_SHIFT)) != QRY('Q')
       || REGA (phys + (0x11 << WIDTH_SHIFT)) != QRY('R')
@@ -731,6 +751,13 @@ static void nor_release (void)
 static void nor_report (void)
 {
   int i;
+
+#if defined (USE_DETECT_ENDIAN_MISMATCH)
+  if (endian_error) {
+    printf ("  nor:    *** Endian Mismatch ***\n");
+    return;
+  }
+#endif
 
   if (!chip)
     return;

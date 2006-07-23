@@ -44,6 +44,7 @@ struct descriptor_d {
   unsigned long start;
   unsigned long length;
   size_t index;
+  size_t width;		   /* Request for witdh of access */
 
 				/* Paths */
   char rgb[256];	   /* *** FIXME: contributes to stack bloat */

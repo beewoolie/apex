@@ -201,20 +201,28 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-#if 1
-  /* *** Larger version of the memory read function which serves to
+  switch (d->width) {
+  case 1:
+  /* *** Dumber version of the memory read function which serves to
      properly read from memories (e.g. broken CF interfaces) where the
      chip select must toggle for every access.  This is a lowest
      common denominator, and will tend to be pretty slow. */
-  {
-    int i = cb;
-    unsigned char* pbSrc = (unsigned char*) (d->start + d->index);
-    while (i--)
-      *(unsigned char*) pv = *pbSrc++, ++pv;
+    {
+      unsigned char* pbSrc = (unsigned char*) (d->start + d->index);
+      int i = cb;
+      while (i--)
+	*(unsigned char*) pv = *pbSrc++, ++pv;
+    }
+    break;
+
+  default:
+  case 2:
+  case 4:
+    /* memcpy performs an optimal copy, probably at machine word width */
+    memcpy (pv, (void*) (d->start + d->index), cb);
+    break;
   }
-#else
-  memcpy (pv, (void*) (d->start + d->index), cb);
-#endif
+
   d->index += cb;
 
   return cb;
@@ -225,7 +233,12 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  memcpy ((void*) (d->start + d->index), pv, cb);
+//  printf ("%s: %p +%d -> %lx\n", __FUNCTION__, pv, cb, d->start + d->index);
+
+  if (cb == 1 && d->start + d->index == 0x50000000)
+    *((unsigned char*)(d->start + d->index)) = *(unsigned char*) pv;
+  else
+    memcpy ((void*) (d->start + d->index), pv, cb);
   d->index += cb;
 
   return cb;
