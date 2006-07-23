@@ -41,4 +41,6 @@
 
 #define NOR_CHIP_MULTIPLIER	(1)	/* Number of chips at REGA */
 
+#define NOR_BIGENDIAN		/* NOR flash is inherently big-endian */
+
 #endif  /* __NOR_CFI_H__ */

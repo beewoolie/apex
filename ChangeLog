@@ -1,3 +1,25 @@
+2006-07-23    <elf@scarlet.buici.com>
+
+	* src/mach-ixp42x/cpuinfo.c (cpuinfo_report): Alignment change to
+	the cpuinfo function.
+
+	* include/driver.h: Added query function to the driver jump table.
+
+	* src/drivers/drv-nor-cfi.c (nor_query): New query function allows
+	a driver to return information about the device.  NOR flash is the
+	only implementer because it's the one that needs this most.  
+	(copy_from): Implementation of a byte swapping copy routine for
+	the sake of BE/LE conversion.
+
+	* src/drivers/drv-fis.c (prescan_directory): New directory prescan
+	detemines if the flash directory has a different endian-ness from
+	APEX.
+	(map_region): New function to map the directory entry to a
+	region.  Now, the region use the underlying flash driver.
+
+	* src/apex/cmd-copy.c (cmd_copy): Added -s option to copy for byte
+	swapping data where the source is a different ending from APEX.
+
 2006-07-22    <elf@scarlet.buici.com>
 
 	* src/drivers/drv-mem.c (memory_read): Checks the width field and

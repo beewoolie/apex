@@ -61,6 +61,10 @@ struct descriptor_d {
 #define SEEK_CUR	1
 #define SEEK_END	2
 
+#define QUERY_START	1	/* Physical address of device */
+#define QUERY_SIZE	2	/* Total size of device */
+#define QUERY_ERASEBLOCKSIZE 3	/* Erase block size at given index */
+
 #define DRIVER_SERIAL	(1<<1)
 #define DRIVER_CONSOLE	(1<<2)
 #define DRIVER_MEMORY	(1<<3)
@@ -92,6 +96,11 @@ int o = ((dou)->driver->flags >> DRIVER_WRITEPROGRESS_SHIFT)\
 #define driver_can_read(p)  ((p)->read != NULL)
 #define driver_can_write(p) ((p)->write != NULL)
 
+#define descriptor_query(d,i,pv)\
+	((d)->driver->query\
+ 	 ? (d)->driver->query ((d),(i),(pv))\
+	 : ERROR_UNSUPPORTED)
+
 struct driver_d {
   const char* name;
   const char* description;
@@ -105,6 +114,7 @@ struct driver_d {
   void		(*erase) (struct descriptor_d*, size_t cb);
   size_t	(*seek)  (struct descriptor_d*, ssize_t cb, int whence);
   int		(*info)  (struct descriptor_d*);
+  int		(*query) (struct descriptor_d*, int, void*);
 };
 
 #define __driver_0 __used __section(.driver.0) /* serial */

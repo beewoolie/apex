@@ -66,7 +66,7 @@ static void cpuinfo_report (void)
   __asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbl));
   __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
   __asm volatile ("mrs %0, cpsr": "=r" (cpsr));
-  printf ("  cpu: id 0x%lx  ctrl 0x%lx (%s)  cpsr 0x%lx\n"
+  printf ("  cpu:      id 0x%08lx  ctrl   0x%lx (%s)  cpsr 0x%lx\n"
 	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n",
 	  id, ctrl, cp15_ctrl (ctrl), cpsr, ttbl, domain, cache);
 }

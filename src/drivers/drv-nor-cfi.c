@@ -53,6 +53,23 @@
      Handling disparate chips, however, will probably never be done as
      the chips may require different control constants.  Phooey.
 
+   o REGA, copy_from, and endianness
+
+     copy_from should be a general implementation of the copy-out
+     routine where the user is reading data from flash.  We use memcpy
+     in most cases because that's OK.  There is one implementation of
+     copy_from that performs a byte swap to cope with the endian
+     change on the NSLU2.  In this case, the flash is written BE and
+     we need to read it from an LE program.  To get the same view of
+     the data, we have to swap.  The FIS driver, too, has some code to
+     cope with swapped data.
+
+     REGA does something different.  It has to read the swapped
+     half-word in order to get the proper view of the flash.  This, I
+     blame on the CPU which is performing a half-word swap.
+     Interestingly, the commands and query data don't need anything
+     except for this address swapping trick.
+
 */
 
 #include <driver.h>
@@ -66,8 +83,8 @@
 
 #include <mach/nor-cfi.h>
 
-//#define TALK
-//#define NOISY
+#define TALK
+#define NOISY
 
 #define USE_DETECT_ENDIAN_MISMATCH
 
@@ -82,16 +99,25 @@
 //#define NO_WRITE		/* Disable writes, for debugging */
 
 #if NOR_WIDTH == 32
-# define REGA		__REG		/* Array I/O macro */
+# define _REGA		__REG		/* Array I/O macro */
 # if NOR_CHIP_MULTIPLIER == 1
-#  define REGC	        __REG
+#  define _REGC	        __REG
 # else
-#  define REGC	        __REG16
+#  define _REGC	        __REG16
 # endif
 #elif NOR_WIDTH == 16
-# define REGA		__REG16		/* Array I/O macro */
-# define REGC		__REG16		/* Single chip I/O macro */
+# define _REGA		__REG16		/* Array I/O macro */
+# define _REGC		__REG16		/* Single chip I/O macro */
 #endif
+
+#if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
+# define REGA(a) _REGA((a)^(1<<1))
+# define REGC(a) _REGC((a)^(1<<1))
+#else
+# define REGA(a) _REGA
+# define REGC(a) _REGC
+#endif
+
 
 #if NOR_CHIP_MULTIPLIER == 2
 # define CMD(v)		((v) | ((v)<<16))
@@ -213,6 +239,35 @@ static unsigned long nor_status (unsigned long index)
 }
 
 
+#if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
+void copy_from (void* _dst, const void* _src, size_t cb)
+{
+  char* dst = (char*) _dst;
+  unsigned long src = (unsigned long) _src;
+  if (cb <= 0)
+    return;
+  if ((src & 1) != 0) {
+    u16 v = REGA (src & ~1);
+    *dst++ = v & 0xff;
+    ++src;
+    --cb;
+  }
+  while (cb > 1) {
+    u16 v = REGA (src);
+    *dst++ = (v >> 8) & 0xff;
+    *dst++ = v & 0xff;
+    src += 2;
+    cb -= 2;
+  }
+  if (cb) {
+    u16 v = REGA (src);
+    *dst++ = (v >> 8) & 0xff;
+  }
+}
+#else
+# define copy_from memcpy
+#endif
+
 /* nor_region
 
    returns a pointer to the erase region structure for the given index.
@@ -277,6 +332,7 @@ static void nor_init_chip (unsigned long phys)
       || REGA (phys + (0x10 << WIDTH_SHIFT)) == QRY('R')
       || REGA (phys + (0x13 << WIDTH_SHIFT)) == QRY('Y')) {
     endian_error = 1;
+    WRITE_ONE (phys, CMD (ReadArray)); /* Put array back into read mode */
     return;
   }
 #endif
@@ -455,7 +511,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     WRITE_ONE (index, CMD (ReadArray));
-    memcpy (pv, (void*) index, available);
+    copy_from (pv, (void*) index, available);
 
     pv += available;
   }
@@ -726,6 +782,28 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
   }
 }
 
+int nor_query (struct descriptor_d* d, int index, void* pv)
+{
+  if (!chip)
+    return ERROR_UNSUPPORTED;
+
+  switch (index) {
+  default:
+    return ERROR_UNSUPPORTED;
+  case QUERY_START:
+    *(unsigned long*)pv = phys_from_index (0);
+    break;
+  case QUERY_SIZE:
+    *(unsigned long*)pv = chip->total_size;
+    break;
+  case QUERY_ERASEBLOCKSIZE:
+    *(unsigned long*)pv = nor_region (d->start + d->index)->size;
+    break;
+  }
+
+  return 0;
+}
+
 
 /* nor_release
 
@@ -788,6 +866,7 @@ static __driver_3 struct driver_d nor_driver = {
   .write = nor_write,
   .erase = nor_erase,
   .seek = seek_helper,
+  .query = nor_query,
 };
 
 static __service_6 struct service_d cfi_nor_service = {

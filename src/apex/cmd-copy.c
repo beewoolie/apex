@@ -37,6 +37,13 @@
 #include <error.h>
 #include <spinner.h>
 
+static inline unsigned long swab32(unsigned long l)
+{
+  return (  ((l & 0x000000ffUL) << 24)
+	  | ((l & 0x0000ff00UL) << 8)
+	  | ((l & 0x00ff0000UL) >> 8)
+	  | ((l & 0xff000000UL) >> 24));
+}
 
 #if !defined (CONFIG_SMALL)
 //# define USE_COPY_VERIFY	/* Define to include verify feature */
@@ -46,6 +53,7 @@ int cmd_copy (int argc, const char** argv)
 {
   struct descriptor_d din;
   struct descriptor_d dout;
+  int swap = 0;
 #if defined (USE_COPY_VERIFY)
   struct descriptor_d din_v;
   struct descriptor_d dout_v;
@@ -55,13 +63,20 @@ int cmd_copy (int argc, const char** argv)
   int result = 0;
   ssize_t cbCopy = 0;
 
+  for (; argc > 1 && *argv[1] == '-'; --argc, ++argv) {
+    switch (argv[1][1]) {
 #if defined (USE_COPY_VERIFY)
-  if (argc > 1 && strcmp (argv[1], "-v") == 0) {
-    verify = 1;
-    --argc;
-    ++argv;
-  }
+    case 'v':
+      verify = 1;
+      break;
 #endif
+    case 's':
+      swap = 1;
+      break;
+    default:
+      return ERROR_PARAM;
+    }
+  }
 
   if (argc != 3)
     return ERROR_PARAM;
@@ -129,6 +144,13 @@ int cmd_copy (int argc, const char** argv)
       }
 #endif
 
+      if (swap) {
+	int i;
+	unsigned long* p = (unsigned long*) rgb;
+	for (i = cb/4; i-- > 0; ++p)
+	  *p = swab32 (*p);
+      }
+
       SPINNER_STEP;
       cbWrote = dout.driver->write (&dout, rgb, cb);
       if (cbWrote != cb) {
@@ -145,6 +167,12 @@ int cmd_copy (int argc, const char** argv)
 	  printf ("\rVerify failed: reread of output %d, expected %d, at"
 		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 512);
 	  return ERROR_FAILURE;
+	}
+	if (swap) {
+	  int i;
+	  unsigned long* p = (unsigned long*) rgbVerify;
+	  for (i = cb/4; i-- > 0; ++p)
+	    *p = swab32 (*p);
 	}
 	if (memcmp (rgb, rgbVerify, cb)) {
 	  printf ("\rVerify failed: reread output compare at 0x%x+0x%x\n",
@@ -185,6 +213,7 @@ int cmd_copy (int argc, const char** argv)
 # define _USE_COPY_VERIFY(s)
 #endif
 
+
 static __command struct command_d c_copy = {
   .command = "copy",
   .func = cmd_copy,
@@ -194,13 +223,18 @@ static __command struct command_d c_copy = {
 _USE_COPY_VERIFY(
 " [-v]"
 )
-" SRC DST\n"
+" [-s] SRC DST\n"
 "  Copy data from SRC region to DST region.\n"
 _USE_COPY_VERIFY(
 "  Adding the -v performs redundant reads of the data to verify that\n"
 "  what is read from SRC is correctly written to DST\n"
 )
+"  Adding the -s performs full word byte swap.  This is necessary when\n"
+"  copying data stored in the opposite endian orientation from that which\n"
+"  APEX is running.  This option requires that the length be an even\n"
+"  multiple of words.\n"
 "  The length of the DST region is ignored.\n\n"
 "  e.g.  copy mem:0x20200000+0x4500 nor:0\n"
+"        copy -s nor:0+1m 0x100000\n"
   )
 };

@@ -28,10 +28,44 @@
    underlying region as files of a sort.  It is similar to the
    filesystem drivers in this way.
 
-   The open call converts the fis driver descriptor into a memory
-   driver descriptor that points to the partition.  It's a simple
-   translation.  This driver has no read methods and the flash
-   partition data cannot be written through this descriptor.
+   IXP42X in LE Mode
+   -----------------
+
+     This Xscale processor does some shenanigans with byte & half-word
+     swapping when it is in little-endian mode.  A flash part which
+     was configured for a big-endian system doesn't read correctly
+     when the CPU is in little-endian mode.  For the most part, this
+     is handled by the NOR flash driver.
+
+     The FIS driver needs to cope in that the data in the partition
+     table will be ordered for big-endian consumption.  The strings
+     will be OK because of the NOR flash driver's efforts.  However
+     the start and length values will be BE and must be swapped for
+     LE.
+
+     This conversion is done by reading all of the partition entries,
+     looking for the partition table's own entry.  When it is found,
+     the driver checks the length of the block for a match with the
+     NOR flash erase block size.  If there is a match when the data is
+     swapped, it is assumed that the system is reading a BE partition
+     table.
+
+     For simplicity and general correctness, this is done every time
+     this driver activates.  The table could be cached, but it is
+     possible that the underlying block driver region is changed
+     between invocations.  So, the easy solution is to read through
+     the table twice: once to determine the endian-ness and a second
+     time looking for the data we care about.
+
+   Open Call Pass Through
+   ----------------------
+
+   The open call converts the fis driver descriptor into a descriptor
+   that points to the partition using the source driver.  Due to the
+   fact that that partition table is physically addressed, the FIS
+   driver has to subtract the base address of the underlying driver
+   when passing this through.  Thus, the FIS driver has no
+   read/seek/write methods.
 
 */
 
@@ -58,6 +92,8 @@ struct fis_descriptor {
   unsigned long cksum_image;	/* Checksum over image data */
 };
 
+static int fis_directory_swap;	/* Set for a byte swapped directory */
+
 #if defined (CONFIG_ENV)
 static __env struct env_d e_fis_drv = {
   .key = "fis-drv",
@@ -65,6 +101,14 @@ static __env struct env_d e_fis_drv = {
   .description = "Block device region for FIS partition driver",
 };
 #endif
+
+static inline unsigned long swab32(unsigned long l)
+{
+  return (  ((l & 0x000000ffUL) << 24)
+	  | ((l & 0x0000ff00UL) << 8)
+	  | ((l & 0x00ff0000UL) >> 8)
+	  | ((l & 0xff000000UL) >> 24));
+}
 
 static inline const char* block_driver (void)
 {
@@ -74,6 +118,56 @@ static inline const char* block_driver (void)
 static int end_of_table (struct fis_descriptor* descriptor)
 {
   return descriptor->start == 0xffffffff;
+}
+
+static void prescan_directory (struct descriptor_d* d)
+{
+  unsigned long start = 0;
+  unsigned long size = 0;
+  unsigned long eraseblocksize = 0;
+
+  fis_directory_swap = 0;
+
+  descriptor_query (d, QUERY_START, &start);
+  descriptor_query (d, QUERY_SIZE, &size);
+
+  printf ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
+  if (size == 0)
+    return;			/* Unable to perform queries */
+
+  d->driver->seek (d, 0, SEEK_SET);
+
+  while (1) {
+    struct fis_descriptor descriptor;
+    if (d->driver->read (d, &descriptor, sizeof (descriptor))
+	!= sizeof (descriptor))
+      break;
+    if (end_of_table (&descriptor))
+      break;
+    if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
+      descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
+      printf ("%s: length %lx  eb %lx  eb_swapped %lx\n",
+	      __FUNCTION__, descriptor.length, eraseblocksize,
+	      swab32 (eraseblocksize));
+      if (descriptor.length == swab32 (eraseblocksize))
+	fis_directory_swap = 1;
+      break;
+    }
+  }
+  d->driver->seek (d, 0, SEEK_SET);
+}
+
+static const char* map_region (struct descriptor_d* d,
+			       struct fis_descriptor* descriptor)
+{
+  static char sz[64];
+  unsigned long start = 0;
+  descriptor_query (d, QUERY_START, &start);
+
+  snprintf (sz, sizeof (sz), "%s:0x%08lx+0x%08lx",
+	    d->driver_name,
+	    descriptor->start - start, descriptor->length);
+  return sz;
 }
 
 static int fis_open (struct descriptor_d* d)
@@ -87,6 +181,8 @@ static int fis_open (struct descriptor_d* d)
   if (   (result = parse_descriptor (block_driver (), &fis_d))
       || (result = open_descriptor (&fis_d)))
     return result;
+
+  prescan_directory (&fis_d);
 
   while (1) {
     struct fis_descriptor descriptor;
@@ -105,16 +201,25 @@ static int fis_open (struct descriptor_d* d)
       ERROR_RETURN (ERROR_OPEN, "region exceeds partition size");
     }
 
+    if (fis_directory_swap) {
+      descriptor.start = swab32 (descriptor.start);
+      descriptor.length = swab32 (descriptor.length);
+    }
+
     descriptor.start += d->start;
     descriptor.length -= d->start;
     if (d->length && d->length < descriptor.length)
       descriptor.length = d->length;
     close_helper (d);
 
-    /* Construct a memory descriptor for the FIS partition */
-    parse_descriptor ("mem:", d);
-    d->start = descriptor.start;
-    d->length = descriptor.length;
+    /* Construct a descriptor for the FIS partition */
+    {
+      const char* sz = map_region (&fis_d, &descriptor);
+      printf ("%s: %s\n", __FUNCTION__, sz);
+      if (   (result = parse_descriptor (sz, d))
+	  || (result = open_descriptor (d)))
+	return result;
+    }
     return 0;
   }
 
@@ -132,6 +237,8 @@ static void fis_report (void)
       || (result = open_descriptor (&d)))
     return;
 
+  prescan_directory (&d);
+
   printf ("  fis:\n");
 
   while (1) {
@@ -141,8 +248,14 @@ static void fis_report (void)
       break;
     if (end_of_table (&descriptor))
       break;
-    printf ("          0x%08lx+0x%08lx %s\n",
-	    descriptor.start, descriptor.length, descriptor.name);
+
+    if (fis_directory_swap) {
+      descriptor.start = swab32 (descriptor.start);
+      descriptor.length = swab32 (descriptor.length);
+    }
+
+    printf ("          %s %s\n",
+	    map_region (&d, &descriptor), descriptor.name);
   }
 
   close_descriptor (&d);
