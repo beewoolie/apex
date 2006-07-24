@@ -359,6 +359,15 @@ config ENV_REGION_KERNEL
 	help
 	  At startup, APEX copies this region to the kernel start address.
 
+config ENV_REGION_KERNEL_SWAP
+	bool "Endian swap when copying kernel"
+	depends on ENV && ENV_STARTUP_KERNEL_COPY
+	default n
+	help
+	  The kernel source is in a different endian format from the
+	  system that will use it.  This option performs a byte-swap
+	  when copying it. 
+
 config ENV_STARTUP_RAMDISK_COPY
 	bool "Copy ramdisk to RAM at startup" 
 	depends on ENV && USE_RAMDISK
@@ -375,6 +384,15 @@ config ENV_REGION_RAMDISK
 	help
 	  At startup, APEX copies this region to memory for use as a
 	  ramdisk.
+
+config ENV_REGION_RAMDISK_SWAP
+	bool "Endian swap when copying ramdisk"
+	depends on ENV && ENV_STARTUP_RAMDISK_COPY
+	default n
+	help
+	  The ramdis source is in a different endian format from the
+	  system that will use it.  This option performs a byte-swap
+	  when copying it. 
 
 config ENV_DEFAULT_CMDLINE_OVERRIDE
 	bool "Override the target default kernel command line"

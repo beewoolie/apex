@@ -131,7 +131,7 @@ static void prescan_directory (struct descriptor_d* d)
   descriptor_query (d, QUERY_START, &start);
   descriptor_query (d, QUERY_SIZE, &size);
 
-  printf ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
+  //  printf ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
   if (size == 0)
     return;			/* Unable to perform queries */
 
@@ -146,9 +146,9 @@ static void prescan_directory (struct descriptor_d* d)
       break;
     if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
       descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
-      printf ("%s: length %lx  eb %lx  eb_swapped %lx\n",
-	      __FUNCTION__, descriptor.length, eraseblocksize,
-	      swab32 (eraseblocksize));
+      //      printf ("%s: length %lx  eb %lx  eb_swapped %lx\n",
+      //	      __FUNCTION__, descriptor.length, eraseblocksize,
+      //	      swab32 (eraseblocksize));
       if (descriptor.length == swab32 (eraseblocksize))
 	fis_directory_swap = 1;
       break;
@@ -215,7 +215,7 @@ static int fis_open (struct descriptor_d* d)
     /* Construct a descriptor for the FIS partition */
     {
       const char* sz = map_region (&fis_d, &descriptor);
-      printf ("%s: %s\n", __FUNCTION__, sz);
+      //      printf ("%s: %s\n", __FUNCTION__, sz);
       if (   (result = parse_descriptor (sz, d))
 	  || (result = open_descriptor (d)))
 	return result;

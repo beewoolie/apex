@@ -50,10 +50,18 @@ static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
 #if defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA)
-    "copy " CONFIG_ENV_REGION_KERNEL " " _t(CONFIG_KERNEL_LMA) ";"
+    "copy "
+# if defined (CONFIG_ENV_REGION_KERNEL_SWAP)
+    "-s "
+# endif
+    CONFIG_ENV_REGION_KERNEL " " _t(CONFIG_KERNEL_LMA) ";"
 #endif
 #if defined (CONFIG_ENV_REGION_RAMDISK) && defined (CONFIG_RAMDISK_LMA)
-    "copy " CONFIG_ENV_REGION_RAMDISK " " _t(CONFIG_RAMDISK_LMA) ";"
+    "copy "
+# if defined (CONFIG_ENV_REGION_RAMDISK_SWAP)
+    "-s "
+# endif
+    CONFIG_ENV_REGION_RAMDISK " " _t(CONFIG_RAMDISK_LMA) ";"
 #endif
 #if defined (CONFIG_ENV_STARTUP)
     CONFIG_ENV_STARTUP

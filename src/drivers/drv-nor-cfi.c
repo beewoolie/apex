@@ -83,8 +83,8 @@
 
 #include <mach/nor-cfi.h>
 
-#define TALK
-#define NOISY
+//#define TALK
+//#define NOISY
 
 #define USE_DETECT_ENDIAN_MISMATCH
 
