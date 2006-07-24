@@ -114,8 +114,8 @@
 # define REGA(a) _REGA((a)^(1<<1))
 # define REGC(a) _REGC((a)^(1<<1))
 #else
-# define REGA(a) _REGA
-# define REGC(a) _REGC
+# define REGA(a) _REGA(a)
+# define REGC(a) _REGC(a)
 #endif
 
 
