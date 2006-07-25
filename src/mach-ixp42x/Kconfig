@@ -105,6 +105,11 @@ config RAMDISK_LMA
 	default "0x01000000"
 	depends on USE_RAMDISK
 
+config RAMDISK_SIZE
+	hex "Ramdisk size"
+	default "0x00400000"
+	depends on USE_RAMDISK
+
 config SDRAM_BANK0
 	bool "Enable SDRAM bank 0"
 	default y

@@ -145,7 +145,7 @@ static __command struct command_d c_boot = {
 struct tag* atag_commandline (struct tag* p)
 {
 #if defined (CONFIG_ENV)
-  const char* szCommand = env_fetch ("cmdline");
+  const char* szCommandEnv = env_fetch ("cmdline");
 #endif
   int cb = 0;
   p->u.cmdline.cmdline[0] = '\0';
@@ -166,14 +166,17 @@ struct tag* atag_commandline (struct tag* p)
     cb = pb - p->u.cmdline.cmdline;
   }
 #if defined (CONFIG_ENV)
-  else if (szCommand) {
-    strlcpy (p->u.cmdline.cmdline, szCommand, COMMAND_LINE_SIZE);
-    cb = strlen (szCommand) + 1;
+  else if (szCommandEnv) {
+    strlcpy (p->u.cmdline.cmdline, szCommandEnv, COMMAND_LINE_SIZE);
+    cb = strlen (szCommandEnv) + 1;
   }
 #endif
 
   if (cb) {
-//    printf ("cmdline '%s'\n", p->u.cmdline.cmdline);
+# if !defined (CONFIG_SMALL)
+    printf ("ATAG_CMDLINE: (%d bytes) '%s'\n",
+	    cb, p->u.cmdline.cmdline);
+# endif
     p->hdr.tag = ATAG_CMDLINE;
     p->hdr.size
       = (sizeof (struct tag_header) + cb + 4) >> 2;

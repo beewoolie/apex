@@ -321,7 +321,13 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
 			case 's':
 				s = va_arg(args, char *);
-				if ((unsigned long)s < PAGE_SIZE)
+//				if ((unsigned long)s < PAGE_SIZE)
+				/* This test was OK for the kernel,
+				   but we may be printing a string
+				   that is really in the first page of
+				   memory, e.g. parameters which start
+				   at 0x1000. */
+				if ((unsigned long)s < 0x100)
 					s = "<NULL>";
 
 				len = strnlen(s, precision);

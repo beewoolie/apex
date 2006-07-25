@@ -346,7 +346,11 @@ static struct tag* atag_memory (struct tag* p)
     p->u.mem.start = start;
     p->u.mem.size  = length;
 
-//    printf (" mem 0x%08x # 0x%08x\n", p->u.mem.start, p->u.mem.size);
+# if !defined (CONFIG_SMALL)
+       printf ("ATAG_MEM: start 0x%08x  size 0x%08x\n",
+	       p->u.mem.start, p->u.mem.size);
+# endif
+
     p = tag_next (p);
   }
 
