@@ -1,3 +1,11 @@
+apex-nslu2 (1.4.0) unstable; urgency=low
+
+  * Revised several key systems for the sake of running APEX in LE mode on
+    a BE system.  APEX now functions as a second-stage boot loader on the
+    nslu2.
+
+ -- Marc Singer <elf@cerise.buici.com>  Wed, 26 Jul 2006 00:57:13 -0700
+
 apex-nslu2 (1.3.30) unstable; urgency=low
 
   * Initial release for configuration debian-nslu2-arm_config (and armeb).
