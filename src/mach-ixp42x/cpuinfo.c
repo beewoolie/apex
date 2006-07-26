@@ -33,23 +33,9 @@
 #include <linux/string.h>
 #include "hardware.h"
 #include <service.h>
+#include <arch-arm.h>
 
 #if !defined (CONFIG_SMALL)
-
-static const char* cp15_ctrl (unsigned long ctrl)
-{
-  static const char bits[] = "vizfrsbldpwcam";
-  const int cbits = sizeof (bits) - 1;
-  static char sz[sizeof (bits)];
-  int i;
-
-  strcpy (sz, bits);
-
-  for (i = 0; i < cbits; ++i)
-    if (ctrl & (1<<(cbits - i - 1)))
-      sz[i] += 'A' - 'a';
-  return sz;
-}
 
 static void cpuinfo_report (void)
 {

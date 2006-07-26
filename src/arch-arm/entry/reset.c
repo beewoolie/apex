@@ -35,6 +35,7 @@
 #include <asm/bootstrap.h>
 #include <debug_ll.h>
 #include <mach/coprocessor.h>
+#include <arch-arm.h>
 #include "mmu.h"
 
 #if !defined (COPROCESSOR_WAIT)
@@ -45,7 +46,6 @@ extern void reset (void);
 extern int  initialize_bootstrap (void);
 extern void initialize_target (void);
 extern void initialize (void);
-extern void relocate_apex (void);
 extern void setup_c (void);
 extern void init (void);
 

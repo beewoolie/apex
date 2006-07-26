@@ -30,6 +30,7 @@
 #include <config.h>
 #include <apex.h>
 #include <service.h>
+#include <arch-arm.h>
 #include "hardware.h"
 
 #if !defined (CONFIG_SMALL)
@@ -84,9 +85,9 @@ static void cpuinfo_report (void)
   __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
 
-  printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx   cpsr 0x%08lx\n"
+  printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx (%s)   cpsr 0x%08lx\n"
 	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n",
-	  id, ctrl, cpsr, ttbl, domain, cache);
+	  id, ctrl, cp15_ctrl (ctrl), cpsr, ttbl, domain, cache);
 
 
   printf ("          chipid 0x%x, %s"
