@@ -65,7 +65,11 @@
 
 #define DEVICE "/dev/mtdblock0"
 
-#define CB_ENV_MAGIC	(2)
+#if 0
+# define PRINTF(f ...)	printf(f)
+#else
+# define PRINTF(f ...)
+#endif
 
 typedef unsigned short u16;
 typedef unsigned long u32;
@@ -77,6 +81,7 @@ struct descriptor {
 };
 
 struct entry {
+  entry () { index = 0xff; }
   int index;			// index of this variable in APEX or 0x7f
   char* key;
   char* value;
@@ -186,21 +191,26 @@ struct descriptor parse_region (const char* sz)
 int scan_environment (struct env_d* env, int c_env, void* pv,
 		      struct entry* rgEntry)
 {
-  for (int i = 0; i < sizeof (rgEntry)/sizeof (rgEntry[0]); ++i)
-    rgEntry[i].index = 0xff;
+//  dumpw (pv, 256, 0, 1);
 
   unsigned char* pb = (unsigned char*) pv;
 
-  if (pb[0] == 0xff && pb[1] == 0xff)
+  if (pb[0] == 0xff && pb[1] == 0xff) {
+    PRINTF ("# empty environment\n");
     return 0;
+  }
 
-  if (pb[0] != ENV_MAGIC_0 || pb[1] != ENV_MAGIC_1)
+  if (pb[0] != ENV_MAGIC_0 || pb[1] != ENV_MAGIC_1) {
+    PRINTF ("# environment contains unrecognized data\n");
     return -1;
+  }
 
   if (c_env <= 0 || env == NULL)
     c_env = 0;
 
   int c = 0;
+
+  pb += 2;
 
   while (*pb != 0xff) {
     unsigned char flags = *pb++;
@@ -209,6 +219,7 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
       int cb = strlen ((char*) pb);
       rgEntry[id].key = new char [cb + 1];
       strcpy (rgEntry[id].key, (char*) pb);
+      PRINTF ("# found %s\n", rgEntry[id].key);
       pb += cb + 1;
       rgEntry[id].index = 0x7f;
       for (int index = 0; index < c_env; ++index)
@@ -218,6 +229,7 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
 	}
       ++c;
     }
+    PRINTF ("# %s = %s\n", rgEntry[id].key, pb);
     int cb = strlen ((char*) pb);
     if (flags & 0x80) {
       rgEntry[id].value = new char [cb + 1];
@@ -242,11 +254,12 @@ void show_environment (struct env_d* env, int c_env,
   char rgId[127];
   memset (rgId, 0xff, sizeof (rgId));
 
-  //  dumpw (pv, 128, 0, 1);
+  if (c_entry < 0)
+    c_entry = 0;
 
   for (int i = 0; i < c_env; ++i) {
     char* value = NULL;
-    for (int j = 0; j < c_entry; ++j) {
+    for (int j = 0; j < c_entry; ++j)
       if (rgEntry[j].index == i) {
 	value = rgEntry[j].value;
 	break;
@@ -256,7 +269,6 @@ void show_environment (struct env_d* env, int c_env,
       printf ("%s = %s\n", env[i].key, value);
     else
       printf ("%s *= %s\n", env[i].key, env[i].default_value);
-    }
   }
   for (int j = 0; j < c_entry; ++j) {
     if (rgEntry[j].index == 0x7f)
@@ -315,6 +327,15 @@ int main (int argc, char** argv)
     /env_link.env_d_size;
   void* pvEnv = NULL;
 
+  PRINTF ("# env_link.magic      0x%lx\n", env_link.magic);
+  PRINTF ("# env_link.apex_start 0x%lx\n", env_link.apex_start);
+  PRINTF ("# env_link.apex_end   0x%lx\n", env_link.apex_end);
+  PRINTF ("# env_link.env_start  0x%lx\n", env_link.env_start);
+  PRINTF ("# env_link.env_end    0x%lx\n", env_link.env_end);
+  PRINTF ("# env_link.env_d_size 0x%lx\n", env_link.env_d_size);
+  PRINTF ("# c_env               %d\n", c_env);
+  PRINTF ("# env_link.env_region %s\n", env_link.region);
+
   struct descriptor d = parse_region (env_link.region);
   if (d.start && d.length) {
     pvEnv = mmap (NULL, d.length, PROT_READ, MAP_PRIVATE, fh, d.start);
@@ -324,7 +345,10 @@ int main (int argc, char** argv)
     }
   }
 
-//  printf ("environment at 0x%x+0x%x -> %p\n", d.start, d.length, pvEnv);
+  PRINTF ("# environment at 0x%x+0x%x -> %p\n", d.start, d.length, pvEnv);
+
+  //  dumpw (pvEnv, 256, 0, 1);
+
 
 //  printf ("link 0x%x %d %s\n",
 //	  (char*) env_link.env_start - (char*) env_link.apex_start,
@@ -340,11 +364,14 @@ int main (int argc, char** argv)
     copy_string (pv, env_link, &env[i].key);
     copy_string (pv, env_link, &env[i].default_value);
     copy_string (pv, env_link, &env[i].description);
+    PRINTF ("# env %s %s (%s)\n",
+	    env[i].key, env[i].default_value, env[i].description);
 //    printf ("%s *= %s\n", env[i].key, env[i].default_value);
   }
 
   struct entry rgEntry[127];
-  int c_entry = scan_environment (env, c_env, env, rgEntry);
+  int c_entry = scan_environment (env, c_env, pvEnv, rgEntry);
+  PRINTF ("# %d entries in environment\n", c_entry);
   show_environment (env, c_env, rgEntry, c_entry);
 
   munmap (pv, cbApex);
