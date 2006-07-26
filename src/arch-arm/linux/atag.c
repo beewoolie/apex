@@ -29,6 +29,7 @@
 
 #include <atag.h>
 #include <linux/string.h>
+#include <apex.h>
 #include <config.h>
 
 void build_atags (void)
@@ -51,6 +52,10 @@ struct tag* atag_header (struct tag* p)
 	p->hdr.size = tag_size (tag_core);
 	memzero (&p->u.core, sizeof (p->u.core));
 
+# if !defined (CONFIG_SMALL)
+	printf ("ATAG_HEADER\n");
+# endif
+
 	return tag_next (p);
 }
 
@@ -58,6 +63,10 @@ struct tag* atag_end (struct tag* p)
 {
 	p->hdr.tag = ATAG_NONE;
 	p->hdr.size = 0;
+
+# if !defined (CONFIG_SMALL)
+	printf ("ATAG_END\n");
+# endif
 
 	return tag_next (p);
 }

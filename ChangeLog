@@ -1,3 +1,10 @@
+2006-07-25    <elf@scarlet.buici.com>
+
+	* src/mach-ixp42x/debian-nslu2-arm_config: Moved the start of the
+	kernel and ramdisk regions to skip the 16 byte sercomm header.
+
+	* include/atag.h: Fixed atag section macros.
+
 2006-07-23    <elf@scarlet.buici.com>
 
 	* src/mach-ixp42x/cpuinfo.c (cpuinfo_report): Alignment change to

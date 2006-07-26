@@ -41,18 +41,18 @@
 
 struct tag* atag_initrd (struct tag* p)
 {
-       p->hdr.tag = ATAG_INITRD2;
-       p->hdr.size = tag_size (tag_initrd);
+	p->hdr.tag = ATAG_INITRD2;
+	p->hdr.size = tag_size (tag_initrd);
 
-       p->u.initrd.start = CONFIG_RAMDISK_LMA;
-       p->u.initrd.size  = CONFIG_RAMDISK_SIZE;
+	p->u.initrd.start = CONFIG_RAMDISK_LMA;
+	p->u.initrd.size  = CONFIG_RAMDISK_SIZE;
 
 # if !defined (CONFIG_SMALL)
-       printf ("ATAG_INITRD2: start 0x%08x  size 0x%08x\n",
-	       p->u.initrd.start, p->u.initrd.size);
+	printf ("ATAG_INITRD2: start 0x%08x  size 0x%08x\n",
+		p->u.initrd.start, p->u.initrd.size);
 # endif
 
-       return tag_next (p);
+	return tag_next (p);
 }
 
 static __atag_6 struct atag_d _atag_initrd = { atag_initrd };
