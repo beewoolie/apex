@@ -1,5 +1,4 @@
 /* cpuinfo.c
-     $Id$
 
    written by Marc Singer
    3 Feb 2005

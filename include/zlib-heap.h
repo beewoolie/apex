@@ -1,5 +1,4 @@
 /* zlib-heap.h
-     $Id$
 
    written by Marc Singer
    10 Jun 2005

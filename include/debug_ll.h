@@ -3,7 +3,7 @@
    written by Marc Singer
    12 Feb 2005
 
-   Copyright (C) 2005 The Buici Company
+   Copyright (C) 2005 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
