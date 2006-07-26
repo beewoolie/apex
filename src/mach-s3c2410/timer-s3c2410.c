@@ -1,5 +1,4 @@
 /* timer-s3c2410.c
-     $Id$
 
    written by Marc Singer
    1 Nov 2004

@@ -1,5 +1,4 @@
 /* cmd-reset.c
-     $Id$
 
    written by Marc Singer
    12 Nov 2004

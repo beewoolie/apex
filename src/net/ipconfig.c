@@ -1,5 +1,4 @@
 /* ipconfig.c
-     $Id$
 
    written by Marc Singer
    1 Aug 2005

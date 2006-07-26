@@ -1,5 +1,4 @@
 /* adc.c
-     $Id$
 
    written by Marc Singer
    1 Jan 2005

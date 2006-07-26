@@ -1,5 +1,4 @@
 /* spinner-nslu2.c
-     $Id$
 
    written by Marc Singer
    11 Feb 2005

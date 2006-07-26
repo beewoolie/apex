@@ -1,5 +1,4 @@
 /* init.c
-     $Id$
 
    written by Marc Singer
    31 Oct 2004

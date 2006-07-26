@@ -1,5 +1,4 @@
 /* console-printf.c
-     $Id$
 
    written by Marc Singer
    2 Nov 2004

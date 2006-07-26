@@ -1,5 +1,4 @@
 /* cmd_compare.c
-     $Id$
 
    written by Marc Singer
    5 Feb 2005

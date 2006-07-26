@@ -1,5 +1,4 @@
 /* cmd-xreceive.c
-     $Id$
 
    written by Marc Singer
    6 Nov 2004

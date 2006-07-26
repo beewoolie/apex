@@ -1,5 +1,4 @@
 /* serial.c
-     $Id$
 
    written by Marc Singer
    14 Jan 2005

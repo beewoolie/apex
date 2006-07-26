@@ -1,5 +1,4 @@
 /* cmd-info.c
-     $Id$
 
    written by Marc Singer
    10 June 2005

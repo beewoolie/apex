@@ -1,5 +1,4 @@
 /* cmd-dump.c
-     $Id$
 
    written by Marc Singer
    4 Nov 2004

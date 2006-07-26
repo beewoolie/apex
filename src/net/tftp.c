@@ -1,5 +1,4 @@
 /* tftp.c
-     $Id$
 
    written by Marc Singer
    8 Jul 2005

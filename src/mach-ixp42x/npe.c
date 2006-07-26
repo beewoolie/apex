@@ -1,5 +1,4 @@
 /* npe.c
-     $Id$
 
    written by Marc Singer
    14 Feb 2005

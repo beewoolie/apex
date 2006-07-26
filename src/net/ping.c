@@ -1,5 +1,4 @@
 /* ping.c
-     $Id$
 
    written by Marc Singer
    25 Jul 2005

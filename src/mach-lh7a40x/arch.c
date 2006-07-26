@@ -1,5 +1,4 @@
 /* arch.c
-     $Id$
 
    written by Marc Singer
    5 Dec 2004

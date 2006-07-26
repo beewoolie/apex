@@ -1,5 +1,4 @@
 /* mmu.c
-     $Id$
 
    written by Marc Singer
    19 Dec 2005

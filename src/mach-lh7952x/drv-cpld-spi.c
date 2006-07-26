@@ -1,5 +1,4 @@
 /* drv-cpld-spi.c
-     $Id$
 
    written by Marc Singer
    17 Nov 2004

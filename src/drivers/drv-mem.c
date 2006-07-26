@@ -1,5 +1,4 @@
 /* drv-mem.c
-     $Id$
 
    written by Marc Singer
    3 Nov 2004

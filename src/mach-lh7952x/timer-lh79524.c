@@ -1,5 +1,4 @@
 /* timer-lh79524.c
-     $Id$
 
    written by Marc Singer
    1 Nov 2004

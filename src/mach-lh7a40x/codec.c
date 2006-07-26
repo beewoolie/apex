@@ -1,5 +1,4 @@
 /* codec.c
-     $Id$
 
    written by Marc Singer
    12 Jul 2005

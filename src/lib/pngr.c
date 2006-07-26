@@ -1,5 +1,4 @@
 /* png.c
-     $Id$
 
    written by Marc Singer
    3 Mar 2005

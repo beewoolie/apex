@@ -1,5 +1,4 @@
 /* mmu-alloc.c
-     $Id$
 
    written by Marc Singer
    22 Dec 2005

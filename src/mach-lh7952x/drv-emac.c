@@ -1,5 +1,4 @@
 /* drv-emac.c
-     $Id$
 
    written by Marc Singer
    16 Nov 2004

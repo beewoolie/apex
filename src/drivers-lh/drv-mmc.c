@@ -1,5 +1,4 @@
 /* drv-mmc.c
-     $Id$
 
    written by Marc Singer
    19 Oct 2005

@@ -1,5 +1,4 @@
 /* atag-initrd.c
-     $Id$
 
    written by Marc Singer
    5 May 2006

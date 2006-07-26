@@ -1,5 +1,4 @@
 /* cmd-wait.c
-     $Id$
 
    written by Marc Singer
    8 Nov 2004

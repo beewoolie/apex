@@ -1,5 +1,4 @@
 /* arp.c
-     $Id$
 
    written by Marc Singer
    7 Jul 2005

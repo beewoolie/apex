@@ -1,5 +1,4 @@
 /* cmd-fill.c
-     $Id$
 
    written by Marc Singer
    5 Nov 2004

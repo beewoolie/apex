@@ -1,5 +1,4 @@
 /* npe-interface.c
-     $Id$
 
    written by Marc Singer
    8 Mar 2005

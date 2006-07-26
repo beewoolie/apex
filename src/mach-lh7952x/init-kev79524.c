@@ -1,5 +1,4 @@
 /* init-kev79524.c
-     $Id$
 
    written by Marc Singer
    28 Oct 2004

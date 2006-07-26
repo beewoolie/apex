@@ -1,5 +1,4 @@
 /* sdramboot.c
-     $Id$
 
    written by Marc Singer
    30 Sep 2005
