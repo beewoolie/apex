@@ -4,8 +4,8 @@ ARCH ?= arm
 ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
-PATCHLEVEL = 3
-SUBLEVEL = 31
+PATCHLEVEL = 4
+SUBLEVEL = 0
 EXTRAVERSION =
 #NAME=Zonked Quokka
 
@@ -812,7 +812,7 @@ ifneq ($(KBUILD_SRC),)
 endif
 
 #prepare0: prepare1 include/linux/version.h include/asm include/config/MARKER
-prepare0: include/asm include/mach include/linux/config.h include/envmagic.h \
+prepare0: include/asm include/mach include/linux/config.h \
 	  include/config/MARKER
 ifneq ($(KBUILD_MODULES),)
 	$(Q)rm -rf $(MODVERDIR)
@@ -825,12 +825,12 @@ prepare-all: prepare0 prepare check_cc
 include/linux/config.h:
 	@touch include/linux/config.h
 
-include/envmagic.h: FORCE
-	$(Q)scripts/envmagic > include/envmagic.h_new
-	$(Q)if [ ! -f include/envmagic.h ] \
-		 || ! cmp -s include/envmagic.h_new include/envmagic.h ;\
-	    then mv include/envmagic.h_new include/envmagic.h ;\
-	    else rm include/envmagic.h_new ; fi
+#include/envmagic.h: FORCE
+#	$(Q)scripts/envmagic > include/envmagic.h_new
+#	$(Q)if [ ! -f include/envmagic.h ] \
+#		 || ! cmp -s include/envmagic.h_new include/envmagic.h ;\
+#	    then mv include/envmagic.h_new include/envmagic.h ;\
+#	    else rm include/envmagic.h_new ; fi
 
 #	Leave this as default for preprocessing apex.lds.S, which is now
 #	done in arch/$(ARCH)/kernel/Makefile
@@ -1076,7 +1076,7 @@ distclean: mrproper
 		-o -name '*.map' -o -name '*.bin'\
 		-o -name '*%' -o -name '.*.cmd' -o -name 'core' \) \
 		-type f -print | xargs rm -f
-	@rm -f include/mach include/envmagic.h include/configfunc.h
+	@rm -f include/mach include/configfunc.h
 	@if [ -L config ] ; then rm config; fi
 
 # Packaging of the kernel to various formats

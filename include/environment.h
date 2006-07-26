@@ -53,7 +53,9 @@ struct env_link {
 
 #define ENV_CB_MAX	(512)
 
-#define ENV_LINK_MAGIC	(unsigned long)(('A'<<0)|('E'<<8)|('L'<<16)|('0'<<24))
+#define ENV_MAGIC_0	'A'
+#define ENV_MAGIC_1	'e'
+#define ENV_LINK_MAGIC	(unsigned long)(('A'<<0)|('E'<<8)|('L'<<16)|('1'<<24))
 
 /* ----- Prototypes */
 

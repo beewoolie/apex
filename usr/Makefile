@@ -1,6 +1,6 @@
 # Makefile
 
-CROSS_COMPILE ?= /usr/arm-linux/gcc-3.4.1-glibc-2.3.3/bin/arm-linux-
+CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 #CFLAGS ?= -I/a/trans/embedded/m3/tools-target/usr/include
 #LDFLAGS ?= -L/a/trans/embedded/m3/tools-target/usr/lib
 
@@ -16,11 +16,14 @@ STRIP=$(CROSS_COMPILE)strip
 
 CFLAGS+= -Os -g -c
 
-TARGETS: printenv
+TARGETS:=printenv
+
+.PHONY: all
+all: $(TARGETS)
 
 printenv: printenv.o
 
-picture: $(OBJS_PICTURE)
+printenv: printenv.o
 	@echo linking $@
 	@$(CC) $(CFLAGS_LINK) -o $@ $^ $(LIBRARIES) $($@_LIB)
 
@@ -28,3 +31,6 @@ picture: $(OBJS_PICTURE)
 	@echo compile $@ $(CCFLAGS)
 	@$(CXX) $(CFLAGS) -o $@ $<
 
+.PHONY: clean
+clean:
+	-rm $(TARGETS) *.o

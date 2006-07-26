@@ -33,72 +33,12 @@
    values.  Instead, we'd rewrite the whole kit every time.
 
 
-   ENV_MAGIC
-   ---------
-
-   In order to prevent inadvertent crashes and hang-ups and mess-ups,
-   the environment is prefixed with a magic number that derives from
-   the environment variables in use.  It is checked only when reading
-   and writing the environment storage area.  The use may have the
-   opportunity to erase the whole area which would clobber an old
-   environment.
-
-   ENV_CHECK_LEN
-   -------------
-
-   The code wll, at a minimum check two bytes to make sure both are
-   0xff.  This macro, ENV_CHECK_LEN, may be set to check a larger
-   portion of memory.
-
    Environment Format
    ------------------
 
-   The environment format has evolved such that it is self-contained
-   for both reading and writing, and it is reasonably compact.
+   Refer to README_environment for an explanation of the NVRAM format
+   of the environment.
 
-   +-------+-------+-------+--------+
-   | MAGIC | Entry | ...   | 0xffff |
-   +-------+-------+-------+--------+
-
-   The MAGIC number is two bytes, stored in the MSB or network order,
-   'A' followed by 'e'.  The environment may be read from either
-   little or big endian machines.
-
-   Entries are key/value pairs of two forms.
-
-   +------+-----+-------+
-   | Flag | Key | Value |
-   +------+-----+-------+
-
-   In this form, the Key and Value are each NULL terminated strings.
-   The Flag field is a single byte where the high bit is 1 for an
-   active entry, and 0 for a deleted entry.  The low seven bits are an
-   id for the environment key.  Valid ids are zero through 0x7e since
-   0x7f would mark the end of the environment.  The id is a unique
-   replacement for the Key string in successive changes to the same
-   environment variable.
-
-   +------+-------+
-   | Flag | Value |
-   +------+-------+
-
-   This is the second form that does not include the Key string.  It
-   only exists when an environment variable is written more than once
-   to the environment.  The first time it is written, an id is
-   allocated for the Key.  The second time it is written, that id
-   is reused.
-
-   The ids are unique within a given environment, and are allocated a
-   variables are written.  For example, if the user performs these
-   commands on a clean environment:
-
-     apex> setenv cmdline console=ttyS0
-     apex> setenv bootaddr 0x8000
-     apex> setenv cmdline console=ttyS0,115200
-
-   the environment will contain three entries, cmdline with a flag of
-   0x0, bootaddr with a flag of 0x81, and cmdline with a flag of 0x80.
-   The second cmdline entry will have only a flag and a value.
 
    Statelessness
    -------------
@@ -108,6 +48,7 @@
    is either used in a fetch or a store.  Should the environment
    become so large that the time to scan it is noticeable, it is
    probably time to rebuild it and remove the deleted entries.
+
 
    rgId
    ----
@@ -123,7 +64,6 @@
    - There may be a desire to be able to erase all of the environment
      and start again.  This might mitigate the issue of using EEPROM
      in that we would force the user to do the erase by hand.
-   - Use a strcasecmp instead of strcmp when looking for keys.
 
    - *** Need to investigate why it fails to boot properly when the
 	 environment region doesn't open, or nor flash driver.
@@ -136,7 +76,6 @@
 #include <environment.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
-//#include <envmagic.h>
 #include <driver.h>
 
 extern char APEX_ENV_START;
@@ -144,8 +83,6 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
-#define ENV_MAGIC_0	'A'
-#define ENV_MAGIC_1	'e'
 #define ENV_CHECK_LEN	(1024)	/* Comment out to check only one short */
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
@@ -183,6 +120,11 @@ static ssize_t _env_read (void* pv, size_t cb)
   return env_d.driver->read (&env_d, pv, cb);
 }
 
+static ssize_t _env_seek (ssize_t ib, int whence)
+{
+  return env_d.driver->seek (&env_d, ib, whence);
+}
+
 #if defined (CONFIG_CMD_SETENV)
 
 static ssize_t _env_write (const void* pv, size_t cb)
@@ -190,9 +132,21 @@ static ssize_t _env_write (const void* pv, size_t cb)
   return env_d.driver->write (&env_d, pv, cb);
 }
 
-static ssize_t _env_seek (ssize_t ib, int whence)
+
+/* _env_id
+
+   returns the id for the given environment index or -1 if there isn't
+   one yet.
+
+*/
+
+static int _env_id (int index)
 {
-  return env_d.driver->seek (&env_d, ib, whence);
+  int i;
+  for (i = 0; i < sizeof (rgId) && rgId[i] != 0xff; ++i)
+    if (rgId[i] == index)
+      return i;
+  return -1;
 }
 
 #endif
@@ -207,7 +161,7 @@ static int _env_index (const char* sz)
   int i;
 
   for (i = 0; i < C_ENV_KEYS; ++i)
-    if (strcmp (sz, ENVLIST(i).key) == 0)
+    if (strnicmp (sz, ENVLIST(i).key, strlen (ENVLIST (i).key) + 1) == 0)
       return i;
 
   return -1;
@@ -232,7 +186,8 @@ static char _env_locate (int i)
 {
   char ch;
 
-  while (_env_read (&ch, 1) == 1 && ch != ENV_END) {
+  while ((ibLastFlag = _env_seek (0, SEEK_CUR), _env_read (&ch, 1) == 1)
+	 && ch != ENV_END) {
     int id = ENV_ID (ch);
     if (rgId[id] == 0xff) {	/* New ID to this scan */
       char rgb[ENV_CB_MAX];
@@ -277,19 +232,19 @@ static char _env_locate (int i)
 int env_check_magic (void)
 {
   char __aligned rgb[2];
-  unsigned short s;
 
   _env_rewind ();
   _env_read (rgb, 2);
   if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)
     return 0;
 
-  if (s != 0xffff)
+  if (rgb[0] != 0xff || rgb[1] != 0xff)
     return -1;
 
 #if defined (ENV_CHECK_LEN)
   {
     int c = ENV_CHECK_LEN/2;
+    unsigned short s;
     while (--c) {
       _env_read (&s, 2);
       if (s != 0xffff)
@@ -331,23 +286,6 @@ static const char* _env_find (int i)
   }
 
   return NULL;
-}
-
-
-/* _env_id
-
-   returns the id for the given environment index or -1 if there isn't
-   one yet.
-
-*/
-
-static int _env_id (int index)
-{
-  int i;
-  for (i = 0; i < sizeof (rgId) && rgId[i] != 0xff; ++i)
-    if (rgId[i] == index)
-      return i;
-  return -1;
 }
 
 
@@ -496,7 +434,7 @@ int env_store (const char* szKey, const char* szValue)
     break;
   case 1:			/* uninitialized */
     {
-      char rgb[2] = { ENV_MAGIC_0, ENV_MAGIC_0 };
+      char rgb[2] = { ENV_MAGIC_0, ENV_MAGIC_1 };
       _env_rewind ();
       _env_write (rgb, 2);
     }
@@ -515,6 +453,8 @@ int env_store (const char* szKey, const char* szValue)
     _env_seek (ibLastFlag, SEEK_SET);
     _env_write (&ch, 1);
     _env_seek (ib, SEEK_SET);
+    while (_env_read (&ch, 1) == 1 && ch != 0)
+      ;
   }
 
 	/* Append new environment entry */
@@ -530,7 +470,7 @@ int env_store (const char* szKey, const char* szValue)
     _env_seek (-1, SEEK_CUR);
     _env_write (&ch, 1);
     if (isNew)
-      _env_write (szKey, strlen (szKey) + 1);
+      _env_write (ENVLIST(i).key, strlen (ENVLIST(i).key) + 1);
     _env_write (szValue, cch + 1);
   }
 

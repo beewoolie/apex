@@ -38,6 +38,16 @@
    Generally, this will work, but it ought to allow for hexadecimal
    values as well.
 
+   This implementation is smart enough to detect the new environment
+   format where it is possible to read the environment keys without
+   scanning through the APEX binary.  It still isn't possible to know
+   the default environment values without reading APEX, so this code
+   will still probe into the APEX binary.
+
+   There ought to be a switch that allows the user to read the
+   environment region without reading APEX, thus only seeing the
+   values that are modified and stored in the environment.
+
 */
 
 #include <stdio.h>
@@ -55,6 +65,8 @@
 
 #define DEVICE "/dev/mtdblock0"
 
+#define CB_ENV_MAGIC	(2)
+
 typedef unsigned short u16;
 typedef unsigned long u32;
 
@@ -62,6 +74,12 @@ struct descriptor {
   char driver[80];
   unsigned long start;
   unsigned long length;
+};
+
+struct entry {
+  int index;			// index of this variable in APEX or 0x7f
+  char* key;
+  char* value;
 };
 
 void dumpw (const void* pv, int cb, unsigned long index, int width)
@@ -115,6 +133,7 @@ void copy_string (void* pv, const struct env_link& env_link, char** szCopy)
   *szCopy = sz;
 }
 
+
 /* parse_region
 
    performs a simplified parse of a region descriptor
@@ -139,7 +158,7 @@ struct descriptor parse_region (const char* sz)
     ++sz;
     d.start *= 1024;
   }
-  if (*sz && *sz == '+') {
+  if (*sz == '+') {
     d.length = strtoul (sz, (char**) &sz, 10);
     if (*sz == 'k' || *sz == 'K') {
       ++sz;
@@ -150,36 +169,98 @@ struct descriptor parse_region (const char* sz)
 }
 
 
-/* show_environment
+/* scan_environment
 
-   is, more or less, the guts of this program.  It scans the
-   environment, mapped to pv, for environment variables that match
-   each of the environment variables defined in APEX.
+   is the guts of this program.  It scans the environment,
+   constructing a map of the environment variables that it finds.
+   These will be all of the entries that exist in non-volatile memory,
+   but these may not all have corresponding entries among APEXs
+   environment descriptors.  If it is given an env_d it will fill in
+   the index field for the entries.
 
-   There are a couple of 'tricky' things that it does.  The +2 when
-   assiging pv to pb skips the environment's magic number.  The |x80
-   while scanning the variables checks for deleted entries.  The high
-   bit is clear for deleted entries.
+   The return value is the count of unique ids found, or -1 if the is
+   environment is unrecognized.
 
 */
 
-void show_environment (struct env_d* env, int c_env, void* pv)
+int scan_environment (struct env_d* env, int c_env, void* pv,
+		      struct entry* rgEntry)
 {
+  for (int i = 0; i < sizeof (rgEntry)/sizeof (rgEntry[0]); ++i)
+    rgEntry[i].index = 0xff;
+
+  unsigned char* pb = (unsigned char*) pv;
+
+  if (pb[0] == 0xff && pb[1] == 0xff)
+    return 0;
+
+  if (pb[0] != ENV_MAGIC_0 || pb[1] != ENV_MAGIC_1)
+    return -1;
+
+  if (c_env <= 0 || env == NULL)
+    c_env = 0;
+
+  int c = 0;
+
+  while (*pb != 0xff) {
+    unsigned char flags = *pb++;
+    int id = flags & 0x7f;
+    if (rgEntry[id].index == 0xff) {
+      int cb = strlen ((char*) pb);
+      rgEntry[id].key = new char [cb + 1];
+      strcpy (rgEntry[id].key, (char*) pb);
+      pb += cb + 1;
+      rgEntry[id].index = 0x7f;
+      for (int index = 0; index < c_env; ++index)
+	if (strcasecmp (rgEntry[id].key, env[index].key) == 0) {
+	  rgEntry[id].index = index;
+	  break;
+	}
+      ++c;
+    }
+    int cb = strlen ((char*) pb);
+    if (flags & 0x80) {
+      rgEntry[id].value = new char [cb + 1];
+      strcpy (rgEntry[id].value, (char*) pb);
+    }
+    pb += cb + 1;
+  }
+  return c;
+}
+
+
+/* show_environment
+
+   knits together the two different kinds of environment data and
+   displays the values.
+
+*/
+
+void show_environment (struct env_d* env, int c_env,
+		       struct entry* rgEntry, int c_entry)
+{
+  char rgId[127];
+  memset (rgId, 0xff, sizeof (rgId));
+
   //  dumpw (pv, 128, 0, 1);
 
   for (int i = 0; i < c_env; ++i) {
-    //    printf ("%s: i %d\n", __FUNCTION__, i);
-    const char* pbFound = NULL;
-    for (const char* pb = (const char*) pv + 2; *pb != 0xff; ) {
-      //      printf ("%d: %x\n", i, *pb);
-      if (*pb == (i | 0x80))
-	pbFound = pb;
-      pb += 1 + strlen (pb + 1) + 1;
-    }
-    if (pbFound)
-      printf ("%s = %s\n", env[i].key, pbFound + 1);
+    char* value = NULL;
+    for (int j = 0; j < c_entry; ++j) {
+      if (rgEntry[j].index == i) {
+	value = rgEntry[j].value;
+	break;
+      }
+
+    if (value)
+      printf ("%s = %s\n", env[i].key, value);
     else
       printf ("%s *= %s\n", env[i].key, env[i].default_value);
+    }
+  }
+  for (int j = 0; j < c_entry; ++j) {
+    if (rgEntry[j].index == 0x7f)
+      printf ("%s #= %s\n", rgEntry[j].key, rgEntry[j].value);
   }
 }
 
@@ -262,7 +343,9 @@ int main (int argc, char** argv)
 //    printf ("%s *= %s\n", env[i].key, env[i].default_value);
   }
 
-  show_environment (env, c_env, pvEnv);
+  struct entry rgEntry[127];
+  int c_entry = scan_environment (env, c_env, env, rgEntry);
+  show_environment (env, c_env, rgEntry, c_entry);
 
   munmap (pv, cbApex);
   munmap (pvEnv, d.length);
