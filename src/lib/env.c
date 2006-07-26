@@ -73,10 +73,10 @@
    In this form, the Key and Value are each NULL terminated strings.
    The Flag field is a single byte where the high bit is 1 for an
    active entry, and 0 for a deleted entry.  The low seven bits are an
-   index for the environment key.  Valid indices are zero through 0x7e
-   since 0x7f would mark the end of the environment.  The index is a
-   unique identifier for the Key that replaces the Key string in
-   successive changes to the same environment variable.
+   id for the environment key.  Valid ids are zero through 0x7e since
+   0x7f would mark the end of the environment.  The id is a unique
+   replacement for the Key string in successive changes to the same
+   environment variable.
 
    +------+-------+
    | Flag | Value |
@@ -84,13 +84,13 @@
 
    This is the second form that does not include the Key string.  It
    only exists when an environment variable is written more than once
-   to the environment.  The first time it is written, an index is
-   allocated for the Key.  The second time it is written, that index
+   to the environment.  The first time it is written, an id is
+   allocated for the Key.  The second time it is written, that id
    is reused.
 
-   The indices are unique within a given environment, and are
-   allocated a variables are written.  For example, if the user
-   performs these commands on a clean environment:
+   The ids are unique within a given environment, and are allocated a
+   variables are written.  For example, if the user performs these
+   commands on a clean environment:
 
      apex> setenv cmdline console=ttyS0
      apex> setenv bootaddr 0x8000
@@ -99,6 +99,24 @@
    the environment will contain three entries, cmdline with a flag of
    0x0, bootaddr with a flag of 0x81, and cmdline with a flag of 0x80.
    The second cmdline entry will have only a flag and a value.
+
+   Statelessness
+   -------------
+
+   These routines are stateless.  The idNext and the rgId array are
+   filled every time the environment is scanned which is every time it
+   is either used in a fetch or a store.  Should the environment
+   become so large that the time to scan it is noticeable, it is
+   probably time to rebuild it and remove the deleted entries.
+
+   rgId
+   ----
+
+   This is an array of environment indices.  rgId[0] is the
+   environment variable index for id 0.  An entry of 0xff means that
+   that id hasn't been scanned or allocated.  An entry of 0x7f means
+   that that ID was found in the environment, but there is no
+   corresponding environment variable that matches it.
 
    ----
 
@@ -133,7 +151,7 @@ extern char APEX_VMA_END;
 #define ENV_MASK_DELETED (0x80)
 #define ENV_VAL_DELETED	 (0x00)
 #define ENV_VAL_NOT_DELETED (0x80)
-#define ENV_INDEX(m)	((int)((m) & 0x7f))
+#define ENV_ID(m)	((int)((m) & 0x7f))
 #define ENV_END		(0xff)
 #define ENV_IS_DELETED(m) (((m) & ENV_MASK_DELETED) == ENV_VAL_DELETED)
 #define C_ENV_KEYS	(((unsigned int) &APEX_ENV_END \
@@ -143,7 +161,22 @@ extern char APEX_VMA_END;
 
 struct descriptor_d env_d;	/* Environment storage region */
 
-unsigned char rgIndices[C_ENV_KEYS];
+static int idNext;		/* Next available index */
+static unsigned char rgId[127]; /* *** I'd rather this not be fixed max */
+static ssize_t ibLastFlag;
+
+/* _env_reset_ids
+
+   must be called before _env_locate () so that the id array may be
+   recomputed.
+
+*/
+
+static void _env_reset_ids (void)
+{
+  idNext = 0;
+  memset (rgId, 0xff, sizeof (rgId));
+}
 
 static ssize_t _env_read (void* pv, size_t cb)
 {
@@ -157,9 +190,9 @@ static ssize_t _env_write (const void* pv, size_t cb)
   return env_d.driver->write (&env_d, pv, cb);
 }
 
-static void _env_back (void)
+static ssize_t _env_seek (ssize_t ib, int whence)
 {
-  env_d.driver->seek (&env_d, -1, SEEK_CUR);
+  return env_d.driver->seek (&env_d, ib, whence);
 }
 
 #endif
@@ -169,12 +202,52 @@ static void _env_rewind (void)
   env_d.driver->seek (&env_d, 0, SEEK_SET);
 }
 
+static int _env_index (const char* sz)
+{
+  int i;
+
+  for (i = 0; i < C_ENV_KEYS; ++i)
+    if (strcmp (sz, ENVLIST(i).key) == 0)
+      return i;
+
+  return -1;
+}
+
+
+/* _env_locate
+
+   is the only function that scans the environment.  This makes it
+   easy to concentrate all of the odd logic to handle the special form
+   of the environment entries.
+
+   The parameter is the index of the desired environment variable.
+
+   A side effect of this function is to set the ibLastFlag global
+   variable to the index of the last flag found.  This is used to seek
+   back to the flag to erase the entry.
+
+*/
+
 static char _env_locate (int i)
 {
   char ch;
 
   while (_env_read (&ch, 1) == 1 && ch != ENV_END) {
-    if (!ENV_IS_DELETED (ch) && ENV_INDEX (ch) == i)
+    int id = ENV_ID (ch);
+    if (rgId[id] == 0xff) {	/* New ID to this scan */
+      char rgb[ENV_CB_MAX];
+      char* pb;
+      for (pb = rgb;
+	   pb < rgb + sizeof (rgb) && _env_read (pb, 1) == 1 && *pb;
+	   ++pb)
+	;
+      *pb = 0;
+      ++idNext;
+
+      rgId[id] = _env_index (rgb) & 0x7f;
+    }
+
+    if (!ENV_IS_DELETED (ch) && rgId[id] == i)
       return ch;
     do {
       _env_read (&ch, 1);
@@ -207,7 +280,7 @@ int env_check_magic (void)
   unsigned short s;
 
   _env_rewind ();
-  _env_read (&rgb, 2);
+  _env_read (rgb, 2);
   if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)
     return 0;
 
@@ -249,7 +322,10 @@ static const char* _env_find (int i)
   if (env_check_magic ())
     return NULL;
 
+  _env_reset_ids ();
+
   if (_env_locate (i) != ENV_END) {
+    /*** FIXME: should be just read until we find a null? */
     _env_read (rgb, sizeof (rgb));
     return rgb;
   }
@@ -257,14 +333,20 @@ static const char* _env_find (int i)
   return NULL;
 }
 
-static int _env_index (const char* sz)
+
+/* _env_id
+
+   returns the id for the given environment index or -1 if there isn't
+   one yet.
+
+*/
+
+static int _env_id (int index)
 {
   int i;
-
-  for (i = 0; i < C_ENV_KEYS; ++i)
-    if (strcmp (sz, ENVLIST(i).key) == 0)
+  for (i = 0; i < sizeof (rgId) && rgId[i] != 0xff; ++i)
+    if (rgId[i] == index)
       return i;
-
   return -1;
 }
 
@@ -335,6 +417,7 @@ const char* env_fetch (const char* szKey)
 {
   const char* szValue = NULL;
   int i;
+
   //  printf ("env_fetch %s\n", szKey);
   i = _env_fetch (szKey, &szValue);
 
@@ -372,15 +455,18 @@ void env_erase (const char* szKey)
 {
   int i = _env_index (szKey);
   char ch;
+
   if (i < 0)
     return;
 
   if (env_check_magic ())
     return;
 
+  _env_reset_ids ();
+
   if ((ch = _env_locate (i)) != ENV_END) {
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
-    _env_back ();
+    _env_seek (ibLastFlag, SEEK_SET);
     _env_write (&ch, 1);
   }
 }
@@ -399,7 +485,7 @@ void env_erase (const char* szKey)
 int env_store (const char* szKey, const char* szValue)
 {
   int i = _env_index (szKey);
-  int cch = strlen (szValue);
+  int   cch = strlen (szValue);
   char ch;
 
   if (i < 0 || cch > ENV_CB_MAX - 1)
@@ -410,9 +496,9 @@ int env_store (const char* szKey, const char* szValue)
     break;
   case 1:			/* uninitialized */
     {
-      unsigned short s = ENV_MAGIC;
+      char rgb[2] = { ENV_MAGIC_0, ENV_MAGIC_0 };
       _env_rewind ();
-      _env_write (&s, 2);
+      _env_write (rgb, 2);
     }
     break;
   default:
@@ -420,15 +506,33 @@ int env_store (const char* szKey, const char* szValue)
     return -1;
   }
 
+  _env_reset_ids ();
+
+	/* Erase existing environment entries */
   while ((ch = _env_locate (i)) != ENV_END) {
+    ssize_t ib = _env_seek (0, SEEK_CUR);
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
-    _env_back ();
+    _env_seek (ibLastFlag, SEEK_SET);
     _env_write (&ch, 1);
+    _env_seek (ib, SEEK_SET);
   }
-  ch = ENV_VAL_NOT_DELETED | (i & 0x7f);
-  _env_back ();
-  _env_write (&ch, 1);
-  _env_write (szValue, cch + 1);
+
+	/* Append new environment entry */
+  {
+    int isNew = 0;
+    int id = _env_id (i);
+    if (id == -1) {
+      id = idNext++;
+      rgId[id] = i;
+      isNew = 1;
+    }
+    ch = ENV_VAL_NOT_DELETED | (id & 0x7f);
+    _env_seek (-1, SEEK_CUR);
+    _env_write (&ch, 1);
+    if (isNew)
+      _env_write (szKey, strlen (szKey) + 1);
+    _env_write (szValue, cch + 1);
+  }
 
   return 0;
 }

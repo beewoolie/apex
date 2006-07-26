@@ -321,11 +321,11 @@ static void nor_init_chip (unsigned long phys)
   REGA (phys) = CMD (ReadArray);
   REGA (phys + (0x55 << WIDTH_SHIFT)) = CMD (ReadQuery);
 
-  printf ("nor phys %p %x %x %x %x\n", (void*) phys,
-	  REGA (phys + (0x10 << WIDTH_SHIFT)),
-	  REGA (phys + (0x11 << WIDTH_SHIFT)),
-	  REGA (phys + (0x12 << WIDTH_SHIFT)),
-	  REGA (phys + (0x13 << WIDTH_SHIFT)));
+  PRINTF ("nor phys %p %x %x %x %x\n", (void*) phys,
+	  (unsigned) REGA (phys + (0x10 << WIDTH_SHIFT)),
+	  (unsigned) REGA (phys + (0x11 << WIDTH_SHIFT)),
+	  (unsigned) REGA (phys + (0x12 << WIDTH_SHIFT)),
+	  (unsigned) REGA (phys + (0x13 << WIDTH_SHIFT)));
 
 #if defined (USE_DETECT_ENDIAN_MISMATCH)
   if (   REGA (phys + (0x11 << WIDTH_SHIFT)) == QRY('Q')
