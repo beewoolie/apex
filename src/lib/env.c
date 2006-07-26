@@ -43,7 +43,63 @@
    opportunity to erase the whole area which would clobber an old
    environment.
 
-   TODO
+   ENV_CHECK_LEN
+   -------------
+
+   The code wll, at a minimum check two bytes to make sure both are
+   0xff.  This macro, ENV_CHECK_LEN, may be set to check a larger
+   portion of memory.
+
+   Environment Format
+   ------------------
+
+   The environment format has evolved such that it is self-contained
+   for both reading and writing, and it is reasonably compact.
+
+   +-------+-------+-------+--------+
+   | MAGIC | Entry | ...   | 0xffff |
+   +-------+-------+-------+--------+
+
+   The MAGIC number is two bytes, stored in the MSB or network order,
+   'A' followed by 'e'.  The environment may be read from either
+   little or big endian machines.
+
+   Entries are key/value pairs of two forms.
+
+   +------+-----+-------+
+   | Flag | Key | Value |
+   +------+-----+-------+
+
+   In this form, the Key and Value are each NULL terminated strings.
+   The Flag field is a single byte where the high bit is 1 for an
+   active entry, and 0 for a deleted entry.  The low seven bits are an
+   index for the environment key.  Valid indices are zero through 0x7e
+   since 0x7f would mark the end of the environment.  The index is a
+   unique identifier for the Key that replaces the Key string in
+   successive changes to the same environment variable.
+
+   +------+-------+
+   | Flag | Value |
+   +------+-------+
+
+   This is the second form that does not include the Key string.  It
+   only exists when an environment variable is written more than once
+   to the environment.  The first time it is written, an index is
+   allocated for the Key.  The second time it is written, that index
+   is reused.
+
+   The indices are unique within a given environment, and are
+   allocated a variables are written.  For example, if the user
+   performs these commands on a clean environment:
+
+     apex> setenv cmdline console=ttyS0
+     apex> setenv bootaddr 0x8000
+     apex> setenv cmdline console=ttyS0,115200
+
+   the environment will contain three entries, cmdline with a flag of
+   0x0, bootaddr with a flag of 0x81, and cmdline with a flag of 0x80.
+   The second cmdline entry will have only a flag and a value.
+
    ----
 
    - There may be a desire to be able to erase all of the environment
@@ -52,7 +108,7 @@
    - Use a strcasecmp instead of strcmp when looking for keys.
 
    - *** Need to investigate why it fails to boot properly when the
-	 environment region doesn't open, no nor flash driver.
+	 environment region doesn't open, or nor flash driver.
 
 */
 
@@ -62,7 +118,7 @@
 #include <environment.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
-#include <envmagic.h>
+//#include <envmagic.h>
 #include <driver.h>
 
 extern char APEX_ENV_START;
@@ -70,6 +126,8 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
+#define ENV_MAGIC_0	'A'
+#define ENV_MAGIC_1	'e'
 #define ENV_CHECK_LEN	(1024)	/* Comment out to check only one short */
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
@@ -84,6 +142,8 @@ extern char APEX_VMA_END;
 #define ENVLIST(i)	(((struct env_d*) &APEX_ENV_START)[i])
 
 struct descriptor_d env_d;	/* Environment storage region */
+
+unsigned char rgIndices[C_ENV_KEYS];
 
 static ssize_t _env_read (void* pv, size_t cb)
 {
@@ -130,7 +190,8 @@ static char _env_locate (int i)
    presence of the environment magic number at the start of the
    region.  It returns 0 if the magic number is present.  If the
    region is uninitialized, it returns 1.  The return value is -1 if
-   there is data in the environment that cannot be recognized.
+   there is data in the environment region that is not an APEX
+   environment.
 
    The original version of this function only checked for a single
    0xffff.  We're modifying this code, conditionally, to check for at
@@ -142,11 +203,12 @@ static char _env_locate (int i)
 
 int env_check_magic (void)
 {
+  char __aligned rgb[2];
   unsigned short s;
 
   _env_rewind ();
-  _env_read (&s, 2);
-  if (s == ENV_MAGIC)
+  _env_read (&rgb, 2);
+  if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)
     return 0;
 
   if (s != 0xffff)
