@@ -212,10 +212,10 @@
 #endif
 
 #if defined (CONFIG_LCD_NL2432HC22_40A)
-	/* NEC QVGA 2432HC22-40A 320x240 8.9cm*/
+	/* NEC QVGA 2432HC22-40A 240x320 8.9cm*/
 /* The full horozontal cycle (Th) is clock/?/256/?. */
 /* The full vertical   cycle (Tv) is line/?/324/?. */
-#define PANEL_NAME	"LCD 10.4\" VGA"
+#define PANEL_NAME	"NEC LCD 8.9cm Portrait QVGA"
 #define PEL_CLOCK_EST	(5*1000*1000)     /* 5MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
@@ -229,6 +229,29 @@
 #define BOTTOM_MARGIN	(324-2-320-1)
 #define HSYNC_WIDTH	(8)			/* clocks/?/8/? */
 #define VSYNC_WIDTH	(2)			/* lines/?/1/? */
+
+#define INVERT_HSYNC
+#define INVERT_VSYNC
+#endif
+
+#if defined (CONFIG_LCD_OSD035TTEA1)
+	/* Sharp QVGA 2432HC22-40A 320x240 70.08mmx52.56mm*/
+/* The full horozontal cycle (Th) is clock/326/440/472. */
+/* The full vertical   cycle (Tv) is line/246/264/282. */
+#define PANEL_NAME	"Sharp LCD Landscape QVGA"
+#define PEL_CLOCK_EST	(8*1000*1000)		/* MHz/4/8/8.65 */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	(240)
+#define PEL_HEIGHT	(320)
+#define BIT_DEPTH	(16)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(42)			/* clock/2/42/256 */
+#define RIGHT_MARGIN	(440-42-320-38)		/* clock/2/40.256 */
+#define TOP_MARGIN	(8)			/* lines/2/8/14 */
+#define BOTTOM_MARGIN	(264-8-240-8)		/* lines/2/8/14 */
+#define HSYNC_WIDTH	(38)			/* clocks/2/38/256 */
+#define VSYNC_WIDTH	(8)			/* lines/2/8/14 */
 
 #define INVERT_HSYNC
 #define INVERT_VSYNC

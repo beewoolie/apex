@@ -63,7 +63,10 @@ config LCD_12_1_SVGA_10
 	bool "LCD 12.1\" SVGA"
 
 config LCD_NL2432HC22_40A
-	bool "NEC QVGA"
+	bool "NEC 3.5\" Portrait QVGA"
+
+config LCD_OSD035TTEA1
+	bool "Sharp 3.5\" Landscape QVGA"
 	
 endchoice
 
