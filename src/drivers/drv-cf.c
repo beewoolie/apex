@@ -68,6 +68,13 @@
      read.  As the code stands, it will hang if the CF card
      identifies, but the interface fails to show a ready status.
 
+   o Attributes and & 0xff
+
+     The attribute memory is only byte-valid on even addresses.  We
+     mask the value with 0xff to prevent problems on some cards that
+     return the same value in the high and low bytes of the 16 bit
+     read.
+
 */
 
 #include <config.h>
@@ -81,8 +88,8 @@
 
 #include <mach/drv-cf.h>
 
-#define TALK
-#define TALK_ATTRIB
+//#define TALK
+//#define TALK_ATTRIB
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -279,20 +286,22 @@ static int cf_identify (void)
 
   drive_select = 0xe0;
 
-  cf_d.type = REG (CF_PHYS);
+  cf_d.type = REG (CF_PHYS) & 0xff;
   IOBARRIER_READ;
+
+  //  printf ("cf_d.type %d (0x%x)\n", cf_d.type, cf_d.type);
 
 #if defined (TALK_ATTRIB)
   {
     int index = 0;
-    while (index < 1024) {
+    while (index < 512) {
       unsigned short s = REG (CF_PHYS + index);
       IOBARRIER_READ;
-      if (s == 0xff)
+      if (s == 0xff || s == 0xffff)
 	break;
       PRINTF ("%03x: 0x%x", index, s);
       index += 2*CF_ADDR_MULT;
-      s = REG (CF_PHYS + index);
+      s = REG (CF_PHYS + index) & 0xff;
       IOBARRIER_READ;
       PRINTF (" 0x%x (%d)\n", s, s);
       index += 2*CF_ADDR_MULT;
@@ -325,7 +334,7 @@ static int cf_identify (void)
   ready_wait ();
 
   {
-    unsigned short rgs[128];
+    unsigned short __aligned rgs[128];
     int i;
     for (i = 0; i < 128; ++i)
       rgs[i] = read16 (IDE_DATA);
@@ -354,7 +363,11 @@ static int cf_identify (void)
       cf_d.total_sectors	= (rgs[7] << 16) + rgs[8];
     }
 
-    cf_d.speed = rgs[67];
+    if (rgs[53] & 1) {
+      cf_d.speed = rgs[67];
+    }
+    else cf_d.speed = -1;
+
 #if defined (TALK)
     printf ("cf: 53 %x\n", rgs[53]);
     printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
@@ -445,10 +458,14 @@ static void cf_report (void)
   if (cf_identify ())
     return;
 
-  printf ("  cf:     %d.%02dMiB, %s %s (%d ns)\n",
+  printf ("  cf:     %d.%02dMiB, %s %s",
 	  (cf_d.total_sectors/2)/1024,
 	  (((cf_d.total_sectors/2)%1024)*100)/1024,
-	  cf_d.szFirmware, cf_d.szName, cf_d.speed);
+	  cf_d.szFirmware, cf_d.szName);
+  if (cf_d.speed != -1)
+    printf (" (%d ns)", cf_d.speed);
+  printf ("\n");
+
 #if defined (TALK)
   printf ("          cyl %d heads %d spt %d total %d\n",
 	  cf_d.cylinders, cf_d.heads, cf_d.sectors_per_track,

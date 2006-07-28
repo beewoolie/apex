@@ -1,3 +1,10 @@
+2006-07-27  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-cf.c (cf_identify): Fixed attribute reading for
+	some cards that return the value in the high and low bytes.
+	Attribute memory is really only byte addressable.  This fixes a
+	problem with recognizing some brands of CF cards.
+
 2006-07-25  Marc Singer  <elf@buici.com>
 
 	* usr/printenv.cc: Rewritten printenv program to support the new
