@@ -413,6 +413,15 @@ config ENV_DEFAULT_CMDLINE
 	  use this option to set a custom command line when there is
 	  not easy access to the console.
 
+config ENV_DEFAULT_STARTUP_OVERRIDE
+	bool "Override the target startup command"
+	depends on ENV
+	default false
+
+config ENV_DEFAULT_STARTUP
+	string "Default startup command"
+	depends on ENV && ENV_DEFAULT_STARTUP_OVERRIDE
+
 endmenu
 
 config USES_NOR_BOOTFLASH

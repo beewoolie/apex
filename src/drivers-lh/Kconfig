@@ -68,6 +68,9 @@ config LCD_NL2432HC22_40A
 config LCD_OSD035TTEA1
 	bool "Sharp 3.5\" Landscape QVGA"
 	
+config LCD_LQ036Q1DA01
+	bool "Sharp 3.5\" Landscape QVGA"
+
 endchoice
 
 endmenu

@@ -242,8 +242,8 @@
 #define PEL_CLOCK_EST	(8*1000*1000)		/* MHz/4/8/8.65 */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(240)
-#define PEL_HEIGHT	(320)
+#define PEL_WIDTH	(320)
+#define PEL_HEIGHT	(240)
 #define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
 #define LEFT_MARGIN	(42)			/* clock/2/42/256 */
@@ -257,6 +257,65 @@
 #define INVERT_VSYNC
 #endif
 
+#if defined (CONFIG_LCD_LQ036Q1DA01)
+	/* Sharp QVGA LQ036Q1DA01 320x240 9.1cm w/ASIC */
+#define PANEL_NAME	"Sharp LCD Landscape QVGA w/ASIC"
+
+#define PANEL_TIMING0	(0x140a114c)
+#define PANEL_TIMING1	(0x040404ef)
+#define PANEL_TIMING2	(0x013f3016)
+#define PANEL_CONTROL	(0x00010929)
+
+#define PANEL_ALI_SETUP		(0x33fd)
+#define PANEL_ALI_CONTROL	(0x0003)
+#define PANEL_ALI_TIMING1	(0x082d)
+#define PANEL_ALI_TIMING2	(0x420d)
+
+#define P_PEL_CLOCK_DIV		((PANEL_TIMING2 & 0x1f) + 2)
+//#define P_PEL_WIDTH		((((PANEL_TIMING0 >> 2) & 0x7f) + 1)*16)
+#define P_PEL_WIDTH		(((PANEL_TIMING2 >> 16) & 0x3ff) + 1)
+#define P_PEL_HEIGHT		((PANEL_TIMING1 & 0x1ff) + 1)
+#define P_LEFT_MARGIN		(((PANEL_TIMING0 >> 24) & 0xff) + 1)
+#define P_RIGHT_MARGIN		(((PANEL_TIMING0 >> 16) & 0xff) + 1)
+#define P_TOP_MARGIN		((PANEL_TIMING1 >> 24) & 0xff)
+#define P_BOTTOM_MARGIN		((PANEL_TIMING1 >> 16) & 0xff)
+
+#define P_HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
+#define P_VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
+
+#define P_INVERT_PIXEL_CLOCK	(PANEL_TIMING2  & (1<<13))
+#define P_INVERT_HSYNC		(PANEL_TIMING2  & (1<<12))
+#define P_INVERT_VSYNC		(PANEL_TIMING2  & (1<<11))
+
+//#define PEL_CLOCK_EST	(12*1000*1000)		/* MHz/4.5/12/? */
+//#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK_DIV	P_PEL_CLOCK_DIV
+#define PEL_CLOCK_EST	PEL_CLOCK_DIV
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	P_PEL_WIDTH
+#define PEL_HEIGHT	P_PEL_HEIGHT
+#define BIT_DEPTH	16
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	P_LEFT_MARGIN
+#define RIGHT_MARGIN	P_RIGHT_MARGIN
+#define TOP_MARGIN	P_TOP_MARGIN
+#define BOTTOM_MARGIN	P_BOTTOM_MARGIN
+#define HSYNC_WIDTH	P_HSYNC_WIDTH
+#define VSYNC_WIDTH	P_VSYNC_WIDTH
+
+# if P_INVERT_PIXEL_CLOCK
+#  define INVERT_PIXEL_CLOCK
+# endif
+
+# if P_INVERT_HSYNC
+#  define INVERT_HSYNC
+# endif
+
+# if P_INVERT_VSYNC
+#  define INVERT_VSYNC
+# endif
+
+#endif
 
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
 #define HFP(v)	((((v) - 1) & 0xff)<<16)
@@ -444,6 +503,13 @@ static void clcdc_init (void)
 # endif
 
 #endif
+
+# if defined (PANEL_ALI_SETUP)
+  ALI_SETUP   = PANEL_ALI_SETUP;
+  ALI_CONTROL = PANEL_ALI_CONTROL;
+  ALI_TIMING1 = PANEL_ALI_TIMING1;
+  ALI_TIMING2 = PANEL_ALI_TIMING2;
+# endif
 }
 
 static void clcdc_release (void)

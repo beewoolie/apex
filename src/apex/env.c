@@ -44,7 +44,13 @@ static __env struct env_d e_bootaddr = {
 };
 #endif
 
-#if (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
+#if defined (CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE)
+static __env struct env_d e_startup = {
+  .key = "startup",
+  .default_value = CONFIG_ENV_DEFAULT_STARTUP,
+  .description = "Startup commands",
+};
+#elif (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
     || defined (CONFIG_AUTOBOOT)
 static __env struct env_d e_startup = {
   .key = "startup",
