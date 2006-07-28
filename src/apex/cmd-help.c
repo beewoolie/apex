@@ -149,7 +149,7 @@ static __command struct command_d c_help_region = {
 "  driver.  When the DRIVER field is absent, the default memory: driver\n"
 "  is used.  The drvinfo command will display a list of available\n"
 "  drivers.  The START value may be in hexadecimal, decimal, or decimal\n"
-"  with a multipler, e.g. 10k for kilobytes, 1m for megabytes.  The\n"
+"  with a multipler, e.g. 10k for 10 kilobytes, 1m for one megabyte.  The\n"
 "  LENGTH takes the same form as START.\n\n"
 "    The second region form is used by drivers that support paths.\n"
 "  The LOCATION is a driver specific element.  For fatfs: it is the\n"
