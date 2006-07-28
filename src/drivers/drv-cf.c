@@ -81,8 +81,8 @@
 
 #include <mach/drv-cf.h>
 
-//#define TALK
-//#define TALK_ATTRIB
+#define TALK
+#define TALK_ATTRIB
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)

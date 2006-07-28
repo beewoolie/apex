@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 25 23:13:49 2006
+# Thu Jul 27 17:36:57 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -110,6 +110,7 @@ CONFIG_ENV_REGION_KERNEL="nor:0x60010+0xffff0"
 # CONFIG_ENV_REGION_KERNEL_SWAP is not set
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="console=ttyS0,115200 rootfstype=jffs2 root=/dev/mtdblock4 rw init=/linuxrc noirqdebug"
+# CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_USES_NOR_BOOTFLASH=y
 CONFIG_BIGENDIAN=y
 CONFIG_ALIASES=y

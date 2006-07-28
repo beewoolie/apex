@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 25 23:13:51 2006
+# Thu Jul 27 17:36:58 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -117,6 +117,8 @@ CONFIG_LCD_BGR=y
 # CONFIG_LCD_6_4_VGA_10 is not set
 # CONFIG_LCD_12_1_SVGA_10 is not set
 CONFIG_LCD_NL2432HC22_40A=y
+# CONFIG_LCD_OSD035TTEA1 is not set
+# CONFIG_LCD_LQ036Q1DA01 is not set
 CONFIG_HAS_LH_ADC=y
 CONFIG_HAS_LH_MMC=y
 CONFIG_HAS_LH_I2C=y
@@ -137,4 +139,5 @@ CONFIG_ENV_REGION_KERNEL="ext2://2/zImage"
 # CONFIG_ENV_REGION_KERNEL_SWAP is not set
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/nfs ip=rarp"
+# CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_ALIASES=y
