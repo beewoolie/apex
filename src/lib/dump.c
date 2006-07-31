@@ -37,7 +37,8 @@ void dumpw (const char* rgb, int cb, unsigned long index, int width)
 {
   int i;
 
-  if ((width == 2 && (rgb & 1)) || (width == 4 && (rgb & 3))) {
+  if (   (width == 2 && ((unsigned long) rgb & 1))
+      || (width == 4 && ((unsigned long) rgb & 3))) {
     printf ("%s: unable to display unaligned data\n", __FUNCTION__);
     return;
   }

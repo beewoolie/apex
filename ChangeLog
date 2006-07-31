@@ -1,3 +1,22 @@
+2006-07-30  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): Rolling revision in preparation for release
+	of the BSP. apex-1.4.2
+
+	* src/mach-lh7952x/env.c: Moved all lh7952x's to use the
+	amba-pl011 serial driver in the kernel.
+
+2006-07-29  Marc Singer  <elf@buici.com>
+
+	* src/drivers-lh/drv-clcdc.c (clcdc_release): Revised the order of
+	the clcdc driver release so it works on the lh79520 which will
+	disable the controller clock.
+
+	* src/drivers/drv-cf.c (ready_wait): Recoded ready_wait to use the
+	attribute pin replacement register.  This doesn't really have an
+	impact on performance, but it does require that the driver is
+	properly configured in the drv_cf.h header.
+
 2006-07-27  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-cf.c (cf_identify): Fixed attribute reading for

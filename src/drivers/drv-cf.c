@@ -121,6 +121,14 @@
 #define IDE_COMMAND	0x07
 #define IDE_STATUS	0x07
 #define IDE_DATA	0x08
+#define IDE_CONTROL	0x0e
+
+#define ATTRIB_OPTION		0x00
+#define ATTRIB_OPTION_LEVELREQ	(1<<6)
+#define ATTRIB_CONFIGSTATUS	0x02
+#define ATTRIB_PIN		0x04
+#define ATTRIB_PIN_READY	(1<<1)
+
 
   /* IO_BARRIER_READ necessary on some platforms where the chip select
      lines don't transition sufficiently.  It is necessary on reads as
@@ -185,6 +193,14 @@ static unsigned char read8 (int reg)
   return (reg & 1) ? (v >> 8) : (v & 0xff);
 }
 
+static unsigned char reada8 (int reg)
+{
+  unsigned short v;
+  v = REG (CF_PHYS | CF_ATTRIB | (reg & ~1)*CF_ADDR_MULT);
+  IOBARRIER_READ;
+  return (reg & 1) ? (v >> 8) : (v & 0xff);
+}
+
 static void write8 (int reg, unsigned char value)
 {
   unsigned short v;
@@ -198,6 +214,19 @@ static void write8 (int reg, unsigned char value)
   REG (CF_PHYS | CF_REG | (reg & ~1)*CF_ADDR_MULT) = v;
   IOBARRIER_READ;
 }
+
+#if 0
+static void writea8 (int reg, unsigned char value)
+{
+  unsigned short v;
+  v = REG (CF_PHYS | CF_ATTRIB | (reg & ~1)*CF_ADDR_MULT);
+  IOBARRIER_READ;
+  v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
+  DELAY;
+  REG (CF_PHYS | CF_ATTRIB | (reg & ~1)*CF_ADDR_MULT) = v;
+  IOBARRIER_READ;
+}
+#endif
 
 static unsigned short read16 (int reg)
 {
@@ -221,8 +250,12 @@ static void write16 (int reg, unsigned short value)
 static void ready_wait (void)
 {
   /* *** FIXME: need a timeout */
-  while (read8 (IDE_STATUS) & (1<<7))
+
+  while ((reada8 (ATTRIB_PIN) & ATTRIB_PIN_READY) == 0)
     ;
+
+//  while (read8 (IDE_STATUS) & (1<<7))
+//    ;
 }
 
 #if defined (TALK)
@@ -283,6 +316,8 @@ static void seek (unsigned sector)
 static int cf_identify (void)
 {
   ENTRY (0);
+
+//  writea8 (ATTRIB_OPTION, reada8 (ATTRIB_OPTION) | ATTRIB_OPTION_LEVELREQ);
 
   drive_select = 0xe0;
 
@@ -471,6 +506,12 @@ static void cf_report (void)
 	  cf_d.cylinders, cf_d.heads, cf_d.sectors_per_track,
 	  cf_d.total_sectors);
 #endif
+
+  printf ("          opt 0x%x  cns 0x%x  pin 0x%x  dcr 0x%x\n",
+	  reada8 (ATTRIB_OPTION),
+	  reada8 (ATTRIB_CONFIGSTATUS),
+	  reada8 (ATTRIB_PIN),
+	  read8 (IDE_CONTROL));
 }
 
 #endif
@@ -488,7 +529,6 @@ static __driver_3 struct driver_d cf_driver = {
 };
 
 static __service_6 struct service_d lpd79524_cf_service = {
-//  .init = cf_init,
 #if !defined (CONFIG_SMALL)
   .report = cf_report,
 #endif

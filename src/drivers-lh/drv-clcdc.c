@@ -69,6 +69,7 @@
 #include <error.h>
 #include <asm/mmu.h>
 #include <mach/drv-clcdc.h>
+#include <debug_ll.h>
 
 #if ! defined (DRV_CLCDC_SETUP)
 # define DRV_CLCDC_SETUP
@@ -514,22 +515,27 @@ static void clcdc_init (void)
 
 static void clcdc_release (void)
 {
+  /* *** This sequence, as well as that which is in the initialization
+     function, should be better documented. */
+
   DRV_CLCDC_BACKLIGHT_DISABLE;
 
   CLCDC_CTRL &= ~PWR;		/* Remove power */
   _msleep (20);			/* Wait 20ms */
-  CLCDC_CTRL &= ~LCDEN;		/* Disable CLCDC controller */
+  CLCDC_CTRL &= ~LCDEN;		/* Disable CLCDC controller output */
   DRV_CLCDC_DISABLE;
 
   DRV_CLCDC_POWER_DISABLE;
 
-  DRV_CLCDC_RELEASE;
-
-  /* Make it clear to the anyone looking that the LCD controller is no
-     longer initialized. */
+  /* Clobber the configuration registers just so we know that the
+     kernel is configuring the controller. */
   CLCDC_TIMING0 = CLCDC_TIMING1 = CLCDC_TIMING2 = 0;
   CLCDC_UPBASE    = 0;
-  CLCDC_CTRL      = 0;
+
+  /* Make sure not to access the CLCDC controller after
+     DRV_CLCDC_RELEASE as the driver is likely to disable clocks
+     making the registers unavailable.  */
+  DRV_CLCDC_RELEASE;
 }
 
 #if !defined (CONFIG_SMALL)
@@ -615,7 +621,7 @@ int cmd_splash (const char* region)
 	case 1:
 	case 2:
 	case 4:
-	  break;		/* unimplemented */
+	  break;		/* unimplemented depths */
 	case 8:
 	  for (j = 0; j < hdr.width; ++j, ++ps) {
 	    unsigned char* color = &rgbPalette[pb[j]*3];
