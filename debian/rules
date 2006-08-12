@@ -60,7 +60,8 @@ binary-arch:	checkroot build
 #		prefix=$$(pwd)/debian/tmp/boot install
 	install -d debian/tmp/boot
 	cp src/arch-arm/rom/apex.bin $$(pwd)/debian/tmp/boot/apex.flash
-	tools/headerize $(ENDIAN) $$(pwd)/debian/tmp/boot/apex.flash
+# Headerization done by slugimage
+#	tools/headerize $(ENDIAN) $$(pwd)/debian/tmp/boot/apex.flash
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
 	cp -a debian/copyright $(docdir)

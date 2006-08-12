@@ -2,6 +2,11 @@
 
 	* Makefile (SUBLEVEL): v1.4.3
 
+	* src/drivers/drv-fis.c (fis_report): Added skips to the report.
+
+	* debian/rules: Removed headerization so that slugimage can be
+	responsible for it. 
+
 	* src/drivers/drv-fis.c: Added skip descriptor handling.  This
 	means that partitions may include 'skips' where some data
 	physically located in the partition is ignored when performing IO
