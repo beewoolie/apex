@@ -71,6 +71,9 @@ config LCD_OSD035TTEA1
 config LCD_LQ036Q1DA01
 	bool "Sharp 3.5\" Landscape QVGA"
 
+config LCD_LQ035Q7DH06
+	bool "Sharp 3.5\" Portrait QVGA"
+
 endchoice
 
 endmenu

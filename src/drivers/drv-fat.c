@@ -490,6 +490,8 @@ static int fat_open (struct descriptor_d* d)
       d->length = fat.file.length - d->start;
   }
 
+  PRINTF ("%s: length %ld\n", __FUNCTION__, d->length);
+
   return result;
 }
 

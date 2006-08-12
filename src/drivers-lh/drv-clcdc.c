@@ -318,6 +318,66 @@
 
 #endif
 
+#if defined (CONFIG_LCD_LQ035Q7DH06)
+	/* Sharp QVGA LQ035Q7DH06 240x320 */
+#define PANEL_NAME	"Sharp LCD Portrait QVGA w/ASIC"
+
+#define PANEL_TIMING0	(0x480f203c)
+#define PANEL_TIMING1	(0x080f153f)
+#define PANEL_TIMING2	(0x271f1806)
+#define PANEL_CONTROL	(0x00010829)
+
+#define PANEL_ALI_SETUP		(0x27f0)
+#define PANEL_ALI_CONTROL	(0x0000)
+#define PANEL_ALI_TIMING1	(0x0000)
+#define PANEL_ALI_TIMING2	(0x0000)
+
+#define P_PEL_CLOCK_DIV		((PANEL_TIMING2 & 0x1f) + 2)
+//#define P_PEL_WIDTH		((((PANEL_TIMING0 >> 2) & 0x7f) + 1)*16)
+#define P_PEL_WIDTH		(((PANEL_TIMING2 >> 16) & 0x3ff) + 1)
+#define P_PEL_HEIGHT		((PANEL_TIMING1 & 0x1ff) + 1)
+#define P_LEFT_MARGIN		(((PANEL_TIMING0 >> 24) & 0xff) + 1)
+#define P_RIGHT_MARGIN		(((PANEL_TIMING0 >> 16) & 0xff) + 1)
+#define P_TOP_MARGIN		((PANEL_TIMING1 >> 24) & 0xff)
+#define P_BOTTOM_MARGIN		((PANEL_TIMING1 >> 16) & 0xff)
+
+#define P_HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
+#define P_VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
+
+#define P_INVERT_PIXEL_CLOCK	(PANEL_TIMING2  & (1<<13))
+#define P_INVERT_HSYNC		(PANEL_TIMING2  & (1<<12))
+#define P_INVERT_VSYNC		(PANEL_TIMING2  & (1<<11))
+
+//#define PEL_CLOCK_EST	(12*1000*1000)		/* MHz/4.5/12/? */
+//#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK_DIV	P_PEL_CLOCK_DIV
+#define PEL_CLOCK_EST	PEL_CLOCK_DIV
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	P_PEL_WIDTH
+#define PEL_HEIGHT	P_PEL_HEIGHT
+#define BIT_DEPTH	16
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	P_LEFT_MARGIN
+#define RIGHT_MARGIN	P_RIGHT_MARGIN
+#define TOP_MARGIN	P_TOP_MARGIN
+#define BOTTOM_MARGIN	P_BOTTOM_MARGIN
+#define HSYNC_WIDTH	P_HSYNC_WIDTH
+#define VSYNC_WIDTH	P_VSYNC_WIDTH
+
+# if P_INVERT_PIXEL_CLOCK
+#  define INVERT_PIXEL_CLOCK
+# endif
+
+# if P_INVERT_HSYNC
+#  define INVERT_HSYNC
+# endif
+
+# if P_INVERT_VSYNC
+#  define INVERT_VSYNC
+# endif
+
+#endif
+
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
 #define HFP(v)	((((v) - 1) & 0xff)<<16)
 #define HSW(v)	((((v) - 1) & 0xff)<<8)
@@ -490,27 +550,35 @@ static void clcdc_init (void)
 # endif
 
 # if defined (CONFIG_ARCH_LH7A400)
+#  if defined (PANEL_ALI_SETUP)
+  HRTFTC_SETUP   = PANEL_ALI_SETUP;
+  HRTFTC_CON     = PANEL_ALI_CONTROL;
+  HRTFTC_TIMING1 = PANEL_ALI_TIMING1;
+  HRTFTC_TIMING2 = PANEL_ALI_TIMING2;
+#  else
   HRTFTC_SETUP   = 0x00002efd;
   HRTFTC_CON     = 0x00000003;
   HRTFTC_TIMING1 = 0x0000087d;
   HRTFTC_TIMING2 = 0x00009ad0;
+#  endif
 # endif
 
 # if defined (CONFIG_ARCH_LH7A404)
-  ALI_SETUP   = 0x00002efd;
-  ALI_CONTROL = 0x00000003;
-  ALI_TIMING1 = 0x0000087d;
-  ALI_TIMING2 = 0x00009ad0;
-# endif
-
-#endif
-
-# if defined (PANEL_ALI_SETUP)
+#  if defined (PANEL_ALI_SETUP)
   ALI_SETUP   = PANEL_ALI_SETUP;
   ALI_CONTROL = PANEL_ALI_CONTROL;
   ALI_TIMING1 = PANEL_ALI_TIMING1;
   ALI_TIMING2 = PANEL_ALI_TIMING2;
+#  else
+  ALI_SETUP   = 0x00002efd;
+  ALI_CONTROL = 0x00000003;
+  ALI_TIMING1 = 0x0000087d;
+  ALI_TIMING2 = 0x00009ad0;
+#  endif
 # endif
+
+#endif
+
 }
 
 static void clcdc_release (void)
@@ -604,6 +672,7 @@ int cmd_splash (const char* region)
 	printf ("%s: read failed at row %d\n", __FUNCTION__, i);
 	goto fail_close;
       }
+
       switch (hdr.color_type) {
 
       case 2:		/* RGB */

@@ -122,6 +122,15 @@
 #include <lookup.h>
 #include <sort.h>
 
+#define TALK
+
+#if defined (TALK)
+# define PRINTF(v...)	printf (v)
+#else
+# define PRINTF(v...)	do {} while (0)
+#endif
+
+#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 struct fis_descriptor {
   char name[16];		/* Image name, null terminated */
   unsigned long start;		/* Physical memory address of image */
@@ -190,7 +199,7 @@ static void prescan_directory (struct descriptor_d* d)
   descriptor_query (d, QUERY_START, &start);
   descriptor_query (d, QUERY_SIZE, &size);
 
-  //  printf ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
+  PRINTF ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
   if (size == 0)
     return;			/* Unable to perform queries */
 
@@ -206,9 +215,9 @@ static void prescan_directory (struct descriptor_d* d)
 
     if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
       descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
-      //      printf ("%s: length %lx  eb %lx  eb_swapped %lx\n",
-      //	      __FUNCTION__, descriptor.length, eraseblocksize,
-      //	      swab32 (eraseblocksize));
+      PRINTF ("%s: length %lx  eb %lx  eb_swapped %lx\n",
+	      __FUNCTION__, descriptor.length, eraseblocksize,
+	      swab32 (eraseblocksize));
       if (descriptor.length == swab32 (eraseblocksize))
 	fis_directory_swap = 1;
       break;
@@ -283,16 +292,19 @@ static int fis_open (struct descriptor_d* d)
       for (i = 0;
 	   skip < sizeof (rgskip)/sizeof (*rgskip)
 	     && i < sizeof (descriptor._pad); i +=4) {
-	if (   descriptor._pad[i + 0] == 's'
-	    && descriptor._pad[i + 1] == 'k'
-	    && descriptor._pad[i + 2] == 'i'
-	    && descriptor._pad[i + 3] == 'p')
-	  memcpy (&rgskip[skip], (void*) &descriptor._pad[0] + i,
-		  sizeof (struct fis_skip_descriptor));
+	if (   descriptor._pad[i + 0] != 's'
+	    || descriptor._pad[i + 1] != 'k'
+	    || descriptor._pad[i + 2] != 'i'
+	    || descriptor._pad[i + 3] != 'p')
+	  continue;
+	memcpy (&rgskip[skip], (void*) &descriptor._pad[0] + i,
+		sizeof (struct fis_skip_descriptor));
 	if (fis_directory_swap) {
 	  rgskip[skip].offset = swab32 (rgskip[skip].offset);
 	  rgskip[skip].length = swab32 (rgskip[skip].length);
 	}
+	PRINTF ("%s: skip 0x%lx %ld\n",
+		__FUNCTION__, rgskip[skip].offset, rgskip[skip].length);
 	rgskip[skip].offset += start; /* Offsets relative to base region */
 	cbSkip += rgskip[skip].length;
 	++skip;
@@ -315,15 +327,15 @@ static int fis_open (struct descriptor_d* d)
       d->length = descriptor.length - cbSkip;;
       sz = map_region (&fis_d, &descriptor);
       if (   (result = parse_descriptor (sz, &dskip))
-          || (result = open_descriptor (&dskip)))
+	  || (result = open_descriptor (&dskip)))
 	return result;
     }
     else {
       const char* sz = map_region (&fis_d, &descriptor);
       close_helper (d);
-      //      printf ("%s: %s\n", __FUNCTION__, sz);
+      PRINTF ("%s: %s\n", __FUNCTION__, sz);
       if (   (result = parse_descriptor (sz, d))
-          || (result = open_descriptor (d)))
+	  || (result = open_descriptor (d)))
 	return result;
     }
 
