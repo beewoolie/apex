@@ -34,7 +34,6 @@
 #include <linux/ctype.h>
 #include <environment.h>
 #include <spinner.h>
-#include <sort.h>
 #include <lookup.h>
 
 const char* error_description;

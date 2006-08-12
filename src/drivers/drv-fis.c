@@ -57,6 +57,17 @@
      the table twice: once to determine the endian-ness and a second
      time looking for the data we care about.
 
+   Underlying Region
+   -----------------
+
+   Due to the way we map form the user's region onto the underlying
+   region, this underlying region's offset and length are ignored.  We
+   certainly could add it in, but the FIS structures don't let this
+   make sense.  Unless our needs change, this is a fine assumption.
+   All we really care about is finding the real flash driver for that
+   the partition table describes.
+
+
    Open Call Pass Through
    ----------------------
 
@@ -66,6 +77,36 @@
    driver has to subtract the base address of the underlying driver
    when passing this through.  Thus, the FIS driver has no
    read/seek/write methods.
+
+   Skip Descriptors
+   ----------------
+
+   In order to handle skip descriptors, we need to either process all
+   IO through this driver, or we need to pass the skip information to
+   the underlying driver.  I think we're better off filtering as that
+   makes for the most localized change.  Really, all we need to do is
+   pass all IO calls through a simple check for the skipp'd areas and
+   go from there.  This also means that the skip descriptors are a
+   global resource as we may have more than one descriptor open.
+
+   There is a short path that ignores the skip data if none of the
+   open descriptors has any.
+
+   Also, we can only handle one partition with skips at a time.  This
+   ought not cause problems since it is really just a crutch for
+   reading data from a partition.  The maximum number of skips per
+   partition is determined by a static array that holds the skip data.
+
+   It is important that the skip descriptors are sorted so that we
+   don't have to pass through the descriptors more than once when
+   performing each cycle through fis_read.  We really have two tasks.
+   We want to determine which descriptors preceed the current IO
+   position and we want to know if there is a descriptor that follows
+   the current IO position that truncates the contiguous IO block.
+   This could be done in two passes, but with a sort, it can be done
+   in one.  Sort is available as long as the user sorts commands.
+   Moreover, this is a driver that is used on a system that doesn't
+   seem to need a SMALL version.
 
 */
 
@@ -79,6 +120,7 @@
 #include <error.h>
 #include <environment.h>
 #include <lookup.h>
+#include <sort.h>
 
 struct fis_descriptor {
   char name[16];		/* Image name, null terminated */
@@ -93,6 +135,15 @@ struct fis_descriptor {
 };
 
 static int fis_directory_swap;	/* Set for a byte swapped directory */
+
+struct fis_skip_descriptor {
+  char magic[4];		/* 's' 'k' 'i' 'p' */
+  unsigned long offset;		/* Offset from partition start */
+  unsigned long length;		/* Size of skip in bytes */
+};
+
+static struct fis_skip_descriptor rgskip[4];
+static struct descriptor_d dskip; /* Underlying skip IO descriptor */
 
 #if defined (CONFIG_ENV)
 static __env struct env_d e_fis_drv = {
@@ -120,6 +171,14 @@ static int end_of_table (struct fis_descriptor* descriptor)
   return descriptor->start == 0xffffffff;
 }
 
+static int compare_skips (const void* _a, const void* _b)
+{
+  struct fis_skip_descriptor** a = (struct fis_skip_descriptor**) _a;
+  struct fis_skip_descriptor** b = (struct fis_skip_descriptor**) _b;
+
+  return (*b)->offset - (*a)->offset;
+}
+
 static void prescan_directory (struct descriptor_d* d)
 {
   unsigned long start = 0;
@@ -144,6 +203,7 @@ static void prescan_directory (struct descriptor_d* d)
       break;
     if (end_of_table (&descriptor))
       break;
+
     if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
       descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
       //      printf ("%s: length %lx  eb %lx  eb_swapped %lx\n",
@@ -186,6 +246,9 @@ static int fis_open (struct descriptor_d* d)
 
   while (1) {
     struct fis_descriptor descriptor;
+    int skip = 0;
+    size_t cbSkip = 0;
+
     if (fis_d.driver->read (&fis_d, &descriptor, sizeof (descriptor))
 	!= sizeof (descriptor)) {
       close_descriptor (&fis_d);
@@ -210,21 +273,111 @@ static int fis_open (struct descriptor_d* d)
     descriptor.length -= d->start;
     if (d->length && d->length < descriptor.length)
       descriptor.length = d->length;
-    close_helper (d);
 
-    /* Construct a descriptor for the FIS partition */
+	/* Look for skips */
     {
-      const char* sz = map_region (&fis_d, &descriptor);
-      //      printf ("%s: %s\n", __FUNCTION__, sz);
-      if (   (result = parse_descriptor (sz, d))
-	  || (result = open_descriptor (d)))
+      int i;
+      unsigned long start = 0;
+      descriptor_query (&fis_d, QUERY_START, &start);
+      memset (rgskip, 0, sizeof (rgskip));
+      for (i = 0;
+	   skip < sizeof (rgskip)/sizeof (*rgskip)
+	     && i < sizeof (descriptor._pad); i +=4) {
+	if (   descriptor._pad[i + 0] == 's'
+	    && descriptor._pad[i + 1] == 'k'
+	    && descriptor._pad[i + 2] == 'i'
+	    && descriptor._pad[i + 3] == 'p')
+	  memcpy (&rgskip[skip], (void*) &descriptor._pad[0] + i,
+		  sizeof (struct fis_skip_descriptor));
+	if (fis_directory_swap) {
+	  rgskip[skip].offset = swab32 (rgskip[skip].offset);
+	  rgskip[skip].length = swab32 (rgskip[skip].length);
+	}
+	rgskip[skip].offset += start; /* Offsets relative to base region */
+	cbSkip += rgskip[skip].length;
+	++skip;
+      }
+      if (skip)
+	sort (rgskip, skip, sizeof (*rgskip), compare_skips, NULL);
+    }
+
+    /* If there is a skip, we open a skip descriptor over the
+       underlying region and return to the user a descriptor over the
+       fis driver.  All IO will go through proxy functions in this
+       driver.
+
+       If there is are skips, we return a descriptor over the
+       underlying region. */
+
+    if (skip) {
+      const char* sz;
+      d->start = descriptor.start;
+      d->length = descriptor.length - cbSkip;;
+      sz = map_region (&fis_d, &descriptor);
+      if (   (result = parse_descriptor (sz, &dskip))
+          || (result = open_descriptor (&dskip)))
 	return result;
     }
+    else {
+      const char* sz = map_region (&fis_d, &descriptor);
+      close_helper (d);
+      //      printf ("%s: %s\n", __FUNCTION__, sz);
+      if (   (result = parse_descriptor (sz, d))
+          || (result = open_descriptor (d)))
+	return result;
+    }
+
     return 0;
   }
 
   close_descriptor (&fis_d);
   ERROR_RETURN (ERROR_BADPARTITION, "partition not found");
+}
+
+static void fis_close (struct descriptor_d* d)
+{
+  close_helper (&dskip);
+  close_helper (d);
+}
+
+static ssize_t fis_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  ssize_t cbRead = 0;
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
+  while (cb) {
+    size_t ib = d->start + d->index;
+    ssize_t available = cb;
+    size_t cbSkip = 0;
+    ssize_t cbThis;
+    int i;
+
+    for (i = 0; i < sizeof (rgskip)/sizeof (*rgskip); ++i) {
+      if (rgskip[i].magic[0] != 's')
+	continue;
+      if (ib + cbSkip < rgskip[i].offset + rgskip[i].length) {
+		/* truncate IO when necessary */
+	if (available > rgskip[i].offset - ib - cbSkip)
+	  cb = rgskip[i].offset - ib - cbSkip;
+	break;
+      }
+      cbSkip += rgskip[i].length;
+    }
+
+    seek_helper (&dskip, ib + cbSkip, SEEK_SET);
+    cbThis = dskip.driver->read (&dskip, pv, available);
+    if (cbThis != available)
+      ERROR_RETURN (ERROR_IOFAILURE, "short read");
+
+    pv += available;
+    cb -= available;
+    d->index += available;
+    cbRead += available;
+  }
+
+  return cbRead;
 }
 
 #if !defined (CONFIG_SMALL)
@@ -267,7 +420,12 @@ static __driver_6 struct driver_d fis_driver = {
   .description	= "FIS partition driver",
   .flags	= DRIVER_DESCRIP_FS,
   .open		= fis_open,
-  .close	= close_helper,
+  .close	= fis_close,
+  .read		= fis_read,
+  /* write and erase must be implemented so that we can cope with
+     skips and these functions...or we may choose to not allow these
+     functions for skip'd partitions. */
+  .seek		= seek_helper,
 };
 
 static __service_6 struct service_d fis_service = {

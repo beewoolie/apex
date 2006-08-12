@@ -56,8 +56,8 @@ __env struct env_d e_cmdline = {
 #if 0
 		   " root=/dev/hda2 3" /* Boot to CF card */
 #else
-//		   " root=/dev/hda1"
-		   " root=/dev/mtdblock1 rootfstype=jffs2"
+		   " root=/dev/hda1"
+//		   " root=/dev/mtdblock1 rootfstype=jffs2"
 		   " mtdparts="
 		   "phys_mapped_flash:2m(boot)ro,-(root)"
 		   ";"

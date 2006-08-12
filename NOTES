@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o Add option to change the write throughput spinner for the NOR
+    driver.  The lh7a404 is much faster that the lh7952x's and the
+    spinner should reflect this.
+
   o Alignment trap handler would be a good thing.
     o We could catch errors instead of failing completely.
     o Not worth too much code.

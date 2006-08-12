@@ -42,7 +42,7 @@ static int compare_commands (const void* _a, const void* _b)
   struct command_d** a = (struct command_d**) _a;
   struct command_d** b = (struct command_d**) _b;
 
-  return strcmp ((*a)->command, (*b)->command);
+  return strcmp ((*b)->command, (*a)->command);
 }
 
 #endif
