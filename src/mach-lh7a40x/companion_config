@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Jul 30 19:14:35 2006
+# Sat Aug 12 12:01:10 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -119,6 +119,7 @@ CONFIG_LCD_BGR=y
 CONFIG_LCD_NL2432HC22_40A=y
 # CONFIG_LCD_OSD035TTEA1 is not set
 # CONFIG_LCD_LQ036Q1DA01 is not set
+# CONFIG_LCD_LQ035Q7DH06 is not set
 CONFIG_HAS_LH_ADC=y
 CONFIG_HAS_LH_MMC=y
 CONFIG_HAS_LH_I2C=y
