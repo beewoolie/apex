@@ -1,3 +1,22 @@
+2006-08-12    <elf@scarlet.buici.com>
+
+	* Makefile (SUBLEVEL): v1.4.3
+
+	* src/drivers/drv-fis.c: Added skip descriptor handling.  This
+	means that partitions may include 'skips' where some data
+	physically located in the partition is ignored when performing IO
+	on the partition.  This feature was added for the slug with a dumb
+	version of Redboot that ignores the partition table when looking
+	for the data it must copy to SDRAM.
+ 
+	* src/apex/cmd-fill.c (cmd_fill): Removed unwanted printf.
+
+	* src/lib/sort.c (sort): Check for degenerate cases of sorting 0
+	or 1 element.
+
+	* debian/*: Fixed the control file and and changelog to properly
+	reflect this release.
+
 2006-07-30  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): Rolling revision in preparation for release

@@ -1,3 +1,11 @@
+apex-nslu2 (1.4.3) unstable; urgency=low
+
+  * Added fis_skip_descriptor interpretation to the FIS driver.  This
+    allows for loading the kernel from FIS partitions that are broken-up
+    by SERCOMM headers to cope with RedBoot shortcomings.
+
+ --  <elf@scarlet.buici.com>  Sat, 12 Aug 2006 09:07:55 -0700
+
 apex-nslu2 (1.4.0) unstable; urgency=low
 
   * Revised several key systems for the sake of running APEX in LE mode on

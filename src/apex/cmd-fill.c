@@ -73,7 +73,7 @@ int cmd_fill (int argc, const char** argv)
     if (step)
       step += 10;
 
-    printf ("%s: writing\n", __FUNCTION__);
+//    printf ("%s: writing\n", __FUNCTION__);
 
     while (cb--) {
       size_t cbWrote;

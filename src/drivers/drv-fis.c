@@ -108,10 +108,13 @@
    Moreover, this is a driver that is used on a system that doesn't
    seem to need a SMALL version.
 
-   **** When dump'ing from the fis: descriptor, we should show the
-   **** user offsets from the start of the partition, not from the
-   **** start of flash.  The code kinda works as is, but it doesn't
-   **** work when the cb overlaps a skip.
+   FIS descriptors with or without skips, will show addresses from the
+   base of the underlying region.  It would be nice if they could show
+   partition relative addresses, but there isn't enough information
+   for that in the descriptor structure.  Skips, on the other had,
+   will not appear in the addresses, such that the flash addresses for
+   the same area, when skips are ignored, will not match.  This is on
+   purpose.
 
 */
 
@@ -127,7 +130,8 @@
 #include <lookup.h>
 #include <sort.h>
 
-#define TALK
+//#define FAKE
+//#define TALK
 
 #if defined (TALK)
 # define PRINTF(v...)	printf (v)
@@ -259,69 +263,82 @@ static int fis_open (struct descriptor_d* d)
   prescan_directory (&fis_d);
 
   while (1) {
-    struct fis_descriptor descriptor;
+    struct fis_descriptor partition;
     int skip = 0;
     size_t cbSkip = 0;
 
-    if (fis_d.driver->read (&fis_d, &descriptor, sizeof (descriptor))
-	!= sizeof (descriptor)) {
+    if (fis_d.driver->read (&fis_d, &partition, sizeof (partition))
+	!= sizeof (partition)) {
       close_descriptor (&fis_d);
       ERROR_RETURN (ERROR_IOFAILURE, "premature end of fis-drv");
     }
-    if (end_of_table (&descriptor))
+    if (end_of_table (&partition))
       break;
-    if (strnicmp (d->pb[0], descriptor.name, sizeof (descriptor.name)))
+    if (strnicmp (d->pb[0], partition.name, sizeof (partition.name)))
       continue;
 
-    if (d->start >= descriptor.length) {
+    if (d->start >= partition.length) {
       close_descriptor (&fis_d);
       ERROR_RETURN (ERROR_OPEN, "region exceeds partition size");
     }
 
     if (fis_directory_swap) {
-      descriptor.start = swab32 (descriptor.start);
-      descriptor.length = swab32 (descriptor.length);
+      partition.start = swab32 (partition.start);
+      partition.length = swab32 (partition.length);
     }
 
-    descriptor.start += d->start;
-    descriptor.length -= d->start;
-    if (d->length && d->length < descriptor.length)
-      descriptor.length = d->length;
+    partition.start += d->start;
+    partition.length -= d->start;
 
 	/* Look for skips */
     {
       int i;
       unsigned long start = 0;
       descriptor_query (&fis_d, QUERY_START, &start);
-      start = descriptor.start - start;
+      start = partition.start - start;
       memset (rgskip, 0, sizeof (rgskip));
       for (i = 0;
 	   skip < sizeof (rgskip)/sizeof (*rgskip)
-	     && i < sizeof (descriptor._pad); i +=4) {
-	if ((   descriptor._pad[i + 0] != 's'
-	    || descriptor._pad[i + 1] != 'k'
-	    || descriptor._pad[i + 2] != 'i'
-	    || descriptor._pad[i + 3] != 'p'
-	    ) && skip > 0)
+	     && i < sizeof (partition._pad); i +=4) {
+	if ((  partition._pad[i + 0] != 's'
+	    || partition._pad[i + 1] != 'k'
+	    || partition._pad[i + 2] != 'i'
+	    || partition._pad[i + 3] != 'p'
+	    )
+#if defined (FAKE)
+	    && skip > 0
+#endif
+)
 	  continue;
-	memcpy (&rgskip[skip], (void*) &descriptor._pad[i],
+	memcpy (&rgskip[skip], (void*) &partition._pad[i],
 		sizeof (struct fis_skip_descriptor));
+#if defined (FAKE)
 	rgskip[skip].magic[0] = 's';
-	rgskip[skip].offset = swab32 (32);
-	rgskip[skip].length = swab32 (16);
+	rgskip[skip].offset = swab32 (32); /* @32 */
+	rgskip[skip].length = swab32 (16); /* +16 */
 	if (fis_directory_swap) {
 	  rgskip[skip].offset = swab32 (rgskip[skip].offset);
 	  rgskip[skip].length = swab32 (rgskip[skip].length);
 	}
+#endif
 	PRINTF ("%s: skip 0x%lx %ld\n",
 		__FUNCTION__, rgskip[skip].offset, rgskip[skip].length);
 	rgskip[skip].offset += start; /* Offsets relative to base region */
 	cbSkip += rgskip[skip].length;
 	++skip;
       }
-      if (skip && 0)
+      if (skip)
 	sort (rgskip, skip, sizeof (*rgskip), compare_skips, NULL);
     }
+
+    /* Fixup the partition/request length to cope with skips.  Skips
+       come directly out of the partition size, but shouldn't affect
+       the request size as long as there is enough data to satisfy it.
+       Note that the skip data is added back to the dskip descriptor
+       when it is opened. */
+    partition.length -= cbSkip;
+    if (d->length && d->length < partition.length - cbSkip)
+      partition.length = d->length;
 
     /* If there is a skip, we open a skip descriptor over the
        underlying region and return to the user a descriptor over the
@@ -331,20 +348,20 @@ static int fis_open (struct descriptor_d* d)
        If there is are skips, we return a descriptor over the
        underlying region. */
 
-    if (skip || 1) {
+    if (skip) {
       const char* sz;
-      d->length = descriptor.length;
-      descriptor.length += cbSkip;
-      sz = map_region (&fis_d, &descriptor);
+      d->length = partition.length;
+      partition.length += cbSkip;
+      sz = map_region (&fis_d, &partition);
       PRINTF ("%s: %s\n", __FUNCTION__, sz);
       if (   (result = parse_descriptor (sz, &dskip))
 	  || (result = open_descriptor (&dskip)))
 	return result;
       d->start = dskip.start;
-      printf ("%s: d @0x%lx+0x%lx\n", __FUNCTION__, d->start, d->length);
+      PRINTF ("%s: d @0x%lx+0x%lx\n", __FUNCTION__, d->start, d->length);
     }
     else {
-      const char* sz = map_region (&fis_d, &descriptor);
+      const char* sz = map_region (&fis_d, &partition);
       close_helper (d);
       PRINTF ("%s: %s\n", __FUNCTION__, sz);
       if (   (result = parse_descriptor (sz, d))
@@ -368,39 +385,37 @@ static void fis_close (struct descriptor_d* d)
 static ssize_t fis_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
-  int big = cb > 256;
+  //  int big = cb > 256;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  if (!big)
+//  if (!big)
     PRINTF ("%s: request 0x%lx 0x%lx 0x%x 0x%x\n",
 	    __FUNCTION__, d->start, d->length, d->index, cb);
 
-  while (cb) {
+  while (cb > 0) {
     size_t ib = d->start + d->index;
     size_t available = cb;
     size_t cbSkip = 0;
     ssize_t cbThis;
     int i;
 
-    printf ("%s: %d/%d\n", __FUNCTION__, sizeof (rgskip), sizeof (*rgskip));
-    for (i = 0; i < sizeof (rgskip)/sizeof (*rgskip); ++i) {
-      PRINTF ("%s: skip %d <%d %lx %lx>\n",
-	      __FUNCTION__, i, rgskip[i].magic[0],
-	      rgskip[i].offset, rgskip[i].length);
-      if (rgskip[i].magic[0] != 's')
-	break;
+    for (i = 0; i < sizeof (rgskip)/sizeof (*rgskip)
+	   && rgskip[i].magic[0] == 's'; ++i) {
+      PRINTF ("%s: skip %d <%lx %lx>\n",
+	      __FUNCTION__, i, rgskip[i].offset, rgskip[i].length);
+      PRINTF ("  ib 0x%x  av 0x%x  cbSkip 0x%x\n", ib, available, cbSkip);
       if (ib + cbSkip < rgskip[i].offset) {
 		/* truncate IO when necessary */
 	if (available > rgskip[i].offset - ib - cbSkip)
-	  cb = rgskip[i].offset - ib - cbSkip;
+	  available = rgskip[i].offset - ib - cbSkip;
 	break;
       }
       cbSkip += rgskip[i].length;
     }
 
-    if (!big)
+    //    if (!big)
       PRINTF ("%s: read 0x%x %d (%d)\n", __FUNCTION__, ib, available, cbSkip);
 
     seek_helper (&dskip, ib - d->start + cbSkip, SEEK_SET);
