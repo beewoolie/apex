@@ -108,6 +108,11 @@
    Moreover, this is a driver that is used on a system that doesn't
    seem to need a SMALL version.
 
+   **** When dump'ing from the fis: descriptor, we should show the
+   **** user offsets from the start of the partition, not from the
+   **** start of flash.  The code kinda works as is, but it doesn't
+   **** work when the cb overlaps a skip.
+
 */
 
 #include <config.h>
@@ -288,17 +293,22 @@ static int fis_open (struct descriptor_d* d)
       int i;
       unsigned long start = 0;
       descriptor_query (&fis_d, QUERY_START, &start);
+      start = descriptor.start - start;
       memset (rgskip, 0, sizeof (rgskip));
       for (i = 0;
 	   skip < sizeof (rgskip)/sizeof (*rgskip)
 	     && i < sizeof (descriptor._pad); i +=4) {
-	if (   descriptor._pad[i + 0] != 's'
+	if ((   descriptor._pad[i + 0] != 's'
 	    || descriptor._pad[i + 1] != 'k'
 	    || descriptor._pad[i + 2] != 'i'
-	    || descriptor._pad[i + 3] != 'p')
+	    || descriptor._pad[i + 3] != 'p'
+	    ) && skip > 0)
 	  continue;
-	memcpy (&rgskip[skip], (void*) &descriptor._pad[0] + i,
+	memcpy (&rgskip[skip], (void*) &descriptor._pad[i],
 		sizeof (struct fis_skip_descriptor));
+	rgskip[skip].magic[0] = 's';
+	rgskip[skip].offset = swab32 (32);
+	rgskip[skip].length = swab32 (16);
 	if (fis_directory_swap) {
 	  rgskip[skip].offset = swab32 (rgskip[skip].offset);
 	  rgskip[skip].length = swab32 (rgskip[skip].length);
@@ -309,7 +319,7 @@ static int fis_open (struct descriptor_d* d)
 	cbSkip += rgskip[skip].length;
 	++skip;
       }
-      if (skip)
+      if (skip && 0)
 	sort (rgskip, skip, sizeof (*rgskip), compare_skips, NULL);
     }
 
@@ -321,14 +331,17 @@ static int fis_open (struct descriptor_d* d)
        If there is are skips, we return a descriptor over the
        underlying region. */
 
-    if (skip) {
+    if (skip || 1) {
       const char* sz;
-      d->start = descriptor.start;
-      d->length = descriptor.length - cbSkip;;
+      d->length = descriptor.length;
+      descriptor.length += cbSkip;
       sz = map_region (&fis_d, &descriptor);
+      PRINTF ("%s: %s\n", __FUNCTION__, sz);
       if (   (result = parse_descriptor (sz, &dskip))
 	  || (result = open_descriptor (&dskip)))
 	return result;
+      d->start = dskip.start;
+      printf ("%s: d @0x%lx+0x%lx\n", __FUNCTION__, d->start, d->length);
     }
     else {
       const char* sz = map_region (&fis_d, &descriptor);
@@ -355,21 +368,30 @@ static void fis_close (struct descriptor_d* d)
 static ssize_t fis_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
+  int big = cb > 256;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  if (!big)
+    PRINTF ("%s: request 0x%lx 0x%lx 0x%x 0x%x\n",
+	    __FUNCTION__, d->start, d->length, d->index, cb);
+
   while (cb) {
     size_t ib = d->start + d->index;
-    ssize_t available = cb;
+    size_t available = cb;
     size_t cbSkip = 0;
     ssize_t cbThis;
     int i;
 
+    printf ("%s: %d/%d\n", __FUNCTION__, sizeof (rgskip), sizeof (*rgskip));
     for (i = 0; i < sizeof (rgskip)/sizeof (*rgskip); ++i) {
+      PRINTF ("%s: skip %d <%d %lx %lx>\n",
+	      __FUNCTION__, i, rgskip[i].magic[0],
+	      rgskip[i].offset, rgskip[i].length);
       if (rgskip[i].magic[0] != 's')
-	continue;
-      if (ib + cbSkip < rgskip[i].offset + rgskip[i].length) {
+	break;
+      if (ib + cbSkip < rgskip[i].offset) {
 		/* truncate IO when necessary */
 	if (available > rgskip[i].offset - ib - cbSkip)
 	  cb = rgskip[i].offset - ib - cbSkip;
@@ -378,7 +400,10 @@ static ssize_t fis_read (struct descriptor_d* d, void* pv, size_t cb)
       cbSkip += rgskip[i].length;
     }
 
-    seek_helper (&dskip, ib + cbSkip, SEEK_SET);
+    if (!big)
+      PRINTF ("%s: read 0x%x %d (%d)\n", __FUNCTION__, ib, available, cbSkip);
+
+    seek_helper (&dskip, ib - d->start + cbSkip, SEEK_SET);
     cbThis = dskip.driver->read (&dskip, pv, available);
     if (cbThis != available)
       ERROR_RETURN (ERROR_IOFAILURE, "short read");
