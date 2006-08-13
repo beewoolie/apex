@@ -1,0 +1,30 @@
+===========================
+     APEX Boot Loader
+       FIS Driver
+===========================
+
+This README explains some of the features and implementation details
+of the FIS driver.  FIS is also sometimes called the RedBoot partition
+format.  This driver supports the flash partition format with an
+extension that allows targets to more easily be upgraded.
+
+
+Underlying Region
+-----------------
+
+The CONFIG_DRIVER_FIS_BLOCKDEVICE region describes the underlying
+region for the FIS partitioned data.  Due to the way that the
+partitions map onto flash, this region may only include the driver.
+No offset or extent will be used.
+
+As far as I know, FIS is only used on NOR flash, but there is no
+reason it couldn't be used on NAND flash.  As such, there is little
+reason for the underlying driver to be anything but "nor:".
+
+
+Skip Descriptors
+----------------
+
+APEX supports an extension to the partition format that describes
+portions of flash to be skipped over during IO.
+
