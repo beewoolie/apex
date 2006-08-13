@@ -1,4 +1,4 @@
-apex-nslu2 (1.4.3) unstable; urgency=low
+apex (1.4.3) unstable; urgency=low
 
   * Added fis_skip_descriptor interpretation to the FIS driver.  This
     allows for loading the kernel from FIS partitions that are broken-up
@@ -6,7 +6,7 @@ apex-nslu2 (1.4.3) unstable; urgency=low
 
  --  <elf@scarlet.buici.com>  Sat, 12 Aug 2006 09:07:55 -0700
 
-apex-nslu2 (1.4.0) unstable; urgency=low
+apex (1.4.0) unstable; urgency=low
 
   * Revised several key systems for the sake of running APEX in LE mode on
     a BE system.  APEX now functions as a second-stage boot loader on the
@@ -14,7 +14,7 @@ apex-nslu2 (1.4.0) unstable; urgency=low
 
  -- Marc Singer <elf@cerise.buici.com>  Wed, 26 Jul 2006 00:57:13 -0700
 
-apex-nslu2 (1.3.30) unstable; urgency=low
+apex (1.3.30) unstable; urgency=low
 
   * Initial release for configuration debian-nslu2-arm_config (and armeb).
 
