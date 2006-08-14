@@ -1,10 +1,17 @@
+apex (1.4.4) unstable; urgency=low
+
+  * Small changes to the configurations for debian builds: noirqdebug
+    added command line, removed root= from command line. 
+
+ --
+
 apex (1.4.3) unstable; urgency=low
 
   * Added fis_skip_descriptor interpretation to the FIS driver.  This
     allows for loading the kernel from FIS partitions that are broken-up
     by SERCOMM headers to cope with RedBoot shortcomings.
 
- --  <elf@scarlet.buici.com>  Sat, 12 Aug 2006 09:07:55 -0700
+ -- Marc Singer <elf@debian.org>  Sun, 13 Aug 2006 17:28:55 -0700
 
 apex (1.4.0) unstable; urgency=low
 
