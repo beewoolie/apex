@@ -68,7 +68,7 @@
      half-word in order to get the proper view of the flash.  This, I
      blame on the CPU which is performing a half-word swap.
      Interestingly, the commands and query data don't need anything
-     except for this address swapping trick.
+     except for the address swapping trick: (^=(1<<1)).
 
 */
 
