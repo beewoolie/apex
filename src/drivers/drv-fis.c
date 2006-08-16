@@ -191,10 +191,10 @@ static int end_of_table (struct fis_descriptor* descriptor)
 
 static int compare_skips (const void* _a, const void* _b)
 {
-  struct fis_skip_descriptor** a = (struct fis_skip_descriptor**) _a;
-  struct fis_skip_descriptor** b = (struct fis_skip_descriptor**) _b;
+  struct fis_skip_descriptor* a = (struct fis_skip_descriptor*) _a;
+  struct fis_skip_descriptor* b = (struct fis_skip_descriptor*) _b;
 
-  return (*b)->offset - (*a)->offset;
+  return b->offset - a->offset;
 }
 
 static void prescan_directory (struct descriptor_d* d)
