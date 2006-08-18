@@ -1,3 +1,9 @@
+2006-08-18    <elf@scarlet.buici.com>
+
+	* src/drivers/drv-fis.c (compare_skips): Fixed the comparison
+	function.  The sign sense was wrong and it sorted to the wrong
+	order.
+
 2006-08-12    <elf@scarlet.buici.com>
 
 	* Makefile (SUBLEVEL): v1.4.3

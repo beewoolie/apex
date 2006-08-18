@@ -194,7 +194,7 @@ static int compare_skips (const void* _a, const void* _b)
   struct fis_skip_descriptor* a = (struct fis_skip_descriptor*) _a;
   struct fis_skip_descriptor* b = (struct fis_skip_descriptor*) _b;
 
-  return b->offset - a->offset;
+  return a->offset - b->offset;
 }
 
 static void prescan_directory (struct descriptor_d* d)

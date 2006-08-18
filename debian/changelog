@@ -1,3 +1,13 @@
+apex (1.4.5) unstable; urgency=low
+
+  * Fixed the sort comparison function in the fis driver so that the skips
+    are ordered by offset address. 
+  * Changed the default startup to copy from fis://kernel and
+    fis://ramdisk.  We no longer expect there to be SERCOMM headers on the
+    kernel or ramdisk images.  Freedom.
+
+ --  Marc Singer <elf@debian.org>  Fri, 18 Aug 2006 09:44:34 -0700
+
 apex (1.4.4) unstable; urgency=low
 
   * Small changes to the configurations for debian builds: noirqdebug
