@@ -94,6 +94,47 @@
    read code ought to detect that the card has changed, probably
    because the select fails, and perform the acquire at that time.
 
+   SINGLE BLOCK WRITE
+   ------------------
+
+   18.1.10.4 Single Block Write
+       For the Single Block Write command, the MMC registers are programmed:
+
+   1.  The clock is stopped.
+   2.  Set the block size in the BLK_LEN register.
+   3.  Set the NOB register to 0x1.
+   4.  Get card status.
+   5.  Command card into transfer state.
+   6.  Program the command code into the CMD register.
+   7.  The most significant byte arguments are programmed in ARGUMENT.
+   8.  The CMDCON parameters are programmed: RESPONSE_FORMAT
+       programmed to 0x01, specifying Format R1.  DATA_EN is set,
+       indicating the command includes a data transfer.  The Write
+       field (WRITE) is set, specifying a Write.  The Stream field
+       (STREAM) is cleared, specifying a block transfer.  BUSY is
+       cleared, indicating no Busy signal is expected after the
+       command.  Unless an Initialization sequence is required,
+       INITIALIZE is cleared.
+   9.  The clock is started.
+   10. Software checks the STATUS register. FIFO Empty field
+       (STATUS:FIFO_EMPTY) to identify whether the FIFO is empty.
+   11. When the FIFO is empty, software writes the FIFO and starts the clock.
+   12. Check STATUS:CRCWRITE. The SD/MMC will not accept Write data if
+       received with a CRC error. If a CRC error occurs, software must
+       re-write the data to the card.
+   13. Send STOP_TRANS command.
+   14. Software polls the STATUS register Data Transfer Done field
+       (STATUS:TRANDONE) until the field is set.
+   15. After TRANDONE is set, software checks various fields in the
+       STATUS register to identify whether the data transfer finished
+       successfully.
+   16. To address a different card, software can send a Chip Select
+       command to the card by sending a basic No Data Command and
+       Response transaction. To address the same card, software must
+       wait for the STATUS register Program Done field (STATUS:DONE)
+       to be set, to ensure the Busy is finished.
+
+
 */
 
 #include <config.h>
@@ -113,7 +154,7 @@
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
 #define USE_WIDE		/* Allow WIDE mode */
-//#define USE_SLOW_CLOCK		/* Slow the transfer clock to 12MHz */
+//#define USE_SLOW_CLOCK	/* Slow the transfer clock to 12MHz */
 //#define USE_WAYSLOW_CLOCK	/* Slow the transfer clock to 400KHz */
 /* *** While multiblock read kinda works, it seems to put the
    interface in an odd state.  Since we don't care about this now,
@@ -253,10 +294,22 @@ static const char* report_status (unsigned long l)
 
 static void SECTION start_clock (void)
 {
-  if (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
+  int c;
+
+  if (!(MMC_STATUS & MMC_STATUS_CLK_DIS)) {
+    DBG (2, "%s: clock already running\n", __FUNCTION__);
     return;
+  }
 
   MMC_CLKC = MMC_CLKC_START_CLK;
+
+  for (c = 0xffff; c--; )
+    if (!(MMC_STATUS & MMC_STATUS_CLK_DIS))
+     break;
+
+  if (c == 0)
+    DBG (2, "%s: clock failed to start %s\n",
+	 __FUNCTION__, report_status (MMC_STATUS));
 
   /* *** FIXME: may be good to implement a timeout check. */
 
@@ -382,6 +435,24 @@ static void SECTION pull_data (void* pv)
   }
 }
 
+static void SECTION push_data (const void* pv, size_t cb)
+{
+  int i;
+  size_t remainder = MMC_SECTOR_SIZE - cb;
+  //  ENTRY (3);
+  //  DBG (3, "%s: %p %p\n", __FUNCTION__, pv, mmc_rgb);
+  for (i = (cb + 1)/2; i--; ) {
+    unsigned short v = (((unsigned char*)pv)[0] << 8)
+      | ((unsigned char*)pv)[1];
+    MMC_DATA_FIFO = v;
+    pv += 2;
+  }
+  for (i = remainder/2; i--; ) {
+    MMC_DATA_FIFO = 0;
+    pv += 2;
+  }
+}
+
 static unsigned long SECTION wait_for_completion (short bits)
 {
   unsigned short status = 0;
@@ -395,7 +466,7 @@ static unsigned long SECTION wait_for_completion (short bits)
 #endif
   int timed_out = 0;
 
-  DBG (3, " (%lx) ", bits);
+  DBG (3, " (%x) ", bits);
   do {
     udelay (1);
     status = MMC_STATUS;
@@ -891,21 +962,116 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
   return cbRead;
 }
 
+
+/* mmc_write
+
+   performs the write of data from the SD/MMC card.
+
+//   It handles unaligned, and sub-block length I/O.
+
+*/
+
+ssize_t SECTION mmc_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  ssize_t cbWrote = 0;
+  int status;
+
+#if 1
+  PUTHEX_LL (d->index);
+  PUTC_LL ('/');
+  PUTHEX_LL (d->start);
+  PUTC_LL ('/');
+  PUTHEX_LL (d->length);
+  PUTC_LL ('/');
+  PUTHEX_LL (cb);
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
+#endif
+
+  if (d->index + cb > d->length)
+    cb = d->length - d->index;
+
+  //  DBG (1, "%s: %ld %ld %d; %ld\n",
+  //       __FUNCTION__, d->start + d->index, d->length, cb, mmc.ib);
+
+ {
+   unsigned long sp;
+   __asm volatile ("mov %0, sp\n\t"
+		   : "=r" (sp));
+   PUTHEX_LL (sp);
+ }
+
+  while (cb) {
+    unsigned long index = d->start + d->index;
+    int availableMax = MMC_SECTOR_SIZE
+      - (index & (MMC_SECTOR_SIZE - 1)); /* Must not overlap a block */
+    int available = cb;
+
+#if 0
+    PUTC_LL ('X');
+    PUTHEX_LL (index);
+    PUTC_LL ('/');
+    PUTHEX_LL (cbRead);
+    PUTC_LL ('\r');
+    PUTC_LL ('\n');
+#endif
+
+    if (available > availableMax)
+      available = availableMax;
+
+    //    DBG (1, "%ld %ld\n", mmc.ib, index);
+
+    DBG (1, "%s: write av %d  avM %d  ind %ld  cb %d\n", __FUNCTION__,
+	 available, availableMax, index, cb);
+
+    status = execute_command (CMD_DESELECT_CARD, 0,
+			      MMC_STATUS_ENDRESP | MMC_STATUS_TRANDONE);
+    status = execute_command (CMD_SELECT_CARD, mmc.rca<<16, 0);
+
+#if defined (USE_WIDE)
+    if (mmc.cmdcon_sd)
+      execute_command (CMD_SD_SET_WIDTH, 2, 0);	/* SD, 4 bit width */
+#endif
+    status = execute_command (CMD_SET_BLOCKLEN, available, 0);
+    MMC_BLK_LEN = available;
+    MMC_NOB = 1;
+
+    status = execute_command (CMD_WRITE_SINGLE, index,
+			      MMC_STATUS_TORES | MMC_STATUS_FIFO_EMPTY);
+    DBG (2, "%s: sending waiting to write %x\n", __FUNCTION__, status);
+
+//    status = wait_for_completion (MMC_STATUS_FIFO_EMPTY);
+    push_data (pv, available);
+    start_clock ();
+    DBG (2, "%s: restarted %s\n", __FUNCTION__, report_status (MMC_STATUS));
+//    status = execute_command (CMD_STOP, 0, MMC_STATUS_TRANDONE);
+    status = wait_for_completion (MMC_STATUS_TRANDONE);
+    DBG (2, "%s: end %s\n", __FUNCTION__, report_status (status));
+
+    d->index += available;
+    cb -= available;
+    cbWrote += available;
+    pv += available;
+  }
+
+  return cbWrote;
+}
+
 static __driver_5 struct driver_d mmc_driver = {
-  .name = "mmc-lh7a404",
-  .description = "MMC/SD card driver",
-  .flags = DRIVER_READPROGRESS(2),
-  .open = mmc_open,
-  .close = close_helper,
-  .read = mmc_read,
-  //  .write = memory_write,
-  .seek = seek_helper,
+  .name		= "mmc-lh7a404",
+  .description	= "MMC/SD card driver",
+  .flags	= DRIVER_READPROGRESS(2),
+  .open		= mmc_open,
+  .close	= close_helper,
+  .read		= mmc_read,
+  .write	= mmc_write,
+  .seek		= seek_helper,
 };
 
 static __service_6 struct service_d mmc_service = {
-  .init = mmc_init,
+  .init		= mmc_init,
 #if !defined (CONFIG_SMALL)
-  .report = mmc_report,
+  .report	= mmc_report,
 #endif
 };
 

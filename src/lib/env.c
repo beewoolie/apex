@@ -83,7 +83,7 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
-#define ENV_CHECK_LEN	(1024)	/* Comment out to check only one short */
+#define ENV_CHECK_LEN	(CONFIG_ENV_CHECK_LEN)
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
 #define ENV_VAL_DELETED	 (0x00)
@@ -241,7 +241,7 @@ int env_check_magic (void)
   if (rgb[0] != 0xff || rgb[1] != 0xff)
     return -1;
 
-#if defined (ENV_CHECK_LEN)
+#if defined (ENV_CHECK_LEN) && ENV_CHECK_LEN > 0
   {
     int c = ENV_CHECK_LEN/2;
     unsigned short s;

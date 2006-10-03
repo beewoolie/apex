@@ -57,6 +57,7 @@
 #define RTC_PHYS	(0x80000d00)	/* Real-time Clock */
 #define GPIO_PHYS	(0x80000e00)	/* General Purpose IO */
 #define BMI_PHYS	(0x80000f00)	/* Battery Monitor Interface */
+#define PWM_PHYS	(0x80001100)	/* Pulse Width Modulator */
 #define WDT_PHYS	(0x80001400)	/* Watchdog Timer */
 #define SMC_PHYS	(0x80002000)	/* Static Memory Controller */
 #define SDRC_PHYS	(0x80002400)	/* SDRAM Controller */
@@ -284,5 +285,10 @@
 #define MMC_RES_FIFO		__REG(MMC_PHYS + 0x40)
 #define MMC_DATA_FIFO		__REG(MMC_PHYS + 0x48)
 #define MMC_BUF_PART_FULL	__REG(MMC_PHYS + 0x4c) /* LH7A400 only */
+
+#define PWM_TC3			__REG(PWM_PHYS + 0x20)
+#define PWM_DC3			__REG(PWM_PHYS + 0x24)
+#define PWM_EN3			__REG(PWM_PHYS + 0x28)
+#define PWM_INV3		__REG(PWM_PHYS + 0x2c)
 
 #endif  /* __LH7A40X_H__ */

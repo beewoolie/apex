@@ -342,6 +342,19 @@ config ENV_REGION
 	help
 	  This region stores the user configurable environment.   
 
+config ENV_CHECK_LEN
+	int "Count of bytes of environment to scan for preexisting data"
+	depends on ENV
+	default 1024
+	help
+	  In order to increase APEX's paranoia about writing to the
+	  environment, set this option to the number of bytes to scan
+	  in the environment region for preexisting data.  If all
+	  bytes are 0xff, the environment is deemed 'empty'.  On the
+	  other hand, if IO with the environment is slow, e.g. I2C
+	  EEPROM, it is best to set this value to zero since the scan
+	  can take a long time and must be performed often.
+
 config ENV_STARTUP_KERNEL_COPY
 	bool "Copy Linux kernel to RAM at startup" 
 	depends on ENV

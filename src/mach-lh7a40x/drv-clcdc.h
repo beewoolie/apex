@@ -48,10 +48,13 @@
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN; })
 #endif
-
 #if defined (CONFIG_MACH_LPD7A404)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ GPIO_PCDD &= ~(1<<3); GPIO_PCD  |= (1<<3); })
+#endif
+#if defined (CONFIG_MACH_COMPANION)
+# define DRV_CLCDC_BACKLIGHT_ENABLE\
+	({ PWM_TC3 = 0xb84; PWM_DC3 = 0x5c1; PWM_INV3 = 0; PWM_EN3 = 1; })
 #endif
 
 #if defined (CONFIG_MACH_LPD7A400)
@@ -61,6 +64,10 @@
 #if defined (CONFIG_MACH_LPD7A404)
 # define DRV_CLCDC_BACKLIGHT_DISABLE\
 	({ GPIO_PCD  &= ~(1<<3); })
+#endif
+#if defined (CONFIG_MACH_COMPANION)
+# define DRV_CLCDC_BACKLIGHT_DISABLE\
+	({ PWM_EN3 = 0; })
 #endif
 
 #if defined (CONFIG_ARCH_LH7A400)

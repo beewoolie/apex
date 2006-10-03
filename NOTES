@@ -5,6 +5,11 @@ APEX Boot Loader
 
 TODO:
 
+  o Very slow environment region means that an empty environment makes
+    the boot-time very slow.  So, we should check it once and if it is
+    empty we can assume it is still empty when the first word is
+    0xffffffff.
+
   o Add option to change the write throughput spinner for the NOR
     driver.  The lh7a404 is much faster that the lh7952x's and the
     spinner should reflect this.

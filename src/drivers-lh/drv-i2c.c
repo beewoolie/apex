@@ -49,7 +49,7 @@
 #include <console.h>
 #include <spinner.h>
 
-//#define TALK 3
+//#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
