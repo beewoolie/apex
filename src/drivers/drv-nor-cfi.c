@@ -70,6 +70,21 @@
      Interestingly, the commands and query data don't need anything
      except for the address swapping trick: (^=(1<<1)).
 
+   o nor_write and endianness
+
+     Thought the read code is recitifed with REGA and copy_from fixes,
+     the write code is still broken on systems where the order in
+     flash does not match the order of the running CPU.
+
+     The REGA fix ought to fix part of it, but there are several code
+     paths to correct.  It is likely that the memcpy calls just need
+     something like the copy_from() call to make them right.  We may
+     need to use an accessor when we compose the write array *or* we
+     may need to simply use REGA's to copy the array to flash.  I hope
+     there is a simple solution.  I *do* know that reading from flash,
+     when the buffer isn't aligned, should be done with copy_from()
+     and I don't think it is.
+
 */
 
 #include <driver.h>
@@ -568,6 +583,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       pageLast = page;
     }
 
+	/* === Initiate buffer write */
+
 #if defined (NO_WRITE)
     printf ("  available %d  cb %d\n", available, cb);
     printf ("0x%lx <= 0x%x\n", index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
@@ -581,6 +598,9 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       goto fail;
     }
 
+	/* === Send the extent of the write.  We optimize (though I
+	   don't really know why) if we don't need to write a whole
+	   full buffer. */
     {
       int av = available + (index & (NOR_WIDTH/8 - 1));
 #if defined (NO_WRITE)
@@ -593,6 +613,9 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 		 av - av/2 - 1);
 #endif
     }
+
+	/* === Either write the data, because we're aligned, or
+	   construct a buffer we can write because we're not. */
 
     if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
       int i;
