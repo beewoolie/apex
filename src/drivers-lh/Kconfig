@@ -74,6 +74,9 @@ config LCD_LQ036Q1DA01
 config LCD_LQ035Q7DH06
 	bool "Sharp 3.5\" Portrait QVGA"
 
+config LCD_TD035TTEA1
+	bool "One Stop Displays 3.5\" Landscape QVGA"
+
 endchoice
 
 endmenu

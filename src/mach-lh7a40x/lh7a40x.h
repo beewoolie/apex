@@ -207,6 +207,8 @@
 #define GPIO_PEDD		__REG (GPIO_PHYS + 0x24)
 #define GPIO_PFD		__REG (GPIO_PHYS + 0x30)
 #define GPIO_PFDD		__REG (GPIO_PHYS + 0x34)
+#define GPIO_PGD		__REG (GPIO_PHYS + 0x38)
+#define GPIO_PGDD		__REG (GPIO_PHYS + 0x3c)
 
 #define DMAC_GCA		__REG(DMAC_PHYS + 0x2b80)
 #define DMAC_GIR		__REG(DMAC_PHYS + 0x2bc0)

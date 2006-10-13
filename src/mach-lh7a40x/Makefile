@@ -27,3 +27,4 @@ obj-y				+= cmd-reset.o
 obj-y				+= cmd-standby.o
 obj-$(CONFIG_CMD_ARM920_TEST)	+= cmd-cp15test.o
 obj-$(CONFIG_RELOCATE_COMPANION) += relocate-companion.o
+obj-$(CONFIG_MACH_COMPANION)    += clcdc-companion.o

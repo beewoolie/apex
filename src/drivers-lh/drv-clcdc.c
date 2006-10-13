@@ -92,6 +92,12 @@
 #if ! defined (DRV_CLCDC_RELEASE)
 # define DRV_CLCDC_RELEASE
 #endif
+#if ! defined (DRV_CLCDC_WAKE)
+# define DRV_CLCDC_WAKE
+#endif
+#if ! defined (DRV_CLCDC_SLEEP)
+# define DRV_CLCDC_SLEEP
+#endif
 
 //#define USE_BORDER
 //#define USE_FILL
@@ -378,6 +384,29 @@
 
 #endif
 
+#if defined (CONFIG_LCD_TD035TTEA1)
+	/* One Stop Display QVGA TD035TTEA1 320x240 */
+/* The full horozontal cycle (Th) is clock/326/440/472. */
+/* The full vertical   cycle (Tv) is line/246/264/282. */
+#define PANEL_NAME	"OSB LCD Landscape QVGA"
+#define PEL_CLOCK_EST	(865*1000*1000/100)     /* 4/8/8.65 MHz */
+#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
+#define PEL_WIDTH	(320)
+#define PEL_HEIGHT	(240)
+#define BIT_DEPTH	(16)
+#define BITS_PER_PEL_2	BPP16
+#define LEFT_MARGIN	(42)			/* clocks/2/42/256 */
+#define RIGHT_MARGIN	(440-38-320-42)
+#define TOP_MARGIN	(8)			/* lines/2/8/14 */
+#define BOTTOM_MARGIN	(264-8-240-8)
+#define HSYNC_WIDTH	(28)			/* clocks/2/38/256 */
+#define VSYNC_WIDTH	(8)			/* lines/2/8/14 */
+
+#define INVERT_HSYNC
+#define INVERT_VSYNC
+#endif
+
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
 #define HFP(v)	((((v) - 1) & 0xff)<<16)
 #define HSW(v)	((((v) - 1) & 0xff)<<8)
@@ -585,6 +614,8 @@ static void clcdc_release (void)
 {
   /* *** This sequence, as well as that which is in the initialization
      function, should be better documented. */
+
+  DRV_CLCDC_SLEEP;
 
   DRV_CLCDC_BACKLIGHT_DISABLE;
 
@@ -804,6 +835,8 @@ int cmd_clcdc (int argc, const char** argv)
     _msleep (20);		/* Wait 20ms for digital signals  */
     CLCDC_CTRL      |= PWR;	/* Apply power */
 
+    DRV_CLCDC_WAKE;
+
     /* *** FIXME: this value is calculable based on the LCD controller
        parameters and the frame size. 40ms is the time for two frame
        displays at 800x600 with a 25MHz pixel clock.  100ms was the
@@ -816,6 +849,8 @@ int cmd_clcdc (int argc, const char** argv)
 
   if (strcmp (argv[1],"off") == 0) {
     DRV_CLCDC_BACKLIGHT_DISABLE;
+
+    DRV_CLCDC_SLEEP;
 
     CLCDC_CTRL &= ~PWR;		/* Remove power */
     _msleep (20);		/* Wait 20ms */

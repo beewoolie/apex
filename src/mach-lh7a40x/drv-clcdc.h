@@ -41,8 +41,26 @@
      CPLD JTAG chain from crashing the board.  See the target_init ()
      code. */
 
-#define DRV_CLCDC_SETUP\
+#if defined (CONFIG_MAC_LPD7A40X)
+# define DRV_CLCDC_SETUP\
 	({ GPIO_PINMUX |= (1<<1) | (1<<0); }) /* LCDVD[15:4] */
+#endif
+
+#if defined (CONFIG_MACH_COMPANION)
+# define DRV_CLCDC_SETUP\
+	({ extern void companion_clcdc_setup (void); \
+	   GPIO_PINMUX |= (1<<1) | (1<<0);\
+	    companion_clcdc_setup (); })
+
+# define DRV_CLCDC_WAKE\
+	({ extern void companion_clcdc_wake (void);\
+	   companion_clcdc_wake (); })
+
+# define DRV_CLCDC_SLEEP\
+	({ extern void companion_clcdc_sleep (void);\
+	   companion_clcdc_sleep (); })
+
+#endif
 
 #if defined (CONFIG_MACH_LPD7A400)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
@@ -54,7 +72,8 @@
 #endif
 #if defined (CONFIG_MACH_COMPANION)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
-	({ PWM_TC3 = 0xb84; PWM_DC3 = 0x5c1; PWM_INV3 = 0; PWM_EN3 = 1; })
+	({ printf ("backlight_enable\n");\
+	   PWM_TC3 = 0xb84; PWM_DC3 = 0x5c1; PWM_INV3 = 0; PWM_EN3 = 1; })
 #endif
 
 #if defined (CONFIG_MACH_LPD7A400)
