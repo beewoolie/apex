@@ -56,6 +56,14 @@
    DRV_CLCDC_POWER_DISABLE		- Disable power to LCD panel
    DRV_CLCDC_RELEASE			- Release clocks
 
+
+   Nomenclature -- Porches
+   -----------------------
+
+   Front porches and back porches refer to the sync pulse as opposed
+   to the displayed frame.  The front porch is in front of the sync
+   pulse, the back porch follows it.
+
 */
 
 #include <config.h>
@@ -386,25 +394,27 @@
 
 #if defined (CONFIG_LCD_TD035TTEA1)
 	/* One Stop Display QVGA TD035TTEA1 320x240 */
-/* The full horozontal cycle (Th) is clock/326/440/472. */
-/* The full vertical   cycle (Tv) is line/246/264/282. */
 #define PANEL_NAME	"OSB LCD Landscape QVGA"
 #define PEL_CLOCK_EST	(865*1000*1000/100)     /* 4/8/8.65 MHz */
+//#define PEL_CLOCK_EST	(600*1000*1000/100)     /* 4/8/8.65 MHz */
 #define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 #define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
 #define PEL_WIDTH	(320)
 #define PEL_HEIGHT	(240)
 #define BIT_DEPTH	(16)
 #define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(42)			/* clocks/2/42/256 */
-#define RIGHT_MARGIN	(440-38-320-42)
-#define TOP_MARGIN	(8)			/* lines/2/8/14 */
-#define BOTTOM_MARGIN	(264-8-240-8)
-#define HSYNC_WIDTH	(28)			/* clocks/2/38/256 */
+#define V_CYCLE		(264)			/* line/246/264/282 */
+#define H_CYCLE		(440)			/* clock/326/440/472 */
+#define HSYNC_WIDTH	(38)			/* clocks/2/38/256 */
 #define VSYNC_WIDTH	(8)			/* lines/2/8/14 */
+#define LEFT_MARGIN	(40)			/* clocks/2/40/256 */
+#define TOP_MARGIN	(8)			/* lines/2/8/14 */
+#define RIGHT_MARGIN	(H_CYCLE-PEL_WIDTH -LEFT_MARGIN-HSYNC_WIDTH)
+#define BOTTOM_MARGIN	(V_CYCLE-PEL_HEIGHT-TOP_MARGIN -VSYNC_WIDTH)
 
 #define INVERT_HSYNC
 #define INVERT_VSYNC
+#define INVERT_PIXEL_CLOCK
 #endif
 
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
