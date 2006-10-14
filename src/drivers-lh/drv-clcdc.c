@@ -121,262 +121,232 @@
 
 #if defined (CONFIG_LCD_3_5_QVGA_20)
 	/* Sharp PN LQ035Q7DB02 */
-#define PANEL_NAME	"LCD 3.5\" QVGA"
-#define PEL_CLOCK_EST	(6800000)     /* 4.5MHz-?-6.8MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(240)
-#define PEL_HEIGHT	(320)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(16)
-#define RIGHT_MARGIN	(21)
-#define TOP_MARGIN	(8)	/* 8 */
-#define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(61)
-#define VSYNC_WIDTH	NS_TO_CLOCK (60, PEL_CLOCK)
-#define INVERT_PIXEL_CLOCK
+# define PANEL_NAME		"LCD 3.5\" QVGA"
+# define PEL_CLOCK_EST		(6800*1000)     /* MHz/4.5/?/6.8 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(240)
+# define PEL_HEIGHT		(320)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HSYNC_WIDTH		(61)
+# define VSYNC_WIDTH		NS_TO_CLOCK (60, PEL_CLOCK)
+# define HORZ_BP		(16)
+# define HORZ_FP		(21)
+# define VERT_BP		(8)		/* 8 */
+# define VERT_FP		(5)
+# define INVERT_PIXEL_CLOCK
 #endif
 
 #if defined (CONFIG_LCD_5_7_QVGA_10)
 	/* Sharp PN LQ057Q3DC02, QVGA mode */
-#define PANEL_NAME	"LCD 5.7\" QVGA"
-#define PEL_CLOCK_EST	(7000000)     /* ?-6.3MHz-7MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(320)
-#define PEL_HEIGHT	(240)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(21)
-#define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(7)	/* 7 */
-#define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
-#define VSYNC_WIDTH	(1)	/* 2-?-34 lines */
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+# define PANEL_NAME		"LCD 5.7\" QVGA"
+# define PEL_CLOCK_EST		(7*1000*1000)     /* MHz/?/6.3/7 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(320)
+# define PEL_HEIGHT		(240)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HSYNC_WIDTH		(96)		/* clocks/2/96/200 */
+# define VSYNC_WIDTH		(1)		/* lines/2/?/34 */
+# define HORZ_BP		(21)
+# define HORZ_FP		(15)
+# define VERT_BP		(7)		/* 7 */
+# define VERT_FP		(5)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_6_4_VGA_10)
 	/* Sharp PN LQ64D343 */
-/* The full horozontal cycle (Th) is clock/770/800/900. */
-/* The full vertical   cycle (Tv) is line/515/525/560. */
-#define PANEL_NAME	"LCD 6.4\" VGA"
-#define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(640)
-#define PEL_HEIGHT	(480)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-
-#define LEFT_MARGIN	(32)
-#define RIGHT_MARGIN	(800-32-640-96)
-#define TOP_MARGIN	(32)	/* 34 */
-#define BOTTOM_MARGIN	(540-32-480-2)
-#define HSYNC_WIDTH	(96)	/* 2-96-200 clocks */
-#define VSYNC_WIDTH	(2)	/* 2-?-34 lines */
-
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+# define PANEL_NAME		"LCD 6.4\" VGA"
+# define PEL_CLOCK_EST		(28330000)     /* MHz/?/25.18/28.33 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(640)
+# define PEL_HEIGHT		(480)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(800)		/* clock/770/800/900 */
+# define VERT_CYCLE		(525)		/* line/515/525/560 */
+# define HSYNC_WIDTH		(96)		/* clocks/2/96/200 */
+# define VSYNC_WIDTH		(2)		/* clocks/2/?/34 */
+# define HORZ_BP		(32)
+# define VERT_BP		(34)		/* 34 */
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_10_4_VGA_10)
 	/* Sharp PN LQ10D368 */
-/* The full horozontal cycle (Th) is clock/750/800/900. */
-/* The full vertical   cycle (Tv) is line/515/525/560. */
-#define PANEL_NAME	"LCD 10.4\" VGA"
-#define PEL_CLOCK_EST	(28330000)     /* ?-25.18MHz-28.33MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(640)
-#define PEL_HEIGHT	(480)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(21)
-#define RIGHT_MARGIN	(800-21-640-96)
-#define TOP_MARGIN	(34)			/* lines/34 (480 line mode)*/
-#define BOTTOM_MARGIN	(540-34-480-2)
-#define HSYNC_WIDTH	(96)			/* clocks/2/96/200 */
-#define VSYNC_WIDTH	(2)			/* lines/1/?/34 */
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+# define PANEL_NAME		"LCD 10.4\" VGA"
+# define PEL_CLOCK_EST		(28330*1000)     /* MHz/?/25.18/28.33 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(640)
+# define PEL_HEIGHT		(480)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(800)		/* clock/750/800/900 */
+# define VERT_CYCLE		(525)		/* line/515/525/560 */
+# define HSYNC_WIDTH		(96)		/* clocks/2/96/200 */
+# define VSYNC_WIDTH		(2)		/* lines/1/?/34 */
+# define HORZ_BP		(21)
+# define VERT_BP		(34)		/* lines/34 (480 line mode)*/
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_12_1_SVGA_10)
 	/* Sharp PN LQ121S1DG41, was LQ121S1DG31 */
-#define PANEL_NAME	"LCD 12.1\" SVGA"
+#define PANEL_NAME		"LCD 12.1\" SVGA"
 /* *** FIXME: this target frequency range isn't achievable with HCLK
    *** at 99993900 Hz. */
-#define PEL_CLOCK_EST	(25000000)     /* 35MHz-40MHz-42MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(800)
-#define PEL_HEIGHT	(600)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(86)
-#define RIGHT_MARGIN	(15)
-#define TOP_MARGIN	(23)	/* 23 */
-#define BOTTOM_MARGIN	(5)
-#define HSYNC_WIDTH	(128)	/* 2-128-200 clocks */
-#define VSYNC_WIDTH	(1)	/* 2-4-6 lines */
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+# define PEL_CLOCK_EST		(25*1000*1000)     /* MHz/35/40/42 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(800)
+# define PEL_HEIGHT		(600)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_BP		(86)
+# define HORZ_FP		(15)
+# define VERT_BP		(23)		/* 23 */
+# define VERT_FP		(5)
+# define HSYNC_WIDTH		(128)		/* clocks/2/128/200 */
+# define VSYNC_WIDTH		(1)		/* lines/2/4/6 */
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_NL2432HC22_40A)
 	/* NEC QVGA 2432HC22-40A 240x320 8.9cm*/
-/* The full horozontal cycle (Th) is clock/?/256/?. */
-/* The full vertical   cycle (Tv) is line/?/324/?. */
-#define PANEL_NAME	"NEC LCD 8.9cm Portrait QVGA"
-#define PEL_CLOCK_EST	(5*1000*1000)     /* 5MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(240)
-#define PEL_HEIGHT	(320)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(4)
-#define RIGHT_MARGIN	(256-8-240-4)
-#define TOP_MARGIN	(1)			/* lines/?*/
-#define BOTTOM_MARGIN	(324-2-320-1)
-#define HSYNC_WIDTH	(8)			/* clocks/?/8/? */
-#define VSYNC_WIDTH	(2)			/* lines/?/1/? */
-
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+# define PANEL_NAME		"NEC LCD 8.9cm Portrait QVGA"
+# define PEL_CLOCK_EST		(5000*1000)	/* MHz/?/5/? */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(240)
+# define PEL_HEIGHT		(320)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(256)		/* clock/?/256/? */
+# define VERT_CYCLE		(324)		/* line/?/324/? */
+# define HORZ_BP		(4)
+# define VERT_BP		(1)		/* lines/?*/
+# define HSYNC_WIDTH		(8)		/* clocks/?/8/? */
+# define VSYNC_WIDTH		(2)		/* lines/?/1/? */
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_OSD035TTEA1)
 	/* Sharp QVGA 2432HC22-40A 320x240 70.08mmx52.56mm*/
-/* The full horozontal cycle (Th) is clock/326/440/472. */
-/* The full vertical   cycle (Tv) is line/246/264/282. */
-#define PANEL_NAME	"Sharp LCD Landscape QVGA"
-#define PEL_CLOCK_EST	(8*1000*1000)		/* MHz/4/8/8.65 */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(320)
-#define PEL_HEIGHT	(240)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	(42)			/* clock/2/42/256 */
-#define RIGHT_MARGIN	(440-42-320-38)		/* clock/2/40.256 */
-#define TOP_MARGIN	(8)			/* lines/2/8/14 */
-#define BOTTOM_MARGIN	(264-8-240-8)		/* lines/2/8/14 */
-#define HSYNC_WIDTH	(38)			/* clocks/2/38/256 */
-#define VSYNC_WIDTH	(8)			/* lines/2/8/14 */
-
-#define INVERT_HSYNC
-#define INVERT_VSYNC
+/* Is this bonafide? Or is this the OneStopDisplay? */
+# define PANEL_NAME		"Sharp LCD Landscape QVGA"
+# define PEL_CLOCK_EST		(8650*1000)	/* MHz/4/8/8.65 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(320)
+# define PEL_HEIGHT		(240)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(440)		/* clock/326/440/472 */
+# define VERT_CYCLE		(264)		/* line/246/264/282 */
+# define HSYNC_WIDTH		(38)		/* clocks/2/38/256 */
+# define VSYNC_WIDTH		(8)		/* lines/2/8/14 */
+# define HORZ_BP		(42)		/* clock/2/42/256 */
+# define VERT_BP		(8)		/* lines/2/8/14 */
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
 #endif
 
 #if defined (CONFIG_LCD_LQ036Q1DA01)
 	/* Sharp QVGA LQ036Q1DA01 320x240 9.1cm w/ASIC */
-#define PANEL_NAME	"Sharp LCD Landscape QVGA w/ASIC"
+#define PANEL_NAME		"Sharp LCD Landscape QVGA w/ASIC"
 
-#define PANEL_TIMING0	(0x140a114c)
-#define PANEL_TIMING1	(0x040404ef)
-#define PANEL_TIMING2	(0x013f3016)
-#define PANEL_CONTROL	(0x00010929)
+#define PANEL_TIMING0		(0x140a114c)
+#define PANEL_TIMING1		(0x040404ef)
+#define PANEL_TIMING2		(0x013f3016)
+#define PANEL_CONTROL		(0x00010929)
 
 #define PANEL_ALI_SETUP		(0x33fd)
 #define PANEL_ALI_CONTROL	(0x0003)
 #define PANEL_ALI_TIMING1	(0x082d)
 #define PANEL_ALI_TIMING2	(0x420d)
 
-#define P_PEL_CLOCK_DIV		((PANEL_TIMING2 & 0x1f) + 2)
-//#define P_PEL_WIDTH		((((PANEL_TIMING0 >> 2) & 0x7f) + 1)*16)
-#define P_PEL_WIDTH		(((PANEL_TIMING2 >> 16) & 0x3ff) + 1)
-#define P_PEL_HEIGHT		((PANEL_TIMING1 & 0x1ff) + 1)
-#define P_LEFT_MARGIN		(((PANEL_TIMING0 >> 24) & 0xff) + 1)
-#define P_RIGHT_MARGIN		(((PANEL_TIMING0 >> 16) & 0xff) + 1)
-#define P_TOP_MARGIN		((PANEL_TIMING1 >> 24) & 0xff)
-#define P_BOTTOM_MARGIN		((PANEL_TIMING1 >> 16) & 0xff)
-
-#define P_HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
-#define P_VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
-
-#define P_INVERT_PIXEL_CLOCK	(PANEL_TIMING2  & (1<<13))
-#define P_INVERT_HSYNC		(PANEL_TIMING2  & (1<<12))
-#define P_INVERT_VSYNC		(PANEL_TIMING2  & (1<<11))
-
-//#define PEL_CLOCK_EST	(12*1000*1000)		/* MHz/4.5/12/? */
-//#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK_DIV	P_PEL_CLOCK_DIV
-#define PEL_CLOCK_EST	PEL_CLOCK_DIV
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	P_PEL_WIDTH
-#define PEL_HEIGHT	P_PEL_HEIGHT
-#define BIT_DEPTH	16
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	P_LEFT_MARGIN
-#define RIGHT_MARGIN	P_RIGHT_MARGIN
-#define TOP_MARGIN	P_TOP_MARGIN
-#define BOTTOM_MARGIN	P_BOTTOM_MARGIN
-#define HSYNC_WIDTH	P_HSYNC_WIDTH
-#define VSYNC_WIDTH	P_VSYNC_WIDTH
-
-# if P_INVERT_PIXEL_CLOCK
-#  define INVERT_PIXEL_CLOCK
-# endif
-
-# if P_INVERT_HSYNC
-#  define INVERT_HSYNC
-# endif
-
-# if P_INVERT_VSYNC
-#  define INVERT_VSYNC
-# endif
-
 #endif
 
 #if defined (CONFIG_LCD_LQ035Q7DH06)
 	/* Sharp QVGA LQ035Q7DH06 240x320 */
-#define PANEL_NAME	"Sharp LCD Portrait QVGA w/ASIC"
+#define PANEL_NAME		"Sharp LCD Portrait QVGA w/ASIC"
 
-#define PANEL_TIMING0	(0x480f203c)
-#define PANEL_TIMING1	(0x080f153f)
-#define PANEL_TIMING2	(0x271f1806)
-#define PANEL_CONTROL	(0x00010829)
+#define PANEL_TIMING0		(0x480f203c)
+#define PANEL_TIMING1		(0x080f153f)
+#define PANEL_TIMING2		(0x271f1806)
+#define PANEL_CONTROL		(0x00010829)
 
 #define PANEL_ALI_SETUP		(0x27f0)
 #define PANEL_ALI_CONTROL	(0x0000)
 #define PANEL_ALI_TIMING1	(0x0000)
 #define PANEL_ALI_TIMING2	(0x0000)
 
-#define P_PEL_CLOCK_DIV		((PANEL_TIMING2 & 0x1f) + 2)
-//#define P_PEL_WIDTH		((((PANEL_TIMING0 >> 2) & 0x7f) + 1)*16)
-#define P_PEL_WIDTH		(((PANEL_TIMING2 >> 16) & 0x3ff) + 1)
-#define P_PEL_HEIGHT		((PANEL_TIMING1 & 0x1ff) + 1)
-#define P_LEFT_MARGIN		(((PANEL_TIMING0 >> 24) & 0xff) + 1)
-#define P_RIGHT_MARGIN		(((PANEL_TIMING0 >> 16) & 0xff) + 1)
-#define P_TOP_MARGIN		((PANEL_TIMING1 >> 24) & 0xff)
-#define P_BOTTOM_MARGIN		((PANEL_TIMING1 >> 16) & 0xff)
+#endif
 
-#define P_HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
-#define P_VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
+#if defined (CONFIG_LCD_TD035TTEA1)
+	/* One Stop Display QVGA TD035TTEA1 320x240 */
+# define PANEL_NAME		"OSB LCD Landscape QVGA"
+# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(320)
+# define PEL_HEIGHT		(240)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(440)		/* clock/326/440/472 */
+# define VERT_CYCLE		(264)		/* line/246/264/282 */
+# define HSYNC_WIDTH		(38)		/* clocks/2/38/256 */
+# define VSYNC_WIDTH		(8)		/* lines/2/8/14 */
+# define HORZ_BP		(40)		/* clocks/2/40/256 */
+# define VERT_BP		(8)		/* lines/2/8/14 */
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
+# define INVERT_PIXEL_CLOCK
+#endif
+
+	/* Inverse timing calculations for peculiar Sharp panels
+	   without complete datasheets. */
+#if defined (PANEL_TIMING0)
+
+#define PEL_CLOCK_DIV		((PANEL_TIMING2 & 0x1f) + 2)
+#define PEL_WIDTH		(((PANEL_TIMING2 >> 16) & 0x3ff) + 1)
+#define PEL_HEIGHT		((PANEL_TIMING1 & 0x1ff) + 1)
+#define HORZ_BP			(((PANEL_TIMING0 >> 24) & 0xff) + 1)
+#define HORZ_FP			(((PANEL_TIMING0 >> 16) & 0xff) + 1)
+#define VERT_BP			((PANEL_TIMING1 >> 24) & 0xff)
+#define VERT_FP			((PANEL_TIMING1 >> 16) & 0xff)
+
+#define HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
+#define VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
 
 #define P_INVERT_PIXEL_CLOCK	(PANEL_TIMING2  & (1<<13))
 #define P_INVERT_HSYNC		(PANEL_TIMING2  & (1<<12))
 #define P_INVERT_VSYNC		(PANEL_TIMING2  & (1<<11))
 
-//#define PEL_CLOCK_EST	(12*1000*1000)		/* MHz/4.5/12/? */
-//#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK_DIV	P_PEL_CLOCK_DIV
-#define PEL_CLOCK_EST	PEL_CLOCK_DIV
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	P_PEL_WIDTH
-#define PEL_HEIGHT	P_PEL_HEIGHT
-#define BIT_DEPTH	16
-#define BITS_PER_PEL_2	BPP16
-#define LEFT_MARGIN	P_LEFT_MARGIN
-#define RIGHT_MARGIN	P_RIGHT_MARGIN
-#define TOP_MARGIN	P_TOP_MARGIN
-#define BOTTOM_MARGIN	P_BOTTOM_MARGIN
-#define HSYNC_WIDTH	P_HSYNC_WIDTH
-#define VSYNC_WIDTH	P_VSYNC_WIDTH
+#define PEL_CLOCK_EST		PEL_CLOCK_DIV
+#define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+#define BIT_DEPTH		16
+#define BITS_PER_PEL_2		BPP16
 
 # if P_INVERT_PIXEL_CLOCK
 #  define INVERT_PIXEL_CLOCK
@@ -392,30 +362,6 @@
 
 #endif
 
-#if defined (CONFIG_LCD_TD035TTEA1)
-	/* One Stop Display QVGA TD035TTEA1 320x240 */
-#define PANEL_NAME	"OSB LCD Landscape QVGA"
-#define PEL_CLOCK_EST	(865*1000*1000/100)     /* 4/8/8.65 MHz */
-//#define PEL_CLOCK_EST	(600*1000*1000/100)     /* 4/8/8.65 MHz */
-#define PEL_CLOCK_DIV	CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-#define PEL_CLOCK	(HCLK/PEL_CLOCK_DIV)
-#define PEL_WIDTH	(320)
-#define PEL_HEIGHT	(240)
-#define BIT_DEPTH	(16)
-#define BITS_PER_PEL_2	BPP16
-#define V_CYCLE		(264)			/* line/246/264/282 */
-#define H_CYCLE		(440)			/* clock/326/440/472 */
-#define HSYNC_WIDTH	(38)			/* clocks/2/38/256 */
-#define VSYNC_WIDTH	(8)			/* lines/2/8/14 */
-#define LEFT_MARGIN	(40)			/* clocks/2/40/256 */
-#define TOP_MARGIN	(8)			/* lines/2/8/14 */
-#define RIGHT_MARGIN	(H_CYCLE-PEL_WIDTH -LEFT_MARGIN-HSYNC_WIDTH)
-#define BOTTOM_MARGIN	(V_CYCLE-PEL_HEIGHT-TOP_MARGIN -VSYNC_WIDTH)
-
-#define INVERT_HSYNC
-#define INVERT_VSYNC
-#define INVERT_PIXEL_CLOCK
-#endif
 
 #define HBP(v)	((((v) - 1) & 0xff)<<24)
 #define HFP(v)	((((v) - 1) & 0xff)<<16)
@@ -547,9 +493,9 @@ static void clcdc_init (void)
 
   DRV_CLCDC_SETUP;
 
-  CLCDC_TIMING0 = HBP (LEFT_MARGIN) | HFP (RIGHT_MARGIN) | HSW (HSYNC_WIDTH)
+  CLCDC_TIMING0 = HBP (HORZ_BP) | HFP (HORZ_FP) | HSW (HSYNC_WIDTH)
     | PPL (PEL_WIDTH);
-  CLCDC_TIMING1 = VBP (TOP_MARGIN) | VFP (BOTTOM_MARGIN) | VSW (VSYNC_WIDTH)
+  CLCDC_TIMING1 = VBP (VERT_BP) | VFP (VERT_FP) | VSW (VSYNC_WIDTH)
     | LPP (PEL_HEIGHT);
   CLCDC_TIMING2   = CPL
 #if defined (INVERT_PIXEL_CLOCK)
@@ -772,7 +718,7 @@ int cmd_clcdc (int argc, const char** argv)
     printf ("  clk %d/%d->%d (%d)  sync (%d %d)  porch (%d %d %d %d)\n",
 	    HCLK, PEL_CLOCK_DIV, PEL_CLOCK, PEL_CLOCK_EST,
 	    HSYNC_WIDTH, VSYNC_WIDTH,
-	    LEFT_MARGIN, RIGHT_MARGIN, TOP_MARGIN, BOTTOM_MARGIN);
+	    HORZ_BP, HORZ_FP, VERT_BP, VERT_FP);
     return 0;
   }
 
