@@ -20,7 +20,7 @@
 # define SMC_IOBASE		(0x70000000)
 
 	 /* Use the second static bank, with fast timings, as an IOBARRIER */
-#define SMC_IOBARRIER		(*(volatile unsigned char __force*) 0x10000000)
+#define SMC_IOBARRIER	(*(volatile unsigned char __force*) IOBARROER_PHYS)
 
 static inline u16 SMC_inw (unsigned long base, int r)
 {

@@ -844,7 +844,7 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
   ssize_t cbRead = 0;
   int status;
 
-#if 1
+#if 0
   PUTHEX_LL (d->index);
   PUTC_LL ('/');
   PUTHEX_LL (d->start);
@@ -862,12 +862,14 @@ ssize_t SECTION mmc_read (struct descriptor_d* d, void* pv, size_t cb)
   //  DBG (1, "%s: %ld %ld %d; %ld\n",
   //       __FUNCTION__, d->start + d->index, d->length, cb, mmc.ib);
 
+#if 0
  {
    unsigned long sp;
    __asm volatile ("mov %0, sp\n\t"
 		   : "=r" (sp));
    PUTHEX_LL (sp);
  }
+#endif
 
   while (cb) {
     unsigned long index = d->start + d->index;

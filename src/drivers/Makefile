@@ -30,3 +30,4 @@ obj-$(CONFIG_DRIVER_COMPACTFLASH)	+= drv-cf.o
 obj-$(CONFIG_DRIVER_SMC91X)		+= drv-smc91x.o
 obj-$(CONFIG_CMD_ETH_DM9000)		+= drv-dm9000.o
 obj-$(CONFIG_DRIVER_FIS)		+= drv-fis.o
+obj-$(CONFIG_DRIVER_NAND)		+= drv-nand.o

@@ -90,6 +90,14 @@ config DRIVER_NOR_CFI_NO_BUFFERED
 	  Leave this option set to 'N' unless your target is
 	  experiencing problems using the buffered write routine.
 
+config DRIVER_NAND
+	bool "NAND Flash"
+	depends on USES_NAND=y
+	default y
+	help
+	  This driver implements a NAND driver based on a
+	  mach-specific header.
+
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"
 	depends on USES_COMPACTFLASH=y
@@ -110,6 +118,9 @@ config DRIVER_SMC91X
 endmenu
 
 config USES_NOR_CFI
+	bool
+
+config USES_NAND
 	bool
 
 config USES_COMPACTFLASH

@@ -37,9 +37,10 @@
 
 /* ----- Prototypes */
 
-#define DM_PHYS		(0x10000000)
+//#define DM_PHYS		(0x10000000) /* Modem MAC/PHY */
+#define DM_PHYS		(0x20000000) /* Dev MAC/PHY */
 #define DM_PHYS_INDEX	(DM_PHYS + 0)
 #define DM_PHYS_DATA	(DM_PHYS + 4)
 #define DM_WIDTH	16
 
-#endif  /* __MACH_DRV_CF_H__ */
+#endif  /* __MACH_DRV_DM9000_H__ */

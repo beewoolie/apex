@@ -179,7 +179,8 @@
 
 #if defined (CONFIG_MACH_COMPANION)
 # define SMC_BCR1_V	((1<<28)|(WST(160)<<5)|1<<10|0xf<<0) // Davicom dm9000
-# define SMC_BCR2_V	((2<<28)|(WST(150)<<5)|(0<<0)) // IOBarrier
+# define SMC_BCR2_V	((1<<28)|(WST(160)<<5)|1<<10|0xf<<0) // Davicom dm9000
+# define SMC_BCR7_V	((2<<28)|(WST(150)<<5)|(0<<0)) // IOBarrier
 #endif
 
 
