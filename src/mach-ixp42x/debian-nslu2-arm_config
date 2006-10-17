@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Oct  2 19:39:17 2006
+# Mon Oct 16 22:51:52 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -103,8 +103,11 @@ CONFIG_USES_PATHNAME_PARSER=y
 # Environment
 #
 CONFIG_ENV=y
+# CONFIG_NO_BOOTSTRAP is not set
 CONFIG_NOR_BOOT=y
 # CONFIG_NAND_BOOT is not set
+# CONFIG_COMPANION_EVT1_BOOT is not set
+# CONFIG_COMPANION_EVT2_BOOT is not set
 CONFIG_AUTOBOOT=y
 CONFIG_AUTOBOOT_DELAY=10
 CONFIG_ENV_MUTABLE=y

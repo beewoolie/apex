@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Oct  2 19:39:18 2006
+# Mon Oct 16 22:52:02 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -133,8 +133,11 @@ CONFIG_USE_ETHERNET=y
 # Environment
 #
 CONFIG_ENV=y
+# CONFIG_NO_BOOTSTRAP is not set
 CONFIG_NOR_BOOT=y
 # CONFIG_NAND_BOOT is not set
+# CONFIG_COMPANION_EVT1_BOOT is not set
+# CONFIG_COMPANION_EVT2_BOOT is not set
 # CONFIG_AUTOBOOT is not set
 CONFIG_ENV_MUTABLE=y
 CONFIG_ENV_LINK=y
