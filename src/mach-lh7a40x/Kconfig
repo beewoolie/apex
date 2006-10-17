@@ -47,6 +47,8 @@ config MACH_COMPANION
 	select HAS_LH_MMC
 	select HAS_LH_I2C
 	select USES_DM9000
+	select USES_COMPANION_EVT1_BOOT
+	select USES_COMPANION_EVT2_BOOT
 	select USES_NAND
 	select USES_NAND_BOOTFLASH
 
@@ -200,14 +202,6 @@ config SDRAM_CONTIGUOUS
 	  sparse in the address space.  Linux does not need this
 	  option, but Windows/CE does.  It should be safe to set
 	  this option. 
-
-config RELOCATE_COMPANION
-	bool "Use Synapse Companion APEX relocate in bootstrap"
-	depends on MACH_COMPANION
-	default n
-	help
-	  This implementation of the relocate_apex () function can
-	  copy the boot loader from SD/MMC or from I2C EEPROM.
 
 endmenu
 

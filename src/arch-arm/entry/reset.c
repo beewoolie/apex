@@ -157,6 +157,8 @@ void __naked __section (.reset) reset (void)
   COPROCESSOR_WAIT;
 #endif
 
+  preinitialization ();		/* Special hook for init's before SDRAM */
+
   initialize_bootstrap ();	/* Initialization critical to relocate */
   PUTC_LL ('E');
   PUTC_LL ('r');

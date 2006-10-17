@@ -161,7 +161,7 @@
    we're disabling the feature until we have time to look at it.  */
 //#define USE_MULTIBLOCK_READ	/* Use multiblock read implementation */
 
-#if defined (CONFIG_RELOCATE_COMPANION)
+#if defined (CONFIG_RELOCATE_COMPANION_EVT1)
 # define USE_MMC_BOOTSTRAP	/* Allow MMC driver to be used in bootstrap */
 # undef USE_MULTIBLOCK_READ	/* ...just in case */
 #endif

@@ -46,23 +46,12 @@
 #include <service.h>
 #include <linux/string.h>
 #include <spinner.h>
+#include <error.h>
+#include <command.h>
 
 #include "mach/drv-nand.h"
 
-#define Reset		(0xff)
-#define ReadID		(0x90)
-#define Status		(0x70)
-#define Read1		(0x00)	/* Start address in first 256 bytes of page */
-#define Read2		(0x01)	/* Start address in second 256 bytes of page */
-#define Read3		(0x50)	/* Start address in last 16 bytes, (ECC?) */
-#define Erase		(0x60)
-#define EraseConfirm	(0xd0)
-#define AutoProgram	(0x10)
-#define SerialInput	(0x80)
-
-#define Fail		(1<<0)
-#define Ready		(1<<6)
-#define Writable	(1<<7)
+#include "nand.h"
 
 struct nand_chip {
   unsigned char device;
@@ -100,19 +89,20 @@ static void nand_init (void)
   unsigned char manufacturer;
   unsigned char device;
 
-  SMC_BCR6 = 0xffef;
+  /* *** FIXME: this must be moved to the platform setup code */
+//  SMC_BCR6 = 0xffef;
 
   NAND_CS_ENABLE;
 
-  NAND_CLE = Reset;
+  NAND_CLE = NAND_Reset;
   wait_on_busy ();
 
-  NAND_CLE = Status;
+  NAND_CLE = NAND_Status;
   wait_on_busy ();
-  if ((NAND_DATA & Ready) == 0)
+  if ((NAND_DATA & NAND_Ready) == 0)
     goto exit;
 
-  NAND_CLE = ReadID;
+  NAND_CLE = NAND_ReadID;
   NAND_ALE = 0;
 
   manufacturer = NAND_DATA;
@@ -174,16 +164,16 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     cb -= available;
     cbRead += available;
 
-    NAND_CLE = Reset;
+    NAND_CLE = NAND_Reset;
     wait_on_busy ();
-    NAND_CLE = (index < 256) ? Read1 : Read2;
+    NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
     NAND_ALE = (index & 0xff);
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
     wait_on_busy ();
     //#if !defined (CONFIG_NAND_LPD)
 		/* Switch back to read mode */
-    NAND_CLE = (index < 256) ? Read1 : Read2;
+    NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
     //#endif
     while (available--)		/* May optimize with assembler...later */
       *((char*) pv++) = NAND_DATA;
@@ -218,7 +208,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
       available = cb;
     tail = 528 - index - available;
 
-    NAND_CLE = SerialInput;
+    NAND_CLE = NAND_SerialInput;
     NAND_ALE = 0;	/* Always start at page beginning */
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
@@ -236,14 +226,14 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     while (tail--)	   /* Fill to end of block */
       NAND_DATA = 0xff;
 
-    NAND_CLE = AutoProgram;
+    NAND_CLE = NAND_AutoProgram;
 
     wait_on_busy ();
 
     SPINNER_STEP;
 
-    NAND_CLE = Status;
-    if (NAND_DATA & Fail) {
+    NAND_CLE = NAND_Status;
+    if (NAND_DATA & NAND_Fail) {
       printf ("Write failed at page %ld\n", page);
       goto exit;
     }
@@ -272,17 +262,17 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
-    NAND_CLE = Erase;
+    NAND_CLE = NAND_Erase;
     NAND_ALE = ( page & 0xff);
     NAND_ALE = ((page >> 8) & 0xff);
-    NAND_CLE = EraseConfirm;
+    NAND_CLE = NAND_EraseConfirm;
 
     wait_on_busy ();
 
     SPINNER_STEP;
 
-    NAND_CLE = Status;
-    if (NAND_DATA & Fail) {
+    NAND_CLE = NAND_Status;
+    if (NAND_DATA & NAND_Fail) {
       printf ("Erase failed at page %ld\n", page);
       goto exit;
     }
@@ -317,14 +307,14 @@ static void nand_report (void)
   if (!chip)
     return;
 
-  NAND_CLE = Status;
+  NAND_CLE = NAND_Status;
   status = NAND_DATA;
 
   printf ("  nand:   %ldMiB total, %dKiB erase %s%s%s\n",
 	  chip->total_size/(1024*1024), chip->erase_size/1024,
-	  (status & Fail) ? " FAIL" : "",
-	  (status & Ready) ? " RDY" : "",
-	  (status & Writable) ? " R/W" : " R/O"
+	  (status & NAND_Fail) ? " FAIL" : "",
+	  (status & NAND_Ready) ? " RDY" : "",
+	  (status & NAND_Writable) ? " R/W" : " R/O"
 	  );
 }
 
@@ -347,4 +337,51 @@ static __service_6 struct service_d nand_service = {
 #if !defined (CONFIG_SMALL)
   .report = nand_report,
 #endif
+};
+
+int cmd_nand (int argc, const char** argv)
+{
+  unsigned long cb = 32*1024*1024;
+  int c;
+  int last = -1;
+
+  for (c = 0; c < cb; c += 512) {
+    char rgb[512];
+    char sz[20];
+    int result;
+    struct descriptor_d d;
+
+    {
+      int v = c/16384;
+      if (v != last)
+	printf ("  %04x    \r", v);
+      last = v;
+    }
+
+    {
+      int i;
+      for (i = 0; i < 512; i += 4)
+	*(unsigned long*)&rgb[i] = i + c;
+    }
+
+    sprintf (sz, "nand:0x%x+512", c);
+    if (   (result = parse_descriptor (sz, &d))
+	|| (result = open_descriptor (&d))) {
+      printf ("Unable to open target %s\n", sz);
+      return ERROR_FAILURE;
+    }
+
+    nand_write (&d, rgb, 512);
+    close_descriptor (&d);
+  }
+  return 0;
+}
+
+static __command struct command_d c_nand = {
+  .command = "nand",
+  .func = cmd_nand,
+  COMMAND_DESCRIPTION ("nand test function")
+  COMMAND_HELP (
+"nand\n"
+"\n")
 };

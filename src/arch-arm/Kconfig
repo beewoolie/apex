@@ -276,9 +276,27 @@ config ENV
 	  possible size, it is best to set this option Y.
 
 choice
-	prompt "Bootflash"
-	depends on USES_NOR_BOOTFLASH || USES_NAND_BOOTFLASH
+	prompt "Bootstrap Method"
+	depends on USES_NOR_BOOTFLASH || USES_NAND_BOOTFLASH || USES
 	default NOR_BOOT
+	help
+	  There are many ways in which the system could bootstreap.
+	  The most common is NOR flash mapped into the memory space.
+	  Other, methods include NAND flash boot, I2C EEPROM booting,
+	  and SD/MMC card booting.  NOR is the easiest as the CPU has
+	  access to the complete boot loader and the loader can copy
+	  itself to RAM once RAM is initialized.  Other methods depend
+	  on the CPU to copy a small portion of the loader (or a
+	  bootstrap) into SRAM which then perform the read of the boot
+	  process.
+
+config NO_BOOTSTRAP
+	bool "No Bootstrap"
+	help
+	  This option disables any possible specialized bootstrap
+	  option and only supports a relocation of the loader from the
+	  location where it is running to SDRAM.  This is, in fact,
+	  the same as NOR_NOOTFLASH.
 
 config NOR_BOOT
 	depends on USES_NOR_BOOTFLASH
@@ -291,6 +309,26 @@ config NAND_BOOT
 	help
 	  Selecting NAND as the bootflash select an APEX relocation
 	  routine to one that copies from the NAND.
+
+config COMPANION_EVT1_BOOT
+	depends on USES_COMPANION_EVT1_BOOT && DRIVER_LH_MMC
+	bool "Companion EVT1 I2C Boot"
+	select RELOCATE_COMPANION_EVT1
+	help
+	  This enables an implementation of the relocate_apex ()
+	  function that copies the boot loader from SD/MMC or from I2C
+	  EEPROM.
+
+config COMPANION_EVT2_BOOT
+	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
+	bool "Companion EVT2 NAND Boot"
+	select RELOCATE_COMPANION_EVT2
+	help
+	  This enables preinitialization() that copies all of the boot
+	  loader from NAND flash to SRAM so that the system can get on
+	  it's feet.  The EVT2 NAND flash part only supports reading
+	  of 512 bytes from NAND flash in the absence of a stream
+	  reading feature.
 
 endchoice
 
@@ -441,6 +479,18 @@ config USES_NOR_BOOTFLASH
 	bool
 
 config USES_NAND_BOOTFLASH
+	bool
+
+config USES_COMPANION_EVT1_BOOT
+	bool
+
+config RELOCATE_COMPANION_EVT1
+	bool
+
+config USES_COMPANION_EVT2_BOOT
+	bool
+
+config RELOCATE_COMPANION_EVT2
 	bool
 
 config RELOCATE_NAND

@@ -21,6 +21,10 @@ SECTIONS
 		*(.envlink)
 	}
 	. = ALIGN (4);			/* should be redundant */
+	.preinit : {		/* Preinitialization code, before bootstrap */
+		*(.preinit)
+	}
+	. = ALIGN (4);			/* should be redundant */
 	.bootstrap : {		/* Bootstrap initialzation */
 		*(.bootstrap)		
 	}		

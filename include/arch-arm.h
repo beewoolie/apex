@@ -37,6 +37,7 @@
 
 /* ----- Prototypes */
 
+extern void preinitialization (void);
 extern void relocate_apex (void);
 extern const char* cp15_ctrl (unsigned long);
 

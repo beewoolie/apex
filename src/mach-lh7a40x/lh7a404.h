@@ -62,6 +62,7 @@
 #define ADC_MIS		__REG(ADC_PHYS + 0xac)	/* Masked Interrupt Status  */
 #define ADC_IC		__REG(ADC_PHYS + 0xb0)	/* Interrupt clear */
 
+#define BOOT_PBC	__REG8(0xb0000000 + 0x13ffc) /* Filled by ROM */
 
 /* ----- Globals */
 

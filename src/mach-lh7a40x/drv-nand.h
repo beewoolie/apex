@@ -34,6 +34,7 @@
 /* ----- Includes */
 
 #include "mach/hardware.h"
+#include "nand.h"
 
 /* ----- Types */
 
@@ -51,6 +52,34 @@
 #define NAND_CS_DISABLE\
 	({ GPIO_PCD |= 1<<6; })
 
-#define NAND_ISBUSY   ({ NAND_CLE = Status; (NAND_DATA & Ready) == 0; })
+#define NAND_ISBUSY   ({ NAND_CLE = NAND_Status;\
+		         (NAND_DATA & NAND_Ready) == 0; })
+
+/* The NAND address map converts the boot code from the CPU into the
+   number of address bytes used by the device.  Refer to the LH79524
+   documentation for the boot codes.  The map is a 32 bit number where
+   each boot code is represented by two bits.  Boot code zero occupies
+   the least significant bits of the map.  The values in the map are 0
+   for non-NAND boot, 1 for 3 address bytes, 2 for 4 address bytes,
+   and 3 for five address bytes.  The simple decode macro will return
+   2 for non-NAND boot codes.
+
+   The reason for this is two-fold.  First, we want to be space
+   efficient when we can.  This stragety yields a correct result in
+   only a few instructions.  Second, a lookup using a byte array is
+   infeasible when the loader is still trying to get itself into
+   SDRAM.  The compiler wants to put the array into constant storage
+   and not in the code segment.  Most importantly, though, this method
+   is compact.
+
+ */
+
+#define _NAM(bootcode,address_bytes) \
+	    ((((address_bytes) - 2)&0x3)<<(((bootcode) & 0xf)*2))
+//#define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)
+//		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
+#define NAND_ADDR_MAP (_NAM(0,3) | _NAM(1,4) | _NAM(2,5)\
+		      |_NAM(8,3) | _NAM(9,4) | _NAM(10,5))
+#define NAM_DECODE(bootcode) (((NAND_ADDR_MAP >> ((bootcode)*2)) & 0x3) + 2)
 
 #endif  /* __DRV_NAND_H__ */
