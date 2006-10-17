@@ -29,3 +29,5 @@ obj-$(CONFIG_CMD_ARM920_TEST)	+= cmd-cp15test.o
 obj-$(CONFIG_RELOCATE_COMPANION_EVT1) += relocate-companion.o
 obj-$(CONFIG_MACH_COMPANION)    += clcdc-companion.o
 obj-$(CONFIG_RELOCATE_COMPANION_EVT2) += preinitialization-companion.o
+
+obj-$(CONFIG_MACH_COMPANION)	+= test-companion.o

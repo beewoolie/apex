@@ -288,9 +288,18 @@
 #define MMC_DATA_FIFO		__REG(MMC_PHYS + 0x48)
 #define MMC_BUF_PART_FULL	__REG(MMC_PHYS + 0x4c) /* LH7A400 only */
 
+#define PWM_TC2			__REG(PWM_PHYS + 0x00)
+#define PWM_DC2			__REG(PWM_PHYS + 0x04)
+#define PWM_EN2			__REG(PWM_PHYS + 0x08)
+#define PWM_INV2		__REG(PWM_PHYS + 0x0c)
+#define PWM_SYNC2		__REG(PWM_PHYS + 0x10)
+
 #define PWM_TC3			__REG(PWM_PHYS + 0x20)
 #define PWM_DC3			__REG(PWM_PHYS + 0x24)
 #define PWM_EN3			__REG(PWM_PHYS + 0x28)
 #define PWM_INV3		__REG(PWM_PHYS + 0x2c)
+
+#define DCDC_DCDCCON		__REG(DCDC_PHYS + 0x00)
+#define DCDC_DCDCFREQ		__REG(DCDC_PHYS + 0x08)
 
 #endif  /* __LH7A40X_H__ */

@@ -1,3 +1,4 @@
+
 /* drv-nand.c
 
    written by Marc Singer
@@ -39,6 +40,8 @@
    (1<<7) !R/O
 
 */
+
+//#define CMD_NAND
 
 #include <config.h>
 #include <apex.h>
@@ -339,6 +342,8 @@ static __service_6 struct service_d nand_service = {
 #endif
 };
 
+#if defined (CMD_NAND)
+
 int cmd_nand (int argc, const char** argv)
 {
   unsigned long cb = 32*1024*1024;
@@ -385,3 +390,5 @@ static __command struct command_d c_nand = {
 "nand\n"
 "\n")
 };
+
+#endif
