@@ -323,6 +323,7 @@ config COMPANION_EVT2_BOOT
 	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
 	bool "Companion EVT2 NAND Boot"
 	select RELOCATE_COMPANION_EVT2
+	select PREINITIALIZATOIN
 	help
 	  This enables preinitialization() that copies all of the boot
 	  loader from NAND flash to SRAM so that the system can get on
@@ -494,6 +495,9 @@ config RELOCATE_COMPANION_EVT2
 	bool
 
 config RELOCATE_NAND
+	bool
+
+config PREINITIALIZATION
 	bool
 
 config BIGENDIAN

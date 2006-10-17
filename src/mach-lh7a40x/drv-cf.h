@@ -32,6 +32,8 @@
 
 /* ----- Includes */
 
+#include "mach/iobarrier.h" 
+
 /* ----- Types */
 
 /* ----- Globals */
