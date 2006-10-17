@@ -46,6 +46,7 @@ config MACH_COMPANION
 	select HAS_LH_CLCDC
 	select HAS_LH_MMC
 	select HAS_LH_I2C
+	select USES_NAND
 	select USES_DM9000
 	select USES_COMPANION_EVT1_BOOT
 	select USES_COMPANION_EVT2_BOOT
