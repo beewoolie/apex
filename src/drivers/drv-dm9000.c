@@ -58,9 +58,8 @@
 #define DBG(l,f...)		do {} while (0)
 #endif
 
-#if DM_WIDTH == 16
-# define DM_INDEX	__REG16 (DM_PHYS_INDEX)
-# define DM_DATA	__REG16 (DM_PHYS_DATA)
+#if !defined (C_DM)
+# define C_DM	(1)
 #endif
 
 struct dm9000 {
@@ -68,11 +67,10 @@ struct dm9000 {
   unsigned short vendor;
   unsigned short product;
   unsigned short chip;
+  u16 rgs_eeprom[64/2];		/* Data copied from the eeprom */
 };
 
-struct dm9000 dm9000;
-
-static u16 rgs_eeprom[64/2];	/* Data copied from the eeprom */
+struct dm9000 dm9000[C_DM];
 
 static void write_reg (int index, u16 value)
 {
@@ -114,8 +112,8 @@ static void write_eeprom (int index, u16 value)
 static void dm9000_read_eeprom (void)
 {
   int i;
-  for (i = 0; i < sizeof (rgs_eeprom)/sizeof (u16); ++i)
-    rgs_eeprom[i] = read_eeprom (i);
+  for (i = 0; i < sizeof (dm9000[0].rgs_eeprom)/sizeof (u16); ++i)
+    dm9000[0].rgs_eeprom[i] = read_eeprom (i);
 }
 
 
@@ -132,12 +130,12 @@ static int cmd_eth (int argc, const char** argv)
 {
   int result = 0;
 
-  if (!dm9000.present)
+  if (!dm9000[0].present)
     ERROR_RETURN (ERROR_FAILURE, "dm9000 device not present");
 
   if (argc == 1) {
     printf ("dm9000: vendor 0x%x  product 0x%x  chip 0x%x\n",
-	    dm9000.vendor, dm9000.product, dm9000.chip);
+	    dm9000[0].vendor, dm9000[0].product, dm9000[0].chip);
   }
   else {
 	/* Set mac address */
@@ -184,9 +182,8 @@ static int cmd_eth (int argc, const char** argv)
 
     if (strcmp (argv[1], "re") == 0) {
       dm9000_read_eeprom ();
-      dump ((void*) rgs_eeprom, sizeof (rgs_eeprom), 0);
+      dump ((void*) dm9000[0].rgs_eeprom, sizeof (dm9000[0].rgs_eeprom), 0);
     }
-
   }
 
   return result;
@@ -223,44 +220,52 @@ static __command struct command_d c_eth = {
 
 static void dm9000_init (void)
 {
-  u16 rgs[3];
+  int i;
 
-  dm9000.vendor  = read_reg (DM9000_VIDL) | (read_reg (DM9000_VIDH) << 8);
-  dm9000.product = read_reg (DM9000_PIDL) | (read_reg (DM9000_PIDH) << 8);
-  dm9000.chip	 = read_reg (DM9000_CHIPR);
+  for (i = 0; i < C_DM; ++i) {
 
-  if (dm9000.vendor != 0xa46 || dm9000.product != 0x9000)
-    return;
+    dm9000[i].vendor  = read_reg (DM9000_VIDL) | (read_reg (DM9000_VIDH) << 8);
+    dm9000[i].product = read_reg (DM9000_PIDL) | (read_reg (DM9000_PIDH) << 8);
+    dm9000[i].chip    = read_reg (DM9000_CHIPR);
 
-  dm9000.present = 1;
+    if (dm9000[i].vendor != 0xa46 || dm9000[i].product != 0x9000)
+      return;
 
-  rgs[0] = read_eeprom (0);
-  rgs[1] = read_eeprom (1);
-  rgs[2] = read_eeprom (2);
+    dm9000[i].present = 1;
 
-  host_mac_address[0] =  rgs[0]       & 0xff;
-  host_mac_address[1] = (rgs[0] >> 8) & 0xff;
-  host_mac_address[2] =  rgs[1]       & 0xff;
-  host_mac_address[3] = (rgs[1] >> 8) & 0xff;
-  host_mac_address[4] =  rgs[2]       & 0xff;
-  host_mac_address[5] = (rgs[2] >> 8) & 0xff;
+    dm9000[i].rgs_eeprom[0] = read_eeprom (0);
+    dm9000[i].rgs_eeprom[1] = read_eeprom (1);
+    dm9000[i].rgs_eeprom[2] = read_eeprom (2);
+
+    if (i == 0) {
+      host_mac_address[0] =  dm9000[i].rgs_eeprom[0]       & 0xff;
+      host_mac_address[1] = (dm9000[i].rgs_eeprom[0] >> 8) & 0xff;
+      host_mac_address[2] =  dm9000[i].rgs_eeprom[1]       & 0xff;
+      host_mac_address[3] = (dm9000[i].rgs_eeprom[1] >> 8) & 0xff;
+      host_mac_address[4] =  dm9000[i].rgs_eeprom[2]       & 0xff;
+      host_mac_address[5] = (dm9000[i].rgs_eeprom[2] >> 8) & 0xff;
+    }
+  }
 }
 
 
 #if !defined (CONFIG_SMALL)
 static void dm9000_report (void)
 {
-  if (dm9000.present) {
-    printf ("  dm9000: phy_addr %d  phy_id 0x%lx"
-	    "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-	    -1, (unsigned long)-1,
-	    host_mac_address[0],
-	    host_mac_address[1],
-	    host_mac_address[2],
-	    host_mac_address[3],
-	    host_mac_address[4],
-	    host_mac_address[5]
-	    );
+  int i;
+
+  for (i = 0; i < C_DM; ++i) {
+    if (dm9000[i].present) {
+      printf ("  dm9000: phy_addr %d  phy_id 0x%lx"
+	      "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	      -1, (unsigned long)-1,
+	      (dm9000[i].rgs_eeprom[0]) & 0xff,
+	      (dm9000[i].rgs_eeprom[0] >> 8) & 0xff,
+	      (dm9000[i].rgs_eeprom[1]) & 0xff,
+	      (dm9000[i].rgs_eeprom[1] >> 8) & 0xff,
+	      (dm9000[i].rgs_eeprom[2]) & 0xff,
+	      (dm9000[i].rgs_eeprom[2] >> 8) & 0xff);
+    }
   }
 }
 #endif
