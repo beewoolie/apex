@@ -23,11 +23,11 @@ int cmd_click (int argc, const char** argv)
   int i;
   printf ("%s\n", __FUNCTION__);
 
-  for (i = 0; i < 1000; ++i) {
+  for (i = 0; i < 15; ++i) {
     GPIO_PGD |= (1<<7);
-    mdelay (250);
+    udelay (125);
     GPIO_PGD &= ~(1<<7);
-    mdelay (750);
+    udelay (125);
   }
 
 

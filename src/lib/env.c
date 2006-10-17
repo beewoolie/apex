@@ -71,12 +71,24 @@
 */
 
 #include <config.h>
-//#include <apex.h>		/* printf */
+#include <apex.h>		/* printf */
 #include <linux/types.h>
 #include <environment.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <driver.h>
+
+//#define TALK 1
+
+#if defined (TALK)
+#define PRINTF(f...)		printf (f)
+#define ENTRY(l)		printf ("%s\n", __FUNCTION__)
+#define DBG(l,f...)		do { if (TALK >= l) printf (f); } while (0)
+#else
+#define PRINTF(f...)		do {} while (0)
+#define ENTRY(l)		do {} while (0)
+#define DBG(l,f...)		do {} while (0)
+#endif
 
 extern char APEX_ENV_START;
 extern char APEX_ENV_END;
@@ -231,15 +243,17 @@ static char _env_locate (int i)
 
 int env_check_magic (void)
 {
-  char __aligned rgb[2];
+  unsigned char __aligned rgb[2];
 
   _env_rewind ();
   _env_read (rgb, 2);
   if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)
     return 0;
 
-  if (rgb[0] != 0xff || rgb[1] != 0xff)
+  if (rgb[0] != 0xff || rgb[1] != 0xff) {
+    DBG (1, "%s: bad magic %x %x\n", __FUNCTION__, rgb[0], rgb[1]);
     return -1;
+  }
 
 #if defined (ENV_CHECK_LEN) && ENV_CHECK_LEN > 0
   {
@@ -394,6 +408,8 @@ void env_erase (const char* szKey)
   int i = _env_index (szKey);
   char ch;
 
+  ENTRY (0);
+
   if (i < 0)
     return;
 
@@ -425,6 +441,8 @@ int env_store (const char* szKey, const char* szValue)
   int i = _env_index (szKey);
   int   cch = strlen (szValue);
   char ch;
+
+  ENTRY (0);
 
   if (i < 0 || cch > ENV_CB_MAX - 1)
     return 1;
