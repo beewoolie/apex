@@ -1,3 +1,21 @@
+2006-10-18  Marc Singer  <elf@zealous.synapse.com>
+
+	* Makefile: v1.4.7
+
+	* src/mach-lh7a40x/preinitialization-companion.c:
+	Preinitialization support to work-around limitation in Sharp Boot
+	ROM.  The ROM only loads 512 bytes from modern NAND parts.  We
+	need to pull more of this down in order to properly initialize the
+	system and copy the loader to SDRAM.
+
+	* src/drivers/drv-nand.c: Genericized NAND driver.
+
+	* src/drivers-lh/drv-clcdc.c: New panels.  Reorganized the panel
+	setup code to better conform to standard nomenclature.
+
+	* src/drivers/drv-dm9000.c: Support for more than one DM9000
+	chip.  It can write to both mac address roms as well.
+	
 2006-08-18    <elf@scarlet.buici.com>
 
 	* src/drivers/drv-fis.c (compare_skips): Fixed the comparison

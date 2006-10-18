@@ -46,7 +46,7 @@
 
 #include <mach/drv-dm9000.h>
 
-#define TALK 3
+#define TALK 1
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -80,14 +80,20 @@ struct dm9000 dm9000[C_DM];
 
 static void write_reg (int dm, int index, u16 value)
 {
+  DBG (3, "%s: [%d] %x <- %x\n", __FUNCTION__, dm, index, value);
   *dm9000[dm].index = index;
+  udelay (1);
   *dm9000[dm].data  = value;
 }
 
 static u16 read_reg (int dm, int index)
 {
+  int value;
   *dm9000[dm].index = index;
-  return *dm9000[dm].data;
+  udelay (1);
+  value =  *dm9000[dm].data;
+  DBG (3, "%s: [%d] %x -> %x\n", __FUNCTION__, dm, index, value);
+  return value;
 }
 
 static u16 read_eeprom (int dm, int index)
@@ -137,8 +143,8 @@ static int cmd_eth (int argc, const char** argv)
   int result = 0;
   int dm = 0;
 
-  if (argc > 1 && *argv[1] == '-') {
-    switch (argv[0][1]) {
+  if (argc > 1 && argv[1][0] == '-') {
+    switch (argv[1][1]) {
     default:
     case '0':
       break;
@@ -191,6 +197,7 @@ static int cmd_eth (int argc, const char** argv)
       write_eeprom (dm, 0, rgs[0]);
       write_eeprom (dm, 1, rgs[1]);
       write_eeprom (dm, 2, rgs[2]);
+      dm9000_read_eeprom (dm);
     }
 
     if (strcmp (argv[1], "re") == 0) {
@@ -238,6 +245,8 @@ static void dm9000_init (void)
 
   for (dm = 0; dm < C_DM; ++dm) {
 
+    DBG (2, "%s: %d\n", __FUNCTION__, dm);
+
     switch (dm) {
     case 0:
       dm9000[dm].index = &__REG16 (DM_PHYS_INDEX);
@@ -253,14 +262,20 @@ static void dm9000_init (void)
       continue;
     }
 
+    DBG (2, "%s: [%d] index %p  data %p\n", __FUNCTION__, dm,
+	 dm9000[dm].index, dm9000[dm].data);
+
     dm9000[dm].vendor  = read_reg (dm, DM9000_VIDL)
       | (read_reg (dm, DM9000_VIDH) << 8);
     dm9000[dm].product = read_reg (dm, DM9000_PIDL)
       | (read_reg (dm, DM9000_PIDH) << 8);
     dm9000[dm].chip    = read_reg (dm, DM9000_CHIPR);
 
+    DBG (2, "%s: [%d] vendor %x  product %x  chip %x\n", __FUNCTION__, dm,
+	 dm9000[dm].vendor, dm9000[dm].product, dm9000[dm].chip);
+
     if (dm9000[dm].vendor != 0xa46 || dm9000[dm].product != 0x9000)
-      return;
+      continue;
 
     dm9000[dm].present = 1;
 
@@ -286,9 +301,14 @@ static void dm9000_report (void)
 {
   int dm;
 
+  printf ("  dm9000: host_mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	  host_mac_address[0], host_mac_address[1],
+	  host_mac_address[2], host_mac_address[3],
+	  host_mac_address[4], host_mac_address[5]);
+
   for (dm = 0; dm < C_DM; ++dm) {
     if (dm9000[dm].present) {
-      printf ("  dm9000: [%d]"
+      printf ("  dm9000: [%d] "
 //	      " phy_addr %d  phy_id 0x%lx"
 	      " mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
 	      dm,

@@ -1,4 +1,3 @@
-
 /* drv-nand.c
 
    written by Marc Singer
