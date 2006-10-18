@@ -32,6 +32,7 @@
 /* ----- Includes */
 
 #include <attributes.h>
+#include <driver.h>
 
 /* ----- Types */
 

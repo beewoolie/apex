@@ -15,21 +15,23 @@
 #include <apex.h>
 #include "hardware.h"
 #include <command.h>
+#include <console.h>
 
 #include <debug_ll.h>
 
 int cmd_click (int argc, const char** argv)
 {
+  int c = 120;
   int i;
   printf ("%s\n", __FUNCTION__);
 
-  for (i = 0; i < 15; ++i) {
-    GPIO_PGD |= (1<<7);
-    udelay (125);
-    GPIO_PGD &= ~(1<<7);
-    udelay (125);
-  }
-
+  for (; c-- && !console->poll (0, 0); mdelay (500))
+    for (i = 0; i < 15; ++i) {
+      GPIO_PGD |= (1<<7);
+      udelay (125);
+      GPIO_PGD &= ~(1<<7);
+      udelay (125);
+    }
 
   return 0;
 }
@@ -42,4 +44,3 @@ static __command struct command_d c_click = {
 "click\n"
 "\n")
 };
-
