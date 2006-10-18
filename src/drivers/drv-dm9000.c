@@ -62,58 +62,64 @@
 # define C_DM	(1)
 #endif
 
+#if DM_WIDTH != 16
+# error "DM9000 driver only supports 16 bit bus"
+#endif
+
 struct dm9000 {
   int present;
   unsigned short vendor;
   unsigned short product;
   unsigned short chip;
-  u16 rgs_eeprom[64/2];		/* Data copied from the eeprom */
+  u16 rgs_eeprom[64/sizeof (u16)]; /* Data copied from the eeprom */
+  volatile u16* index;
+  volatile u16* data;
 };
 
 struct dm9000 dm9000[C_DM];
 
-static void write_reg (int index, u16 value)
+static void write_reg (int dm, int index, u16 value)
 {
-  DM_INDEX = index;
-  DM_DATA = value;
+  *dm9000[dm].index = index;
+  *dm9000[dm].data  = value;
 }
 
-static u16 read_reg (int index)
+static u16 read_reg (int dm, int index)
 {
-  DM_INDEX = index;
-  return DM_DATA;
+  *dm9000[dm].index = index;
+  return *dm9000[dm].data;
 }
 
-static u16 read_eeprom (int index)
+static u16 read_eeprom (int dm, int index)
 {
   u16 v;
 
-  write_reg (DM9000_EPAR, index);
-  write_reg (DM9000_EPCR, EPCR_ERPRR);
+  write_reg (dm, DM9000_EPAR, index);
+  write_reg (dm, DM9000_EPCR, EPCR_ERPRR);
   mdelay (10);	/* according to the datasheet 200us should be enough,
 		   but it doesn't work */
-  write_reg (DM9000_EPCR, 0x0);
+  write_reg (dm, DM9000_EPCR, 0x0);
 
-  v = read_reg (DM9000_EPDRL) & 0xff;
-  v |= (read_reg (DM9000_EPDRH) & 0xff) << 8;
+  v = read_reg (dm, DM9000_EPDRL) & 0xff;
+  v |= (read_reg (dm, DM9000_EPDRH) & 0xff) << 8;
   return v;
 }
 
-static void write_eeprom (int index, u16 value)
+static void write_eeprom (int dm, int index, u16 value)
 {
-  write_reg (DM9000_EPAR, index);
-  write_reg (DM9000_EPDRH, (value >> 8) & 0xff);
-  write_reg (DM9000_EPDRL,  value       & 0xff);
-  write_reg (DM9000_EPCR, EPCR_WEP | EPCR_ERPRW);
+  write_reg (dm, DM9000_EPAR, index);
+  write_reg (dm, DM9000_EPDRH, (value >> 8) & 0xff);
+  write_reg (dm, DM9000_EPDRL,  value       & 0xff);
+  write_reg (dm, DM9000_EPCR, EPCR_WEP | EPCR_ERPRW);
   mdelay (10);
-  write_reg (DM9000_EPCR, 0);
+  write_reg (dm, DM9000_EPCR, 0);
 }
 
-static void dm9000_read_eeprom (void)
+static void dm9000_read_eeprom (int dm)
 {
   int i;
-  for (i = 0; i < sizeof (dm9000[0].rgs_eeprom)/sizeof (u16); ++i)
-    dm9000[0].rgs_eeprom[i] = read_eeprom (i);
+  for (i = 0; i < sizeof (dm9000[dm].rgs_eeprom)/sizeof (u16); ++i)
+    dm9000[dm].rgs_eeprom[i] = read_eeprom (dm, i);
 }
 
 
@@ -129,13 +135,29 @@ static char host_mac_address[6];
 static int cmd_eth (int argc, const char** argv)
 {
   int result = 0;
+  int dm = 0;
 
-  if (!dm9000[0].present)
+  if (argc > 1 && *argv[1] == '-') {
+    switch (argv[0][1]) {
+    default:
+    case '0':
+      break;
+#if C_DM > 0
+    case '1':
+      dm = 1;
+      break;
+#endif
+    }
+    --argc;
+    ++argv;
+  }
+
+  if (!dm9000[dm].present)
     ERROR_RETURN (ERROR_FAILURE, "dm9000 device not present");
 
   if (argc == 1) {
-    printf ("dm9000: vendor 0x%x  product 0x%x  chip 0x%x\n",
-	    dm9000[0].vendor, dm9000[0].product, dm9000[0].chip);
+    printf ("dm9000[%d]: vendor 0x%x  product 0x%x  chip 0x%x\n",
+	    dm, dm9000[dm].vendor, dm9000[dm].product, dm9000[dm].chip);
   }
   else {
 	/* Set mac address */
@@ -159,15 +181,6 @@ static int cmd_eth (int argc, const char** argv)
       }
 
       memcpy (host_mac_address, rgb, 6); /* For networking layer */
-
-#if 0
-      EMAC_SPECAD1BOT
-	= (rgb[3]<<24)|(rgb[2]<<16)|(rgb[1]<<8)|(rgb[0]<<0);
-      EMAC_SPECAD1TOP
-	= (rgb[5]<<8)|(rgb[4]<<0);
-      printf ("emac: mac address\n");
-      dump (rgb, 6, 0);
-#endif
     }
 
     if (strcmp (argv[1], "save") == 0) {
@@ -175,14 +188,14 @@ static int cmd_eth (int argc, const char** argv)
       rgs[0] = host_mac_address[0] | (host_mac_address[1] << 8);
       rgs[1] = host_mac_address[2] | (host_mac_address[3] << 8);
       rgs[2] = host_mac_address[4] | (host_mac_address[5] << 8);
-      write_eeprom (0, rgs[0]);
-      write_eeprom (1, rgs[1]);
-      write_eeprom (2, rgs[2]);
+      write_eeprom (dm, 0, rgs[0]);
+      write_eeprom (dm, 1, rgs[1]);
+      write_eeprom (dm, 2, rgs[2]);
     }
 
     if (strcmp (argv[1], "re") == 0) {
-      dm9000_read_eeprom ();
-      dump ((void*) dm9000[0].rgs_eeprom, sizeof (dm9000[0].rgs_eeprom), 0);
+      dm9000_read_eeprom (dm);
+      dump ((void*) dm9000[dm].rgs_eeprom, sizeof (dm9000[dm].rgs_eeprom), 0);
     }
   }
 
@@ -194,10 +207,11 @@ static __command struct command_d c_eth = {
   .func = cmd_eth,
   COMMAND_DESCRIPTION ("dm9000 diagnostics")
   COMMAND_HELP(
-"eth [SUBCOMMAND [PARAMETER]]\n"
+"eth [-#] [SUBCOMMAND [PARAMETER]]\n"
 "  Commands for the Ethernet MAC and PHY devices.\n"
 "  Without a SUBCOMMAND, it displays info about the chip\n"
 "    This information is for debugging the hardware.\n"
+"  -#   - Select interface number # (0..N-1)\n"
 //"  clear - reset the EMAC.\n"
 //"  anen  - restart auto negotiation.\n"
 //"  send  - send a test packet.\n"
@@ -220,30 +234,48 @@ static __command struct command_d c_eth = {
 
 static void dm9000_init (void)
 {
-  int i;
+  int dm;
 
-  for (i = 0; i < C_DM; ++i) {
+  for (dm = 0; dm < C_DM; ++dm) {
 
-    dm9000[i].vendor  = read_reg (DM9000_VIDL) | (read_reg (DM9000_VIDH) << 8);
-    dm9000[i].product = read_reg (DM9000_PIDL) | (read_reg (DM9000_PIDH) << 8);
-    dm9000[i].chip    = read_reg (DM9000_CHIPR);
+    switch (dm) {
+    case 0:
+      dm9000[dm].index = &__REG16 (DM_PHYS_INDEX);
+      dm9000[dm].data  = &__REG16 (DM_PHYS_DATA);
+      break;
+#if C_DM > 1
+    case 1:
+      dm9000[dm].index = &__REG16 (DM1_PHYS_INDEX);
+      dm9000[dm].data  = &__REG16 (DM1_PHYS_DATA);
+      break;
+#endif
+    default:
+      continue;
+    }
 
-    if (dm9000[i].vendor != 0xa46 || dm9000[i].product != 0x9000)
+    dm9000[dm].vendor  = read_reg (dm, DM9000_VIDL)
+      | (read_reg (dm, DM9000_VIDH) << 8);
+    dm9000[dm].product = read_reg (dm, DM9000_PIDL)
+      | (read_reg (dm, DM9000_PIDH) << 8);
+    dm9000[dm].chip    = read_reg (dm, DM9000_CHIPR);
+
+    if (dm9000[dm].vendor != 0xa46 || dm9000[dm].product != 0x9000)
       return;
 
-    dm9000[i].present = 1;
+    dm9000[dm].present = 1;
 
-    dm9000[i].rgs_eeprom[0] = read_eeprom (0);
-    dm9000[i].rgs_eeprom[1] = read_eeprom (1);
-    dm9000[i].rgs_eeprom[2] = read_eeprom (2);
+    dm9000[dm].rgs_eeprom[0] = read_eeprom (dm, 0);
+    dm9000[dm].rgs_eeprom[1] = read_eeprom (dm, 1);
+    dm9000[dm].rgs_eeprom[2] = read_eeprom (dm, 2);
 
-    if (i == 0) {
-      host_mac_address[0] =  dm9000[i].rgs_eeprom[0]       & 0xff;
-      host_mac_address[1] = (dm9000[i].rgs_eeprom[0] >> 8) & 0xff;
-      host_mac_address[2] =  dm9000[i].rgs_eeprom[1]       & 0xff;
-      host_mac_address[3] = (dm9000[i].rgs_eeprom[1] >> 8) & 0xff;
-      host_mac_address[4] =  dm9000[i].rgs_eeprom[2]       & 0xff;
-      host_mac_address[5] = (dm9000[i].rgs_eeprom[2] >> 8) & 0xff;
+	/* Only the first interface can participate in the network stack */
+    if (dm == 0) {
+      host_mac_address[0] =  dm9000[dm].rgs_eeprom[0]       & 0xff;
+      host_mac_address[1] = (dm9000[dm].rgs_eeprom[0] >> 8) & 0xff;
+      host_mac_address[2] =  dm9000[dm].rgs_eeprom[1]       & 0xff;
+      host_mac_address[3] = (dm9000[dm].rgs_eeprom[1] >> 8) & 0xff;
+      host_mac_address[4] =  dm9000[dm].rgs_eeprom[2]       & 0xff;
+      host_mac_address[5] = (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff;
     }
   }
 }
@@ -252,19 +284,21 @@ static void dm9000_init (void)
 #if !defined (CONFIG_SMALL)
 static void dm9000_report (void)
 {
-  int i;
+  int dm;
 
-  for (i = 0; i < C_DM; ++i) {
-    if (dm9000[i].present) {
-      printf ("  dm9000: phy_addr %d  phy_id 0x%lx"
-	      "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-	      -1, (unsigned long)-1,
-	      (dm9000[i].rgs_eeprom[0]) & 0xff,
-	      (dm9000[i].rgs_eeprom[0] >> 8) & 0xff,
-	      (dm9000[i].rgs_eeprom[1]) & 0xff,
-	      (dm9000[i].rgs_eeprom[1] >> 8) & 0xff,
-	      (dm9000[i].rgs_eeprom[2]) & 0xff,
-	      (dm9000[i].rgs_eeprom[2] >> 8) & 0xff);
+  for (dm = 0; dm < C_DM; ++dm) {
+    if (dm9000[dm].present) {
+      printf ("  dm9000: [%d]"
+//	      " phy_addr %d  phy_id 0x%lx"
+	      " mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	      dm,
+//	      -1, (unsigned long)-1,
+	      (dm9000[dm].rgs_eeprom[0]) & 0xff,
+	      (dm9000[dm].rgs_eeprom[0] >> 8) & 0xff,
+	      (dm9000[dm].rgs_eeprom[1]) & 0xff,
+	      (dm9000[dm].rgs_eeprom[1] >> 8) & 0xff,
+	      (dm9000[dm].rgs_eeprom[2]) & 0xff,
+	      (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff);
     }
   }
 }
