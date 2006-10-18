@@ -157,7 +157,7 @@ void __naked __section (.reset) reset (void)
   COPROCESSOR_WAIT;
 #endif
 
-#if defined (PREINITIALIZATION)
+#if defined (CONFIG_PREINITIALIZATION)
   preinitialization ();		/* Special hook for init's before SDRAM */
 #endif
 
