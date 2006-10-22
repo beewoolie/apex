@@ -1,3 +1,10 @@
+apex (1.4.7) unstable; urgency=low
+
+  * New command line starts RTC.
+  * Moved the environment to the same block as the loader.
+
+ --  Marc Singer <elf@debian.org>  Sun, 22 Oct 2006 14:20:13 -0700
+
 apex (1.4.5) unstable; urgency=low
 
   * Fixed the sort comparison function in the fis driver so that the skips
