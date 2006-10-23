@@ -227,15 +227,7 @@ static void prescan_directory (struct descriptor_d* d)
       PRINTF ("%s: length %lx  eb %lx  eb_swapped %lx\n",
 	      __FUNCTION__, descriptor.length, eraseblocksize,
 	      swab32 (eraseblocksize));
-      /* The original method for detecting byte-swapped flash was to
-	 check if the byte-swapped partition size was the same as the
-	 erase block size.  Now, we check if the byte-swapped
-	 partition size, rounded to a multiple of the erase block
-	 size, is the same as the erase block size.  This means that
-	 the directory can be equal to or less than the size of an
-	 erase block. */
-      if (((swab32 (descriptor.length) + eraseblocksize - 1)
-	   & ~(eraseblocksize - 1)) == eraseblocksize)
+      if (swab32 (descriptor.length) == eraseblocksize)
 	fis_directory_swap = 1;
       break;
     }
