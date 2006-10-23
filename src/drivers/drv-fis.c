@@ -234,8 +234,8 @@ static void prescan_directory (struct descriptor_d* d)
 	 size, is the same as the erase block size.  This means that
 	 the directory can be equal to or less than the size of an
 	 erase block. */
-      if ((swab32 (descriptor.length) + eraseblocksize - 1)
-	  & ~(eraseblocksize - 1) == eraseblocksize)
+      if (((swab32 (descriptor.length) + eraseblocksize - 1)
+	   & ~(eraseblocksize - 1)) == eraseblocksize)
 	fis_directory_swap = 1;
       break;
     }
