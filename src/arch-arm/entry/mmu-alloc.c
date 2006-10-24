@@ -34,6 +34,7 @@
 #include <service.h>
 #include <apex.h>
 #include <asm/mmu.h>
+#include <drv-mem.h>
 
 void* pvAlloc;			/* Address of next allocatable address */
 
@@ -53,6 +54,42 @@ void* alloc_uncached (size_t cb, size_t alignment)
   pv = (void*) (((unsigned long) pvAlloc + (alignment - 1))
 		& ~(alignment - 1));
   pvAlloc = pv + cb;
+
+#if defined (CONFIG_MMU)
+  mmu_protsegment (pv, 0, 0);
+#endif
+
+  return pv;
+}
+
+/* alloc_uncached_top_retain
+
+   allocates an aligned block of memory from the top of the probed
+   regions, removes it from the caches, and returns it.
+
+   *** FIXME: should verify that the allocation being requested is
+   *** available among the regions.  I'm not fixing it now because it
+   *** either works, or it doesn't.
+
+*/
+
+void* alloc_uncached_top_retain (size_t cb, size_t alignment)
+{
+  void* pv;
+  struct mem_region* region = NULL;
+  int i;
+
+  if (alignment == 0)
+    alignment = 1;
+
+  for (i = 0; i < sizeof (memory_regions)/sizeof (*memory_regions); ++i)
+    if (memory_regions[i].length)
+      region = &memory_regions[i];
+    else
+      break;
+
+  pv = (void*) ((region->start + region->length - cb) & ~(alignment - 1));
+  region->length = (unsigned long) pv - region->start;
 
 #if defined (CONFIG_MMU)
   mmu_protsegment (pv, 0, 0);

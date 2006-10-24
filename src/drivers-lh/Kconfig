@@ -45,6 +45,18 @@ config LCD_BGR
 	  kernel requires that blue be in the least significant bits
 	  of each framebuffer pel.
 
+config LCD_RETAIN_SPLASH
+	bool "Retain splash image through kernel boot"
+	depends on DRIVER_LH_CLCDC
+	default n
+	help
+	  This option moves the frame buffer allocation to the top of
+	  RAM, removes that memory from the pool passed to the kernel,
+	  and then passes that frame buffer address to the kernel so
+	  that it can maintain continuity of the display.  It also
+	  prevents the LCD driver from disabling the display when it
+	  passes control during boot or go commands.
+
 choice
 	prompt "LCD Panel"
 	depends on DRIVER_LH_CLCDC

@@ -1,3 +1,15 @@
+2006-10-23  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/arch-arm/entry/mmu-alloc.c (alloc_uncached_top_retain):
+	Function returns a block of memory from the top of scanned RAM.
+	It also removes the memory from the pool passed to the kernel.
+
+	* src/drivers-lh/drv-clcdc.c (clcdc_init): New configuration
+	option to allocate the frame buffer from the top of memory and
+	remove it from the pool given the kernel.  It also prevents the
+	LCD display from being shut down when the loader passes control to
+	the boot or go application.
+
 2006-10-18  Marc Singer  <elf@zealous.synapse.com>
 
 	* Makefile: v1.4.7

@@ -54,6 +54,7 @@
 # include <atag.h>
 #endif
 
+#include <drv-mem.h>
 #include <mach/memory.h>
 
 #include <debug_ll.h>
@@ -66,12 +67,7 @@
 # define PRINTF(f...) do {} while (0)
 #endif
 
-struct mem_region {
-  unsigned long start;
-  size_t length;
-};
-
-static struct mem_region regions[32];
+struct mem_region memory_regions[32];
 
 #if defined (CONFIG_CMD_MEMLIMIT)
 static unsigned memlimit;
@@ -110,19 +106,19 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   for (pl = (unsigned long*) (start
 			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
        pl < (unsigned long*) (start + length)
-	 && i < sizeof (regions)/sizeof (struct mem_region);
+	 && i < sizeof (memory_regions)/sizeof (*memory_regions);
        pl += CB_BLOCK/sizeof (*pl)) {
     //    PRINTF ("   %p %p\n", pl, *pl);
     //    if (testram ((u32) pl) != 0)
     //      continue;
     if (*pl == (unsigned long) pl) {
-      if (regions[i].length == 0)
-	regions[i].start
+      if (memory_regions[i].length == 0)
+	memory_regions[i].start
 	  = (unsigned long) pl - (&APEX_VMA_PROBE_END - &APEX_VMA_START);
-      regions[i].length += CB_BLOCK;
+      memory_regions[i].length += CB_BLOCK;
     }
     else
-      if (regions[i].length)
+      if (memory_regions[i].length)
 	++i;
   }
   return i;
@@ -170,13 +166,13 @@ static void memory_report (void)
 
   printf ("  memory:");
 
-  for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i)
-    if (regions[i].length) {
+  for (i = 0; i < sizeof (memory_regions)/sizeof (*memory_regions); ++i)
+    if (memory_regions[i].length) {
       if (i)
 	printf ("         ");
       printf (" 0x%lx 0x%08x (%d MiB)\n",
-	      regions[i].start, regions[i].length,
-	      regions[i].length/(1024*1024));
+	      memory_regions[i].start, memory_regions[i].length,
+	      memory_regions[i].length/(1024*1024));
     }
 #if defined (CONFIG_CMD_MEMLIMIT)
   if (memlimit)
@@ -322,15 +318,15 @@ static struct tag* atag_memory (struct tag* p)
   unsigned long limit = memlimit;
 #endif
 
-  for (i = 0; i < sizeof (regions)/sizeof (struct mem_region); ++i) {
-    if (!regions[i].length)
+  for (i = 0; i < sizeof (memory_regions)/sizeof (*memory_regions); ++i) {
+    if (!memory_regions[i].length)
       break;
 
     p->hdr.tag = ATAG_MEM;
     p->hdr.size = tag_size (tag_mem32);
 
-    start = regions[i].start;
-    length = regions[i].length;
+    start = memory_regions[i].start;
+    length = memory_regions[i].length;
 
 #if defined (CONFIG_CMD_MEMLIMIT)
     if (memlimit) {

@@ -456,7 +456,14 @@ static void _msleep (int ms)
 
 static void clcdc_init (void)
 {
+#if defined (CONFIG_LCD_RETAIN_SPLASH)
+  /* The alignment here has to do with the kernel.  It didn't like
+     receiving a block of memory that wasn't MB boundary aligned.  Not
+     sure why and I don't care for now. */
+  buffer = alloc_uncached_top_retain (CB_BUFFER, 1024*1024);
+#else
   buffer = alloc_uncached (CB_BUFFER, 1024*1024);
+#endif
 
 #if defined (USE_FILL)
 
@@ -568,6 +575,7 @@ static void clcdc_init (void)
 
 static void clcdc_release (void)
 {
+#if !defined (CONFIG_LCD_RETAIN_SPLASH)
   /* *** This sequence, as well as that which is in the initialization
      function, should be better documented. */
 
@@ -591,6 +599,7 @@ static void clcdc_release (void)
      DRV_CLCDC_RELEASE as the driver is likely to disable clocks
      making the registers unavailable.  */
   DRV_CLCDC_RELEASE;
+#endif
 }
 
 #if !defined (CONFIG_SMALL)
