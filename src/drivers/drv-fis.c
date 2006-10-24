@@ -45,10 +45,9 @@
 
      This conversion is done by reading all of the partition entries,
      looking for the partition table's own entry.  When it is found,
-     the driver checks the length of the block for a match with the
-     NOR flash erase block size.  If there is a match when the data is
-     swapped, it is assumed that the system is reading a BE partition
-     table.
+     the driver compares the swapped start address of the directory
+     partition with the address we're reading.  If both are in the
+     same erase block, we know we have a swapped directory.
 
      For simplicity and general correctness, this is done every time
      this driver activates.  The table could be cached, but it is
@@ -116,6 +115,17 @@
    the same area, when skips are ignored, will not match.  This is on
    purpose.
 
+   fis_directory_entries
+   ---------------------
+
+   Except in the prescan call, the search through the directory is
+   ultimately limited by the number of possible entries in the
+   partition containing the directory.  The end_of_table () call is
+   likely to limit the search even more, but this is an optimization
+   introduced here in APEX.  In prescan, we depend on the end_of_table
+   () call and the extent of the region passed via the environment or
+   alias as "fis-drv".
+
 */
 
 #include <config.h>
@@ -153,6 +163,7 @@ struct fis_descriptor {
 };
 
 static int fis_directory_swap;	/* Set for a byte swapped directory */
+static int fis_directory_entries; /* Computed from the size of the partition */
 
 struct fis_skip_descriptor {
   char magic[4];		/* 's' 'k' 'i' 'p' */
@@ -204,6 +215,7 @@ static void prescan_directory (struct descriptor_d* d)
   unsigned long eraseblocksize = 0;
 
   fis_directory_swap = 0;
+  fis_directory_entries = 0;
 
   descriptor_query (d, QUERY_START, &start);
   descriptor_query (d, QUERY_SIZE, &size);
@@ -219,16 +231,30 @@ static void prescan_directory (struct descriptor_d* d)
     if (d->driver->read (d, &descriptor, sizeof (descriptor))
 	!= sizeof (descriptor))
       break;
-    if (end_of_table (&descriptor))
+    if (end_of_table (&descriptor))		/* Checked for expedience. */
       break;
 
     if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
+      /* Read the erase block size where we need it since it is
+	 possible we're crossing boundaries within flash where the
+	 erase block size changes. */
       descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
       PRINTF ("%s: length %lx  eb %lx  eb_swapped %lx\n",
 	      __FUNCTION__, descriptor.length, eraseblocksize,
 	      swab32 (eraseblocksize));
-      if (swab32 (descriptor.length) == eraseblocksize)
+      /* The original implementation of this check was to compare the
+	 the FIS directory partition entry's length field with the
+	 eraseblocksize swapped.  This, however, assumes that the
+	 directory is always the full size of an erase block.  This is
+	 now no longer true, so we change the test to something more
+	 robust. */
+      if ((swab32 (descriptor.start) & ~(eraseblocksize - 1))
+	  == (&descriptor & ~(eraseblocksize - 1))) {
 	fis_directory_swap = 1;
+	fis_directory_entries = swab32 (descriptor.length)/sizeof (descriptor);
+      }
+      else
+	fis_directory_entries = descriptor.length/sizeof (descriptor);
       break;
     }
   }
@@ -252,6 +278,7 @@ static int fis_open (struct descriptor_d* d)
 {
   int result;
   struct descriptor_d fis_d;
+  int cEntries;
 
   if (d->c != 1 || d->iRoot != 1)
     ERROR_RETURN (ERROR_BADPARTITION, "path must include partition");
@@ -264,7 +291,7 @@ static int fis_open (struct descriptor_d* d)
 
   PRINTF ("%s: d@0x%lx+0x%lx\n", __FUNCTION__, d->start, d->length);
 
-  while (1) {
+  for (cEntries = fis_directory_entries ; cEntries--; ) {
     struct fis_descriptor partition;
     int skip = 0;
     size_t cbSkip = 0;
@@ -276,6 +303,8 @@ static int fis_open (struct descriptor_d* d)
     }
     if (end_of_table (&partition))
       break;
+    if (f->pb[0] == 0xff)	/* Erased entry -- dumb, but that's RedBoot */
+      continue;
     if (strnicmp (d->pb[0], partition.name, sizeof (partition.name)))
       continue;
 
@@ -441,6 +470,7 @@ static void fis_report (void)
 {
   int result;
   struct descriptor_d d;
+  int cEntries;
 
   if (   (result = parse_descriptor (block_driver (), &d))
       || (result = open_descriptor (&d)))
@@ -450,15 +480,17 @@ static void fis_report (void)
 
   printf ("  fis:\n");
 
-  while (1) {
+  while (cEntries = fis_directory_entries; cEntries--; ) {
     struct fis_descriptor partition;
     int i;
 
     if (d.driver->read (&d, &partition, sizeof (partition))
 	!= sizeof (partition))
       break;
-    if (end_of_table (&partition))
+    if (end_of_table (&partition))		/* Checked for expedience. */
       break;
+    if (f->pb[0] == 0xff)	/* Erased entry -- dumb, but that's RedBoot */
+      continue;
 
     if (fis_directory_swap) {
       partition.start = swab32 (partition.start);

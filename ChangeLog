@@ -1,3 +1,11 @@
+2006-10-23  Marc Singer  <elf@cerise.buici.com>
+
+	* src/drivers/drv-fis.c (prescan_directory): Modified the check
+	for swapped partitions to compare the address of the directory
+	partition with the address being scanned.  Should be more robust
+	than the original test.  Also added a further limit to directory
+	scanning using the length of the directory partition.
+
 2006-10-23  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/arch-arm/entry/mmu-alloc.c (alloc_uncached_top_retain):
