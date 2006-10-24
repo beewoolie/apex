@@ -243,11 +243,11 @@ static void prescan_directory (struct descriptor_d* d)
 	      __FUNCTION__, descriptor.length, eraseblocksize,
 	      swab32 (eraseblocksize));
       /* The original implementation of this check was to compare the
-	 the FIS directory partition entry's length field with the
-	 eraseblocksize swapped.  This, however, assumes that the
-	 directory is always the full size of an erase block.  This is
-	 now no longer true, so we change the test to something more
-	 robust. */
+	 the FIS directory partition entry's length field with
+	 eraseblocksize swapped.  This, however, assumed that the
+	 directory was always the full size of an erase block,
+	 something which is not (nor ever was) true.  So we changed
+	 the test to something more robust. */
       if ((swab32 (descriptor.start) & ~(eraseblocksize - 1))
 	  == ((unsigned long) &descriptor & ~(eraseblocksize - 1))) {
 	fis_directory_swap = 1;
