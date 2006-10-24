@@ -249,7 +249,7 @@ static void prescan_directory (struct descriptor_d* d)
 	 now no longer true, so we change the test to something more
 	 robust. */
       if ((swab32 (descriptor.start) & ~(eraseblocksize - 1))
-	  == (&descriptor & ~(eraseblocksize - 1))) {
+	  == ((unsigned long) &descriptor & ~(eraseblocksize - 1))) {
 	fis_directory_swap = 1;
 	fis_directory_entries = swab32 (descriptor.length)/sizeof (descriptor);
       }
@@ -303,7 +303,7 @@ static int fis_open (struct descriptor_d* d)
     }
     if (end_of_table (&partition))
       break;
-    if (f->pb[0] == 0xff)	/* Erased entry -- dumb, but that's RedBoot */
+    if (*partition.name == 0xff) /* Erased entry -- dumb, but that's RedBoot */
       continue;
     if (strnicmp (d->pb[0], partition.name, sizeof (partition.name)))
       continue;
@@ -480,7 +480,7 @@ static void fis_report (void)
 
   printf ("  fis:\n");
 
-  while (cEntries = fis_directory_entries; cEntries--; ) {
+  for (cEntries = fis_directory_entries; cEntries--; ) {
     struct fis_descriptor partition;
     int i;
 
@@ -489,7 +489,7 @@ static void fis_report (void)
       break;
     if (end_of_table (&partition))		/* Checked for expedience. */
       break;
-    if (f->pb[0] == 0xff)	/* Erased entry -- dumb, but that's RedBoot */
+    if (*partition.name == 0xff) /* Erased entry -- dumb, but that's RedBoot */
       continue;
 
     if (fis_directory_swap) {
