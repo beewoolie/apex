@@ -40,8 +40,6 @@
 
 */
 
-//#define CMD_NAND
-
 #include <config.h>
 #include <apex.h>
 #include <driver.h>
@@ -67,6 +65,15 @@ const static struct nand_chip chips[] = {
 };
 
 const static struct nand_chip* chip;
+
+
+/* wait_on_busy
+
+   checks the status of the device and returns when it is no longer
+   busy.  This call *requires* that the nCE line is already pulled
+   low.
+
+*/
 
 static void wait_on_busy (void)
 {
@@ -309,8 +316,10 @@ static void nand_report (void)
   if (!chip)
     return;
 
+  NAND_CS_ENABLE;
   NAND_CLE = NAND_Status;
   status = NAND_DATA;
+  NAND_CS_DISABLE;
 
   printf ("  nand:   %ldMiB total, %dKiB erase %s%s%s\n",
 	  chip->total_size/(1024*1024), chip->erase_size/1024,
@@ -341,43 +350,84 @@ static __service_6 struct service_d nand_service = {
 #endif
 };
 
-#if defined (CMD_NAND)
+#if defined (CONFIG_CMD_NAND)
 
 int cmd_nand (int argc, const char** argv)
 {
-  unsigned long cb = 32*1024*1024;
-  int c;
-  int last = -1;
+  if (!chip)
+    return 0;
 
-  for (c = 0; c < cb; c += 512) {
-    char rgb[512];
-    char sz[20];
-    int result;
-    struct descriptor_d d;
+  if (strcmp (argv[1], "mark") == 0) {
+    unsigned long cb = 32*1024*1024;
+    int c;
+    int last = -1;
 
-    {
-      int v = c/16384;
-      if (v != last)
-	printf ("  %04x    \r", v);
-      last = v;
+    for (c = 0; c < cb; c += 512) {
+      char rgb[512];
+      char sz[20];
+      int result;
+      struct descriptor_d d;
+
+      {
+	int v = c/16384;
+	if (v != last)
+	  printf ("  %04x    \r", v);
+	last = v;
+      }
+
+      {
+	int i;
+	for (i = 0; i < 512; i += 4)
+	  *(unsigned long*)&rgb[i] = i + c;
+      }
+
+      sprintf (sz, "nand:0x%x+512", c);
+      if (   (result = parse_descriptor (sz, &d))
+	     || (result = open_descriptor (&d))) {
+	printf ("Unable to open target %s\n", sz);
+	return ERROR_FAILURE;
+      }
+
+      nand_write (&d, rgb, 512);
+      close_descriptor (&d);
     }
-
-    {
-      int i;
-      for (i = 0; i < 512; i += 4)
-	*(unsigned long*)&rgb[i] = i + c;
-    }
-
-    sprintf (sz, "nand:0x%x+512", c);
-    if (   (result = parse_descriptor (sz, &d))
-	|| (result = open_descriptor (&d))) {
-      printf ("Unable to open target %s\n", sz);
-      return ERROR_FAILURE;
-    }
-
-    nand_write (&d, rgb, 512);
-    close_descriptor (&d);
   }
+
+  if (strcmp (argv[1], "scan") == 0) {
+    int index;
+    int cBad = 0;
+
+    NAND_CS_ENABLE;
+    for (index = 0; index < chip->total_size; index += chip->erase_size) {
+      int page = index/512;
+      NAND_CLE = NAND_Reset;
+      wait_on_busy ();
+      NAND_CLE = NAND_Read3;
+      NAND_ALE = (index & 0xff);
+      NAND_ALE = ( page        & 0xff);
+      NAND_ALE = ((page >>  8) & 0xff);
+      wait_on_busy ();
+      NAND_CLE = NAND_Read3;
+      {
+	char rgb[16];
+	int i;
+	int f = 0;
+	for (i = 0; i < sizeof (rgb); ++i) {
+	  rgb[i] = NAND_DATA;
+	  if (rgb[i] != 0xff)
+	    f = 1;
+	}
+	if (f) {
+	  dumpw (rgb, 16, index, 1);
+	  ++cBad;
+	}
+      }
+    }
+    NAND_CS_DISABLE;
+    printf ("%d of %ld blocks are bad\n",
+	    cBad, chip->total_size/chip->erase_size);
+  }
+
   return 0;
 }
 
@@ -386,7 +436,9 @@ static __command struct command_d c_nand = {
   .func = cmd_nand,
   COMMAND_DESCRIPTION ("nand test function")
   COMMAND_HELP (
-"nand\n"
+"nand [SUBCOMMAND [PARAMETER]]\n"
+" mark       - Write to every block an identifying pattern\n"
+" scan       - Scan for bad blocks\n"
 "\n")
 };
 

@@ -304,6 +304,7 @@
 #if defined (CONFIG_LCD_TD035TTEA1)
 	/* One Stop Display QVGA TD035TTEA1 320x240 */
 # define PANEL_NAME		"OSB LCD Landscape QVGA"
+//# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
 # define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
 # define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 # define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
@@ -608,7 +609,7 @@ static void clcdc_report (void)
   unsigned long clk = HCLK/((CLCDC_TIMING2 & 0x1f) + 2);
   printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
 	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
-  printf ("          ctrl 0x%lx\n", CLCDC_CTRL);
+  printf ("          ctrl 0x%lx  [%s]\n", CLCDC_CTRL, PANEL_NAME);
   printf ("          timing0 0x%08lx  timing1 0x%08lx  timing2 0x%08lx\n",
 	  CLCDC_TIMING0, CLCDC_TIMING1, CLCDC_TIMING2);
   if (clk < 1000000)

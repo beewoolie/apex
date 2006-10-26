@@ -157,22 +157,22 @@ void companion_clcdc_setup (void)
 
 	/* Perform main setup of the LCD panel controller */
   mdelay (1);		/* Paranoid */
-  spi_write ("\xb0\x02", 2);	  /* Blanking period: Use DE */
-  spi_write ("\xb4\x01", 2);	  /* Display mode */
-  spi_write ("\x36\x08", 2);	  /* Memory access control: BGR mode */
-  spi_write ("\xb7\x03", 2);	  /* DCCK & DCEV timing setup */
-  spi_write ("\xbe\x38", 2);	  /* ASW signal slew rate adjustment */
+  spi_write ("\xb0\x02",     2);  /* Blanking period: Use DE */
+  spi_write ("\xb4\x01",     2);  /* Display mode */
+  spi_write ("\x36\x08",     2);  /* Memory access control: BGR mode */
+  spi_write ("\xb7\x03",     2);  /* DCCK & DCEV timing setup */
+  spi_write ("\xbe\x38",     2);  /* ASW signal slew rate adjustment */
   spi_write ("\xc0\x08\x08", 3);  /* CKV1,2 timing control */
   spi_write ("\xc2\x18\x18", 3);  /* OEV timing control */
   spi_write ("\xc4\x30\x30", 3);  /* ASW timing control */
-  spi_write ("\xc5\x0c", 2);	  /* ASW timing control */
-  spi_write ("\xed\x04", 2);	  /* Valid display lines: 256 */
-  spi_write ("\x26\x04", 2);	  /* Gamma set */
-  spi_write ("\xba\x45", 2);	  /* Booster operation setup */
+  spi_write ("\xc5\x0c",     2);  /* ASW timing control */
+  spi_write ("\xed\x04",     2);  /* Valid display lines: 256 */
+  spi_write ("\x26\x04",     2);  /* Gamma set */
+  spi_write ("\xba\x45",     2);  /* Booster operation setup */
   spi_write ("\xd6\x77\x35", 3);  /* gamma 3 (2) fine tuning */
-  spi_write ("\xd7\x01", 2);	  /* Gamma 3 (1) fine tuning */
-  spi_write ("\xd8\x00", 2);	  /* Gamma 3 inclination adjustment */
-  spi_write ("\xd9\x00", 2);	  /* Gamma 3 blue offset adjustment */
+  spi_write ("\xd7\x01",     2);  /* Gamma 3 (1) fine tuning */
+  spi_write ("\xd8\x00",     2);  /* Gamma 3 inclination adjustment */
+  spi_write ("\xd9\x00",     2);  /* Gamma 3 blue offset adjustment */
 }
 
 void companion_clcdc_wake (void)

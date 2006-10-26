@@ -53,7 +53,7 @@
 	({ GPIO_PCD |= 1<<6; })
 
 #define NAND_ISBUSY   ({ NAND_CLE = NAND_Status;\
-		         (NAND_DATA & NAND_Ready) == 0; })
+			 (NAND_DATA & NAND_Ready) == 0; })
 
 /* The NAND address map converts the boot code from the CPU into the
    number of address bytes used by the device.  Refer to the LH79524

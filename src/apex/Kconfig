@@ -217,4 +217,11 @@ config CMD_ARM920_TEST
 	  These sub-commands allow for changes to the CP15 test
 	  registers.
 
+config CMD_NAND
+	bool "Define special NAND commands "
+	depends on DRIVER_NAND
+	default n
+	help
+	  Defines NAND commands for testing.
+
 endmenu

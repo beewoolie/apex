@@ -19,11 +19,12 @@
 #define NAND_Status	(0x70)
 #define NAND_Read1	(0x00)	/* Start address in first 256 bytes of page */
 #define NAND_Read2	(0x01)	/* Start address in second 256 bytes of page */
-#define NAND_Read3	(0x50)	/* Start address in last 16 bytes, (ECC?) */
+#define NAND_Read3	(0x50)	/* Start address in last 16 bytes of page */
 #define NAND_Erase	(0x60)
 #define NAND_EraseConfirm (0xd0)
 #define NAND_AutoProgram (0x10)
 #define NAND_SerialInput (0x80)
+#define NAND_CopyBack	 (0x8a)
 
 #define NAND_Fail	(1<<0)
 #define NAND_Ready	(1<<6)
