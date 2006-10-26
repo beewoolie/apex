@@ -823,6 +823,8 @@ int cmd_clcdc (int argc, const char** argv)
     _msleep (20);		/* Wait 20ms for digital signals  */
     CLCDC_CTRL      |= PWR;	/* Apply power */
 
+    _msleep (20);		/* *** Hack */
+
     DRV_CLCDC_WAKE;
 
     /* *** FIXME: this value is calculable based on the LCD controller
