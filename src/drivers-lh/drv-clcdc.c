@@ -391,6 +391,22 @@
 #define BW	(1<<4)
 #define LCDEN	(1<<0)
 
+	// Decode macros
+#define D_PEL_CLOCK_DIV		((CLCDC_TIMING2 & 0x1f) + 2)
+#define D_PEL_WIDTH		(((CLCDC_TIMING2 >> 16) & 0x3ff) + 1)
+#define D_PEL_HEIGHT		((CLCDC_TIMING1 & 0x1ff) + 1)
+#define D_HBP			(((CLCDC_TIMING0 >> 24) & 0xff) + 1)
+#define D_HFP			(((CLCDC_TIMING0 >> 16) & 0xff) + 1)
+#define D_VBP			((CLCDC_TIMING1 >> 24) & 0xff)
+#define D_VFP			((CLCDC_TIMING1 >> 16) & 0xff)
+
+#define D_HSW			(((CLCDC_TIMING0 >> 8) & 0x7f) + 1)
+#define D_VSW			(((CLCDC_TIMING1 >> 10) & 0x3f) + 1)
+
+#define D_IPC			(CLCDC_TIMING2  & (1<<13))
+#define D_IHS			(CLCDC_TIMING2  & (1<<12))
+#define D_IVS			(CLCDC_TIMING2  & (1<<11))
+
 
 #define CB_BUFFER ((PEL_WIDTH*PEL_HEIGHT*BIT_DEPTH)/8)
 
@@ -609,14 +625,20 @@ static void clcdc_report (void)
   unsigned long clk = HCLK/((CLCDC_TIMING2 & 0x1f) + 2);
   printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
 	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
-  printf ("          ctrl 0x%lx  [%s]\n", CLCDC_CTRL, PANEL_NAME);
+  printf ("          ctrl 0x%lx", CLCDC_CTRL);
+  if (clk < 1000000)
+    printf ("  clk %ldHz", clk);
+  else
+    printf ("  clk %ld.%03ldMHz",
+	    clk/(1000*1000), (clk/1000)%1000);
+  printf (" [ " PANEL_NAME " ]\n");
   printf ("          timing0 0x%08lx  timing1 0x%08lx  timing2 0x%08lx\n",
 	  CLCDC_TIMING0, CLCDC_TIMING1, CLCDC_TIMING2);
-  if (clk < 1000000)
-    printf ("          clk %ldHz\n", clk);
-  else
-    printf ("          clk %ld.%03ldMHz\n",
-	    clk/(1000*1000), (clk/1000)%1000);
+  printf ("          hpels %ld hbp %ld hsw %ld hfp %ld ipc %d ihs %d ivs %d\n",
+	  D_PEL_WIDTH, D_HBP, D_HSW, D_HFP,
+	  D_IPC != 0, D_IHS != 0, D_IVS != 0);
+  printf ("          vpels %ld vbp %ld vsw %ld vfp %ld\n",
+	  D_PEL_HEIGHT, D_VBP, D_VSW, D_VFP);
 }
 #endif
 
