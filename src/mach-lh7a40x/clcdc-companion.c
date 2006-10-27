@@ -105,6 +105,8 @@ static void write_fifo_9 (const char* rgb, int cb)
   int cmddata = 0;		/* Cmd/Data bit */
 
   for (; cb; --cb) {
+    while (!(SSP_SR & SSP_SR_TNF))	/* Wait for room in FIFO */
+      ;
     SSP_DR = *rgb++ | (cmddata << 8);
     cmddata = 1;
   }
