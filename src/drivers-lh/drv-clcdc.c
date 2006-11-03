@@ -305,7 +305,8 @@
 	/* One Stop Display QVGA TD035TTEA1 320x240 */
 # define PANEL_NAME		"OSB LCD Landscape QVGA"
 //# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
-# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
+# define PEL_CLOCK_EST		(8000*1000)     /* MHz/4/8/8.65 */
+//# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
 # define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
 # define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
 # define PEL_WIDTH		(320)
@@ -323,6 +324,7 @@
 # define INVERT_HSYNC
 # define INVERT_VSYNC
 # define INVERT_PIXEL_CLOCK
+# define INVERT_OE
 #endif
 
 	/* Inverse timing calculations for peculiar Sharp panels
@@ -340,6 +342,7 @@
 #define HSYNC_WIDTH		(((PANEL_TIMING0 >> 8) & 0x7f) + 1)
 #define VSYNC_WIDTH		(((PANEL_TIMING1 >> 10) & 0x3f) + 1)
 
+#define P_INVERT_OE		(PANEL_TIMING2  & (1<<14))
 #define P_INVERT_PIXEL_CLOCK	(PANEL_TIMING2  & (1<<13))
 #define P_INVERT_HSYNC		(PANEL_TIMING2  & (1<<12))
 #define P_INVERT_VSYNC		(PANEL_TIMING2  & (1<<11))
@@ -351,6 +354,10 @@
 
 # if P_INVERT_PIXEL_CLOCK
 #  define INVERT_PIXEL_CLOCK
+# endif
+
+# if P_INVERT_OE
+#  define INVERT_OE
 # endif
 
 # if P_INVERT_HSYNC
@@ -403,6 +410,7 @@
 #define D_HSW			(((CLCDC_TIMING0 >> 8) & 0x7f) + 1)
 #define D_VSW			(((CLCDC_TIMING1 >> 10) & 0x3f) + 1)
 
+#define D_IOE			(CLCDC_TIMING2  & (1<<14))
 #define D_IPC			(CLCDC_TIMING2  & (1<<13))
 #define D_IHS			(CLCDC_TIMING2  & (1<<12))
 #define D_IVS			(CLCDC_TIMING2  & (1<<11))
@@ -522,6 +530,9 @@ static void clcdc_init (void)
   CLCDC_TIMING1 = VBP (VERT_BP) | VFP (VERT_FP) | VSW (VSYNC_WIDTH)
     | LPP (PEL_HEIGHT);
   CLCDC_TIMING2   = CPL
+#if defined (INVERT_OE)
+    | IOE
+#endif
 #if defined (INVERT_PIXEL_CLOCK)
     | IPC
 #endif
@@ -634,9 +645,10 @@ static void clcdc_report (void)
   printf (" [ " PANEL_NAME " ]\n");
   printf ("          timing0 0x%08lx  timing1 0x%08lx  timing2 0x%08lx\n",
 	  CLCDC_TIMING0, CLCDC_TIMING1, CLCDC_TIMING2);
-  printf ("          hpels %ld hbp %ld hsw %ld hfp %ld ipc %d ihs %d ivs %d\n",
+  printf ("          hpels %ld hbp %ld hsw %ld hfp %ld "
+	  "ioe %d ipc %d ihs %d ivs %d\n",
 	  D_PEL_WIDTH, D_HBP, D_HSW, D_HFP,
-	  D_IPC != 0, D_IHS != 0, D_IVS != 0);
+	  D_IOE != 0, D_IPC != 0, D_IHS != 0, D_IVS != 0);
   printf ("          vpels %ld vbp %ld vsw %ld vfp %ld\n",
 	  D_PEL_HEIGHT, D_VBP, D_VSW, D_VFP);
 }
