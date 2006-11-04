@@ -324,7 +324,7 @@
 # define INVERT_HSYNC
 # define INVERT_VSYNC
 # define INVERT_PIXEL_CLOCK
-# define INVERT_OE
+//# define INVERT_OE
 #endif
 
 	/* Inverse timing calculations for peculiar Sharp panels

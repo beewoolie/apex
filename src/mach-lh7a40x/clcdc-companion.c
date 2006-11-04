@@ -104,9 +104,10 @@ static void write_fifo_9 (const char* rgb, int cb)
 {
   int cmddata = 0;		/* Cmd/Data bit */
 
-  for (; cb; --cb) {
+  while (cb--) {
     while (!(SSP_SR & SSP_SR_TNF))	/* Wait for room in FIFO */
       ;
+//    printf ("(0x%x) ", *rgb | (cmddata << 8));
     SSP_DR = *rgb++ | (cmddata << 8);
     cmddata = 1;
   }
@@ -121,22 +122,40 @@ static void spi_read_flush (void)
 static void spi_write (const char* rgb, int cb)
 {
   cs_enable ();
-  mdelay (1);
+//  mdelay (1);
 
   write_fifo_9 (rgb, cb);
 
   while (SSP_SR & SSP_SR_BSY)
     ;
 
-  mdelay (1);
+//  mdelay (1);
 
   cs_disable ();
-  mdelay (1);
+//  mdelay (1);
   spi_read_flush ();
 }
 
 void companion_clcdc_setup (void)
 {
+  printf ("%s\n", __FUNCTION__);
+
+  /* *** FIXME: this is a work-around for a problem with the EVT2
+     *** schematic.  The DDS chip, when powered off, pulls the SPI
+     *** clock line low, preventing this code from initializing the
+     *** LCD panel.  By powering up the DDS chip (via the MODEM_GATE),
+     *** we prevent the DDS chip from interfering with the SPI
+     *** clock. */
+
+//  GPIO_PCDD &= ~(1<<7);		// nCM_ECM_RESET output
+  GPIO_PGDD &= ~(1<<0);		// MODEM_GATE output
+
+  //  GPIO_PCD  &= ~(1<<7);		// nCM_ECM_RESET -> LOW
+  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
+  GPIO_PGD  |=  (1<<0);		// MODEM_GATE -> HIGH (Power On)
+  usleep (20*1000);		// Wait 500ms
+//  GPIO_PCD  |=  (1<<7);		// nCM_ECM_RESET -> HIGH
+
   cs_disable ();
   GPIO_PGDD &= ~(1<<5);		/* Force to output */
 
@@ -144,7 +163,7 @@ void companion_clcdc_setup (void)
   SSP_CPR = 74;			/* /74 for 99KHz clock*/
 
   SSP_CR1 = 0
-    | (1<<6)
+    | (1<<6)			/* FEN: FIFO enable  */
     | (0<<4)			/* SPH: Framing high for one SSPCLK period */
     | (0<<3)			/* SPO */
     ;
@@ -158,7 +177,7 @@ void companion_clcdc_setup (void)
     ;
 
 	/* Perform main setup of the LCD panel controller */
-  mdelay (1);		/* Paranoid */
+//  mdelay (1);		/* Paranoid */
   spi_write ("\xb0\x02",     2);  /* Blanking period: Use DE */
   spi_write ("\xb4\x01",     2);  /* Display mode */
   spi_write ("\x36\x08",     2);  /* Memory access control: BGR mode */
@@ -175,13 +194,16 @@ void companion_clcdc_setup (void)
   spi_write ("\xd7\x01",     2);  /* Gamma 3 (1) fine tuning */
   spi_write ("\xd8\x00",     2);  /* Gamma 3 inclination adjustment */
   spi_write ("\xd9\x00",     2);  /* Gamma 3 blue offset adjustment */
+
+  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
 }
 
 void companion_clcdc_wake (void)
 {
   printf ("%s\n", __FUNCTION__);
   spi_write ("\x11", 1);
-  mdelay (400);
+  /* 6 frames (2.7ms), one frame ~450us */
+  mdelay (10);
   spi_write ("\x29", 1);
 }
 
@@ -190,5 +212,5 @@ void companion_clcdc_sleep (void)
   printf ("%s\n", __FUNCTION__);
   spi_write ("\x28", 1);
   spi_write ("\x10", 1);
-  mdelay (1);
+//  mdelay (1);
 }
