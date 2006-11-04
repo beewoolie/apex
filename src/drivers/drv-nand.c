@@ -215,8 +215,22 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     if (available > cb)
       available = cb;
-    tail = 528 - index - available;
+    /* A previous version of this code wrote to the end of the page,
+       including the auxiliary region.  This is no longer the case.
+       Now, we only write to the end of the data area.  */
+//    tail = 528 - index - available;
+    tail = 512 - index - available;
 
+	/* Reset and read to perform I/O on the data region  */
+    NAND_CLE = NAND_Reset;
+    wait_on_busy ();
+    NAND_CLE = NAND_Read1;
+    NAND_ALE = 0;
+    NAND_ALE = ( page        & 0xff);
+    NAND_ALE = ((page >>  8) & 0xff);
+    wait_on_busy ();
+
+	/* Perform write */
     NAND_CLE = NAND_SerialInput;
     NAND_ALE = 0;	/* Always start at page beginning */
     NAND_ALE = ( page        & 0xff);
