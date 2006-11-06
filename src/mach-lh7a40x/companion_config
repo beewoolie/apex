@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri Nov  3 18:54:19 2006
+# Mon Nov  6 08:55:58 2006
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -114,7 +114,7 @@ CONFIG_DRIVER_LH_MMC=y
 # CONFIG_DRIVER_LH_I2C is not set
 CONFIG_DRIVER_LH_CLCDC=y
 # CONFIG_LCD_BGR is not set
-# CONFIG_LCD_RETAIN_SPLASH is not set
+CONFIG_LCD_RETAIN_SPLASH=y
 # CONFIG_LCD_3_5_QVGA_20 is not set
 # CONFIG_LCD_5_7_QVGA_10 is not set
 # CONFIG_LCD_6_4_VGA_10 is not set
@@ -149,8 +149,9 @@ CONFIG_ENV_STARTUP_KERNEL_COPY=y
 CONFIG_ENV_REGION_KERNEL="nand:128k+1500k"
 # CONFIG_ENV_REGION_KERNEL_SWAP is not set
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
-CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/mmcblk0p2 ro"
-# CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
+CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/mmcblk0p2 ro mtdparts=lh7a404-nandflash:128k(apex),4m(data),-(unused)"
+CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE=y
+CONFIG_ENV_DEFAULT_STARTUP="clc bars ; clc splash ext2://2/splash.png ; clc on ; copy ext2://2/zImage $bootaddr ; wait 10 Booting ; boot"
 CONFIG_USES_NAND_BOOTFLASH=y
 CONFIG_USES_COMPANION_EVT1_BOOT=y
 CONFIG_USES_COMPANION_EVT2_BOOT=y
