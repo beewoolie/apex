@@ -47,6 +47,12 @@
 #define NAND_CLE	__REG8(NAND_PHYS + (1<<21))
 #define NAND_ALE	__REG8(NAND_PHYS + (1<<20))
 
+#define NAND_WP_DISABLE\
+	({ GPIO_PCD |=  (1<<2); })
+
+#define NAND_WP_ENABLE\
+	({ GPIO_PCD |= ~(1<<2); })
+
 #define NAND_CS_ENABLE\
 	({ GPIO_PCD &= ~(1<<6); })
 #define NAND_CS_DISABLE\

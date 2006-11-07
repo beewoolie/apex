@@ -53,6 +53,13 @@
 
 #include "nand.h"
 
+#if !defined (NAND_WP_ENABLE)
+# define NAND_WP_ENABLE
+#endif
+#if !defined (NAND_WP_DISABLE)
+# define NAND_WP_DISABLE
+#endif
+
 struct nand_chip {
   unsigned char device;
   unsigned long total_size;
@@ -200,6 +207,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (!chip)
     return cbWrote;
 
+  NAND_WP_DISABLE;
+
   NAND_CS_ENABLE;
 
   if (d->index + cb > d->length)
@@ -263,6 +272,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   }
 
  exit:
+  NAND_WP_ENABLE;
   NAND_CS_DISABLE;
 
   return cbWrote;

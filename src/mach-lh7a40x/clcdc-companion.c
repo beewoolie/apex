@@ -32,6 +32,8 @@
 
 #include <debug_ll.h>
 
+//#define USE_FAST_CLOCK
+#define USE_DDS_HACK
 
 #define SSP_CR0		__REG(SSP_PHYS + 0x00)
 #define SSP_CR1		__REG(SSP_PHYS + 0x04)
@@ -140,6 +142,7 @@ void companion_clcdc_setup (void)
 {
   printf ("%s\n", __FUNCTION__);
 
+#if defined (USE_DDS_HACK)
   /* *** FIXME: this is a work-around for a problem with the EVT2
      *** schematic.  The DDS chip, when powered off, pulls the SPI
      *** clock line low, preventing this code from initializing the
@@ -147,20 +150,26 @@ void companion_clcdc_setup (void)
      *** we prevent the DDS chip from interfering with the SPI
      *** clock. */
 
-//  GPIO_PCDD &= ~(1<<7);		// nCM_ECM_RESET output
+  printf ("%s: DDS hack\n", __FUNCTION__);
+
+  GPIO_PCDD &= ~(1<<7);		// nCM_ECM_RESET output
   GPIO_PGDD &= ~(1<<0);		// MODEM_GATE output
 
-  //  GPIO_PCD  &= ~(1<<7);		// nCM_ECM_RESET -> LOW
+  GPIO_PCD  &= ~(1<<7);		// nCM_ECM_RESET -> LOW
   GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
   GPIO_PGD  |=  (1<<0);		// MODEM_GATE -> HIGH (Power On)
-  usleep (20*1000);		// Wait 500ms
+  msleep (500);
 //  GPIO_PCD  |=  (1<<7);		// nCM_ECM_RESET -> HIGH
+#endif
 
   cs_disable ();
   GPIO_PGDD &= ~(1<<5);		/* Force to output */
 
-//  SSP_CPR = 2;			/* /2 for 7.3728 MHz master clock*/
+#if defined (USE_FAST_CLOCK)
+  SSP_CPR = 2;			/* /2 for 7.3728 MHz master clock*/
+#else
   SSP_CPR = 74;			/* /74 for 99KHz clock*/
+#endif
 
   SSP_CR1 = 0
     | (1<<6)			/* FEN: FIFO enable  */
@@ -195,7 +204,9 @@ void companion_clcdc_setup (void)
   spi_write ("\xd8\x00",     2);  /* Gamma 3 inclination adjustment */
   spi_write ("\xd9\x00",     2);  /* Gamma 3 blue offset adjustment */
 
+#if defined (USE_DDS_HACK)
   GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
+#endif
 }
 
 void companion_clcdc_wake (void)
