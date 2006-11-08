@@ -74,6 +74,7 @@ struct dm9000 {
   u16 rgs_eeprom[64/sizeof (u16)]; /* Data copied from the eeprom */
   volatile u16* index;
   volatile u16* data;
+  const char* name;
 };
 
 struct dm9000 dm9000[C_DM];
@@ -251,11 +252,17 @@ static void dm9000_init (void)
     case 0:
       dm9000[dm].index = &__REG16 (DM_PHYS_INDEX);
       dm9000[dm].data  = &__REG16 (DM_PHYS_DATA);
+# if defined (DM_NAME)
+      dm9000[dm].name = DM_NAME;
+# endif
       break;
 #if C_DM > 1
     case 1:
       dm9000[dm].index = &__REG16 (DM1_PHYS_INDEX);
       dm9000[dm].data  = &__REG16 (DM1_PHYS_DATA);
+# if defined (DM1_NAME)
+      dm9000[dm].name = DM1_NAME;
+# endif
       break;
 #endif
     default:
@@ -310,7 +317,7 @@ static void dm9000_report (void)
     if (dm9000[dm].present) {
       printf ("  dm9000: [%d] "
 //	      " phy_addr %d  phy_id 0x%lx"
-	      " mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+	      " mac_addr %02x:%02x:%02x:%02x:%02x:%02x  %s\n",
 	      dm,
 //	      -1, (unsigned long)-1,
 	      (dm9000[dm].rgs_eeprom[0]) & 0xff,
@@ -318,7 +325,8 @@ static void dm9000_report (void)
 	      (dm9000[dm].rgs_eeprom[1]) & 0xff,
 	      (dm9000[dm].rgs_eeprom[1] >> 8) & 0xff,
 	      (dm9000[dm].rgs_eeprom[2]) & 0xff,
-	      (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff);
+	      (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff,
+	      dm9000[dm].name ? dm9000[dm].name : "");
     }
   }
 }

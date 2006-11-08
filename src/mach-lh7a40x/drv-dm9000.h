@@ -44,9 +44,11 @@
 #define DM_PHYS		(0x20000000) /* Dev MAC/PHY */
 #define DM_PHYS_INDEX	(DM_PHYS + 0)
 #define DM_PHYS_DATA	(DM_PHYS + 4)
+#define DM_NAME		"dev"
 
 #define DM1_PHYS	(0x10000000) /* Modem MAC/PHY */
 #define DM1_PHYS_INDEX	(DM1_PHYS + 0)
 #define DM1_PHYS_DATA	(DM1_PHYS + 4)
+#define DM1_NAME	"modem"
 
 #endif  /* __MACH_DRV_DM9000_H__ */
