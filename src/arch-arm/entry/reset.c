@@ -25,9 +25,9 @@
    -----------
 
    True, default entry for APEX loader on ARM.  The real entry point
-   is entry () which is linked in ../lib/entry.c.  Most of the symbols
-   herein are weak and may be overridden by target specific
-   implementations.  Refer to the documentation for details.
+   is entry () which is linked in ../lib/entry.c.  Some of the symbols
+   used herein may be overridden by target specific implementations.
+   Refer to the documentation for details.
 
 */
 
@@ -45,8 +45,6 @@
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
-extern void initialize_target (void);
-extern void initialize (void);
 extern void setup_c (void);
 extern void init (void);
 
@@ -188,6 +186,7 @@ void __naked __section (.reset) reset (void)
   PUTC_LL ('E');
   PUTC_LL ('r');
   relocate_apex ();
+
   /* This early executed code can be very temperamental. The
      relocate_apex() function will tend to clobber some of the
      registers.  Even with careful coding, it will clobber r4 and
