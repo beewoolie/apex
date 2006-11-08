@@ -1,3 +1,13 @@
+2006-11-07  Marc Singer  <elf@zealous.synapse.com>
+
+	* Makefile (SUBLEVEL): Rolling rev for memory test.
+
+	* src/lib/memtest.c (memory_test_0): memory test for system setup.
+	It checks SDRAM before copying the loader post-bootstrap.  Works
+	generally on any target, but requires that the
+	initialize_bootstrap () function return TRUE when it initializes
+	SDRAM.
+  
 2006-10-25  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/drivers/drv-nand.c (cmd_nand): NAND commands moved to a

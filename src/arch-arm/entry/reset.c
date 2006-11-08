@@ -173,15 +173,12 @@ void __naked __section (.reset) reset (void)
   {
     unsigned long result = 0;
 
+    PUTC ('M');
+
     result = memory_test_0 (CONFIG_BOOTSTRAP_MEMTEST_BASE,
 			    CONFIG_BOOTSTRAP_MEMTEST_SIZE);
-    if (!result)
-      result = memory_test_1 (CONFIG_BOOTSTRAP_MEMTEST_BASE,
-			      CONFIG_BOOTSTRAP_MEMTEST_SIZE);
-
     if (result) {
       PUTC ('!');
-      PUTC ('M');
       PUTHEX (result);
       __asm volatile ("0: b 0b");
     }

@@ -13,55 +13,17 @@
 
 #include <config.h>
 #include <attributes.h>
-
 #include <memtest.h>
-
-#include <debug_ll.h>
-
-/* memory_test
-
-   peforms a full-spectrum (eventually?) memory test of the given
-   region.  The return value is zero for success and non-zero on
-   error.
-
-*/
 
 
 /* memory_test_0
 
-   is a data bus memory verification test for verifying that memory is
-   OK before we copy APEX into SDRAM.
+   is a data bus/address bus memory verification test for verifying
+   that memory is OK before we copy APEX into SDRAM.
 
 */
 
 int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
-					  unsigned long cb)
-{
-  unsigned long v;
-
-  __asm volatile ("mov fp, lr");
-
-		/* Walking data bit */
-  for (v = 1; v; v <<= 1) {
-    *(volatile unsigned long*) address = v;
-    if (*(volatile unsigned long*) address != v)
-      __asm volatile ("mov r0, #1\n\t"
-		      "mov pc, fp");
-  }
-
-  __asm volatile ("mov r0, #0\n\t"
-		  "mov pc, fp");
-  return 0;			/* Redundant, but calms the compiler */
-}
-
-
-/* memory_test_1
-
-   address bus test.
-
- */
-
-int __naked __section (.bootstrap) memory_test_1 (unsigned long address,
 						  unsigned long cb)
 {
   const unsigned long pattern_a = 0xaaaaaaaa;
@@ -73,6 +35,15 @@ int __naked __section (.bootstrap) memory_test_1 (unsigned long address,
 
   __asm volatile ("mov fp, lr");
 
+		/* Walking data bit */
+  for (mark = 1; mark; mark <<= 1) {
+    *(volatile unsigned long*) address = mark;
+    if (*(volatile unsigned long*) address != mark)
+      __asm volatile ("mov r0, #1\n\t"
+		      "mov pc, fp");
+  }
+
+		/* Walking address bits */
   for (offset = 1; offset < cb; offset <<= 1)
     p[offset] = pattern_a;
 

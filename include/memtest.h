@@ -24,8 +24,5 @@
 
 int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 						  unsigned long cb);
-int __naked __section (.bootstrap) memory_test_1 (unsigned long address,
-						  unsigned long cb);
-
 
 #endif  /* __MEMTEST_H__ */
