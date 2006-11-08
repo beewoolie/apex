@@ -104,5 +104,7 @@
 
 #define PUTC(c)		({ UART_DATA = c; \
 			   while (UART_STATUS & UART_STATUS_BUSY) ; })
+//#define PUTC(c)		({ __asm volatile ("
+
 
 #endif  /* __DEBUG_LL_H__ */

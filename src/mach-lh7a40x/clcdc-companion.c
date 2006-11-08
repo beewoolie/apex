@@ -34,6 +34,7 @@
 
 //#define USE_FAST_CLOCK
 #define USE_DDS_HACK
+#define USE_SPI
 
 #define SSP_CR0		__REG(SSP_PHYS + 0x00)
 #define SSP_CR1		__REG(SSP_PHYS + 0x04)
@@ -58,6 +59,40 @@
 #define SSP_SR_BSY	(1<<3)	/* Receive or transmit active */
 #define SSP_SR_RNE	(1<<2)	/* Receive FIFO not empty */
 #define SSP_SR_TNF	(1<<1)	/* Transmit FIFO not full */
+
+static inline void dds_hack_enable (void)
+{
+#if defined (USE_DDS_HACK)
+  /* *** FIXME: this is a work-around for a problem with the EVT2
+     *** schematic.  The DDS chip, when powered off, pulls the SPI
+     *** clock line low, preventing this code from initializing the
+     *** LCD panel.  By powering up the DDS chip (via the MODEM_GATE),
+     *** we prevent the DDS chip from interfering with the SPI
+     *** clock. */
+
+  printf ("%s: DDS hack\n", __FUNCTION__);
+
+  GPIO_PGDD &= ~(1<<4);		// nDDS_SPI_GPIO_CS set to output
+  GPIO_PGD  |=  (1<<4);		// nDDS_SPI_GPIO_CS -> high
+
+  GPIO_PCDD &= ~(1<<7);		// nCM_ECM_RESET output
+  GPIO_PGDD &= ~(1<<0);		// MODEM_GATE output
+
+  GPIO_PCD  &= ~(1<<7);		// nCM_ECM_RESET -> LOW
+  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
+  GPIO_PGD  |=  (1<<0);		// MODEM_GATE -> HIGH (Power On)
+  msleep (150);
+//  GPIO_PCD  |=  (1<<7);		// nCM_ECM_RESET -> HIGH
+#endif
+}
+
+
+static inline void dds_hack_disable (void)
+{
+#if defined (USE_DDS_HACK)
+//  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
+#endif
+}
 
 static inline void cs_enable (void)
 {
@@ -123,6 +158,7 @@ static void spi_read_flush (void)
 
 static void spi_write (const char* rgb, int cb)
 {
+#if defined (USE_SPI)
   cs_enable ();
 //  mdelay (1);
 
@@ -136,31 +172,14 @@ static void spi_write (const char* rgb, int cb)
   cs_disable ();
 //  mdelay (1);
   spi_read_flush ();
+#endif
 }
 
 void companion_clcdc_setup (void)
 {
   printf ("%s\n", __FUNCTION__);
 
-#if defined (USE_DDS_HACK)
-  /* *** FIXME: this is a work-around for a problem with the EVT2
-     *** schematic.  The DDS chip, when powered off, pulls the SPI
-     *** clock line low, preventing this code from initializing the
-     *** LCD panel.  By powering up the DDS chip (via the MODEM_GATE),
-     *** we prevent the DDS chip from interfering with the SPI
-     *** clock. */
-
-  printf ("%s: DDS hack\n", __FUNCTION__);
-
-  GPIO_PCDD &= ~(1<<7);		// nCM_ECM_RESET output
-  GPIO_PGDD &= ~(1<<0);		// MODEM_GATE output
-
-  GPIO_PCD  &= ~(1<<7);		// nCM_ECM_RESET -> LOW
-  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
-  GPIO_PGD  |=  (1<<0);		// MODEM_GATE -> HIGH (Power On)
-  msleep (500);
-//  GPIO_PCD  |=  (1<<7);		// nCM_ECM_RESET -> HIGH
-#endif
+  dds_hack_enable ();
 
   cs_disable ();
   GPIO_PGDD &= ~(1<<5);		/* Force to output */
@@ -168,7 +187,8 @@ void companion_clcdc_setup (void)
 #if defined (USE_FAST_CLOCK)
   SSP_CPR = 2;			/* /2 for 7.3728 MHz master clock*/
 #else
-  SSP_CPR = 74;			/* /74 for 99KHz clock*/
+//  SSP_CPR = 74;			/* /74 for 99KHz clock*/
+  SSP_CPR = 118;
 #endif
 
   SSP_CR1 = 0
@@ -204,24 +224,26 @@ void companion_clcdc_setup (void)
   spi_write ("\xd8\x00",     2);  /* Gamma 3 inclination adjustment */
   spi_write ("\xd9\x00",     2);  /* Gamma 3 blue offset adjustment */
 
-#if defined (USE_DDS_HACK)
-  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
-#endif
+  dds_hack_disable ();
 }
 
 void companion_clcdc_wake (void)
 {
   printf ("%s\n", __FUNCTION__);
+  dds_hack_enable ();
   spi_write ("\x11", 1);
   /* 6 frames (2.7ms), one frame ~450us */
   mdelay (10);
   spi_write ("\x29", 1);
+  dds_hack_disable ();
 }
 
 void companion_clcdc_sleep (void)
 {
   printf ("%s\n", __FUNCTION__);
+  dds_hack_enable ();
   spi_write ("\x28", 1);
   spi_write ("\x10", 1);
 //  mdelay (1);
+  dds_hack_disable ();
 }

@@ -207,9 +207,8 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (!chip)
     return cbWrote;
 
-  NAND_WP_DISABLE;
-
   NAND_CS_ENABLE;
+  NAND_WP_DISABLE;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -284,6 +283,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     return;
 
   NAND_CS_ENABLE;
+  NAND_WP_DISABLE;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -321,6 +321,7 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
   } while (cb > 0);
 
  exit:
+  NAND_WP_ENABLE;
   NAND_CS_DISABLE;
 }
 

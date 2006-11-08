@@ -36,6 +36,7 @@
 #include <debug_ll.h>
 #include <mach/coprocessor.h>
 #include <arch-arm.h>
+#include <memtest.h>
 #include "mmu.h"
 
 #if !defined (COPROCESSOR_WAIT)
@@ -161,7 +162,32 @@ void __naked __section (.reset) reset (void)
   preinitialization ();		/* Special hook for init's before SDRAM */
 #endif
 
-  initialize_bootstrap ();	/* Initialization critical to relocate */
+  /* The initialize_bootstrap () function *must* return TRUE when it
+     initialized SDRAM; otherwise, we may clobber ourself in the
+     memory test. */
+
+  if (initialize_bootstrap ())	/* Initialization critical to relocate */
+#if !defined (CONFIG_BOOTSTRAP_MEMTEST)
+  ;
+#else
+  {
+    unsigned long result = 0;
+
+    result = memory_test_0 (CONFIG_BOOTSTRAP_MEMTEST_BASE,
+			    CONFIG_BOOTSTRAP_MEMTEST_SIZE);
+    if (!result)
+      result = memory_test_1 (CONFIG_BOOTSTRAP_MEMTEST_BASE,
+			      CONFIG_BOOTSTRAP_MEMTEST_SIZE);
+
+    if (result) {
+      PUTC ('!');
+      PUTC ('M');
+      PUTHEX (result);
+      __asm volatile ("0: b 0b");
+    }
+  }
+#endif
+
   PUTC_LL ('E');
   PUTC_LL ('r');
   relocate_apex ();

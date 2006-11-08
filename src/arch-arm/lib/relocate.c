@@ -39,8 +39,9 @@
 //# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
 # define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
 # define USE_COPY_VERIFY
+#else
+# define USE_COPY_VERIFY	/* Verify all of the time */
 #endif
-
 
 /* relocate_apex
 
@@ -136,11 +137,11 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
 #if defined (USE_COPY_VERIFY)
   if (*(unsigned long*) lr != *(unsigned long*) (lr - offset)) {
-    PUTC_LL ('@');
-    PUTC_LL ('F');
-    PUTC_LL ('A');
-    PUTC_LL ('I');
-    PUTC_LL ('L');
+    PUTC ('@');
+    PUTC ('F');
+    PUTC ('A');
+    PUTC ('I');
+    PUTC ('L');
     __asm volatile ("0: b 0b");
   }
 #endif

@@ -243,6 +243,32 @@ config STACKLIMIT
 	  describing how much of the stack has been used.  It isn't
 	  guaranteed to be correct, but it should be an approximation.
 
+config BOOTSTRAP_MEMTEST
+	bool "Perform a memory test during the bootstrap"
+	default n
+	help
+	  This option enables memory tests during initialization, just
+	  after SDRAM has been initialized.  Memory tests are
+	  suppressed when running from SDRAM.
+	  
+	  In order for this code to work, the initialize_bootstrap ()
+	  function *must* return TRUE when SDRAM has been initialized,
+	  signaling that the loader is not already running in SDRAM.
+
+config BOOTSTRAP_MEMTEST_BASE
+	hex "Bootstrap Memory Test Base Address"
+	depends on BOOTSTRAP_MEMTEST
+	help
+	  Base address for SDRAM post-initialization memory test.
+
+config BOOTSTRAP_MEMTEST_SIZE
+	hex "Bootstrap Memory Test Base Address"
+	default 0x00100000
+	depends on BOOTSTRAP_MEMTEST
+	help
+	  Length of regionfor SDRAM post-initialization memory test.
+	  It is best if this is a power of 2.
+
 endmenu
 
 source src/mach-lh7952x/Kconfig
