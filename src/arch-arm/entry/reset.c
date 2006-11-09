@@ -29,6 +29,18 @@
    used herein may be overridden by target specific implementations.
    Refer to the documentation for details.
 
+   preinitialization and reset_finish
+   ----------------------------------
+
+   In order to support the NAND boot on the lh7 processors where the
+   processor may only load 512 bytes from flash, we support a
+   preinitialization() call to move more data from flash to memory
+   before initialization the SDRAM.  In order to maximize the size of
+   the preinitialization function, we put it in it's own segment,
+   immediately following .reset, and followed by the reset of the
+   bootstrap segment.  The reset_finish() function handles the rest of
+   the reset-made calls.
+
 */
 
 #include <config.h>
@@ -47,6 +59,7 @@ extern void reset (void);
 extern int  initialize_bootstrap (void);
 extern void setup_c (void);
 extern void init (void);
+extern void reset_finish (void);
 
 
 /* reset
@@ -160,6 +173,11 @@ void __naked __section (.reset) reset (void)
   preinitialization ();		/* Special hook for init's before SDRAM */
 #endif
 
+  __asm volatile ("b reset_finish");
+}
+
+void __naked __section (.bootstrap) reset_finish (void)
+{
   /* The initialize_bootstrap () function *must* return TRUE when it
      initialized SDRAM; otherwise, we may clobber ourself in the
      memory test. */
@@ -180,6 +198,7 @@ void __naked __section (.reset) reset (void)
       PUTHEX (result);
       __asm volatile ("0: b 0b");
     }
+    PUTC ('m');
   }
 #endif
 

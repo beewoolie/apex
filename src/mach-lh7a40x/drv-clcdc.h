@@ -71,9 +71,16 @@
 	({ GPIO_PCDD &= ~(1<<3); GPIO_PCD  |= (1<<3); })
 #endif
 #if defined (CONFIG_MACH_COMPANION)
+
+# define BL_FREQ	(5*1000)	/* Hz */
+# define BL_DUTY	50		/* percentage*100 */
+# define PWM_TC3_V	((14745600/BL_FREQ) - 1)
+# define PWM_DC3_V	((BL_DUTY*(PWM_TC3_V + 1)/100) - 1)
+
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ printf ("backlight_enable\n");\
-	   PWM_TC3 = 0xb84; PWM_DC3 = 0x5c1; PWM_INV3 = 0; PWM_EN3 = 1; })
+	   PWM_TC3 = PWM_TC3_V; PWM_DC3 = PWM_DC3_V; \
+	   PWM_INV3 = 0; PWM_EN3 = 1; })
 #endif
 
 #if defined (CONFIG_MACH_LPD7A400)
