@@ -1029,7 +1029,10 @@ MRPROPER_FILES += .config .config.old include/asm .version \
 tidy:
 	@echo "  TIDY"
 	@find . $(RCS_FIND_IGNORE) \
-		\( -name '*~' -o -name '*.i' \) \
+		\( -name '*~' \
+		-o -name '*.i' \
+		-o -name '*.lst' \
+		-o -name '*.s' \) \
 		-type f -print | xargs rm -f
 
 # clean - Delete most, but leave enough to build external modules
