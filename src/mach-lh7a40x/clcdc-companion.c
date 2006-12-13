@@ -90,7 +90,7 @@ static inline void dds_hack_enable (void)
 static inline void dds_hack_disable (void)
 {
 #if defined (USE_DDS_HACK)
-//  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
+  GPIO_PGD  &= ~(1<<0);		// MODEM_GATE -> LOW  (Power Off)
 #endif
 }
 

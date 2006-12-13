@@ -103,11 +103,24 @@ static char* expand_variables (const char* rgbSrc)
 }
 #endif
 
+
+/* parse_command
+
+   accepts a string in a buffer and returns a parsed command in the
+   form of a count and a pointer to a list of words.
+
+   The return value is zero for a normal parse, less than zero if the
+   command doesn't parse, and one if the result of the command is to
+   be ignored.  This last occurs when the command begins with '-'.
+
+*/
+
 int parse_command (char* rgb, int* pargc, const char*** pargv)
 {
   static const char* __xbss(command) argv[C_ARG_MAX];	/* Command words */
   char* pb;
   int cb;
+  int result = 0;
 
 #if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
   pb = expand_variables (rgb);
@@ -125,8 +138,11 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
 	/* Construct argv.  We allow simple quoting within double
 	   quotation marks.  */
   {
-    while (isspace (*pb))
+    while (*pb && isspace (*pb))
       ++pb;
+
+    if (*pb == '-')		/* Ignore result of the command */
+      result = 1, ++pb;
 
     *pargc = 0;
     for (; *pargc < sizeof (argv)/sizeof (char*) && pb - rgb < cb; ++pb) {
@@ -150,7 +166,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
 
   *pargv = argv;
 
-  return 1;
+  return result;
 }
 
 
@@ -239,14 +255,15 @@ void exec_monitor (void)
     strcpy (sz, szStartup);
 
     while (pch && *pch) {
+      int result;
       char* pchEnd = strchr (pch, ';');
       if (pchEnd)
 	*pchEnd = 0;
       while (*pch == ' ')
 	++pch;
       printf ("\r# %s\n", pch);
-      parse_command (pch, &argc, &argv);
-      if (call_command (argc, argv))
+      result = parse_command (pch, &argc, &argv);
+      if (result >= 0 && (call_command (argc, argv) && result != 1))
 	break;
       pch = (pchEnd ? pchEnd + 1 : 0);
     }

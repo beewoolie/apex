@@ -1,3 +1,9 @@
+2006-12-13  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/apex/command.c (parse_command): Added '-' command prefix
+	that tells APEX to ignore the return value of a command.  This is
+	helpful in the startup command. 
+
 2006-11-07  Marc Singer  <elf@zealous.synapse.com>
 
 	* Makefile (SUBLEVEL): Rolling rev for memory test.
