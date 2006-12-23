@@ -1,0 +1,96 @@
+if ARCH_MX3
+
+choice
+	prompt "Freescale MX3 Implementations"
+	default MACH_MX31ADS
+
+config MACH_MX31ADS
+	bool "Freescale MX31 Development Board"
+	select USES_NOR_CFI
+	select USES_COMPACTFLASH
+	select USES_CS8900
+
+endchoice
+
+menu "Platform Setup"
+
+config ATAG_PHYS
+	hex "Physical address for ATAGs list"
+	default "0x80000100"
+	depends on ATAG
+	help
+	  This is the address where APEX will construct the ATAG list
+	  before starting the Linux kernel.  This address should be
+	  within the first 16KiB of physical RAM.  Don't change this
+	  value unless you know what you are doing. 
+
+config ARCH_NUMBER
+	int
+	default 447 if MACH_MX31ADS
+
+config APEX_VMA
+	hex "APEX Runtime Address"
+	default "0x80200000"
+
+config KERNEL_LMA
+	hex "Kernel Load Address"
+	default "0x80008000"
+
+config USE_RAMDISK
+	bool "Enable ramdisk options"
+	default n
+	help
+	  This option doesn't enable the ramdisk, per se.  It enables
+	  other configuration options that help setup a default
+	  ramdisk.  The kernel command line and the APEX startup
+	  commands may be overridden to perform the same steps.
+
+	  There is a separate option in the Environment section that
+	  controls whether or not APEX copies the ramdisk from flash
+	  into RAM at startup.  That is where the ramdisk region is
+	  defined.
+
+config RAMDISK_LMA
+	hex "Ramdisk load address"
+	default "0x84000000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the physical load address for an initial
+	  ramdisk (a.k.a initrd).
+
+config RAMDISK_SIZE
+	hex "Ramdisk compressed size"
+	default "0x00300000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the size, in bytes, of the initial ramdisk
+	  (a.k.a. initrd).  This is the size of the compressed initrd
+	  image.
+
+config SDRAM_BANK0
+	bool "Enable SDRAM Bank 0"
+	default y
+
+config SDRAM_BANK1
+	bool "Enable SDRAM Bank 1"
+	depends on SDRAM_BANK0
+	default n 
+
+endmenu
+
+menu "Platform Drivers"
+
+endmenu
+
+config MACH
+	string
+	default "mx31ads"
+
+config ARCH_MX31
+	bool
+	select CPU_ARMV6
+	select CPU_ARM11
+	select CPU_ARM1136
+
+endif
+

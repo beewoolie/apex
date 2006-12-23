@@ -23,6 +23,9 @@ config CPU_ARMV4
 config CPU_ARMV5
 	bool
 
+config CPU_ARMV6
+	bool
+
 config CPU_XSCALE
 	bool
 
@@ -47,6 +50,13 @@ config CPU_ARM925T
 config CPU_ARM926T
 	bool
 
+config CPU_ARM11
+	bool
+
+config CPU_ARM1136
+	bool
+
+
 choice
 	prompt "ARM Platform"
 	default ARCH_LH7952X
@@ -62,6 +72,9 @@ config ARCH_IXP42X
 
 config ARCH_S3C2410
 	bool "Samsung S3C2410"
+
+config ARCH_MX3
+	bool "Freescale iMX3"
 
 endchoice
 
@@ -275,6 +288,7 @@ source src/mach-lh7952x/Kconfig
 source src/mach-lh7a40x/Kconfig
 source src/mach-ixp42x/Kconfig
 source src/mach-s3c2410/Kconfig
+source src/mach-mx3/Kconfig
 
 source src/apex/Kconfig
 
