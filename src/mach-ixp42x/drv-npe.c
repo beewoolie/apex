@@ -210,7 +210,6 @@ static int send_npe_mh_msg (struct npe_info* npe, struct npe_mh_msg* msg)
   int retries;
   u32 rgwSend[2];
 
-  /* Convert to proper endianness *** FIXME what is that? */
   rgwSend[0] = be32_to_cpu (msg->rgw[0]);
   rgwSend[1] = be32_to_cpu (msg->rgw[1]);
 
