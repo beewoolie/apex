@@ -21,21 +21,69 @@
    npe_mac code uses it to set the MAC address, for example.  The only
    client of the npe_mh calls is the mac.
 
+   Unknowns
+   --------
+
+   o Would be nice to know the meaning of the other bits in the NPE
+     status register.  We can tell that the NPE is running and that's
+     all.
+
 */
 
 #include <config.h>
 #include <mach/hardware.h>
 #include <mach/drv-npe.h>
 #include <linux/types.h>
+#include <linux/string.h>
+#include <asm/byteorder.h>
 #include <apex.h>
 #include <driver.h>
 #include <service.h>
+#include <network.h>
+
+struct npe_plat_data {
+  const char* name;
+  int data_size;
+  int inst_size;
+  int id;         /* Node ID */
+};
+
+struct mac_plat_info {
+  int npe_id;     /* Node ID of the NPE for this port */
+  int port_id;    /* Port ID for NPE-B @ ixp465 */
+  int eth_id;     /* Physical ID */
+  int phy_id;     /* ID of the connected PHY (PCB/platform dependent) */
+  int rxq_id;     /* Queue ID of the RX-free q*/
+  int txq_id;     /* Where to push the outgoing packets */
+};
 
 struct npe_info {
   u32 addr;			/* Physical IO base address */
 };
 
+struct mac_info {
+  u32 addr;
+  int npe_id;
+  int phy_id;
+  int eth_id;
+  int rxq_id;
+  int txq_id;
+//  struct resource *res;
+//  struct device *npe_dev;
+//  struct qm_qmgr *qmgr;
+//  struct qm_queue *rxq;
+  //  struct qm_queue *txq;
+//  u32 irqflags;
+//  struct net_device_stats stat;
+//  struct mii_if_info mii;
+//  struct work_struct mdio_thread;
+//  int rxq_pkt;
+  //  int unloading;
+//  struct mac_plat_info *plat;
+};
+
 struct npe_info npe[3];
+struct mac_info mac[2];
 
 static inline void npe_reg_write (struct npe_info* npe, u32 reg, u32 val)
 {
@@ -87,8 +135,6 @@ static inline u32 npe_read_ecs_reg(struct npe_info* npe, u32 addr)
 	return npe_read_cmd(npe, addr, IX_NPEDL_EXCTL_CMD_RD_ECS_REG);
 }
 
-#if 0
-
 #define NPE_MH_RETRIES			200
 
 #define NPE_MH_CMD			0
@@ -109,32 +155,34 @@ struct npe_mh_msg {
 
 #define logical_id(mp) (((mp)->npe_id << 4) | ((mp)->port_id & 0xf))
 
-struct mac_info {
-  u32 addr;			/* Physical IO base address */
-};
-
 static inline void mac_write_reg (struct mac_info* mac, int offset, u32 val)
 {
-  __REG (mac->addr + offset) = val;
+//  printf ("%s: %x + %x <- %x\n", __FUNCTION__, mac->addr, offset, val);
+  __REG (mac->addr + (offset<<2)) = val;
 }
 
 static inline u32 mac_read_reg (struct mac_info* mac, int offset)
 {
-  return __REG (mac->addr + offset);
+  u32 v = __REG (mac->addr + (offset<<2));
+
+//  printf ("%s: %x + %x -> %x\n", __FUNCTION__, mac->addr, offset, v);
+  return v;
+//  return __REG (mac->addr + offset);
 }
 
 static inline void mac_set_regbit (struct mac_info* mac, int offset, u32 bit)
 {
-	mac_write_reg (mac, offset, mac_read_reg (mac, offset) | bit);
+  mac_write_reg (mac, offset, mac_read_reg (mac, offset) | bit);
 }
 static inline void mac_reset_regbit (struct mac_info* mac, int offset, u32 bit)
 {
-	mac_write_reg (mac, offset, mac_read_reg (mac, offset) & ~bit);
+  mac_write_reg (mac, offset, mac_read_reg (mac, offset) & ~bit);
 }
 
 static inline void mac_mdio_cmd_write(struct mac_info* mac, u32 cmd)
 {
   int i;
+//  printf ("%s: 0x%x\n", __FUNCTION__, cmd);
   for (i = 0; i < 4; ++i, cmd >>= 8)
     mac_write_reg (mac, MAC_MDIO_CMD + i, cmd & 0xff);
 }
@@ -157,7 +205,7 @@ static inline u32 mdio_cmd (int phy_addr, int phy_reg)
   return (phy_addr << MII_ADDR_SHL) | (phy_reg << MII_REG_SHL) | MII_GO;
 }
 
-static int send_npe_mh_msg (struct npe_info* npe, struct npe_nh_msg* msg)
+static int send_npe_mh_msg (struct npe_info* npe, struct npe_mh_msg* msg)
 {
   int retries;
   u32 rgwSend[2];
@@ -185,7 +233,7 @@ static int send_npe_mh_msg (struct npe_info* npe, struct npe_nh_msg* msg)
       break;
 
   if (retries < 0) {
-    print ("npe_mh: waiting for output FIFO NotEmpty failed\n");
+    printf ("npe_mh: waiting for output FIFO NotEmpty failed\n");
     return -1;
   }
 
@@ -193,30 +241,31 @@ static int send_npe_mh_msg (struct npe_info* npe, struct npe_nh_msg* msg)
     u32 rgwRecv[2];
     int i;
     for (rgwRecv[0] = rgwRecv[1] = 0, i = 0;
-	 npe_reg_read (npe, IX_NPEDL_REG_OFFSET_STAT) & IX_NPEMH_NPE_STAT_OFNE)
+	 npe_reg_read (npe, IX_NPEDL_REG_OFFSET_STAT) & IX_NPEMH_NPE_STAT_OFNE;
+	 )
       rgwRecv [(i++)&1] = npe_reg_read (npe, IX_NPEDL_REG_OFFSET_FIFO);
 
     if (   rgwRecv[0] != rgwSend[0]
 	|| rgwRecv[1] != rgwSend[1])
-      print ("npe_mh: unexpected answer: send %08x:%08x Ret %08x:%08x\n",
-	     rgwSend[0], rgwSend[1], rgwRecv[0], rgwRecv[1]);
+      printf ("npe_mh: unexpected answer: send %08x:%08x Ret %08x:%08x\n",
+	      rgwSend[0], rgwSend[1], rgwRecv[0], rgwRecv[1]);
   }
 
   return 0;
 }
 
-int npe_mh_disable_firewall (struct npe_info *npe, struct mac_plat_info *mp)
+int npe_mh_disable_firewall (struct npe_info* npe, struct mac_plat_info* mp)
 {
   struct npe_mh_msg msg;
 
-  memset (&msg, 0, sizeof(msg));
+  memset (&msg, 0, sizeof (msg));
   msg.rgb[NPE_MH_CMD] = IX_ETHNPE_FW_SETFIREWALLMODE;
   msg.rgb[NPE_MH_PORT] = logical_id (mp);
 
   return send_npe_mh_msg (npe, &msg);
 }
 
-int npe_mh_npe_loopback_mode (struct npe_info *npe, struct mac_plat_info *mp,
+int npe_mh_npe_loopback_mode (struct npe_info* npe, struct mac_plat_info* mp,
 			      int enable)
 {
   struct npe_mh_msg msg;
@@ -241,14 +290,14 @@ int npe_mh_setportaddr (struct npe_info* npe, struct mac_plat_info* mp,
   return send_npe_mh_msg (npe, &msg);
 }
 
-int npe_mh_set_rxqid (struct npe_info *npe, struct mac_plat_info *mp, int qid)
+int npe_mh_set_rxqid (struct npe_info* npe, struct mac_plat_info* mp, int qid)
 {
   struct npe_mh_msg msg;
   int i;
 
   memset (&msg, 0, sizeof (msg));
-  msg.rgb[CMD] = IX_ETHNPE_VLAN_SETRXQOSENTRY;
-  msg.rgb[PORT] = logical_id (mp);
+  msg.rgb[NPE_MH_CMD] = IX_ETHNPE_VLAN_SETRXQOSENTRY;
+  msg.rgb[NPE_MH_PORT] = logical_id (mp);
   msg.rgb[5] = qid | 0x80;
   msg.rgb[7] = qid<<4;
   for (i = 0; i < 8; ++i) {
@@ -260,30 +309,30 @@ int npe_mh_set_rxqid (struct npe_info *npe, struct mac_plat_info *mp, int qid)
   return 0;
 }
 
-int phy_read (int phy_address, int phy_register)
+int phy_read (struct mac_info* mac, int phy_address, int phy_register)
 {
   u32 v = mdio_cmd (phy_address, phy_register);
   int retries;
 
   mac_mdio_cmd_write (mac, v);
   for (retries = 100; retries--; )
-    if (!((v = mac_mdio_cmd_read (mac)) && MII_GO))
+    if (!((v = mac_mdio_cmd_read (mac)) & MII_GO))
       break;
   if (retries < 0) {
-    printf ("%s: PHY[%d] access failed\n", __FUNCTION__, phy_address);
+    printf ("%s: PHY[%d] access failed 0x%x\n", __FUNCTION__, phy_address, v);
     return 0;
   }
 
   v = mac_mdio_status_read (mac);
   if (v & MII_READ_FAIL) {
-    printf ("%s: PHY[%d] unresponsive\n", __FUNCTION__, phy_address);
+    printf ("%s: PHY[%d] unresponsive 0x%x\n", __FUNCTION__, phy_address, v);
     return 0;
   }
 
   return v;
 }
 
-void phy_write (int phy_address, int phy_register, int v)
+void phy_write (struct mac_info* mac, int phy_address, int phy_register, int v)
 {
   int retries;
 
@@ -291,7 +340,7 @@ void phy_write (int phy_address, int phy_register, int v)
 
   mac_mdio_cmd_write (mac, v);
   for (retries = 100; retries--; )
-    if (!((v = mac_mdio_cmd_read (mac)) && MII_GO))
+    if (!((v = mac_mdio_cmd_read (mac)) & MII_GO))
       break;
   if (retries < 0) {
     printf ("%s: PHY[%d] access failed\n", __FUNCTION__, phy_address);
@@ -300,14 +349,19 @@ void phy_write (int phy_address, int phy_register, int v)
 
   return;
 }
-#endif
-
 
 void npe_init (void)
 {
-  npe[0].addr = NPEA_PHYS,
-  npe[1].addr = NPEB_PHYS,
-  npe[2].addr = NPEC_PHYS,
+  npe[0].addr = NPEA_PHYS;
+  npe[1].addr = NPEB_PHYS;
+  npe[2].addr = NPEC_PHYS;
+
+  mac[0].addr = ETH_PHYS;
+  mac[0].npe_id = ETH_NPE_ID;
+  mac[0].phy_id = ETH_PHY_ID;
+  mac[0].eth_id = ETH_ETH_ID;
+  mac[0].rxq_id = ETH_RXQ_ID;
+  mac[0].txq_id = ETH_TXQ_ID;
 
   printf ("npe: init\n");
 }
@@ -318,9 +372,21 @@ void npe_release (void)
 
 void npe_report (void)
 {
-  printf ("  npe:    npea 0x%x\n", npe_status (&npe[0]));
-  printf ("          npeb 0x%x\n", npe_status (&npe[1]));
-  printf ("          npec 0x%x\n", npe_status (&npe[2]));
+  int i;
+  for (i = 0; i < 3; ++i) {
+    u32 v = npe_status (&npe[i]);
+    printf ("  %s    npe%c%s (0x%x)\n",
+	    i ? "    " : "npe:", 'a' + i,
+	    (v & IX_NPEDL_EXCTL_STATUS_RUN) ? " running" : "", v);
+  }
+
+  for (i = 0; i < 1; ++i)
+    printf ("          eth%c 0x%x 0x%x 0x%x 0x%x\n",
+	    'a' + i,
+	    phy_read (&mac[i], mac[i].phy_id, PHY_CONTROL),
+	    phy_read (&mac[i], mac[i].phy_id, PHY_STATUS),
+	    phy_read (&mac[i], mac[i].phy_id, PHY_ID1),
+	    phy_read (&mac[i], mac[i].phy_id, PHY_ID2));
 
 //  printf ("  npe:    phy_addr %d  phy_id 0x%lx"
 //	  "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -344,4 +410,3 @@ static __service_6 struct service_d ixp4xx_npe_emac_service = {
   .report = npe_report,
 #endif
 };
-

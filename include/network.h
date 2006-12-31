@@ -118,6 +118,27 @@ struct addrinfo {
 
 /* ----- Prototypes */
 
+	/* Generic PHY registers and bits */
+
+#define PHY_CONTROL	0
+#define PHY_STATUS	1
+#define PHY_ID1		2
+#define PHY_ID2		3
+
+#define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_LOOPBACK		(1<<14)
+#define PHY_CONTROL_POWERDOWN		(1<<11)
+#define PHY_CONTROL_ANEN_ENABLE		(1<<12)
+#define PHY_CONTROL_RESTART_ANEN	(1<<9)
+#define PHY_STATUS_ANEN_COMPLETE	(1<<5)
+#define PHY_STATUS_LINK			(1<<2)
+#define PHY_STATUS_100FULL		(1<<14)
+#define PHY_STATUS_100HALF		(1<<13)
+#define PHY_STATUS_10FULL		(1<<12)
+#define PHY_STATUS_10HALF		(1<<11)
+
+	/* Ethernet/IP protocols */
+
 #define ETH_PROTO_IP		0x0800
 #define ETH_PROTO_ARP		0x0806
 #define ETH_PROTO_RARP		0x8035

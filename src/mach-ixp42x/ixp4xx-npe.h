@@ -39,6 +39,22 @@
 
 /* ----- Prototypes */
 
+#define NPEA_PHYS	IXP4XX_NPEA_PHYS
+#define NPEB_PHYS	IXP4XX_NPEB_PHYS
+#define NPEC_PHYS	IXP4XX_NPEC_PHYS
+
+#define NPEA_NAME	"NPE-A"
+#define NPEA_DATA_SIZE	(0x800)
+#define NPEA_INST_SIZE	(0x1000)
+
+#define NPEB_NAME	"NPE-B"
+#define NPEB_DATA_SIZE	(0x800)
+#define NPEB_INST_SIZE	(0x1000)
+
+#define NPEC_NAME	"NPE-C"
+#define NPEC_DATA_SIZE	(0x800)
+#define NPEC_INST_SIZE	(0x1000)
+
 #define MAC_TX_CNTRL1       0x00  // 0x000
 #define MAC_TX_CNTRL2       0x01  // 0x004
 #define MAC_RX_CNTRL1       0x04  // 0x010
