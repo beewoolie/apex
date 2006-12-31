@@ -115,6 +115,15 @@ config DRIVER_SMC91X
 	  This driver initializes and activates the SMSC SMC91x
 	  Ethernet controller.
 
+config DRIVER_IXP4XX_NPE_ETH
+	bool "IXP4xx NPE Ethernet"
+	depends on USES_IXP4XX_NPE_ETH
+	select USE_ETHERNET
+	default y
+	help
+	  This driver initializes and activates the internal NPE
+	  Ethernet interface available on the Intel IXP4xx.
+
 endmenu
 
 config USES_NOR_CFI
@@ -133,4 +142,10 @@ config USES_SMC91X
 	bool
 
 config USES_DM9000
+	bool
+
+config USES_IXP4XX_NPE_ETH
+	bool
+
+config USES_CS8900
 	bool

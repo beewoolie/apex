@@ -41,6 +41,9 @@ extern void (*interrupt_handlers[32])(void);
 # include "ixp42x.h"
 #endif
 
+/* *** FIXME: ifdef? */
+#include "ixp4xx-npe.h"
+
 #if defined (CONFIG_MACH_NSLU2)
 # include "nslu2.h"
 #endif

@@ -9,6 +9,7 @@ config MACH_NSLU2
 	select ARCH_IXP420
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
+	select USES_IXP4XX_NPE_ETH
 
 config MACH_AVILA2347
 	bool "Gateworks Avila 2347"

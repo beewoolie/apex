@@ -264,5 +264,4 @@
 	 ^ PCI_CRP_AD_CBE_BE_MASK) & PCI_CRP_AD_CBE_BE_MASK)),\
     PCI_CRP_RDATA )
 
-
 #endif  /* __IXP42X_H__ */
