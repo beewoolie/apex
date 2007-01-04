@@ -5,6 +5,33 @@ APEX Boot Loader
 
 TODO:
 
+  o Enviroinment/alias variations.  The default state is to use the
+    simply named version of each variable, aliases before environment
+    variables.  If 'variation' is defined among the aliases, it is
+    appended to the variable name and that one is checked first.  If
+    that one is found, it is used.  Otherwise, the default is used.
+
+    For example, when variation is "-1", "boot-1" would be used to
+    boot the kernel.
+
+    This new feature requires support in two ways.  First, we need
+    another standard environment variable to hold the boot preparation
+    commands, "setup".  So, "startup" is called first.  It may set
+    "variation".  Then APEX calls "setup".  Setting the variation will
+    can change *all* variable references including driver regions.
+    So, for example, the variation can be used to set the underlying
+    partition for booting simply by changing the base device.  This
+    can also be used to change some other environment variable used as
+    a reference elsewhere.
+
+    Now, we need a command, platform specific, that determine the
+    variation and sets the appropriate alias.  It would be put into
+    the startup command: "check-variation", "query-variation",
+    "select", "survey".  On nslu2, for example, it would check whether
+    or not the reset button is pressed.  If so, it would set variation
+    to '-alt'.  Perhaps the suffix is part of the command.  At this
+    point, the boot would proceeed normally.
+
   o Very slow environment region means that an empty environment makes
     the boot-time very slow.  So, we should check it once and if it is
     empty we can assume it is still empty when the first word is
