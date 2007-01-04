@@ -66,6 +66,8 @@ SECTIONS
 		*(.service.5)
 		*(.service.6)
 		*(.service.7)
+		*(.service.8)
+		*(.service.9)
 		APEX_SERVICE_END = .;
 	}
 	.driver . : {

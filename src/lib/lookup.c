@@ -36,6 +36,8 @@
 const char* lookup_alias_or_env (const char* szKey,
 				 const char* szDefault)
 {
+  /* *** FIXME: this is where we perform checks for variations */
+
   const char* sz = NULL;
 #if defined (CONFIG_ALIASES)
   if (!sz)
