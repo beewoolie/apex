@@ -44,6 +44,54 @@ static __env struct env_d e_bootaddr = {
 };
 #endif
 
+#if defined (CONFIG_RAMDISK_LMA)
+static __env struct env_d e_ramdiskaddr = {
+  .key = "ramdiskaddr",
+  .default_value = _t(CONFIG_RAMDISK_LMA),
+  .description = "Ramdisk load address",
+};
+#endif
+
+#if defined (CONFIG_ENV_REGION_KERNEL)
+static __env struct env_d e_region_kernel = {
+  .key = "kernelsrc",
+  .default_value = CONFIG_ENV_REGION_KERNEL,
+  .description = "Kernel source region",
+};
+#endif
+
+#if defined (CONFIG_ENV_REGION_KERNEL_ALT)
+static __env struct env_d e_region_kernel_alt = {
+  .key = "kernelsrc" CONFIG_VARIATION_SUFFIX,
+  .default_value = CONFIG_ENV_REGION_KERNEL_ALT,
+  .description = "Alternative kernel source region",
+};
+#endif
+
+#if defined (CONFIG_ENV_REGION_RAMDISK)
+static __env struct env_d e_region_ramdisk = {
+  .key = "ramdisksrc",
+  .default_value = CONFIG_ENV_REGION_RAMDISK,
+  .description = "Ramdisk image source region",
+};
+#endif
+
+#if defined (CONFIG_ENV_REGION_RAMDISK_ALT)
+static __env struct env_d e_region_ramdisk_alt = {
+  .key = "ramdisksrc" CONFIG_VARIATION_SUFFIX,
+  .default_value = CONFIG_ENV_REGION_RAMDISK_ALT,
+  .description = "Alternative ramdisk source region",
+};
+#endif
+
+#if defined (CONFIG_ENV_DEFAULT_STARTUP_ALT)
+static __env struct env_d e_startup_alt = {
+  .key = "startup" CONFIG_VARIATION_SUFFIX,
+  .default_value = CONFIG_ENV_DEFAULT_STARTUP_ALT,
+  .description = "Alternative startup commands",
+};
+#endif
+
 #if defined (CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE)
 static __env struct env_d e_startup = {
   .key = "startup",
@@ -55,26 +103,26 @@ static __env struct env_d e_startup = {
 static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
-#if defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA)
+#if defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
     "copy "
 # if defined (CONFIG_ENV_REGION_KERNEL_SWAP)
     "-s "
 # endif
-    CONFIG_ENV_REGION_KERNEL " " _t(CONFIG_KERNEL_LMA) ";"
+     "$kernelsrc $bootaddr; "
 #endif
-#if defined (CONFIG_ENV_REGION_RAMDISK) && defined (CONFIG_RAMDISK_LMA)
+#if defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
     "copy "
 # if defined (CONFIG_ENV_REGION_RAMDISK_SWAP)
     "-s "
 # endif
-    CONFIG_ENV_REGION_RAMDISK " " _t(CONFIG_RAMDISK_LMA) ";"
+    "$ramdisksrc $ramdiskaddr; "
 #endif
 #if defined (CONFIG_ENV_STARTUP)
     CONFIG_ENV_STARTUP
 #endif
 #if defined (CONFIG_AUTOBOOT)
 # if CONFIG_AUTOBOOT_DELAY != 0
-    "wait " _t(CONFIG_AUTOBOOT_DELAY) " Type ^C key to cancel autoboot.;"
+    "wait " _t(CONFIG_AUTOBOOT_DELAY) " Type ^C key to cancel autoboot.; "
 # endif
     "boot"
 #endif

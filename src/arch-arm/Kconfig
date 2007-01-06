@@ -315,77 +315,6 @@ config ENV
 	  Unless you are trying to shrink APEX to it's smallest
 	  possible size, it is best to set this option Y.
 
-choice
-	prompt "Bootstrap Method"
-	depends on USES_NOR_BOOTFLASH || USES_NAND_BOOTFLASH || USES
-	default NOR_BOOT
-	help
-	  There are many ways in which the system could bootstreap.
-	  The most common is NOR flash mapped into the memory space.
-	  Other, methods include NAND flash boot, I2C EEPROM booting,
-	  and SD/MMC card booting.  NOR is the easiest as the CPU has
-	  access to the complete boot loader and the loader can copy
-	  itself to RAM once RAM is initialized.  Other methods depend
-	  on the CPU to copy a small portion of the loader (or a
-	  bootstrap) into SRAM which then perform the read of the boot
-	  process.
-
-config NO_BOOTSTRAP
-	bool "No Bootstrap"
-	help
-	  This option disables any possible specialized bootstrap
-	  option and only supports a relocation of the loader from the
-	  location where it is running to SDRAM.  This is, in fact,
-	  the same as NOR_NOOTFLASH.
-
-config NOR_BOOT
-	depends on USES_NOR_BOOTFLASH
-	bool "NOR Flash Boot"
-
-config NAND_BOOT
-	depends on USES_NAND_BOOTFLASH
-	bool "NAND Flash Boot"
-	select RELOCATE_NAND
-	help
-	  Selecting NAND as the bootflash select an APEX relocation
-	  routine to one that copies from the NAND.
-
-config COMPANION_EVT1_BOOT
-	depends on USES_COMPANION_EVT1_BOOT && DRIVER_LH_MMC
-	bool "Companion EVT1 I2C Boot"
-	select RELOCATE_COMPANION_EVT1
-	help
-	  This enables an implementation of the relocate_apex ()
-	  function that copies the boot loader from SD/MMC or from I2C
-	  EEPROM.
-
-config COMPANION_EVT2_BOOT
-	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
-	bool "Companion EVT2 NAND Boot"
-	select RELOCATE_COMPANION_EVT2
-	select PREINITIALIZATION
-	help
-	  This enables preinitialization() that copies all of the boot
-	  loader from NAND flash to SRAM so that the system can get on
-	  it's feet.  The EVT2 NAND flash part only supports reading
-	  of 512 bytes from NAND flash in the absence of a stream
-	  reading feature.
-
-endchoice
-
-config AUTOBOOT
-	bool "Automatically boot operating system"
-	depends on ENV
-	default n
-
-config AUTOBOOT_DELAY
-	int "Autoboot delay"
-	depends on AUTOBOOT
-	default "50"
-	help
-	  Tenths of a second that APEX will pause before automatically
-	  booting the operating system kernel.
-
 config ENV_MUTABLE
 	bool "Allow runtime changes to the environment"
 	depends on ENV
@@ -434,26 +363,122 @@ config ENV_CHECK_LEN
 	  EEPROM, it is best to set this value to zero since the scan
 	  can take a long time and must be performed often.
 
+config VARIATIONS
+	bool "Enable environment variations"
+	default y
+	select ALIASES
+	help
+	  Variations refer to variable variations that are selected by
+	  the special variable 'variation'.  When defined, reference
+	  to environment variables or aliases will first be satisfied
+	  by the original name with the variation suffix.  If that
+	  value is not present, the original name is checked.
+
+	  The motive for this feature is to allow for boot-time
+	  selection of alternative operating system parameters.
+	  Setting the variation will select every variable that has an
+	  available variation defined, 'startup', 'cmdline',
+	  'bootaddr', and even driver regions.
+
+config VARIATION_SUFFIX
+	string "Default variation suffix"
+	default "-alt"
+	help
+	  This is the variation suffix used for alternative
+	  environment variables.  The mechanism for variations doesn't
+	  require that there be only one alternative, but this
+	  configuration option and the options that allow declaration
+	  of other variations should be sufficient.
+
+choice
+	prompt "Bootstrap Method"
+	depends on USES_NOR_BOOTFLASH\
+         || USES_NAND_BOOTFLASH\
+	 || USES_COMPANION_EVT1_BOOT\
+	 || USES_COMPANION_EVT2_BOOT
+	default NOR_BOOT
+	help
+	  There are many ways in which the system could bootstreap.
+	  The most common is NOR flash mapped into the memory space.
+	  Other, methods include NAND flash boot, I2C EEPROM booting,
+	  and SD/MMC card booting.  NOR is the easiest as the CPU has
+	  access to the complete boot loader and the loader can copy
+	  itself to RAM once RAM is initialized.  Other methods depend
+	  on the CPU to copy a small portion of the loader (or a
+	  bootstrap) into SRAM which then perform the rest of the boot
+	  process.
+
+config NO_BOOTSTRAP
+	bool "No Bootstrap"
+	help
+	  This option disables any possible specialized bootstrap
+	  option and only supports a relocation of the loader from the
+	  location where it is running to SDRAM.  This is, in fact,
+	  the same as NOR_NOOTFLASH.
+
+config NOR_BOOT
+	depends on USES_NOR_BOOTFLASH
+	bool "NOR Flash Boot"
+
+config NAND_BOOT
+	depends on USES_NAND_BOOTFLASH
+	bool "NAND Flash Boot"
+	select RELOCATE_NAND
+	help
+	  Selecting NAND as the bootflash select an APEX relocation
+	  routine to one that copies from the NAND.
+
+config COMPANION_EVT1_BOOT
+	depends on USES_COMPANION_EVT1_BOOT && DRIVER_LH_MMC
+	bool "Companion EVT1 I2C Boot"
+	select RELOCATE_COMPANION_EVT1
+	help
+	  This enables an implementation of the relocate_apex ()
+	  function that copies the boot loader from SD/MMC or from I2C
+	  EEPROM.
+
+config COMPANION_EVT2_BOOT
+	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
+	bool "Companion EVT2 NAND Boot"
+	select RELOCATE_COMPANION_EVT2
+	select PREINITIALIZATION
+	help
+	  This enables preinitialization() that copies all of the boot
+	  loader from NAND flash to SRAM so that the system can get on
+	  it's feet.  The EVT2 NAND flash part only supports reading
+	  of 512 bytes from NAND flash in the absence of a stream-read
+	  feature in the NAND flash part.
+
+endchoice
+
+comment "   Default Startup"
+depends on !ENV_DEFAULT_STARTUP_OVERRIDE
+
+config AUTOBOOT
+	bool "Automatically boot operating system"
+	depends on ENV
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
+	default n
+
+config AUTOBOOT_DELAY
+	int "Autoboot delay"
+	depends on AUTOBOOT
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
+	default "50"
+	help
+	  Tenths of a second that APEX will pause before automatically
+	  booting the operating system kernel.
+
 config ENV_STARTUP_KERNEL_COPY
 	bool "Copy Linux kernel to RAM at startup" 
 	depends on ENV
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 	default y
 	
-config ENV_REGION_KERNEL
-	string "Source region for kernel"
-	depends on ENV && ENV_STARTUP_KERNEL_COPY
-	default "nor:256k+1024k" if MACH_M7200
-	default "nor:256k+1024k" if MACH_LNODE80
-	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
-	default "nor:0x60010+0xffff0" if MACH_NSLU2
-	default "nor:128k+1536k" if MACH_KEV79524
-	default "ext2://2/zImage" if MACH_COMPANION
-	help
-	  At startup, APEX copies this region to the kernel start address.
-
 config ENV_REGION_KERNEL_SWAP
 	bool "Endian swap when copying kernel"
 	depends on ENV && ENV_STARTUP_KERNEL_COPY
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 	default n
 	help
 	  The kernel source is in a different endian format from the
@@ -463,28 +488,71 @@ config ENV_REGION_KERNEL_SWAP
 config ENV_STARTUP_RAMDISK_COPY
 	bool "Copy ramdisk to RAM at startup" 
 	depends on ENV && USE_RAMDISK
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 	default y if MACH_LNODE80
 	default y if MACH_M7200
 	default y if MACH_NSLU2
 	
-config ENV_REGION_RAMDISK
-	string "Source region for ramdisk image"
-	depends on ENV && ENV_STARTUP_RAMDISK_COPY
-	default "nor:1280k+1536k" if MACH_M7200
-	default "nor:1280k+1536k" if MACH_LNODE80
-	default "nor:0x160010+0x69fff0" if MACH_NSLU2
-	help
-	  At startup, APEX copies this region to memory for use as a
-	  ramdisk.
-
 config ENV_REGION_RAMDISK_SWAP
 	bool "Endian swap when copying ramdisk"
 	depends on ENV && ENV_STARTUP_RAMDISK_COPY
+	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 	default n
 	help
 	  The ramdis source is in a different endian format from the
 	  system that will use it.  This option performs a byte-swap
 	  when copying it. 
+
+comment "   Regions"
+
+config ENV_REGION_KERNEL
+	string "Source region for kernel"
+	depends on ENV
+	default "nor:256k+1024k" if MACH_M7200
+	default "nor:256k+1024k" if MACH_LNODE80
+	default "nor:256k+1536k" if MACH_LPD7A40X || MACH_LPD7952X
+	default "nor:0x60010+0xffff0" if MACH_NSLU2
+	default "nor:128k+1536k" if MACH_KEV79524
+	default "ext2://2/zImage" if MACH_COMPANION
+	help
+	  Defines the default kernel region.  Typically, APEX copies
+	  this region to the $bootaddr boot address. 
+
+config ENV_REGION_KERNEL_ALT_P
+	bool "Define alternate kernel region"
+	depends on ENV && VARIATIONS
+	help
+	  Set to define the alternative kernel region.
+
+config ENV_REGION_KERNEL_ALT
+	string "Alternative source region for kernel"
+	depends on ENV_REGION_KERNEL_ALT_P
+	help
+	  Defines the alternative kernel region.
+
+config ENV_REGION_RAMDISK
+	string "Source region for ramdisk image"
+	depends on ENV && USE_RAMDISK
+	default "nor:1280k+1536k" if MACH_M7200
+	default "nor:1280k+1536k" if MACH_LNODE80
+	default "nor:0x160010+0x69fff0" if MACH_NSLU2
+	help
+	  Defines the ramdisk image region.  Typically, APEX copies
+	  this region to the $ramdiskaddr address.
+
+config ENV_REGION_RAMDISK_ALT_P
+	bool "Define alternate ramdisk image region"
+	depends on ENV && VARIATIONS && USE_RAMDISK
+	help
+	  Set to define the alternative kernel region.
+
+config ENV_REGION_RAMDISK_ALT
+	string "Alternative source region for ramdisk image"
+	depends on ENV_REGION_RAMDISK_ALT_P && USE_RAMDISK
+	help
+	  This is the region of the alternative ramdisk image.
+
+comment "   Overrides"
 
 config ENV_DEFAULT_CMDLINE_OVERRIDE
 	bool "Override the target default kernel command line"
@@ -505,6 +573,16 @@ config ENV_DEFAULT_CMDLINE
 	  use this option to set a custom command line when there is
 	  not easy access to the console.
 
+config ENV_DEFAULT_CMDLINE_ALT_P
+	bool "Define alternate kernel command line"
+	depends on ENV && VARIATIONS
+	help
+	  Set to define the alternative kernel command line.
+
+config ENV_DEFAULT_CMDLINE_ALT
+	string "Alternative kernel command line"
+	depends on ENV_DEFAULT_CMDLINE_ALT_P
+
 config ENV_DEFAULT_STARTUP_OVERRIDE
 	bool "Override the target startup command"
 	depends on ENV
@@ -513,6 +591,16 @@ config ENV_DEFAULT_STARTUP_OVERRIDE
 config ENV_DEFAULT_STARTUP
 	string "Default startup command"
 	depends on ENV && ENV_DEFAULT_STARTUP_OVERRIDE
+
+config ENV_DEFAULT_STARTUP_ALT_P
+	bool "Define alternate startup command"
+	depends on ENV && VARIATIONS
+	help
+	  Set to define the alternative startup command.
+
+config ENV_DEFAULT_STARTUP_ALT
+	string "Alternative startup command"
+	depends on ENV_DEFAULT_STARTUP_ALT_P
 
 endmenu
 

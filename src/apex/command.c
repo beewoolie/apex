@@ -70,7 +70,7 @@ static char* expand_variables (const char* rgbSrc)
       break;
 
     case 2:			/* Scanning variable key */
-      if (isalpha (*pchSrc) || *pchSrc == '_')
+      if (isalpha (*pchSrc) || *pchSrc == '_' || *pchSrc == '-')
 	break;
       *pch = 0;
       value = lookup_alias_or_env (pchKey + 1, 0);
@@ -236,13 +236,7 @@ int call_command (int argc, const char** argv)
 
 void exec_monitor (void)
 {
-  const char* szStartup
-#if defined (CONFIG_ENV)
-    = env_fetch ("startup")
-#else
-    = NULL
-#endif
-    ;
+  const char* szStartup = lookup_alias_or_env ("startup", NULL);
 
 //  printf ("exec_monitor\n");
 //  printf (" startup %s\n", szStartup);

@@ -115,7 +115,7 @@ config CMD_ENV
 
 config CMD_ERASEENV
 	bool "Define Erase Environment Command"
-	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y && EXPERIMENTAL
+	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y && EXPERIMENTAL && false
 	default n
 	help
 	  Experimental (unimplemented) feature that allows safe,
@@ -127,6 +127,19 @@ config CMD_SETENV
 	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
 	default y
 
+config CMD_PRINTENV_ALPHABETIZE
+       bool "Sort environment variables alphabetically"
+       default y
+       depends on SMALL=n && false
+       help
+	 *** This option isn't yet available because it is a little
+	 trickier than I had time to implement.
+         Setting this option will sort alphabetically the environment
+	 variables when listing them.  This option makes it easier to
+         browse the variables.  It forces the inclusion of sort
+         function, so it is automatically disabled when the SMALL
+         configuration option is set.
+ 
 config CMD_ERASE
 	bool "Define Erase Region Command"
 	default y

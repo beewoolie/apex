@@ -1,3 +1,28 @@
+2007-01-06  Marc Singer  <elf@cerise.buici.com>
+
+	* src/apex/env.c: Many more environment variables may be defined.
+
+	* src/apex/cmd-boot.c (atag_commandline): boot command performs
+	lookup of the default command line that allows for alternatives.
+
+	* src/arch-arm/Kconfig: Reworking of the environment configuration
+	section.  We now have options to set alternative kernel command
+	line, kernel source region, and ramdisk region.  Default variation
+	suffix is a config parameter.  The default startup command is more
+	clearly controlled.
+
+	* src/mach-ixp42x/variation-nslu2.c (variation_init): Added
+	variation for nslu2.  Holding the reset button while booting will
+	select the alternative boot and set the variation to the
+	configured value.
+
+	* src/apex/command.c (expand_variables): Added '-' to the list of
+	acceptable characters when scanning a command for variables to
+	expand.  This is helpful for variations.
+
+	* src/lib/lookup.c (lookup_alias_or_env): Variation support added
+	to the standard lookup function.
+
 2006-12-13  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/apex/command.c (parse_command): Added '-' command prefix

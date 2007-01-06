@@ -27,7 +27,7 @@ static void variation_init (void)
   int reset_pressed = (GPIO_INR & (1<<GPIO_I_RESETBUTTON)) == 0;
 
   if (reset_pressed)
-    alias_set ("variation", "-alt");
+    alias_set ("variation", CONFIG_VARIATION_SUFFIX);
 
   MASK_AND_SET (GPIO_OUTR, 1<<GPIO_I_LEDRED,
 		reset_pressed ? (1<<GPIO_I_LEDRED): 0);

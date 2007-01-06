@@ -29,16 +29,43 @@
 #include <config.h>
 #include <apex.h>
 #include <lookup.h>
-
+#include <linux/string.h>
 #include <environment.h>
 #include <alias.h>
 
 const char* lookup_alias_or_env (const char* szKey,
 				 const char* szDefault)
 {
-  /* *** FIXME: this is where we perform checks for variations */
-
   const char* sz = NULL;
+
+#if defined (CONFIG_VARIATIONS)
+  const char* szAlt = NULL;
+  static char szKeyAlt[80];
+
+# if defined (CONFIG_ALIASES)
+  szAlt = alias_lookup ("variation");
+# endif
+
+# if defined (CONFIG_ENV)
+  if (!szAlt)
+    szAlt == env_fetch ("variation");
+# endif
+
+  if (szAlt) {
+    int cch = strlcpy (szKeyAlt, szKey, sizeof (szKeyAlt));
+    strlcpy (szKeyAlt + cch, szAlt, sizeof (szKeyAlt) - cch);
+
+# if defined (CONFIG_ALIASES)
+    if (!sz)
+      sz = alias_lookup (szKeyAlt);
+# endif
+# if defined (CONFIG_ENV)
+    if (!sz)
+      sz = env_fetch (szKeyAlt);
+# endif
+  }
+#endif
+
 #if defined (CONFIG_ALIASES)
   if (!sz)
     sz = alias_lookup (szKey);

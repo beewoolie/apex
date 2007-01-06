@@ -38,6 +38,7 @@
 #include <configfunc.h>
 #include <environment.h>
 #include <service.h>
+#include <lookup.h>
 
 //#define CONFIG_ICACHE_BOOT
 
@@ -143,9 +144,8 @@ static __command struct command_d c_boot = {
 #if defined (CONFIG_ATAG)
 struct tag* atag_commandline (struct tag* p)
 {
-#if defined (CONFIG_ENV)
-  const char* szCommandEnv = env_fetch ("cmdline");
-#endif
+  const char* szCommandEnv = lookup_alias_or_env ("cmdline", NULL);
+
   int cb = 0;
   p->u.cmdline.cmdline[0] = '\0';
 
@@ -164,12 +164,10 @@ struct tag* atag_commandline (struct tag* p)
 
     cb = pb - p->u.cmdline.cmdline;
   }
-#if defined (CONFIG_ENV)
   else if (szCommandEnv) {
     strlcpy (p->u.cmdline.cmdline, szCommandEnv, COMMAND_LINE_SIZE);
     cb = strlen (szCommandEnv) + 1;
   }
-#endif
 
   if (cb) {
 # if !defined (CONFIG_SMALL)
@@ -193,6 +191,16 @@ __env struct env_d e_cmdline = {
   .key = "cmdline",
   .default_value = CONFIG_ENV_DEFAULT_CMDLINE,
   .description = "Linux kernel command line",
+};
+
+#endif
+
+#if defined (CONFIG_ENV_DEFAULT_CMDLINE_ALT)
+
+__env struct env_d e_cmdline_alt = {
+  .key = "cmdline" CONFIG_VARIATION_SUFFIX,
+  .default_value = CONFIG_ENV_DEFAULT_CMDLINE_ALT,
+  .description = "Alternative Linux kernel command line",
 };
 
 #endif

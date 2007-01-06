@@ -19,7 +19,7 @@ By defining an environment variable or alias of the name 'variation',
 APEX will select alternative versions of environment variables or
 aliases when available when expanding them on the command line or when
 variables are referenced by drivers.  When 'variation' is set to
-'-alt', APEX will first look for the startup command in 'startup-alt'
+'_alt', APEX will first look for the startup command in 'startup_alt'
 and then in 'startup' if the variation is not present.  This is true
 for all variable references include the ones used to define the base
 regions for drivers.
@@ -42,13 +42,20 @@ configured.  Remember, the difference between environment variables
 and aliases is that environment variables are immediately saved to
 non-volatile storage when set and aliases are only stored in RAM
 
+  _alt vs. -alt
+  -------------
+
+While both are perfectly valid and the environment variable expansion
+code supports both, it is important to be aware that variable and
+alias names will only expand with alphanumeric names with - and _
+added to aid readability.
 
   ====================
 
 static void variation_init (void)
 {
   if (is_reset_button_pressed ())
-    alias_set ("variation", "-alt"); 
+    alias_set ("variation", "_alt"); 
 }
 
 static __service_9 struct service_d variation_service = {
