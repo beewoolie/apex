@@ -42,7 +42,7 @@ void nslu2_spinner (unsigned v)
   if (v == ~0) {		/* Clear */
     value = 0;
     step = 0;
-    _L(LED0);
+    _LG(LED0);
     return;
   }
 
@@ -53,17 +53,17 @@ void nslu2_spinner (unsigned v)
   value = v;
   switch (step) {
   case 0:
-    _L(LED1); break;
+    _LG(LED1); break;
   case 1:
-    _L(LED5); break;
+    _LG(LED5); break;
   case 2:
-    _L(LEDd); break;
+    _LG(LEDd); break;
   case 3:
-    _L(LEDc); break;
+    _LG(LEDc); break;
   case 4:
-    _L(LED8); break;
+    _LG(LED8); break;
   case 5:
-    _L(LED0); break;
+    _LG(LED0); break;
   }
   //  step = (step + 1)%6;
   ++step;
@@ -74,12 +74,12 @@ void nslu2_spinner (unsigned v)
 static void spinner_init (void)
 {
   hook_spinner = nslu2_spinner;
-  _L(LED0);			/* All off once we've init'd */
+  _LG(LED0);			/* All off once we've init'd */
 }
 
 static void spinner_release (void)
 {
-  _L(LEDf);			/* All on while kernel decompresses */
+  _LG(LEDf);			/* All on while kernel decompresses */
 }
 
 static __service_7 struct service_d spinner_service = {

@@ -37,7 +37,8 @@
 
 /* ----- Prototypes */
 
-#define LED_MASK (0xf)
+#define LED_MASK (0xf)		/* All LEDs */
+#define LED_GREEN_MASK (0xe)	/* Green only LEDs */
 
 #define LED0	((0<<1)|(0<<0)|(1<<2)|(1<<3))
 #define LED1	((1<<1)|(0<<0)|(1<<2)|(1<<3))
@@ -58,6 +59,7 @@
 #define LEDf	((1<<1)|(1<<0)|(0<<2)|(0<<3))
 
 #define _L(l) MASK_AND_SET(GPIO_OUTR, LED_MASK, l)
+#define _LG(l) MASK_AND_SET(GPIO_OUTR, LED_GREEN_MASK, l)
 
 
 #define GPIO_ER_OUTPUTS	 (1<<0)		/* Status LED */\

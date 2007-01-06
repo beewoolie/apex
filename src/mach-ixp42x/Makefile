@@ -46,6 +46,7 @@ obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o pci.o
 
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_SPINNER) += spinner-nslu2.o
+obj-$(CONFIG_MACH_NSLU2) += variation-nslu2.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 
 obj-$(CONFIG_NPE)		+= npe.o npe-interface.o
