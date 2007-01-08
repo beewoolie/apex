@@ -111,7 +111,7 @@
 
 #define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
-//#define NO_WRITE		/* Disable writes, for debugging */
+#define NO_WRITE		/* Disable writes, for debugging */
 
 #if NOR_WIDTH == 32
 # define _REGA		__REG		/* Array I/O macro */
@@ -629,6 +629,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     else {
       int i;
       char __aligned rgb[chip->writebuffer_size];
+      /* *** FIXME: I think this is where I need to swap the low
+	 *** address bits for big endian mode. */
       rgb[0] = 0xff;						/* First */
       rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);
