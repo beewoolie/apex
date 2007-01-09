@@ -221,7 +221,8 @@ static void prescan_directory (struct descriptor_d* d)
   descriptor_query (d, QUERY_START, &start);
   descriptor_query (d, QUERY_SIZE, &size);
 
-  PRINTF ("%s: start %lx size %ld\n", __FUNCTION__, start, size);
+  PRINTF ("%s: start %lx size %ld start 0x%lx index 0x%x\n",
+	  __FUNCTION__, start, size, d->start, d->index);
   if (size == 0)
     return;			/* Unable to perform queries */
 
@@ -240,22 +241,28 @@ static void prescan_directory (struct descriptor_d* d)
 	 possible we're crossing boundaries within flash where the
 	 erase block size changes. */
       descriptor_query (d, QUERY_ERASEBLOCKSIZE, &eraseblocksize);
-      PRINTF ("%s: length %lx  eb %lx  eb_swapped %lx\n",
-	      __FUNCTION__, descriptor.length, eraseblocksize,
-	      swab32 (eraseblocksize));
       /* The original implementation of this check was to compare the
 	 the FIS directory partition entry's length field with
 	 eraseblocksize swapped.  This, however, assumed that the
 	 directory was always the full size of an erase block,
 	 something which is not (nor ever was) true.  So we changed
-	 the test to something more robust. */
+	 the test to something more robust.  Now, we check that the
+	 partition table start address is in the same erase block from
+	 which we are reading. */
+      PRINTF ("%s: descriptor.start 0x%lx (0x%lx)  &descriptor 0x%lx"
+	      "  mask 0x%lx\n",
+	      __FUNCTION__, descriptor.start, swab32 (descriptor.start),
+	      start + d->start + d->index, ~(eraseblocksize - 1));
       if ((swab32 (descriptor.start) & ~(eraseblocksize - 1))
-	  == ((unsigned long) &descriptor & ~(eraseblocksize - 1))) {
+	  == ((unsigned long) (start + d->start + d->index)
+	      & ~(eraseblocksize - 1))) {
 	fis_directory_swap = 1;
 	fis_directory_entries = swab32 (descriptor.length)/sizeof (descriptor);
       }
       else
 	fis_directory_entries = descriptor.length/sizeof (descriptor);
+      PRINTF ("%s: %d entries, swapped %d\n",
+	      __FUNCTION__, fis_directory_entries, fis_directory_swap);
       break;
     }
   }

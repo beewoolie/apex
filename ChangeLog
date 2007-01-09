@@ -1,3 +1,13 @@
+2007-01-09  Marc Singer  <elf@cerise.buici.com>
+
+	* Makefile (SUBLEVEL): 1.4.11, to fix partition table swapped-ness
+	check.
+
+	* src/drivers/drv-fis.c (prescan_directory): Fixed the partition
+	table swapped-ness check to a more robust comparison of the
+	partition table entry's erase block with the erase block from
+	which the table is being read.
+
 2007-01-08  Marc Singer  <elf@cerise.buici.com>
 
 	* 1.4.10.
