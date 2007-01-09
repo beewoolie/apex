@@ -737,7 +737,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       index &= ~(NOR_WIDTH/8 - 1);
     }
     else
-      data = SWAP_ONE (*(nor_t*) pv)
+      data = SWAP_ONE (*(nor_t*) pv);
 
     vpen_enable ();
     if (page != pageLast) {
