@@ -126,6 +126,17 @@
    () call and the extent of the region passed via the environment or
    alias as "fis-drv".
 
+   Deleted Entries and the End of the Table
+   ----------------------------------------
+
+   The Redboot will write 0xff to the start of a partition entry when
+   it deletes it.  This is peculiar since the only way to write 0xff
+   is to write the whole partition, so why not simply remove the
+   partition instead.  Duh.
+
+   The end of the table is marked by 0xff's in the first two bytes of
+   the descriptor.
+
 */
 
 #include <config.h>
@@ -195,10 +206,15 @@ static inline const char* block_driver (void)
   return lookup_alias_or_env ("fis-drv", CONFIG_DRIVER_FIS_BLOCKDEVICE);
 }
 
-static int deleted_entry (struct fis_descriptor* descriptor)
+static inline int deleted_entry (struct fis_descriptor* partition)
 {
 	/* Erased entry -- dumb, but that's RedBoot */
-  return descriptor->name[0] == 0xff;
+  return partition->name[0] == 0xff;
+}
+
+static inline int end_of_table (struct fis_descriptor* partition)
+{
+  return (*(u16*) &partition->name[0]) == 0xffff;
 }
 
 static int compare_skips (const void* _a, const void* _b)
@@ -229,14 +245,16 @@ static void prescan_directory (struct descriptor_d* d)
   d->driver->seek (d, 0, SEEK_SET);
 
   while (1) {
-    struct fis_descriptor descriptor;
-    if (d->driver->read (d, &descriptor, sizeof (descriptor))
-	!= sizeof (descriptor))
+    struct fis_descriptor partition;
+    if (d->driver->read (d, &partition, sizeof (partition))
+	!= sizeof (partition))
       break;
-    if (deleted_entry (&descriptor))
+    if (end_of_table (&partition))
+      break;
+    if (deleted_entry (&partition))
       continue;
 
-    if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
+    if (strnicmp (partition.name, "fis directory", 16) == 0) {
       /* Read the erase block size where we need it since it is
 	 possible we're crossing boundaries within flash where the
 	 erase block size changes. */
@@ -249,18 +267,18 @@ static void prescan_directory (struct descriptor_d* d)
 	 the test to something more robust.  Now, we check that the
 	 partition table start address is in the same erase block from
 	 which we are reading. */
-      PRINTF ("%s: descriptor.start 0x%lx (0x%lx)  &descriptor 0x%lx"
+      PRINTF ("%s: partition.start 0x%lx (0x%lx)  &partition 0x%lx"
 	      "  mask 0x%lx\n",
-	      __FUNCTION__, descriptor.start, swab32 (descriptor.start),
+	      __FUNCTION__, partition.start, swab32 (partition.start),
 	      start + d->start + d->index, ~(eraseblocksize - 1));
-      if ((swab32 (descriptor.start) & ~(eraseblocksize - 1))
+      if ((swab32 (partition.start) & ~(eraseblocksize - 1))
 	  == ((unsigned long) (start + d->start + d->index)
 	      & ~(eraseblocksize - 1))) {
 	fis_directory_swap = 1;
-	fis_directory_entries = swab32 (descriptor.length)/sizeof (descriptor);
+	fis_directory_entries = swab32 (partition.length)/sizeof (partition);
       }
       else
-	fis_directory_entries = descriptor.length/sizeof (descriptor);
+	fis_directory_entries = partition.length/sizeof (partition);
       PRINTF ("%s: %d entries, swapped %d\n",
 	      __FUNCTION__, fis_directory_entries, fis_directory_swap);
       break;
@@ -270,7 +288,7 @@ static void prescan_directory (struct descriptor_d* d)
 }
 
 static const char* map_region (struct descriptor_d* d,
-			       struct fis_descriptor* descriptor)
+			       struct fis_descriptor* partition)
 {
   static char sz[64];
   unsigned long start = 0;
@@ -278,7 +296,7 @@ static const char* map_region (struct descriptor_d* d,
 
   snprintf (sz, sizeof (sz), "%s:0x%08lx+0x%08lx",
 	    d->driver_name,
-	    descriptor->start - start, descriptor->length);
+	    partition->start - start, partition->length);
   return sz;
 }
 
@@ -309,6 +327,8 @@ static int fis_open (struct descriptor_d* d)
       close_descriptor (&fis_d);
       ERROR_RETURN (ERROR_IOFAILURE, "premature end of fis-drv");
     }
+    if (end_of_table (&partition))
+      break;
     if (deleted_entry (&partition))
       continue;
     if (strnicmp (d->pb[0], partition.name, sizeof (partition.name)))
@@ -492,6 +512,8 @@ static void fis_report (void)
 
     if (d.driver->read (&d, &partition, sizeof (partition))
 	!= sizeof (partition))
+      break;
+    if (end_of_table (&partition))
       break;
     if (deleted_entry (&partition))
       continue;
