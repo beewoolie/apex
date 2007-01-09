@@ -63,7 +63,7 @@ int cmd_version (int argc, const char** argv)
   }
 #if defined (CONFIG_CMD_SETENV)
   printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
-  switch (env_check_magic ()) {
+  switch (env_check_magic (1)) {
   case 0:
     printf ("in-use");
     break;

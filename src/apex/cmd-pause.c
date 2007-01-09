@@ -41,11 +41,31 @@
 #include <apex.h>
 #include <command.h>
 #include <error.h>
+#include <linux/string.h>
+#include <linux/kernel.h>
 
 #define SEC_PAUSE 5
 
 int cmd_pause (int argc, const char** argv)
 {
+  u8 b;
+  u16 s;
+  u32 w;
+  u32 addr;
+
+  if (argc < 2)
+    return -1;
+
+  addr = simple_strtoul (argv[1], NULL, 0);
+  addr &= ~3;
+  b = *(u8*) addr;
+  s = *(u16*) addr;
+  w = *(u32*) addr;
+
+  printf ("b 0x%x s 0x%x w 0x%x\n", b, s, w);
+
+#if 0
+
   int mode = 0;
   printf ("pausing for %d seconds\n", SEC_PAUSE);
 
@@ -83,7 +103,7 @@ int cmd_pause (int argc, const char** argv)
 #endif
 
   printf ("done\n");
-
+#endif
   return 0;
 }
 
