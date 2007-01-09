@@ -59,6 +59,18 @@
    that that ID was found in the environment, but there is no
    corresponding environment variable that matches it.
 
+   env_check_magic and rgs[]
+   -------------------------
+
+   It may seem wasteful to use a large auto array to hold read data
+   while looking for evidence that the environment is in-use.  I
+   checked this with the stack extent monitoring code and it looks
+   like the impact is minimal.  At the points in time where the
+   environment is being scanned, the stack is well below 1KiB.  At
+   128, the rgs array is only 256 which is the length of a moderately
+   long string buffer.
+
+
    ----
 
    - There may be a desire to be able to erase all of the environment
@@ -95,6 +107,7 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_START;
 extern char APEX_VMA_END;
 
+#define C_ENV_CHECK_READ	(64)
 #define ENV_CHECK_LEN	(CONFIG_ENV_CHECK_LEN)
 #define ENV_CB_MAX	(512)
 #define ENV_MASK_DELETED (0x80)
@@ -239,9 +252,12 @@ static char _env_locate (int i)
    environment space, just before a write, just to make sure it is
    clear.
 
+   The parameter is true when we are looking to write to the
+   environent and need to do a more extensive scan.
+
 */
 
-int env_check_magic (void)
+int env_check_magic (int full_check)
 {
   unsigned char __aligned rgb[2];
 
@@ -249,6 +265,9 @@ int env_check_magic (void)
   _env_read (rgb, 2);
   if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)
     return 0;
+
+  if (!full_check)	  /* !full_check good for reading */
+    return -1;
 
   if (rgb[0] != 0xff || rgb[1] != 0xff) {
     DBG (1, "%s: bad magic %x %x\n", __FUNCTION__, rgb[0], rgb[1]);
@@ -258,14 +277,19 @@ int env_check_magic (void)
 #if defined (ENV_CHECK_LEN) && ENV_CHECK_LEN > 0
   {
     int c = ENV_CHECK_LEN/2;
-    unsigned short s;
-    while (--c) {
-      _env_read (&s, 2);
-      if (s != 0xffff)
-	return -1;
+    unsigned short rgs[C_ENV_CHECK_READ]; /* More efficient that reading 1 short */
+    while (c > 0) {
+      int cRead = c;
+      if (cRead > sizeof (rgs)/sizeof (*rgs))
+	cRead = sizeof (rgs)/sizeof (*rgs);
+      _env_read (rgs, cRead*2);
+      c -= cRead;
+      while (cRead-- > 0)
+	if (rgs[cRead] != 0xffff)
+	  return -1;
     }
     _env_rewind ();
-    _env_read (&s, 2);
+    _env_read (rgs, 2);
   }
 #endif
 
@@ -288,7 +312,7 @@ static const char* _env_find (int i)
   if (!is_descriptor_open (&env_d))
     return NULL;
 
-  if (env_check_magic ())
+  if (env_check_magic (0))
     return NULL;
 
   _env_reset_ids ();
@@ -413,7 +437,7 @@ void env_erase (const char* szKey)
   if (i < 0)
     return;
 
-  if (env_check_magic ())
+  if (env_check_magic (1))
     return;
 
   _env_reset_ids ();
@@ -447,7 +471,7 @@ int env_store (const char* szKey, const char* szValue)
   if (i < 0 || cch > ENV_CB_MAX - 1)
     return 1;
 
-  switch (env_check_magic ()) {
+  switch (env_check_magic (1)) {
   case 0:			/* magic present */
     break;
   case 1:			/* uninitialized */

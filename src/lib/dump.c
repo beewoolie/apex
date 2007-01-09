@@ -70,7 +70,8 @@ void dumpw (const char* rgb, int cb, unsigned long index, int width)
     for (i = 0; i < 16; ++i) {
       if (i == 8)
 	putchar (' ');
-      putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
+      putchar ( (i < cb) ? (isascii (rgb[i]) && isprint (rgb[i])
+			    ? rgb[i] : '.') : ' ');
     }
     printf ("\n");
 
