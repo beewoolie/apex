@@ -48,6 +48,7 @@
 
 int cmd_pause (int argc, const char** argv)
 {
+#if 0
   u8 b;
   u16 s;
   u32 w;
@@ -63,8 +64,9 @@ int cmd_pause (int argc, const char** argv)
   w = *(u32*) addr;
 
   printf ("b 0x%x s 0x%x w 0x%x\n", b, s, w);
+#endif
 
-#if 0
+#if 1
 
   int mode = 0;
   printf ("pausing for %d seconds\n", SEC_PAUSE);
