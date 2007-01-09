@@ -52,6 +52,10 @@ extern void (*interrupt_handlers[32])(void);
 # include "nas100d.h"
 #endif
 
+#if defined (CONFIG_MACH_DSMG600)
+# include "dsmg600.h"
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

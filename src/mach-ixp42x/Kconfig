@@ -17,6 +17,12 @@ config MACH_NAS100D
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
 
+config MACH_DSMG600
+	bool "D-Link DSM-G600 RevA"
+	select ARCH_IXP420
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+
 config MACH_AVILA2347
 	bool "Gateworks Avila 2347"
 	select ARCH_IXP422
@@ -86,6 +92,7 @@ config ARCH_NUMBER
 	int
 	default 597 if MACH_NSLU2
 	default 865 if MACH_NAS100D
+	default 964 if MACH_DSMG600
 
 config APEX_VMA
 	hex "APEX runtime address"
