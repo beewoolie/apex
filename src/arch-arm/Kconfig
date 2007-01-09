@@ -365,7 +365,7 @@ config ENV_CHECK_LEN
 
 config VARIATIONS
 	bool "Enable environment variations"
-	default y
+	default n
 	select ALIASES
 	help
 	  Variations refer to variable variations that are selected by
@@ -382,6 +382,7 @@ config VARIATIONS
 
 config VARIATION_SUFFIX
 	string "Default variation suffix"
+	depends on VARIATIONS
 	default "-alt"
 	help
 	  This is the variation suffix used for alternative
