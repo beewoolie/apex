@@ -48,6 +48,10 @@ extern void (*interrupt_handlers[32])(void);
 # include "nslu2.h"
 #endif
 
+#if defined (CONFIG_MACH_NAS100D)
+# include "nas100d.h"
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

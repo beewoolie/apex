@@ -1,3 +1,21 @@
+2007-01-08  Marc Singer  <elf@cerise.buici.com>
+
+	* src/drivers/drv-nor-cfi.c (SWAP_ONE): Fixed the nor flash driver
+	to properly write when in an endian mismatched mode.  This may be
+	peculiar to the nslu2 (and other ixp4xx systems) where flash is
+	assumed to be written in one endian-ness while the system is
+	executing in the opposite endian-ness.
+  
+	* src/mach-ixp42x/variation-nslu2.c (variation_init): Variation
+	now uses the fact that the power button is depressed (instead of
+	the reset button).
+
+	* src/lib/dump.c (dumpw): Fixed the printability check on dump so
+	that we don't write non-ascii characters.
+
+	* src/lib/env.c (env_check_magic): Streamlined the environment
+	magic number check.
+
 2007-01-06  Marc Singer  <elf@cerise.buici.com>
 
 	* src/apex/env.c: Many more environment variables may be defined.
