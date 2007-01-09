@@ -72,18 +72,14 @@
 
    o nor_write and endianness
 
-     Thought the read code is recitifed with REGA and copy_from fixes,
-     the write code is still broken on systems where the order in
-     flash does not match the order of the running CPU.
+     Though the read code is recitifed with REGA and copy_from
+     fixes, the write code is still broken on systems where the order
+     in flash does not match the order of the running CPU.
 
-     The REGA fix ought to fix part of it, but there are several code
-     paths to correct.  It is likely that the memcpy calls just need
-     something like the copy_from() call to make them right.  We may
-     need to use an accessor when we compose the write array *or* we
-     may need to simply use REGA's to copy the array to flash.  I hope
-     there is a simple solution.  I *do* know that reading from flash,
-     when the buffer isn't aligned, should be done with copy_from()
-     and I don't think it is.
+     Instead, we use SWAP_ONE in the write code to swap as we send
+     bytes to the flash.  This is only used for data since the
+     commands appear to be correctly understood without this
+     transformation.
 
 */
 
@@ -111,7 +107,7 @@
 
 #define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
-#define NO_WRITE		/* Disable writes, for debugging */
+//#define NO_WRITE		/* Disable writes, for debugging */
 
 #if NOR_WIDTH == 32
 # define _REGA		__REG		/* Array I/O macro */
@@ -120,19 +116,28 @@
 # else
 #  define _REGC	        __REG16
 # endif
+# define nor_t		u32
 #elif NOR_WIDTH == 16
 # define _REGA		__REG16		/* Array I/O macro */
 # define _REGC		__REG16		/* Single chip I/O macro */
+# define nor_t		u16
 #endif
 
 #if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
 # define REGA(a) _REGA((a)^(1<<1))
 # define REGC(a) _REGC((a)^(1<<1))
+
+# if NOR_WIDTH == 32
+#  define SWAP_ONE(v) (  ((v & 0xff)<<24)    | ((v & 0xff00)<<8)\
+		       | ((v & 0xff0000)>>8) | ((v & 0xff000000)>>24))
+# else
+#  define SWAP_ONE(v) (((v & 0xff)<<8)    | ((v & 0xff00)>>8))
+# endif
 #else
 # define REGA(a) _REGA(a)
 # define REGC(a) _REGC(a)
+# define SWAP_ONE(v)	(v)
 #endif
-
 
 #if NOR_CHIP_MULTIPLIER == 2
 # define CMD(v)		((v) | ((v)<<16))
@@ -255,6 +260,15 @@ static unsigned long nor_status (unsigned long index)
 
 
 #if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
+
+/* copy_from
+
+   implements a byte-swapping memory copy.  This code uses the REGA
+   macro to read the correct half-words from memory in order, but it
+   also needs to swap bytes when it stores them in RAM.
+
+*/
+
 void copy_from (void* _dst, const void* _src, size_t cb)
 {
   char* dst = (char*) _dst;
@@ -269,8 +283,8 @@ void copy_from (void* _dst, const void* _src, size_t cb)
   }
   while (cb > 1) {
     u16 v = REGA (src);
-    *dst++ = (v >> 8) & 0xff;
-    *dst++ = v & 0xff;
+    *dst++ = (v >> 8) & 0xff;	/* High byte first */
+    *dst++ = v & 0xff;		/*   then low byte */
     src += 2;
     cb -= 2;
   }
@@ -576,12 +590,14 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     vpen_enable ();
 
+#if !defined (NO_WRITE)
     if (page != pageLast) {
       status = nor_unlock_page (index);
       if (status & (ProgramError | VPEN_Low | DeviceProtected))
 	goto fail;
       pageLast = page;
     }
+#endif
 
 	/* === Initiate buffer write */
 
@@ -591,12 +607,15 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 #else
     WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
 #endif
+
+#if !defined (NO_WRITE)
     status = nor_status (index & ~(NOR_WIDTH/8 - 1));
     if (!(status & Ready)) {
       PRINTF ("nor_write failed program start 0x%lx (0x%x)\n",
 	      index & ~(NOR_WIDTH/8 - 1), status);
       goto fail;
     }
+#endif
 
 	/* === Send the extent of the write.  We optimize (though I
 	   don't really know why) if we don't need to write a whole
@@ -614,35 +633,38 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 #endif
     }
 
-	/* === Either write the data, because we're aligned, or
-	   construct a buffer we can write because we're not. */
+	/* === Either write the data, because we're aligned (first
+	   case), or construct a buffer we can write because we're
+	   not. */
 
     if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
       int i;
-      for (i = 0; i < available; i += 2)
+      for (i = 0; i < available; i += NOR_WIDTH/8) {
 #if defined (NO_WRITE)
-	printf ("0x%lx := 0x%04x\n", index + i, ((unsigned short*)pv)[i/2]);
+	printf ("0x%lx := 0x%04x\n", index + i, ((nor_t*)pv)[i/(NOR_WIDTH/8)]);
 #else
-	WRITE_ONE (index + i, ((unsigned short*)pv)[i/2]);
+        nor_t v = SWAP_ONE (((nor_t*)pv)[i/(NOR_WIDTH/8)]);
+	WRITE_ONE (index + i, v);
 #endif
+      }
     }
     else {
       int i;
       char __aligned rgb[chip->writebuffer_size];
-      /* *** FIXME: I think this is where I need to swap the low
-	 *** address bits for big endian mode. */
-      rgb[0] = 0xff;						/* First */
-      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
+      memset (rgb, 0xff, chip->writebuffer_size);	/* Fill with FFs to mask the unwritten bytes */
+//      rgb[0] = 0xff;						/* First */
+//      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);
       memcpy (rgb + (index & (NOR_WIDTH/8 - 1)), pv, available);
-      for (i = 0; i < available + (index & 1); i += 2)
+      for (i = 0; i < available + (index & 1); i += NOR_WIDTH/8) {
 #if defined (NO_WRITE)
 	printf ("0x%lx #= 0x%04x\n",
-		(index & ~(NOR_WIDTH/8 - 1)) + i, ((unsigned short*)rgb)[i/2]);
+		(index & ~(NOR_WIDTH/8 - 1)) + i, ((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
 #else
-	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i,
-		   ((unsigned short*)rgb)[i/2]);
+	nor_t v = SWAP_ONE (((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
+	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i, v);
 #endif
+      }
     }
 
 #if defined (NO_WRITE)
@@ -657,12 +679,14 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     SPINNER_STEP;
 
+#if !defined (NO_WRITE)
     if (status & (ProgramError | VPEN_Low | DeviceProtected)) {
     fail:
       printf ("Program failed at 0x%p (%x)\n", (void*) index, status);
       CLEAR_STATUS (index);
       return cbWrote;
     }
+#endif
 
     d->index += available;
     pv += available;
@@ -713,7 +737,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       index &= ~(NOR_WIDTH/8 - 1);
     }
     else
-      memcpy (&data, pv, step);
+      data = SWAP_ONE (*(nor_t*) pv)
 
     vpen_enable ();
     if (page != pageLast) {
