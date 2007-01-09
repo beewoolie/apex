@@ -5,6 +5,18 @@ APEX Boot Loader
 
 TODO:
 
+  o Support for non-ARM
+
+    o The biggest hurdle to supporting non-ARM architectures will be
+      the implicit dependence on stack-free procedure calls.
+    o Some platforms, such as PowerPC, may have SRAM that can be used
+      for a stack until SDRAM is initialized.
+    o It may be feasible to rework the initialize_platform code to run
+      inline instead of using calls.  Really, there isn't much that
+      must be done from the standpoint of execution.
+    o x86 is the real bear, but I don't think we really care about
+      that.
+
   o Enviroinment/alias variations.  The default state is to use the
     simply named version of each variable, aliases before environment
     variables.  If 'variation' is defined among the aliases, it is

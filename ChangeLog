@@ -1,5 +1,7 @@
 2007-01-08  Marc Singer  <elf@cerise.buici.com>
 
+	* 1.4.10.
+		
 	* src/drivers/drv-fis.c (deleted_entry): Replaced the
 	end_of_table() checks with deleted_entry checks.  Really, we
 	cannot be sure that we've seen the end of the table since a 0xff
