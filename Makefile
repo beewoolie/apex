@@ -1320,6 +1320,7 @@ every: distclean
 	@mkdir every
 	@for i in `find src/mach-*/ \
 		   -path '*/debian-*' -prune -o \
+		   -path '*/slugos-*' -prune -o \
 		   -name '*_config' -printf ' %f'` ; do \
 	 o=apex-$(APEXRELEASE)-`echo $$i | sed -s 's/_config//'`; \
 	 $(MAKE) clean ; \

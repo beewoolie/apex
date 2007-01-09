@@ -1,5 +1,15 @@
 2007-01-08  Marc Singer  <elf@cerise.buici.com>
 
+	* src/drivers/drv-fis.c (deleted_entry): Replaced the
+	end_of_table() checks with deleted_entry checks.  Really, we
+	cannot be sure that we've seen the end of the table since a 0xff
+	in the first byte indicates a deleted entry and we have to check
+	for that first.  We previously thought that (u32)~0 was the end of
+	the table, but we cannot now be sure.  Argh.
+
+	* Applyied nas100d and dsmg600 patches as well as a slew of config
+	file patches courtesy of rwhitby.
+
 	* src/drivers/drv-nor-cfi.c (SWAP_ONE): Fixed the nor flash driver
 	to properly write when in an endian mismatched mode.  This may be
 	peculiar to the nslu2 (and other ixp4xx systems) where flash is

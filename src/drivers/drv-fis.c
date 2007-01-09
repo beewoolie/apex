@@ -195,9 +195,10 @@ static inline const char* block_driver (void)
   return lookup_alias_or_env ("fis-drv", CONFIG_DRIVER_FIS_BLOCKDEVICE);
 }
 
-static int end_of_table (struct fis_descriptor* descriptor)
+static int deleted_entry (struct fis_descriptor* descriptor)
 {
-  return descriptor->start == 0xffffffff;
+	/* Erased entry -- dumb, but that's RedBoot */
+  return descriptor->name[0] == 0xff;
 }
 
 static int compare_skips (const void* _a, const void* _b)
@@ -231,8 +232,8 @@ static void prescan_directory (struct descriptor_d* d)
     if (d->driver->read (d, &descriptor, sizeof (descriptor))
 	!= sizeof (descriptor))
       break;
-    if (end_of_table (&descriptor))		/* Checked for expedience. */
-      break;
+    if (deleted_entry (&descriptor))
+      continue;
 
     if (strnicmp (descriptor.name, "fis directory", 16) == 0) {
       /* Read the erase block size where we need it since it is
@@ -301,9 +302,7 @@ static int fis_open (struct descriptor_d* d)
       close_descriptor (&fis_d);
       ERROR_RETURN (ERROR_IOFAILURE, "premature end of fis-drv");
     }
-    if (end_of_table (&partition))
-      break;
-    if (*partition.name == 0xff) /* Erased entry -- dumb, but that's RedBoot */
+    if (deleted_entry (&partition))
       continue;
     if (strnicmp (d->pb[0], partition.name, sizeof (partition.name)))
       continue;
@@ -487,9 +486,7 @@ static void fis_report (void)
     if (d.driver->read (&d, &partition, sizeof (partition))
 	!= sizeof (partition))
       break;
-    if (end_of_table (&partition))		/* Checked for expedience. */
-      break;
-    if (*partition.name == 0xff) /* Erased entry -- dumb, but that's RedBoot */
+    if (deleted_entry (&partition))
       continue;
 
     if (fis_directory_swap) {
