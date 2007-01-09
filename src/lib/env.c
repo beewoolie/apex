@@ -252,8 +252,9 @@ static char _env_locate (int i)
    environment space, just before a write, just to make sure it is
    clear.
 
-   The parameter is true when we are looking to write to the
-   environent and need to do a more extensive scan.
+   The parameter is true when we are looking for a complete scan of
+   the environment region viability.  For reading from the
+   environment, only a magic number check is necessary.
 
 */
 
