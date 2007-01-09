@@ -24,13 +24,13 @@
 
 static void variation_init (void)
 {
-  int reset_pressed = (GPIO_INR & (1<<GPIO_I_RESETBUTTON)) == 0;
+  int button_pressed = (GPIO_INR & (1<<GPIO_I_POWERBUTTON)) != 0;
 
-  if (reset_pressed)
+  if (button_pressed)
     alias_set ("variation", CONFIG_VARIATION_SUFFIX);
 
   MASK_AND_SET (GPIO_OUTR, 1<<GPIO_I_LEDRED,
-		reset_pressed ? (1<<GPIO_I_LEDRED): 0);
+		button_pressed ? (1<<GPIO_I_LEDRED): 0);
 }
 
 static __service_9 struct service_d variation_service = {

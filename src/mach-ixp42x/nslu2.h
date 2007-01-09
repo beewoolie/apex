@@ -78,14 +78,14 @@
 #define GPIO_I_DISK2		2
 #define GPIO_I_DISK1		3
 #define GPIO_I_BUZZER		4
-#define GPIO_I_POWERBUTTON	5
+#define GPIO_I_POWERBUTTON	5	/* 0: pressed  */
 #define GPIO_I_I2C_SCL		6
 #define GPIO_I_I2C_SDA		7
 #define GPIO_I_POWEROFF		8
 #define GPIO_I_PCI_INTC		9
 #define GPIO_I_PCI_INTB		10
 #define GPIO_I_PCI_INTA		11
-#define GPIO_I_RESETBUTTON	12
+#define GPIO_I_RESETBUTTON	12	/* 1: pressed  */
 #define GPIO_I_PCI_RESET	13
 #define GPIO_I_PCI_CLOCK	14
 
