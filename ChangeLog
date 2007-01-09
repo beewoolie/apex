@@ -1,3 +1,9 @@
+2007-01-09  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/drv-fis.c (end_of_table): Added back the
+	end-of-table check.  We're now checking the same way that the
+	kernel checks.
+	
 2007-01-09  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile (SUBLEVEL): 1.4.11, to fix partition table swapped-ness
