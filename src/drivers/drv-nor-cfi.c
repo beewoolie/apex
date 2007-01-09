@@ -737,7 +737,9 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       index &= ~(NOR_WIDTH/8 - 1);
     }
     else
-      data = SWAP_ONE (*(nor_t*) pv);
+      memcpy (&data, pv, step);
+
+    data = SWAP_ONE (data);	/* *** FIXME: do we really need memcpy? */
 
     vpen_enable ();
     if (page != pageLast) {
