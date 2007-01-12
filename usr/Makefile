@@ -1,6 +1,6 @@
 # Makefile
 
-#CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
+CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 #CFLAGS ?= -I/a/trans/embedded/m3/tools-target/usr/include
 #LDFLAGS ?= -L/a/trans/embedded/m3/tools-target/usr/lib
 
