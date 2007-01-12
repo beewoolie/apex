@@ -184,12 +184,17 @@ struct descriptor parse_region (const char* sz)
     d.driver[c] = 0;
     sz = pch + 1;
   }
-  d.start = strtoul (sz, (char**) &sz, 10);
+  if (sz[0] == '0' && sz[1] == 'x')
+    d.start = strtoul (sz, (char**) &sz, 16);
+  else
+    d.start = strtoul (sz, (char**) &sz, 10);
   if (*sz == 'k' || *sz == 'K') {
     ++sz;
     d.start *= 1024;
   }
   if (*sz == '+') {
+    if (sz[0] == '0' && sz[1] == 'x')
+      d.length = strtoul (sz, (char**) &sz, 16);
     d.length = strtoul (sz, (char**) &sz, 10);
     if (*sz == 'k' || *sz == 'K') {
       ++sz;
