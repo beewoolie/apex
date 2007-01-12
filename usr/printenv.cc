@@ -393,8 +393,6 @@ int main (int argc, char** argv)
     return 1;
   }
 
-	// *** FIXME: need to account for an offset induced by skips
-
   char rgb[1024];		// *** fixme wrt mmap length
   bzero (rgb, sizeof (rgb));
   struct env_link& env_link = *(struct env_link*) rgb;
@@ -417,7 +415,7 @@ int main (int argc, char** argv)
 	      sizeof (rgb) - sizeof (struct env_link));
     }
     break;
-      
+
   case 2:
     memcpy (rgb, (const char*) pv + index_env_link, sizeof (rgb));
     break;
@@ -426,6 +424,11 @@ int main (int argc, char** argv)
   for (int i = 0; i < sizeof (rgb)/sizeof (u32); ++i)
     ((u32*)rgb)[i] = swab32_maybe (((u32*)rgb)[i]);
 
+  // Compute offset within pv of the APEX image
+  int mapping_offset = index_env_link
+    - ((char*) env_link.env_link - (char*) env_link.apex_start);
+  void* pvMap = pv;
+  pv = (void*)((char*) pvMap + mapping_offset);
   int c_env = ((char*) env_link.env_end - (char*) env_link.env_start)
     /env_link.env_d_size;
   void* pvEnv = NULL;
@@ -459,8 +462,6 @@ int main (int argc, char** argv)
 //	  (char*) env_link.env_start - (char*) env_link.apex_start,
 //	  c_env, env_link.region);
 
-  if (0) {
-
 	// --- Pull the environment descriptors from APEX
 
   struct env_d* env = new env_d[c_env];
@@ -481,9 +482,7 @@ int main (int argc, char** argv)
   PRINTF ("# %d entries in environment\n", c_entry);
   show_environment (env, c_env, rgEntry, c_entry);
 
-  }
-
-  munmap (pv, cbApex);
+  munmap (pvMap, cbApex);
   munmap (pvEnv, d.length);
   close (fh);
 
