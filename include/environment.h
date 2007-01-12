@@ -42,6 +42,7 @@ struct env_d {
 struct env_link {
   unsigned long magic;
   const char apexrelease[16];
+  void* env_link;		/* Align loader within flash */
   void* apex_start;
   void* apex_end;
   void* env_start;

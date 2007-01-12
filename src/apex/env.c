@@ -143,14 +143,15 @@ extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 
 static __section (.envlink) struct env_link env_link = {
-  ENV_LINK_MAGIC,
-  APEXRELEASE,
-  &APEX_VMA_COPY_START,		/* Immutable portion of APEX */
-  &APEX_VMA_COPY_END,
-  &APEX_ENV_START,
-  &APEX_ENV_END,
-  sizeof (struct env_d),
-  CONFIG_ENV_REGION,
+  .magic	= ENV_LINK_MAGIC,
+  .apexrelease	= APEXRELEASE,
+  .apex_start	= &APEX_VMA_COPY_START, /* Immutable portion of APEX */
+  .apex_end	= &APEX_VMA_COPY_END,
+  .env_start	= &APEX_ENV_START,
+  .env_end	= &APEX_ENV_END,
+  .env_link	= &env_link,
+  .env_d_size	= sizeof (struct env_d),
+  .region	= CONFIG_ENV_REGION,
  };
 
 #  define ENV_REGION_STRING env_link.region
