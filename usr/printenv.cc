@@ -48,6 +48,15 @@
    environment region without reading APEX, thus only seeing the
    values that are modified and stored in the environment.
 
+   Endianness
+   ----------
+
+   The code that scans for the presence of the APEX environment link
+   structure will check for a reversed copy of the link magic.  If
+   found, it triggers the code to swab32() all of the words to correct
+   for the endianness mismatch.  It will assume that the environment
+   does not need to be swapped.
+
 */
 
 #include <stdio.h>
@@ -64,9 +73,9 @@
 #include "environment.h"
 
 #define DEVICEBASE "/dev/mtdblock"
-#define DEVICE DEVICEBASE "0"
+#define DEVICE DEVICEBASE "2"
 
-#if 0
+#if 1
 # define PRINTF(f ...)	printf(f)
 #else
 # define PRINTF(f ...)
@@ -87,6 +96,22 @@ struct entry {
   char* key;
   char* value;
 };
+
+bool endian_mismatch;
+bool env_link_version;
+
+static inline u32 swab32(u32 l)
+{
+  return (  ((l & 0x000000ffUL) << 24)
+	  | ((l & 0x0000ff00UL) << 8)
+	  | ((l & 0x00ff0000UL) >> 8)
+	  | ((l & 0xff000000UL) >> 24));
+}
+
+static inline u32 swab32_maybe (u32 l)
+{
+  return endian_mismatch ? swab32 (l) : l;
+}
 
 void dumpw (const void* pv, int cb, unsigned long index, int width)
 {
@@ -244,8 +269,8 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
 
 /* show_environment
 
-   knits together the two different kinds of environment data and
-   displays the values.
+knits together the two different kinds of environment data and
+displays the values.
 
 */
 
@@ -304,12 +329,51 @@ int main (int argc, char** argv)
 	 i < 1024/sizeof (unsigned long)
 	   - sizeof (env_link)/sizeof (unsigned long);
 	 ++i) {
-      if (rgl[i] == ENV_LINK_MAGIC) {
-	struct env_link* env_link = (struct env_link*) &rgl[i];
-	cbApex = (char*) env_link->apex_end - (char*) env_link->apex_start;
-	index_env_link = i*sizeof (unsigned long);
+//      printf ("%d 0x%x (%x %x)\n",
+//	      i, rgl[i], ENV_LINK_MAGIC, swab32 (ENV_LINK_MAGIC));
+
+      switch (rgl[i]) {
+      case ENV_LINK_MAGIC_1:
+	env_link_version = 1;
+	break;
+      case ENV_LINK_MAGIC:
+	env_link_version = 2;
 	break;
       }
+
+      switch (swab32 (rgl[i])) {
+      case ENV_LINK_MAGIC_1:
+	endian_mismatch = true;
+	env_link_version = 1;
+	break;
+      case ENV_LINK_MAGIC:
+	endian_mismatch = true;
+	env_link_version = 2;
+	break;
+      }
+
+      if (!env_link_version)
+	continue;
+
+      switch (env_link_version) {
+      case 1:
+	{
+	  struct env_link_1* env_link = (struct env_link_1*) &rgl[i];
+	  index_env_link = i*sizeof (unsigned long);
+	  cbApex = (char*) swab32_maybe ((u32) env_link->apex_end)
+	    - (char*) swab32_maybe ((u32) env_link->apex_start);
+	}
+	break;
+      case 2:
+	{
+	  struct env_link* env_link = (struct env_link*) &rgl[i];
+	  index_env_link = i*sizeof (unsigned long);
+	  cbApex = (char*) swab32_maybe ((u32) env_link->apex_end)
+	    - (char*) swab32_maybe ((u32) env_link->apex_start);
+	}
+	break;
+      }
+      break;
     }
   }
 
@@ -318,25 +382,61 @@ int main (int argc, char** argv)
     return 1;
   }
 
-  munmap (pv, 1024);
+  printf ("index_env_link %d #%d %d swapped\n",
+	  index_env_link, env_link_version, endian_mismatch);
+
+  munmap (pv, 4096);
 
   pv = mmap (NULL, cbApex, PROT_READ, MAP_PRIVATE, fh, 0);
-  if (pv == NULL) {
+  if (pv == NULL || pv == (void*) 0xffffffff) {
     printf ("unable to mmap\n");
+    return 1;
   }
 
-  const struct env_link& env_link
-    = *(const struct env_link*) ((unsigned char*) pv + index_env_link);
+	// *** FIXME: need to account for an offset induced by skips
+
+  char rgb[1024];		// *** fixme wrt mmap length
+  bzero (rgb, sizeof (rgb));
+  struct env_link& env_link = *(struct env_link*) rgb;
+
+  switch (env_link_version) {
+  case 1:
+    {
+      const struct env_link_1& env_link_1
+	= *(const struct env_link_1*) ((unsigned char*) pv + index_env_link);
+      env_link.magic = env_link_1.magic;
+      env_link.apex_start = env_link_1.apex_start;
+      env_link.apex_end = env_link_1.apex_end;
+      env_link.env_start = env_link_1.env_start;
+      env_link.env_end = env_link_1.env_end;
+      env_link.env_link		// *** Hack to accomodate partition w/swap
+	= (void*) swab32_maybe (swab32_maybe ((u32) env_link.apex_start)
+				+ index_env_link - 16);
+      env_link.env_d_size = env_link_1.env_d_size;
+      memcpy ((void*) env_link.region, env_link_1.region,
+	      sizeof (rgb) - sizeof (struct env_link));
+    }
+    break;
+      
+  case 2:
+    memcpy (rgb, (const char*) pv + index_env_link, sizeof (rgb));
+    break;
+  }
+
+  for (int i = 0; i < sizeof (rgb)/sizeof (u32); ++i)
+    ((u32*)rgb)[i] = swab32_maybe (((u32*)rgb)[i]);
+
   int c_env = ((char*) env_link.env_end - (char*) env_link.env_start)
     /env_link.env_d_size;
   void* pvEnv = NULL;
 
   PRINTF ("# env_link.magic      0x%lx\n", env_link.magic);
-  PRINTF ("  env_link.apexrelease %s\n", env_link.apexrelease);
+  PRINTF ("# env_link.apexrelease %s\n", env_link.apexrelease);
   PRINTF ("# env_link.apex_start 0x%lx\n", env_link.apex_start);
   PRINTF ("# env_link.apex_end   0x%lx\n", env_link.apex_end);
   PRINTF ("# env_link.env_start  0x%lx\n", env_link.env_start);
   PRINTF ("# env_link.env_end    0x%lx\n", env_link.env_end);
+  PRINTF ("# env_link.env_link   0x%lx\n", env_link.env_link);
   PRINTF ("# env_link.env_d_size 0x%lx\n", env_link.env_d_size);
   PRINTF ("# c_env               %d\n", c_env);
   PRINTF ("# env_link.env_region %s\n", env_link.region);
@@ -359,6 +459,8 @@ int main (int argc, char** argv)
 //	  (char*) env_link.env_start - (char*) env_link.apex_start,
 //	  c_env, env_link.region);
 
+  if (0) {
+
 	// --- Pull the environment descriptors from APEX
 
   struct env_d* env = new env_d[c_env];
@@ -378,6 +480,8 @@ int main (int argc, char** argv)
   int c_entry = scan_environment (env, c_env, pvEnv, rgEntry);
   PRINTF ("# %d entries in environment\n", c_entry);
   show_environment (env, c_env, rgEntry, c_entry);
+
+  }
 
   munmap (pv, cbApex);
   munmap (pvEnv, d.length);
