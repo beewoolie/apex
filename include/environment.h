@@ -41,6 +41,7 @@ struct env_d {
 
 struct env_link {
   unsigned long magic;
+  const char apexrelease[16];
   void* apex_start;
   void* apex_end;
   void* env_start;
@@ -55,7 +56,7 @@ struct env_link {
 
 #define ENV_MAGIC_0	'A'
 #define ENV_MAGIC_1	'e'
-#define ENV_LINK_MAGIC	(unsigned long)(('A'<<0)|('E'<<8)|('L'<<16)|('1'<<24))
+#define ENV_LINK_MAGIC	(unsigned long)(('A'<<0)|('E'<<8)|('L'<<16)|('2'<<24))
 
 /* ----- Prototypes */
 

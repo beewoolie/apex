@@ -63,7 +63,8 @@
 
 #include "environment.h"
 
-#define DEVICE "/dev/mtdblock0"
+#define DEVICEBASE "/dev/mtdblock"
+#define DEVICE DEVICEBASE "0"
 
 #if 0
 # define PRINTF(f ...)	printf(f)
@@ -276,6 +277,9 @@ void show_environment (struct env_d* env, int c_env,
   }
 }
 
+
+
+
 int main (int argc, char** argv)
 {
   int fh = open (DEVICE, O_RDONLY);
@@ -328,6 +332,7 @@ int main (int argc, char** argv)
   void* pvEnv = NULL;
 
   PRINTF ("# env_link.magic      0x%lx\n", env_link.magic);
+  PRINTF ("  env_link.apexrelease %s\n", env_link.apexrelease);
   PRINTF ("# env_link.apex_start 0x%lx\n", env_link.apex_start);
   PRINTF ("# env_link.apex_end   0x%lx\n", env_link.apex_end);
   PRINTF ("# env_link.env_start  0x%lx\n", env_link.env_start);

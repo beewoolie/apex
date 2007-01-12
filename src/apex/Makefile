@@ -46,3 +46,4 @@ ifneq ($(CONFIG_THUMB),)
 endif
 
 CFLAGS_cmd-version.o += -DAPEXRELEASE=\"$(APEXRELEASE)\"
+CFLAGS_env.o += -DAPEXRELEASE=\"$(APEXRELEASE)\"

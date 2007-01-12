@@ -29,6 +29,7 @@
 */
 
 #include <config.h>
+#include <apex.h>
 #include <environment.h>
 #include <driver.h>
 #include <service.h>
@@ -143,12 +144,14 @@ extern char APEX_VMA_COPY_END;
 
 static __section (.envlink) struct env_link env_link = {
   ENV_LINK_MAGIC,
+  APEXRELEASE,
   &APEX_VMA_COPY_START,		/* Immutable portion of APEX */
   &APEX_VMA_COPY_END,
   &APEX_ENV_START,
   &APEX_ENV_END,
   sizeof (struct env_d),
-  CONFIG_ENV_REGION };
+  CONFIG_ENV_REGION,
+ };
 
 #  define ENV_REGION_STRING env_link.region
 # else
