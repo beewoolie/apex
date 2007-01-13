@@ -71,6 +71,7 @@
 #include <sys/mman.h>
 
 #include "environment.h"
+#include "ospartition.h"
 
 #define DEVICEBASE "/dev/mtdblock"
 #define DEVICE DEVICEBASE "2"
@@ -97,6 +98,7 @@ struct entry {
   char* value;
 };
 
+
 bool endian_mismatch;
 bool env_link_version;
 
@@ -112,6 +114,18 @@ static inline u32 swab32_maybe (u32 l)
 {
   return endian_mismatch ? swab32 (l) : l;
 }
+
+static inline void swab32_block_maybe (void* pv, int cb)
+{
+  if (!endian_mismatch)
+    return;
+
+  u32* pl = (u32*) pv;
+  cb /= 4;
+  for (; cb--; ++pl)
+    *pl = swab32 (*pl);
+}
+
 
 void dumpw (const void* pv, int cb, unsigned long index, int width)
 {
@@ -162,6 +176,37 @@ void copy_string (void* pv, const struct env_link& env_link, char** szCopy)
   char* sz = new char[cb + 1];
   strcpy (sz, szSource);
   *szCopy = sz;
+}
+
+
+char* open_environment (struct descriptor* d)
+{
+  char* device = NULL;
+  unsigned long offset = 0;
+
+  //  printf ("environment %s %d %d\n", d->driver, d->start, d->length);
+
+  if (strcasecmp (d->driver, "nor") == 0)
+    OSPartition::find (d->start, &device, &offset);
+  else
+    ;
+
+  if (!device)
+    return NULL;
+
+  char sz[80];
+  snprintf (sz, sizeof (sz), "/dev/%s", device);
+  
+  int fh = open (sz, O_RDONLY);
+  if (fh == -1)
+    return NULL;
+  lseek (fh, offset, SEEK_SET);
+  
+  char* env = new char[d->length];
+  printf ("reading into %p\n", env);
+  read (fh, env, d->length);
+  close (fh);
+  return env;
 }
 
 
@@ -426,17 +471,20 @@ int main (int argc, char** argv)
     break;
   }
 
-  for (int i = 0; i < sizeof (rgb)/sizeof (u32); ++i)
-    ((u32*)rgb)[i] = swab32_maybe (((u32*)rgb)[i]);
+  swab32_block_maybe (rgb, sizeof (rgb));
 
-  // Compute offset within pv of the APEX image
+	// Compute offset within pv of the APEX image
   int mapping_offset = index_env_link
     - ((char*) env_link.env_link - (char*) env_link.apex_start);
-  void* pvMap = pv;
-  pv = (void*)((char*) pvMap + mapping_offset);
+
+	// Fixup the whole APEX image so we don't have to fuss
+  void* pvApex = pv;
+  pv = new char[cbApex];
+  memcpy (pv, (char*) pvApex + mapping_offset, cbApex);
+  swab32_block_maybe (pv, cbApex);
+
   int c_env = ((char*) env_link.env_end - (char*) env_link.env_start)
     /env_link.env_d_size;
-  void* pvEnv = NULL;
 
   PRINTF ("# env_link.magic      0x%lx\n", env_link.magic);
   PRINTF ("# env_link.apexrelease %s\n", env_link.apexrelease);
@@ -450,17 +498,11 @@ int main (int argc, char** argv)
   PRINTF ("# env_link.env_region %s\n", env_link.region);
 
   struct descriptor d = parse_region (env_link.region);
-  if (d.start && d.length) {
-    pvEnv = mmap (NULL, d.length, PROT_READ, MAP_PRIVATE, fh, d.start);
-    if (pvEnv == MAP_FAILED) {
-      printf ("unable to mmap environment");
-      return 1;
-    }
-  }
+  char* pvEnv = open_environment (&d);
 
   PRINTF ("# environment at 0x%x+0x%x -> %p\n", d.start, d.length, pvEnv);
 
-  //  dumpw (pvEnv, 256, 0, 1);
+  dumpw (pvEnv, 256, 0, 1);
 
 
 //  printf ("link 0x%x %d %s\n",
@@ -473,6 +515,8 @@ int main (int argc, char** argv)
   memcpy (env, (const char*) pv
 	  + ((char *) env_link.env_start - (char*) env_link.apex_start),
 	  c_env*sizeof (struct env_d));
+//  dumpw (env, c_env*sizeof (struct env_d), 0, 0);
+
   for (int i = 0; i < c_env; ++i) {
     copy_string (pv, env_link, &env[i].key);
     copy_string (pv, env_link, &env[i].default_value);
@@ -482,12 +526,15 @@ int main (int argc, char** argv)
 //    printf ("%s *= %s\n", env[i].key, env[i].default_value);
   }
 
+#if 0
   struct entry rgEntry[127];
   int c_entry = scan_environment (env, c_env, pvEnv, rgEntry);
   PRINTF ("# %d entries in environment\n", c_entry);
   show_environment (env, c_env, rgEntry, c_entry);
+#endif
 
-  munmap (pvMap, cbApex);
+  delete (char*) pv;
+  munmap (pvApex, cbApex);
   munmap (pvEnv, d.length);
   close (fh);
 

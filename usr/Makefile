@@ -6,7 +6,7 @@ CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 
 CFLAGS += -I../include
 
-SRCS:=printenv.cc
+SRCS:=printenv.cc ospartition.cc
 OBJS:=$(SRCS:.cc=.o)
 
 CC=$(CROSS_COMPILE)g++
@@ -22,11 +22,9 @@ TARGETS:=printenv
 .PHONY: all
 all: $(TARGETS)
 
-printenv: printenv.o
-
-printenv: printenv.o
+printenv: $(OBJS)
 	@echo linking $@
-	@$(CC) $(CFLAGS_LINK) -o $@ $^ $(LIBRARIES) $($@_LIB)
+	@$(CC) $(CFLAGS_LINK) -o $@ $(OBJS) $(LIBRARIES) $($@_LIB)
 
 %.o: %.cc
 	@echo compile $@ $(CCFLAGS)
