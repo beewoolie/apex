@@ -131,7 +131,10 @@ void __naked __section (.reset) reset (void)
      instructions to make sure the cache is correctly flushed.  Just
      disabling the MMU isn't going to be enough.  This will have to be
      linked in with the mmu code so that everything necessary is done.
-     I'm leaving this [somewhat broken] code here for the time being.
+
+     It's also not clear how much of this code needs to be
+     architecture specific.
+
   */
 
   {
@@ -143,14 +146,15 @@ void __naked __section (.reset) reset (void)
     COPROCESSOR_WAIT;
   }
 
+  CACHE_FLUSH;
+
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
   __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain WB
   COPROCESSOR_WAIT;
 
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
-
-  CACHE_FLUSH;
 
 #endif
 

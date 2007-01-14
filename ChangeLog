@@ -1,3 +1,11 @@
+2007-01-13  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/entry/reset.c (__section): Slight change to MMU
+	disabling code.
+
+	* src/arch-arm/entry/mmu-xscale.h (CACHE_CLEAN_D): Revised cache
+	clean code to match Nicolas Pitre's work in the Linux kernel.
+
 2007-01-09  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/drv-fis.c (end_of_table): Added back the

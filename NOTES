@@ -5,6 +5,33 @@ APEX Boot Loader
 
 TODO:
 
+  o RedBoot and APEX
+
+    In debugging an update to APEX, I found that the startup copy
+    commands would tend to fail.  The copy would have some garbage
+    in the middle of the destination: 0x632b0, 0x63f00, 0x638c0 when
+    copying the kernel to 0x8000.
+
+    Changing the kernel command line to *not* use variables for the
+    copy source and destination appeared to fix the problem, but that
+    wasn't a very satisfying solution.  Looking at those memory
+    location from RedBoot revealed that the contents of memory at thos
+    locations appeared to come from the contents that were there when
+    RedBoot was running.  It was easy to detect the error by
+    performing a checksum.  Oddly, a second copy of the data was
+    always successful.  I suspected the cache.
+
+    Revising to cache flush code to more closely match that which the
+    kernel implemented didn't seem to fix the problem.  What didn't
+    seem to fix the problem was disconnecting the Ethernet cable from
+    the Slug while booting.  Thus, I suspect that the problem is
+    caused by the NPE still thinking it can write to memory.
+
+    Really, this is probably never going to be a problem since RedBoot
+    ought to normally disable the MMU and caches before executing the
+    second stage boot loader (or kernel) and I suspect that this
+    oddity won't occur under normal use.
+
   o Support for non-ARM
 
     o The biggest hurdle to supporting non-ARM architectures will be
