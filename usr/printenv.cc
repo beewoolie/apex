@@ -100,7 +100,7 @@ struct entry {
 
 
 bool endian_mismatch;
-bool env_link_version;
+int  env_link_version;
 
 static inline u32 swab32(u32 l)
 {
@@ -196,12 +196,12 @@ char* open_environment (struct descriptor* d)
 
   char sz[80];
   snprintf (sz, sizeof (sz), "/dev/%s", device);
-  
+
   int fh = open (sz, O_RDONLY);
   if (fh == -1)
     return NULL;
   lseek (fh, offset, SEEK_SET);
-  
+
   char* env = new char[d->length];
   printf ("reading into %p\n", env);
   read (fh, env, d->length);
