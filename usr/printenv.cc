@@ -71,7 +71,7 @@
 #include <sys/mman.h>
 
 #include "environment.h"
-#include "ospartition.h"
+#include "mtdpartition.h"
 
 #define DEVICEBASE "/dev/mtdblock"
 #define DEVICE DEVICEBASE "2"
@@ -181,26 +181,25 @@ void copy_string (void* pv, const struct env_link& env_link, char** szCopy)
 
 char* open_environment (struct descriptor* d)
 {
-  char* device = NULL;
-  unsigned long offset = 0;
+  MTDPartition mtd;
 
   //  printf ("environment %s %d %d\n", d->driver, d->start, d->length);
 
   if (strcasecmp (d->driver, "nor") == 0)
-    OSPartition::find (d->start, &device, &offset);
+    mtd = MTDPartition::find (d->start);
   else
     ;
 
-  if (!device)
+  if (!mtd.is ())
     return NULL;
 
   char sz[80];
-  snprintf (sz, sizeof (sz), "/dev/%s", device);
+  snprintf (sz, sizeof (sz), "/dev/%s", mtd.device);
 
   int fh = open (sz, O_RDONLY);
   if (fh == -1)
     return NULL;
-  lseek (fh, offset, SEEK_SET);
+  lseek (fh, d->start - mtd.base, SEEK_SET);
 
   char* env = new char[d->length];
   printf ("reading into %p\n", env);

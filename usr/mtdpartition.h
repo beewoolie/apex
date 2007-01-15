@@ -16,25 +16,34 @@
 
 /* ----- Includes */
 
-/* ----- Types */
-
 #include <string.h>
+
+/* ----- Types */
 
 struct MTDPartition {
   char* device;
   int size;
   int erasesize;
   char* name;
+  int base;			/* Offset from the start of flash */
 
-  static MTDPartition* g_rg;
+  static const int g_cPartitionMax = 32;
+  static const int g_cbMax = 4096;
+
+  static MTDPartition g_rg[g_cPartitionMax];
+  static char g_rgb[g_cbMax];
   static void init (void);
 
+  bool is (void) {
+    return device != NULL; }
   void zero (void) { bzero (this, sizeof (*this)); }
   MTDPartition () { zero (); }
 
-  static const MTDPartition& find (unsigned long addr);
+  static const MTDPartition find (unsigned long addr);
 
 };
+
+
 
 
 /* ----- Globals */
