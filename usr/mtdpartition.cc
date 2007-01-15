@@ -87,8 +87,8 @@ void MTDPartition::init (void)
       g_rg[c].name	= pb + m[4].rm_so;
       g_rg[c].base = base;
       base += g_rg[c].size;
-      printf ("%s: 0x%x 0x%x '%s'\n",
-	      g_rg[c].device, g_rg[c].size, g_rg[c].erasesize, g_rg[c].name);
+      //      printf ("%s: 0x%x 0x%x '%s'\n",
+//	      g_rg[c].device, g_rg[c].size, g_rg[c].erasesize, g_rg[c].name);
       ++c;
     }
     pb += cbLine + (ch ? 1 : 0);

@@ -48,6 +48,53 @@
    environment region without reading APEX, thus only seeing the
    values that are modified and stored in the environment.
 
+   Environment Format
+   ------------------
+
+   The in-flash format of the user's contribution to the environment
+   has the following format in types 1 and 2 of the environment link.
+   Note that the endianness of the in-flash environment shouldn't
+   matter since the writer of the environment needs to honor the
+   essential endian-ness of the system.  On systems where there is no
+   ambiguity between the inherent endianness and the run-time
+   endianness, all is equivalent.  On systems where we run in one
+   mode, but the system was engineers for the other, the flash drivers
+   ought to swap so that we can read the FIS Directory.
+
+
+     +---+---+----------+------+
+     | A | e | Entry... | 0xff |
+     +---+---+----------+------+
+
+   The magic bytes, A and e preceed the environment.  Following it are
+   the entries with 0xff being the first byte after the last valid
+   entry.  Entries have one of two forms depending on whether or not
+   the key already exists in the environment.
+
+     +----+-----+----+-------+----+
+     | ID | Key | \0 | Value | \0 |
+     +----+-----+----+-------+----+
+
+   The high bit of the ID is 1 when the entry is valid and zero when
+   the entry is erased.  The lower seven bits are an index, starting
+   at zero, of the unique keys in the environment.  The first time an
+   environment entry is added to the environment, an ID is allocated
+   and the above format is emitted.  The second time the same key is
+   used, the Key string is omitted and the entry looks as follows.
+
+     +----+-------+----+
+     | ID | Value | \0 |
+     +----+-------+----+
+
+   This scheme replaces an earlier one that used the key values in the
+   APEX image as the Key values.  The trouble with that format is that
+   it required the in-flash format to match the APEX executable in a
+   way that was impossible to guarantee even though a checksum of the
+   available environment variables was used as the magic for the
+   environment.  The current format allows for APEX upgrades without
+   losing the user's environment.
+
+
    Endianness
    ----------
 
@@ -76,7 +123,9 @@
 #define DEVICEBASE "/dev/mtdblock"
 #define DEVICE DEVICEBASE "2"
 
-#if 1
+//#define TALK
+
+#if defined (TALK)
 # define PRINTF(f ...)	printf(f)
 #else
 # define PRINTF(f ...)
@@ -94,8 +143,8 @@ struct descriptor {
 struct entry {
   entry () { index = 0xff; }
   int index;			// index of this variable in APEX or 0x7f
-  char* key;
-  char* value;
+  const char* key;
+  const char* value;
 };
 
 
@@ -127,8 +176,15 @@ static inline void swab32_block_maybe (void* pv, int cb)
 }
 
 
+int compare_env (const void* pv1, const void* pv2)
+{
+  return strcasecmp (((struct env_d*) pv1)->key,
+		     ((struct env_d*) pv2)->key);
+}
+
 void dumpw (const void* pv, int cb, unsigned long index, int width)
 {
+#if defined (TALK)
   const unsigned char* rgb = (const unsigned char*) pv;
   int i;
 
@@ -167,6 +223,7 @@ void dumpw (const void* pv, int cb, unsigned long index, int width)
     index += 16;
     rgb += 16;
   }
+#endif
 }
 
 void copy_string (void* pv, const struct env_link& env_link, char** szCopy)
@@ -202,7 +259,6 @@ char* open_environment (struct descriptor* d)
   lseek (fh, d->start - mtd.base, SEEK_SET);
 
   char* env = new char[d->length];
-  printf ("reading into %p\n", env);
   read (fh, env, d->length);
   close (fh);
   return env;
@@ -268,7 +324,7 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
 {
 //  dumpw (pv, 256, 0, 1);
 
-  unsigned char* pb = (unsigned char*) pv;
+  const char* pb = (const char*) pv;
 
   if (pb[0] == 0xff && pb[1] == 0xff) {
     PRINTF ("# empty environment\n");
@@ -288,14 +344,16 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
   pb += 2;
 
   while (*pb != 0xff) {
-    unsigned char flags = *pb++;
-    int id = flags & 0x7f;
+    char flags = *pb++;
+    int id = (unsigned char) flags & 0x7f;
     if (rgEntry[id].index == 0xff) {
-      int cb = strlen ((char*) pb);
-      rgEntry[id].key = new char [cb + 1];
-      strcpy (rgEntry[id].key, (char*) pb);
+      rgEntry[id].key = pb;
+
+//      int cb = strlen ((char*) pb);
+//      rgEntry[id].key = new char [cb + 1];
+//      strcpy (rgEntry[id].key, (char*) pb);
       PRINTF ("# found %s\n", rgEntry[id].key);
-      pb += cb + 1;
+      pb += strlen (pb) + 1;
       rgEntry[id].index = 0x7f;
       for (int index = 0; index < c_env; ++index)
 	if (strcasecmp (rgEntry[id].key, env[index].key) == 0) {
@@ -305,12 +363,10 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
       ++c;
     }
     PRINTF ("# %s = %s\n", rgEntry[id].key, pb);
-    int cb = strlen ((char*) pb);
-    if (flags & 0x80) {
-      rgEntry[id].value = new char [cb + 1];
-      strcpy (rgEntry[id].value, (char*) pb);
-    }
-    pb += cb + 1;
+//    int cb = strlen ((char*) pb);
+    if (flags & 0x80)
+      rgEntry[id].value = pb;
+    pb += strlen (pb) + 1;
   }
   return c;
 }
@@ -318,8 +374,8 @@ int scan_environment (struct env_d* env, int c_env, void* pv,
 
 /* show_environment
 
-knits together the two different kinds of environment data and
-displays the values.
+   knits together the two different kinds of environment data and
+   displays the values.
 
 */
 
@@ -333,7 +389,7 @@ void show_environment (struct env_d* env, int c_env,
     c_entry = 0;
 
   for (int i = 0; i < c_env; ++i) {
-    char* value = NULL;
+    const char* value = NULL;
     for (int j = 0; j < c_entry; ++j)
       if (rgEntry[j].index == i) {
 	value = rgEntry[j].value;
@@ -431,7 +487,7 @@ int main (int argc, char** argv)
     return 1;
   }
 
-  printf ("index_env_link %d #%d %d swapped\n",
+  PRINTF ("index_env_link %d #%d %d swapped\n",
 	  index_env_link, env_link_version, endian_mismatch);
 
   munmap (pv, 4096);
@@ -510,7 +566,7 @@ int main (int argc, char** argv)
 
 	// --- Pull the environment descriptors from APEX
 
-  struct env_d* env = new env_d[c_env];
+  struct env_d* env = new struct env_d[c_env];
   memcpy (env, (const char*) pv
 	  + ((char *) env_link.env_start - (char*) env_link.apex_start),
 	  c_env*sizeof (struct env_d));
@@ -525,12 +581,12 @@ int main (int argc, char** argv)
 //    printf ("%s *= %s\n", env[i].key, env[i].default_value);
   }
 
-#if 0
-  struct entry rgEntry[127];
+  qsort (env, c_env, sizeof (struct env_d), compare_env);
+
+  struct entry rgEntry[127];	// Number of unique entries permitted
   int c_entry = scan_environment (env, c_env, pvEnv, rgEntry);
   PRINTF ("# %d entries in environment\n", c_entry);
   show_environment (env, c_env, rgEntry, c_entry);
-#endif
 
   delete (char*) pv;
   munmap (pvApex, cbApex);
