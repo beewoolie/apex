@@ -34,12 +34,17 @@ struct MTDPartition {
   static char g_rgb[g_cbMax];
   static void init (void);
 
-  bool is (void) {
+  bool is (void) const {
     return device != NULL; }
   void zero (void) { bzero (this, sizeof (*this)); }
   MTDPartition () { zero (); }
+  const char* dev (void) const {
+    static char szDevice[80];
+    snprintf (szDevice, sizeof (szDevice), "/dev/%s", device);
+    return szDevice; }
 
   static const MTDPartition find (unsigned long addr);
+  static const MTDPartition find (const char*);
 
 };
 

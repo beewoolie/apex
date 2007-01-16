@@ -48,6 +48,25 @@ const MTDPartition MTDPartition::find (unsigned long addr)
   return MTDPartition ();
 }
 
+const MTDPartition MTDPartition::find (const char* sz)
+{
+  if (!g_rgb[0])
+    init ();
+  if (!g_rgb[0])
+    return MTDPartition ();
+
+
+  for (MTDPartition* p = g_rg; p->device; ++p) {
+    printf ("'%s' '%s'\n", p->name, sz);
+    if (strcasecmp (p->name, sz) == 0)
+      return *p;
+  }
+
+  printf ("nothing\n");
+
+  return MTDPartition ();
+}
+
 
 void MTDPartition::init (void)
 {

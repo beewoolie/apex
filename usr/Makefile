@@ -6,7 +6,7 @@ CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 
 CFLAGS += -I../include
 
-SRCS:=printenv.cc ospartition.cc mtdpartition.cc
+SRCS:=printenv.cc ospartition.cc mtdpartition.cc link.cc
 OBJS:=$(SRCS:.cc=.o)
 
 CC=$(CROSS_COMPILE)g++
