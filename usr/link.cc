@@ -82,7 +82,7 @@
 #include "mtdpartition.h"
 #include "link.h"
 
-//#define TALK
+#define TALK
 
 #if defined (TALK)
 # define PRINTF(f ...)	printf(f)
@@ -100,6 +100,53 @@ struct descriptor {
   unsigned long start;
   unsigned long length;
 };
+
+
+void dumpw (const void* pv, int cb, unsigned long index, int width)
+{
+#if defined (TALK) || 1
+  const unsigned char* rgb = (const unsigned char*) pv;
+  int i;
+
+  while (cb > 0) {
+    printf ("%08lx: ", index);
+    for (i = 0; i < 16; ++i) {
+      if (i < cb) {
+	switch (width) {
+	default:
+	case 1:
+	  printf ("%02x ", rgb[i]);
+	  break;
+	case 2:
+	  printf ("%04x ", *((u16*)&rgb[i]));
+	  ++i;
+	  break;
+	case 4:
+	  printf ("%08x ", *((u32*)&rgb[i]));
+	  i += 3;
+	  break;
+	}
+      }
+      else
+	printf ("   ");
+      if (i%8 == 7)
+	putchar (' ');
+    }
+    for (i = 0; i < 16; ++i) {
+      if (i == 8)
+	putchar (' ');
+      putchar ( (i < cb) ? (isprint (rgb[i]) ? rgb[i] : '.') : ' ');
+    }
+    printf ("\n");
+
+    cb -= 16;
+    index += 16;
+    rgb += 16;
+  }
+#endif
+}
+
+
 
 static int compare_env (const void* pv1, const void* pv2)
 {
@@ -194,12 +241,13 @@ int Link::load_env (void)
     /env_link->env_d_size;
 
   env = new struct env_d[c_env];
-  memcpy (env, (const char*) pvApex
+  memcpy (env, (const char*) pvApexSwab
 	  + ((char *) env_link->env_start - (char*) env_link->apex_start),
 	  c_env*sizeof (struct env_d));
 //  dumpw (env, c_env*sizeof (struct env_d), 0, 0);
 
-  long delta =  (long) pvApex - (long) env_link->apex_start;
+  long delta =  (long) pvApexSwab - (long) env_link->apex_start;
+  printf ("delta 0x%x\n", delta);
   for (int i = 0; i < c_env; ++i) {
     env[i].key += delta;
     env[i].default_value += delta;
@@ -231,9 +279,15 @@ int Link::map_environment (void)
   if (!mtd.is ())
     return -1;
 
-  fhEnv = ::open (mtd.dev (), O_RDWR);
+  fhEnv = ::open (mtd.dev_block (), O_RDONLY);
   cbEnv = d.length;
-  pvEnv = ::mmap (NULL, cbEnv, PROT_READ | PROT_WRITE, MAP_SHARED, fhEnv, 0);
+  lseek (fhEnv, d.start - mtd.base, SEEK_SET);
+  pvEnv = ::mmap (NULL, cbEnv, PROT_READ, MAP_SHARED, fhEnv,
+		  d.start - mtd.base);
+  printf ("%s->%d 0x%x->%p [%x %x]\n",
+	  mtd.dev_block (), fhEnv, cbEnv, pvEnv, d.start, mtd.base);
+
+  dumpw (pvEnv, 256, 0, 0);
 
   return cbEnv;
 }
@@ -248,8 +302,8 @@ int Link::map_environment (void)
 
 bool Link::open_apex (const MTDPartition& mtd)
 {
-  printf ("%s: '%s'\n", __FUNCTION__, mtd.dev ());
-  int fh = ::open (mtd.dev (), O_RDONLY);
+  printf ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
+  int fh = ::open (mtd.dev_block (), O_RDONLY);
   if (fh == -1)
     return false;
 
@@ -372,6 +426,10 @@ bool Link::open_apex (const MTDPartition& mtd)
 
   munmap (pv, cbApex);
   close (fh);
+
+  pvApexSwab = (void*) new char[cbApex];
+  memcpy (pvApexSwab, pvApex, cbApex);
+  swab32_block_maybe (pvApexSwab, cbApex);
 
   return true;
 }

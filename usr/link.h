@@ -33,6 +33,7 @@ class Link {
 
 protected:
   void* pvApex;			/* Copy of APEX firmware from flash */
+  void* pvApexSwab;		// Copy of APEX firmware swab'd
   size_t cbApex;		/* Length of APEX firmware */
   unsigned long crcApex;	/* CRC of APEX */
 

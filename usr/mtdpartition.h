@@ -38,9 +38,13 @@ struct MTDPartition {
     return device != NULL; }
   void zero (void) { bzero (this, sizeof (*this)); }
   MTDPartition () { zero (); }
-  const char* dev (void) const {
+  const char* dev_block (void) const {
     static char szDevice[80];
-    snprintf (szDevice, sizeof (szDevice), "/dev/%s", device);
+    snprintf (szDevice, sizeof (szDevice), "/dev/mtdblock%s", device+3);
+    return szDevice; }
+  const char* dev_char (void) const {
+    static char szDevice[80];
+    snprintf (szDevice, sizeof (szDevice), "/dev/mtd%s", device + 3);
     return szDevice; }
 
   static const MTDPartition find (unsigned long addr);
