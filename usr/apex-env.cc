@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <argp.h>
 
 #include "link.h"
 
@@ -55,8 +56,19 @@
 #endif
 
 
+const char* argp_program_version = "apex-env 1.0";
+
+const char* g_szDocumentation
+	= "apex-env -- user-mode access to APEX boot loader environment";
+
+
+static struct argp argp = { 0, 0, 0, g_szDocumentation };
+
+
 int main (int argc, char** argv)
 {
+  argp_parse (&argp, argc, argv, 0, 0, 0);
+
   Link link;
 
   if (!link.open ()) {

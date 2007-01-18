@@ -6,7 +6,7 @@ CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 
 CFLAGS += -I../include
 
-SRCS:=printenv.cc ospartition.cc mtdpartition.cc link.cc
+SRCS:=apex-env.cc ospartition.cc mtdpartition.cc link.cc
 OBJS:=$(SRCS:.cc=.o)
 
 CC=$(CROSS_COMPILE)g++
@@ -17,12 +17,16 @@ STRIP=$(CROSS_COMPILE)strip
 CFLAGS+= -O0 -g -c
 CFLAGS_LINK+= -g
 
-TARGETS:=printenv
+TARGETS:=apex-env
 
 .PHONY: all
 all: $(TARGETS)
 
 printenv: $(OBJS)
+	@echo linking $@
+	@$(CC) $(CFLAGS_LINK) -o $@ $(OBJS) $(LIBRARIES) $($@_LIB)
+
+apex-env: $(OBJS)
 	@echo linking $@
 	@$(CC) $(CFLAGS_LINK) -o $@ $(OBJS) $(LIBRARIES) $($@_LIB)
 
