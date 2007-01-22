@@ -73,7 +73,7 @@
 #if defined (CONFIG_MACH_COMPANION)
 
 # define BL_FREQ	(5*1000)	/* Hz */
-# define BL_DUTY	50		/* percentage*100 */
+# define BL_DUTY	30		/* percentage*100 */
 # define PWM_TC3_V	((14745600/BL_FREQ) - 1)
 # define PWM_DC3_V	((BL_DUTY*(PWM_TC3_V + 1)/100) - 1)
 
