@@ -60,7 +60,8 @@ void init_services (void)
     PUTC_LL ('\n');
     if (service->init)
       service->init ();
-    PUTC_LL ('|');
+    PUTC_LL ('\r');
+    PUTC_LL ('\n');
   }
   PUTC_LL ('s');
 //  printf ("init complete\n");
