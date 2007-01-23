@@ -1,3 +1,9 @@
+2007-01-23  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-lh7a40x/variation-companion.c (variation_init): Added
+	variation support to the Companion.  Pressing three keys at
+	power-on will activate the variation boot.
+
 2007-01-13  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/entry/reset.c (__section): Slight change to MMU
