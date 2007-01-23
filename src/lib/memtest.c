@@ -37,6 +37,9 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 
   c /= 4;			/* Count of words */
 
+  /* *** FIXME: Walking data bit test needs to write to different
+     *** addresses */
+
 		/* Walking data bit */
   for (mark = 1; mark; mark <<= 1) {
     *(volatile unsigned long*) address = mark;

@@ -31,3 +31,6 @@ obj-$(CONFIG_MACH_COMPANION)    += clcdc-companion.o
 obj-$(CONFIG_RELOCATE_COMPANION_EVT2) += preinitialization-companion.o
 
 obj-$(CONFIG_MACH_COMPANION)	+= test-companion.o
+obj-x$(CONFIG_MACH_COMPANION)$(CONFIG_VARIATIONS) += variation-companion.o
+
+obj-y += $(obj-xyy)

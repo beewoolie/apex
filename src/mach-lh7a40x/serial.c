@@ -40,25 +40,6 @@
 #define UART_INTEN		__REG(UART + 0x18)
 #define UART_ISR		__REG(UART + 0x1c)
 
-#define UART_DATA_FE		(1<<8)
-#define UART_DATA_PE		(1<<9)
-#define UART_DATA_DATAMASK	(0xff)
-
-#define UART_STATUS_TXFE	(1<<7)
-#define UART_STATUS_RXFF	(1<<6)
-#define UART_STATUS_TXFF	(1<<5)
-#define UART_STATUS_RXFE	(1<<4)
-#define UART_STATUS_BUSY	(1<<3)
-#define UART_STATUS_DCD		(1<<2)
-#define UART_STATUS_DSR		(1<<1)
-#define UART_STATUS_CTS		(1<<0)
-
-#define UART_FCON_WLEN8		(3<<5)
-#define UART_FCON_FEN		(1<<4)
-
-#define UART_CON_SIRDIS		(1<<1)
-#define UART_CON_ENABLE		(1<<0)
-
 //#include <debug_ll.h>
 
 extern struct driver_d* console_driver;
