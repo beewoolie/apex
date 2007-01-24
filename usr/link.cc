@@ -70,8 +70,9 @@
 
    It is possible to have a variable set in the environment, but there
    be no environment record in APEX to support it.  These orphans are
-   ignored by the Link class.  The ID will be skipped when adding new
-   variables, but an orphan can neither be printed nor changed.
+   recgonized by the Link class.  The ID will be skipped when adding
+   new variables.  Printing the environment usually shows them with #=
+   as the equivalence operator.
 
 */
 
@@ -476,6 +477,7 @@ int Link::scan_environment (void)
 
   const char* pbEnd = pb + cbEnv;
   while (pb < pbEnd && *pb != 0xff) {
+    const char* head = pb;
     char flags = *pb++;
     int id = (unsigned char) flags & 0x7f;
     if (id >= idNext)
@@ -500,12 +502,89 @@ int Link::scan_environment (void)
     }
     PRINTF ("# %s = %s\n", (*entries)[id].key, pb);
 //    int cb = strlen ((char*) pb);
-    if (flags & 0x80)
+    if (flags & 0x80) {
       (*entries)[id].value = pb;
+      (*entries)[id].active = head;
+    }
     pb += strlen (pb) + 1;
   }
 
   return entries->size ();
+}
+
+
+/* Link::printenv
+
+   prints the value for a given key.  It is the value from flash if
+   one exists, or the default value if there is none.
+
+ */
+
+/* Link::unsetenv
+
+   deletes a key/value pair from flash if there is one.  This returns
+   the value of key to the default.
+
+*/
+
+bool Link::unsetenv (const char* key)
+{
+  if (key == NULL)
+    return false;
+
+  // Look for the key among the flash entries
+  EntryMap::iterator it;
+  for (it = entries->begin (); it != entries->end (); ++it)
+    if (strcasecmp (key, (*it).second.key) == 0)
+      break;
+
+  if (it != entries->end () && (*it).second.active) {
+    printf ("delete old entry at %p\n", (*it).second.active);
+  }
+
+  return true;
+}
+
+
+/* Link::setenv
+
+   accepts a key/value pair and sets this value in the environment.
+   Previously set instances of the key are marked as deleted.
+
+*/
+
+bool Link::setenv (const char* key, const char* value)
+{
+  if (key == NULL || value == NULL)
+    return false;
+
+  // Look for the key among the environment variables that APEX
+  // recognizes.
+  int index;
+  for (index = 0; index < c_env; ++index)
+    if (strcasecmp (key, env[index].key) == 0)
+      break;
+  if (index >= c_env)
+    return false;
+
+
+  // Look for the key among the flash entries
+  EntryMap::iterator it;
+  for (it = entries->begin (); it != entries->end (); ++it)
+    if (strcasecmp (key, (*it).second.key) == 0)
+      break;
+
+  if (it != entries->end () && (*it).second.active) {
+    printf ("delete old entry at %p\n", (*it).second.active);
+  }
+
+  if (it != entries->end ()) {
+    printf ("append new entry using id %d\n", (*it).first);
+  }
+  else {
+    printf ("create new entry using id %d\n", idNext);
+  }
+  return true;
 }
 
 

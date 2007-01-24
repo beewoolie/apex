@@ -58,16 +58,51 @@
 
 const char* argp_program_version = "apex-env 1.0";
 
-const char* g_szDocumentation
-	= "apex-env -- user-mode access to APEX boot loader environment";
 
+const char* g_szArgsDoc;
 
-static struct argp argp = { 0, 0, 0, g_szDocumentation };
+struct arguments {
+  arguments () {
+    bzero (this, sizeof (*this)); }
 
+  int argc;
+  const char* argv[3];		// command, key, value
+};
+
+static error_t arg_parser (int key, char* arg, struct argp_state* state)
+{
+  struct arguments& args = *(struct arguments*) state->input;
+
+  switch (key) {
+  case ARGP_KEY_ARG:
+    if (args.argc > 2)
+      argp_usage (state);
+    args.argv[args.argc++] = arg;
+    break;
+
+  case ARGP_KEY_END:
+    // *** FIXME: check for the right number of arguments per command
+    break;
+
+  default:
+    return ARGP_ERR_UNKNOWN;
+  }
+  return 0;
+}
+
+static struct argp argp = {
+  0, arg_parser,
+  "COMMAND [ARG ...]",
+  "apex-env -- user-mode access to APEX boot loader environment"
+};
 
 int main (int argc, char** argv)
 {
+  struct arguments args;
+
   argp_parse (&argp, argc, argv, 0, 0, 0);
+
+  printf ("%d %s\n", args.argc, args.argv[0]);
 
   Link link;
 

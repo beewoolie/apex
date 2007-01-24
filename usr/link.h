@@ -96,7 +96,8 @@ public:
 
   void show_environment (void);
 
-  //  int setenv (const char*
+  bool setenv (const char* key, const char* value);
+  bool unsetenv (const char* key);
 
 };
 
