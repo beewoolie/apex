@@ -75,7 +75,7 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
 
   switch (key) {
   case ARGP_KEY_ARG:
-    if (args.argc > 2)
+    if (args.argc >= sizeof (args.argv)/sizeof (*args.argv))
       argp_usage (state);
     args.argv[args.argc++] = arg;
     break;
@@ -96,13 +96,47 @@ static struct argp argp = {
   "apex-env -- user-mode access to APEX boot loader environment"
 };
 
+struct command {
+  const char* sz;
+  int (*func) (Link&, int, const char**);
+};
+
+int cmd_printenv (Link& link, int argc, const char** argv)
+{
+  if (argc == 1)
+    link.show_environment ();
+
+  return 0;
+}
+
+int cmd_setenv (Link& link, int argc, const char** argv)
+{
+  if (argc == 3)
+    link.setenv (argv[1], argv[2]);
+  else
+    return 1;
+  return 0;
+}
+
+int cmd_unsetenv (Link& link, int argc, const char** argv)
+{
+  if (argc == 2)
+    link.unsetenv (argv[1]);
+  else
+    return 1;
+  return 0;
+}
+
+static struct command commands[] = {
+  { "printenv",		cmd_printenv },
+  { "setenv",		cmd_setenv },
+  { "unsetenv",		cmd_unsetenv },
+};
+
 int main (int argc, char** argv)
 {
   struct arguments args;
-
-  argp_parse (&argp, argc, argv, 0, 0, 0);
-
-  printf ("%d %s\n", args.argc, args.argv[0]);
+  argp_parse (&argp, argc, argv, 0, 0, &args);
 
   Link link;
 
@@ -111,7 +145,20 @@ int main (int argc, char** argv)
     return -1;
   }
 
-  link.show_environment ();
+  if (args.argc == 0) {
+    ++args.argc;
+    args.argv[0] = "printenv";
+  }
+
+  //  printf ("argc %d  '%s'\n", args.argc, args.argv[0]);
+
+  for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i) {
+    if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
+      int result = commands[i].func (link, args.argc, args.argv);
+      if (result)
+	printf ("error %d\n", result);
+    }
+  }
 
   return 0;
 }

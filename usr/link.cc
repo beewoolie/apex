@@ -296,7 +296,7 @@ int Link::map_environment (void)
   printf ("%s->%d 0x%x->%p [%x %x]\n",
 	  mtd.dev_block (), fhEnv, cbEnv, pvEnv, d.start, mtd.base);
 
-  dumpw (pvEnv, 256, 0, 0);
+//  dumpw (pvEnv, 256, 0, 0);
 
   return cbEnv;
 }
@@ -313,8 +313,11 @@ bool Link::open_apex (const MTDPartition& mtd)
 {
   printf ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
   int fh = ::open (mtd.dev_block (), O_RDONLY);
-  if (fh == -1)
+  if (fh == -1) {
+    printf ("unable to open mtd device %s.  Priviledges may be required.\n",
+	    mtd.dev_block ());
     return false;
+  }
 
   void* pv = mmap (NULL, CB_LINK_SCAN, PROT_READ, MAP_SHARED, fh, 0);
   if (pv == MAP_FAILED) {
@@ -518,7 +521,8 @@ int Link::scan_environment (void)
    prints the value for a given key.  It is the value from flash if
    one exists, or the default value if there is none.
 
- */
+*/
+
 
 /* Link::unsetenv
 
@@ -579,10 +583,10 @@ bool Link::setenv (const char* key, const char* value)
   }
 
   if (it != entries->end ()) {
-    printf ("append new entry using id %d\n", (*it).first);
+    printf ("append reusing id %d\n", (*it).first);
   }
   else {
-    printf ("create new entry using id %d\n", idNext);
+    printf ("create new id %d\n", idNext);
   }
   return true;
 }
