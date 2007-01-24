@@ -1,3 +1,9 @@
+2007-01-23  Marc Singer  <elf@cerise.buici.com>
+
+	* src/lib/memtest.c (memory_test_0): Revised the memory test
+	walking bit loop on advice from a collegue.  Made the full memory
+	test an option on top of the basic memory test.
+
 2007-01-23  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-lh7a40x/variation-companion.c (variation_init): Added

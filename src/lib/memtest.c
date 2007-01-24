@@ -35,15 +35,15 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 
   __asm volatile ("mov fp, lr");
 
-  c /= 4;			/* Count of words */
+  c /= 4;	/* Convert to count of words */
 
-  /* *** FIXME: Walking data bit test needs to write to different
-     *** addresses */
-
-		/* Walking data bit */
+		/* Walking data bit.  Each write must be to a
+		   different address to avoid memory capacitance from
+		   generating a falsely correct value. */
+  for (mark = 1; mark; mark <<= 1)
+    *(volatile unsigned long*) (address + mark*4) = mark;
   for (mark = 1; mark; mark <<= 1) {
-    *(volatile unsigned long*) address = mark;
-    if (*(volatile unsigned long*) address != mark)
+    if (*(volatile unsigned long*) (address + mark*4) != mark)
       __asm volatile ("mov r0, #1\n\t"
 		      "mov pc, fp");
   }
@@ -75,7 +75,12 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
     p[mark] = pattern_a;
   }
 
-		/* Full memory test */
+#if defined (BOOTSTRAP_MEMTEST_FULL)
+
+		/* Full memory test.  This is probably unnecessary
+		   given the fact that failures in memory these days
+		   tend to be shorts or cold-solder joints in
+		   manufacturing and not 'stuck' cells.  */
   for (offset = 0; offset < c; ++offset)
     p[offset] = offset + 1;
 
@@ -89,6 +94,8 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
     if (p[offset] != ~(offset + 1))
       __asm volatile ("mov r0, %0\n\t"
 		      "mov pc, fp" :: "r" (offset*4));
+
+#endif
 
   __asm volatile ("mov r0, #0\n\t"
 		  "mov pc, fp");

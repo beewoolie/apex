@@ -275,12 +275,27 @@ config BOOTSTRAP_MEMTEST_BASE
 	  Base address for SDRAM post-initialization memory test.
 
 config BOOTSTRAP_MEMTEST_SIZE
-	hex "Bootstrap Memory Test Base Address"
+	hex "Bootstrap Memory Test Size"
 	default 0x00100000
 	depends on BOOTSTRAP_MEMTEST
 	help
 	  Length of regionfor SDRAM post-initialization memory test.
 	  It is best if this is a power of 2.
+
+config BOOTSTRAP_MEMTEST_FULL
+	bool "Perform full memory test"
+	default n
+	depends on BOOTSTRAP_MEMTEST
+	help
+	  The memory test at least performs a walking data bit test
+	  and a walking address bit test.  This option enables a full
+	  scan memory test as well.  Given the nature of memory these
+	  days, the full test is probably unnecessary.  Most failures
+	  occur in manufacturing due to solder shorts or cold solder
+	  joints.
+
+	  The full memory test will add a significant interval to the
+	  boot of time.  It is disabled by default.
 
 endmenu
 
