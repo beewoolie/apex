@@ -18,17 +18,25 @@
 
 #include "environment.h"
 #include "mtdpartition.h"
+#include <map>
 
 /* ----- Types */
 
 class Link {
 
   struct entry {
-    entry () { index = 0xff; }
+    void zero (void) {
+      bzero (this, sizeof (this)); }
+    entry () { zero (); index = -1; }
     int index;			// index of this variable in APEX or 0x7f
     const char* key;
     const char* value;
-    char* active;		// Pointer to active copy
+    const char* active;		// Pointer to active copy
+  };
+
+  struct EntryMap : public std::map<int, entry> {
+    bool contains (int id) {
+      return find (id) != end (); }
   };
 
 protected:
@@ -37,7 +45,7 @@ protected:
   size_t cbApex;		/* Length of APEX firmware */
   unsigned long crcApex;	/* CRC of APEX */
 
-  bool endian_mismatch;		// Controles swab32_maybe
+  bool endian_mismatch;		// Controls swab32_maybe
   int env_link_version;		/* 1: legacy; 2: current version */
   struct env_link* env_link;	// Fixed up env_link structure
   int mapping_offset;		// Offset of APEX within mmap'd region
@@ -47,8 +55,9 @@ protected:
   int fhEnv;			// File pointer of environment
   void* pvEnv;			// mmap'd environment
   size_t cbEnv;			// Extent of mmap'd environment
-  struct entry* entries;	// Array of entries in the environment
-  int cEntries;			// Number of entries, active or deleted
+
+  EntryMap* entries;		// Entries found in flash
+  int idNext;			// Next available ID for flash environment
 
   void zero (void) {
     bzero (this, sizeof (*this)); }
@@ -80,12 +89,14 @@ protected:
 public:
 
   Link () {
-    zero (); }
-
+    zero ();
+    entries = new EntryMap; }
 
   bool open (void);
 
   void show_environment (void);
+
+  //  int setenv (const char*
 
 };
 

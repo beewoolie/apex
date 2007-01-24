@@ -65,6 +65,14 @@
    environment.  The current format allows for APEX upgrades without
    losing the user's environment.
 
+   Orphans
+   -------
+
+   It is possible to have a variable set in the environment, but there
+   be no environment record in APEX to support it.  These orphans are
+   ignored by the Link class.  The ID will be skipped when adding new
+   variables, but an orphan can neither be printed nor changed.
+
 */
 
 #include <stdio.h>
@@ -222,7 +230,7 @@ bool Link::open (void)
   map_environment ();
   scan_environment ();
 
-  PRINTF ("# %d entries in environment\n", cEntries);
+  PRINTF ("# %d entries in environment\n", entries->size ());
   //  show_environment (env, c_env, rgEntry, c_entry);
 
   return true;
@@ -451,16 +459,12 @@ int Link::scan_environment (void)
 {
   const char* pb = (const char*) pvEnv;
 
-  if (entries)
-    delete entries;
-
-  int cEntriesMax = c_env*2;
-  entries = new struct entry[cEntriesMax];
-  cEntries = 0;
+  entries->clear ();
+  idNext = 0;
 
   if (pb[0] == 0xff && pb[1] == 0xff) {
     PRINTF ("# empty environment\n");
-    return cEntries;
+    return entries->size ();
   }
 
   if (pb[0] != ENV_MAGIC_0 || pb[1] != ENV_MAGIC_1) {
@@ -474,30 +478,34 @@ int Link::scan_environment (void)
   while (pb < pbEnd && *pb != 0xff) {
     char flags = *pb++;
     int id = (unsigned char) flags & 0x7f;
-    if (entries[id].index == 0xff) {
-      entries[id].key = pb;
+    if (id >= idNext)
+      idNext = id + 1;
+
+    if (!entries->contains (id)) {
+      entry e;
+      e.key = pb;
+//      (*entries)[id].key = pb;
 
 //      int cb = strlen ((char*) pb);
 //      rgEntry[id].key = new char [cb + 1];
 //      strcpy (rgEntry[id].key, (char*) pb);
-      PRINTF ("# found %s\n", entries[id].key);
+      PRINTF ("# found %s\n", e.key);
       pb += strlen (pb) + 1;
-      entries[id].index = 0x7f;
       for (int index = 0; index < c_env; ++index)
-	if (strcasecmp (entries[id].key, env[index].key) == 0) {
-	  entries[id].index = index;
+	if (strcasecmp (e.key, env[index].key) == 0) {
+	  e.index = index;
 	  break;
 	}
-      ++cEntries;
+      (*entries)[id] = e;
     }
-    PRINTF ("# %s = %s\n", entries[id].key, pb);
+    PRINTF ("# %s = %s\n", (*entries)[id].key, pb);
 //    int cb = strlen ((char*) pb);
     if (flags & 0x80)
-      entries[id].value = pb;
+      (*entries)[id].value = pb;
     pb += strlen (pb) + 1;
   }
 
-  return cEntries;
+  return entries->size ();
 }
 
 
@@ -515,9 +523,10 @@ void Link::show_environment (void)
 
   for (int i = 0; i < c_env; ++i) {
     const char* value = NULL;
-    for (int j = 0; j < cEntries; ++j)
-      if (entries[j].index == i) {
-	value = entries[j].value;
+    for (EntryMap::iterator it = entries->begin ();
+	 it != entries->end (); ++it)
+      if ((*it).second.index == i) {
+	value = (*it).second.value;
 	break;
       }
 
@@ -526,8 +535,8 @@ void Link::show_environment (void)
     else
       printf ("%s *= %s\n", env[i].key, env[i].default_value);
   }
-  for (int j = 0; j < cEntries; ++j) {
-    if (entries[j].index == 0x7f)
-      printf ("%s #= %s\n", entries[j].key, entries[j].value);
-  }
+  for (EntryMap::iterator it = entries->begin ();
+       it != entries->end (); ++it)
+    if ((*it).second.index == -1)
+      printf ("%s #= %s\n", (*it).second.key, (*it).second.value);
 }
