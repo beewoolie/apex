@@ -59,14 +59,14 @@
    Relocating APEX from SD/MMC
    ---------------------------
 
-   Relocation of APEX from SD/MMC has several elements.  The first 4K
-   of the loader are copied from I2C memory to address 0xb0000000 by
-   the CPU Boot ROM.  The relocate_apex () implementation here is
+   Relocation of APEX from SD/MMC has several elements.  The first
+   4KiB of the loader are copied from I2C memory to address 0xb0000000
+   by the CPU Boot ROM.  The relocate_apex () implementation here is
    guaranteed to be able to execute from that section of the program.
 
    The relocator reads the partition table of the SD card.  If it
-   finds that the first partition is type 0, it reads 80K - 7K (4K
-   for the code from I2C, 2K for stack, and 1K for data), from that
+   finds that the first partition is type 0, it reads 80K - 12K (4K
+   for the code from I2C, 4K for stack, and 4K for data), from that
    partition to address 0xb0000000+4k and jumps to it.  This
    guarantees that the loader, as read from SD/MMC, is able fully
    initialize the system including SDRAM as needed.

@@ -452,6 +452,16 @@ config COMPANION_EVT1_BOOT
 	  This enables an implementation of the relocate_apex ()
 	  function that copies the boot loader from SD/MMC or from I2C
 	  EEPROM.
+	  
+	  It is very important to recognize that the I2C/MMC boot
+	  process is limited to a 68KiB loader.  There is 80KiB of
+	  SRAM.  4KiB is used to load the first page from I2C at
+	  0xb0000000.  There is 4KiB for stack and 4KiB for bootstrap
+	  data.  That leaves only 68KiB for the whole loader to be
+	  read from MMC and executed from SRAM.
+
+	  This also means that the loader on the SD card does not have
+	  to resemble the loader in SRAM in any way.
 
 config COMPANION_EVT2_BOOT
 	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
