@@ -33,7 +33,7 @@
 #include <debug_ll.h>
 
 //#define USE_FAST_CLOCK
-#define USE_DDS_HACK
+//#define USE_DDS_HACK
 #define USE_SPI
 
 #define SSP_CR0		__REG(SSP_PHYS + 0x00)

@@ -1,3 +1,8 @@
+2007-01-25  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-lh7a40x/clcdc-companion.c: Removed the DDS hack form
+	the LCD init on Companion.  No DDS circuit present anymore.
+
 2007-01-23  Marc Singer  <elf@cerise.buici.com>
 
 	* src/lib/memtest.c (memory_test_0): Revised the memory test
