@@ -9,6 +9,8 @@ CFLAGS += -I../include
 SRCS:=apex-env.cc ospartition.cc mtdpartition.cc link.cc
 OBJS:=$(SRCS:.cc=.o)
 
+DEPS:=$(SRCS:%.cc=%.d)
+
 CC=$(CROSS_COMPILE)g++
 CXX=$(CROSS_COMPILE)g++
 LD=$(CROSS_COMPILE)ld
@@ -34,6 +36,14 @@ apex-env: $(OBJS)
 	@echo compile $@ $(CCFLAGS)
 	@$(CXX) $(CFLAGS) -o $@ $<
 
+%.d: %.cc
+	@set -e; rm -f $@; \
+          $(CXX) -MM $(CFLAGS) $< > $@.$$$$; \
+          sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+          rm -f $@.$$$$
+
 .PHONY: clean
 clean:
 	-rm $(TARGETS) *.o
+
+-include $(DEPS)

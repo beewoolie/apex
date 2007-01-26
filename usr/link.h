@@ -26,7 +26,7 @@ class Link {
 
   struct entry {
     void zero (void) {
-      bzero (this, sizeof (this)); }
+      bzero (this, sizeof (*this)); }
     entry () { zero (); index = -1; }
     int index;			// index of this variable in APEX or 0x7f
     const char* key;
@@ -52,9 +52,13 @@ protected:
   struct env_d* env;		// APEX environment variables
   int c_env;			// Count of environment variables in APEX
 
-  int fhEnv;			// File pointer of environment
+  int fhEnv;			// File handle of environment
   void* pvEnv;			// mmap'd environment
   size_t cbEnv;			// Extent of mmap'd environment
+  size_t cbEnvUsed;		// Bytes of environment that are in use
+
+  int fhEnvWrite;		// File handle of writable environment
+  int ibEnv;			// Index of environment data in file handles
 
   EntryMap* entries;		// Entries found in flash
   int idNext;			// Next available ID for flash environment
@@ -96,6 +100,7 @@ public:
 
   void show_environment (void);
 
+  void eraseenv (void);
   bool setenv (const char* key, const char* value);
   bool unsetenv (const char* key);
 

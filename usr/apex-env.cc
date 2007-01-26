@@ -127,10 +127,17 @@ int cmd_unsetenv (Link& link, int argc, const char** argv)
   return 0;
 }
 
+int cmd_eraseenv (Link& link, int argc, const char** argv)
+{
+  link.eraseenv ();
+  return 0;
+}
+
 static struct command commands[] = {
   { "printenv",		cmd_printenv },
   { "setenv",		cmd_setenv },
   { "unsetenv",		cmd_unsetenv },
+  { "eraseenv",		cmd_eraseenv },
 };
 
 int main (int argc, char** argv)

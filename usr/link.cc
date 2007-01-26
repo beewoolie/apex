@@ -74,6 +74,20 @@
    new variables.  Printing the environment usually shows them with #=
    as the equivalence operator.
 
+   mtd devices and write behavior
+   ------------------------------
+
+   The MTD block device driver handles writes by caching a modified
+   eraseblock and performing the erase and write back as necessary.
+   While we *can* depend on this to support conveniently block device
+   likea behavior, we choose instead to be explicit in how we update
+   the environment.  Namely, this code will use the environment in the
+   same mode it does when there is no MTD driver.  Modifications to
+   the environment are handles in a NOR flash consistent manner.
+   Erasing the whole environment region is explicit.  However, we
+   depend on the kernel driver to maintain the contents of the
+   eraseblock that are not affected by the erasing the environment.
+
 */
 
 #include <stdio.h>
@@ -290,13 +304,23 @@ int Link::map_environment (void)
 
   fhEnv = ::open (mtd.dev_block (), O_RDONLY);
   cbEnv = d.length;
+  ibEnv = d.start - mtd.base;
   lseek (fhEnv, d.start - mtd.base, SEEK_SET);
+  // *** FIXME: this mmap will only work with the offset if we are
+  // mapping at a page boundary.  This call will fail completely,
+  // perhaps even segfault, if the offset is not a multiple of 4KiB.
+  // The only other way to handle this would be to round down to a
+  // page boundary and keep track of the real start of the
+  // environment.
   pvEnv = ::mmap (NULL, cbEnv, PROT_READ, MAP_SHARED, fhEnv,
 		  d.start - mtd.base);
-  printf ("%s->%d 0x%x->%p [%x %x]\n",
-	  mtd.dev_block (), fhEnv, cbEnv, pvEnv, d.start, mtd.base);
+	// Open separate handle for writing to environment
+  fhEnvWrite = ::open (mtd.dev_char (), O_RDWR);
 
-//  dumpw (pvEnv, 256, 0, 0);
+  printf ("%s %s->(%d,%d) 0x%x+0x%x->%p [%x %x]\n",
+	  env_link->region, mtd.dev_block (), fhEnv, fhEnvWrite, ibEnv, cbEnv,
+	  pvEnv, d.start, mtd.base);
+  dumpw (pvEnv, 256, 0, 0);
 
   return cbEnv;
 }
@@ -511,10 +535,16 @@ int Link::scan_environment (void)
     }
     pb += strlen (pb) + 1;
   }
+  cbEnvUsed = pb - (char*) pvEnv;
 
   return entries->size ();
 }
 
+
+void Link::eraseenv (void)
+{
+
+}
 
 /* Link::printenv
 
@@ -526,8 +556,8 @@ int Link::scan_environment (void)
 
 /* Link::unsetenv
 
-   deletes a key/value pair from flash if there is one.  This returns
-   the value of key to the default.
+   deletes a key/value pair from flash if there is one.  It returns
+   true if there was a successful delete.
 
 */
 
@@ -543,10 +573,17 @@ bool Link::unsetenv (const char* key)
       break;
 
   if (it != entries->end () && (*it).second.active) {
-    printf ("delete old entry at %p\n", (*it).second.active);
+    int ib = (*it).second.active - (const char*) pvEnv;
+    char ch;
+    if (::lseek (fhEnvWrite, ibEnv + ib, SEEK_SET) == ibEnv + ib
+	&& ::read (fhEnvWrite, &ch, 1) == 1
+	&& ::lseek (fhEnvWrite, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
+      ch &= ~0x80;		// Clobber high bit indicating deletion
+      return ::write (fhEnvWrite, &ch, 1) == 1;
+    }
   }
 
-  return true;
+  return false;
 }
 
 
@@ -583,10 +620,23 @@ bool Link::setenv (const char* key, const char* value)
   }
 
   if (it != entries->end ()) {
-    printf ("append reusing id %d\n", (*it).first);
+    int cb = strlen (value);
+    char rgb[cb + 2];
+    rgb[0] = 0x80 + (*it).first;
+    memcpy (rgb + 1, value, cb + 1);
+    printf ("append reusing id %d, writing to 0x%x\n", (*it).first,
+	    cbEnvUsed);
+    dumpw (rgb, cb + 2, 0, 0);
   }
   else {
-    printf ("create new id %d\n", idNext);
+    int cbKey = strlen (key);
+    int cbValue = strlen (value);
+    char rgb[cbKey + cbValue + 3];
+    rgb[0] = 0x80 + idNext;
+    memcpy (rgb + 1, key, cbKey + 1);
+    memcpy (rgb + 1 + cbKey + 1, value, cbValue + 1);
+    dumpw (rgb, cbKey + cbValue + 3, 0, 0);
+    printf ("create new id %d at 0x%x\n", idNext, cbEnvUsed);
   }
   return true;
 }
