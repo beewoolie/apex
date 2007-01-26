@@ -541,7 +541,7 @@ int Link::scan_environment (void)
 }
 
 
-void Link::eraseenv (void) throw ()
+void Link::eraseenv (void)
 {
   char rgb[cbEnv];
   memset (rgb, 0xff, sizeof (rgb));
@@ -559,6 +559,23 @@ void Link::eraseenv (void) throw ()
 
 */
 
+void Link::printenv (const char* key)
+{
+  for (int i = 0; i < c_env; ++i) {
+    if (!key || strcasecmp (env[i].key, key) == 0) {
+      EntryMap::iterator it = entries->find_index (i);
+      if (it != entries->end ())
+	printf ("%s = %s\n", key, (*it).second.value);
+      else
+	printf ("%s *= %s\n", key, env[i].default_value);
+      if (key)
+	return;
+    }
+  }
+  if (key)
+    throw "unknown environment variable";
+}
+
 
 /* Link::unsetenv
 
@@ -567,7 +584,7 @@ void Link::eraseenv (void) throw ()
 
 */
 
-void Link::unsetenv (const char* key) throw ()
+void Link::unsetenv (const char* key)
 {
   if (key == NULL)
     throw "NULL key passed to unsetenv";
@@ -604,7 +621,7 @@ void Link::unsetenv (const char* key) throw ()
 
 */
 
-void Link::setenv (const char* key, const char* value) throw ()
+void Link::setenv (const char* key, const char* value)
 {
   if (key == NULL)
     throw "NULL key passed to setenv";
@@ -666,9 +683,6 @@ void Link::setenv (const char* key, const char* value) throw ()
 
 void Link::show_environment (void)
 {
-  char rgId[127];
-  memset (rgId, 0xff, sizeof (rgId));
-
   for (int i = 0; i < c_env; ++i) {
     const char* value = NULL;
     for (EntryMap::iterator it = entries->begin ();

@@ -69,6 +69,11 @@ struct arguments {
   const char* argv[3];		// command, key, value
 };
 
+struct command {
+  const char* sz;
+  void (*func) (Link&, int, const char**);
+};
+
 static error_t arg_parser (int key, char* arg, struct argp_state* state)
 {
   struct arguments& args = *(struct arguments*) state->input;
@@ -81,7 +86,7 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
     break;
 
   case ARGP_KEY_END:
-    // *** FIXME: check for the right number of arguments per command
+    // *** FIXME: check for the right number of arguments per command?
     break;
 
   default:
@@ -96,41 +101,41 @@ static struct argp argp = {
   "apex-env -- user-mode access to APEX boot loader environment"
 };
 
-struct command {
-  const char* sz;
-  int (*func) (Link&, int, const char**);
-};
-
-int cmd_printenv (Link& link, int argc, const char** argv)
+void cmd_printenv (Link& link, int argc, const char** argv)
 {
-  if (argc == 1)
+  switch (argc) {
+  case 1:
     link.show_environment ();
-
-  return 0;
+    break;
+  case 2:
+    link.printenv (argv[1]);
+    break;
+  default:
+    throw "incorect number of command arguments";
+  }
 }
 
-int cmd_setenv (Link& link, int argc, const char** argv)
+void cmd_setenv (Link& link, int argc, const char** argv)
 {
   if (argc == 3)
     link.setenv (argv[1], argv[2]);
   else
-    return 1;
-  return 0;
+    return throw "incorrect number of command arguments";
 }
 
-int cmd_unsetenv (Link& link, int argc, const char** argv)
+void cmd_unsetenv (Link& link, int argc, const char** argv)
 {
   if (argc == 2)
     link.unsetenv (argv[1]);
   else
-    return 1;
-  return 0;
+    throw "incorrect number of command arguments";
 }
 
-int cmd_eraseenv (Link& link, int argc, const char** argv)
+void cmd_eraseenv (Link& link, int argc, const char** argv)
 {
-  link.eraseenv ();
-  return 0;
+  if (argc == 1)
+    link.eraseenv ();
+  throw "incorrect number of command arguments";
 }
 
 static struct command commands[] = {
@@ -162,9 +167,7 @@ int main (int argc, char** argv)
   for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i) {
     if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
       try {
-	int result = commands[i].func (link, args.argc, args.argv);
-	if (result)
-	  printf ("error %d\n", result);
+	commands[i].func (link, args.argc, args.argv);
       } catch (char const* sz) {
 	printf ("error: %s\n", sz);
       }

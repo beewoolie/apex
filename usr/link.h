@@ -37,6 +37,16 @@ class Link {
   struct EntryMap : public std::map<int, entry> {
     bool contains (int id) {
       return find (id) != end (); }
+    iterator find_index (int index) {
+      for (iterator it = begin (); it != end (); ++it)
+	if ((*it).second.index == index)
+	  return it;
+      return end (); }
+    iterator  find_key (const char* key) {
+      for (iterator it = begin (); it != end (); ++it)
+	if (strcasecmp ((*it).second.key, key) == 0)
+	  return it;
+      return end (); }
   };
 
 protected:
@@ -100,9 +110,10 @@ public:
 
   void show_environment (void);
 
-  void eraseenv (void) throw ();
-  void setenv (const char* key, const char* value) throw ();
-  void unsetenv (const char* key) throw ();
+  void eraseenv (void);
+  void setenv (const char* key, const char* value);
+  void unsetenv (const char* key);
+  void printenv (const char* key);
 
 };
 
