@@ -100,9 +100,9 @@ public:
 
   void show_environment (void);
 
-  void eraseenv (void);
-  bool setenv (const char* key, const char* value);
-  bool unsetenv (const char* key);
+  void eraseenv (void) throw ();
+  void setenv (const char* key, const char* value) throw ();
+  void unsetenv (const char* key) throw ();
 
 };
 

@@ -541,10 +541,16 @@ int Link::scan_environment (void)
 }
 
 
-void Link::eraseenv (void)
+void Link::eraseenv (void) throw ()
 {
+  char rgb[cbEnv];
+  memset (rgb, 0xff, sizeof (rgb));
 
+  if (::lseek (fhEnvWrite, ibEnv, SEEK_SET) != ibEnv
+      || ::write (fhEnvWrite, rgb, cbEnv) != cbEnv)
+      throw "failed to write environment";
 }
+
 
 /* Link::printenv
 
@@ -561,16 +567,19 @@ void Link::eraseenv (void)
 
 */
 
-bool Link::unsetenv (const char* key)
+void Link::unsetenv (const char* key) throw ()
 {
   if (key == NULL)
-    return false;
+    throw "NULL key passed to unsetenv";
 
   // Look for the key among the flash entries
   EntryMap::iterator it;
   for (it = entries->begin (); it != entries->end (); ++it)
     if (strcasecmp (key, (*it).second.key) == 0)
       break;
+
+  if (it == entries->end ())
+    throw "variable not present in flash envronment";
 
   if (it != entries->end () && (*it).second.active) {
     int ib = (*it).second.active - (const char*) pvEnv;
@@ -579,11 +588,12 @@ bool Link::unsetenv (const char* key)
 	&& ::read (fhEnvWrite, &ch, 1) == 1
 	&& ::lseek (fhEnvWrite, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
       ch &= ~0x80;		// Clobber high bit indicating deletion
-      return ::write (fhEnvWrite, &ch, 1) == 1;
+      if (::write (fhEnvWrite, &ch, 1) != 1)
+	throw "failed to write environment";
     }
+    else
+      throw "unable to read from environment";
   }
-
-  return false;
 }
 
 
@@ -594,10 +604,12 @@ bool Link::unsetenv (const char* key)
 
 */
 
-bool Link::setenv (const char* key, const char* value)
+void Link::setenv (const char* key, const char* value) throw ()
 {
-  if (key == NULL || value == NULL)
-    return false;
+  if (key == NULL)
+    throw "NULL key passed to setenv";
+  if (value == NULL)
+    throw "NULL value passed to setenv";
 
   // Look for the key among the environment variables that APEX
   // recognizes.
@@ -606,8 +618,7 @@ bool Link::setenv (const char* key, const char* value)
     if (strcasecmp (key, env[index].key) == 0)
       break;
   if (index >= c_env)
-    return false;
-
+    throw "unknown environment variable";
 
   // Look for the key among the flash entries
   EntryMap::iterator it;
@@ -615,30 +626,34 @@ bool Link::setenv (const char* key, const char* value)
     if (strcasecmp (key, (*it).second.key) == 0)
       break;
 
-  if (it != entries->end () && (*it).second.active) {
-    printf ("delete old entry at %p\n", (*it).second.active);
-  }
+  if (it != entries->end () && (*it).second.active)
+    unsetenv (key);
 
   if (it != entries->end ()) {
     int cb = strlen (value);
+    if (cbEnv - cbEnvUsed < cb + 2)
+      throw "insufficient free space in environment";
     char rgb[cb + 2];
     rgb[0] = 0x80 + (*it).first;
     memcpy (rgb + 1, value, cb + 1);
-    printf ("append reusing id %d, writing to 0x%x\n", (*it).first,
-	    cbEnvUsed);
-    dumpw (rgb, cb + 2, 0, 0);
+    if (::lseek (fhEnvWrite, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+	|| ::write (fhEnvWrite, rgb, cb + 2) != cb + 2)
+      throw "failed to write environment";
   }
   else {
     int cbKey = strlen (key);
     int cbValue = strlen (value);
+    if (cbEnv - cbEnvUsed < cbKey + cbValue + 3)
+      throw "insufficient free space in environment";
     char rgb[cbKey + cbValue + 3];
     rgb[0] = 0x80 + idNext;
     memcpy (rgb + 1, key, cbKey + 1);
     memcpy (rgb + 1 + cbKey + 1, value, cbValue + 1);
-    dumpw (rgb, cbKey + cbValue + 3, 0, 0);
-    printf ("create new id %d at 0x%x\n", idNext, cbEnvUsed);
+    if (::lseek (fhEnvWrite, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+	|| ::write (fhEnvWrite, rgb, cbKey + cbValue + 3)
+	!= cbKey + cbValue + 3)
+      throw "failed to write environment";
   }
-  return true;
 }
 
 

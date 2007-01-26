@@ -161,9 +161,13 @@ int main (int argc, char** argv)
 
   for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i) {
     if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
-      int result = commands[i].func (link, args.argc, args.argv);
-      if (result)
-	printf ("error %d\n", result);
+      try {
+	int result = commands[i].func (link, args.argc, args.argv);
+	if (result)
+	  printf ("error %d\n", result);
+      } catch (char const* sz) {
+	printf ("error: %s\n", sz);
+      }
     }
   }
 
