@@ -546,6 +546,8 @@ void Link::eraseenv (void)
   char rgb[cbEnv];
   memset (rgb, 0xff, sizeof (rgb));
 
+  // *** FIXME: doesn't work.  We may need to use the block device to
+  // *** erase.
   if (::lseek (fhEnvWrite, ibEnv, SEEK_SET) != ibEnv
       || ::write (fhEnvWrite, rgb, cbEnv) != cbEnv)
       throw "failed to write environment";

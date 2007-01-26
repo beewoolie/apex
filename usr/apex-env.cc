@@ -135,7 +135,8 @@ void cmd_eraseenv (Link& link, int argc, const char** argv)
 {
   if (argc == 1)
     link.eraseenv ();
-  throw "incorrect number of command arguments";
+  else
+    throw "incorrect number of command arguments";
 }
 
 static struct command commands[] = {
