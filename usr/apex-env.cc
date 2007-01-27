@@ -58,7 +58,6 @@
 
 const char* argp_program_version = "apex-env 1.0";
 
-
 const char* g_szArgsDoc;
 
 struct arguments {
@@ -98,7 +97,14 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
 static struct argp argp = {
   0, arg_parser,
   "COMMAND [ARG ...]",
-  "apex-env -- user-mode access to APEX boot loader environment"
+  "apex-env provides for user-mode access to APEX boot loader environment\n"
+  "\n"
+  "Commands:\n"
+  "  describe [KEY]\t- describe KEY or all variables\n"
+  "  dump\t\t\t- hexadecimal/ascii dump of environment region\n"
+  "  printenv [KEY]\t- print KEY or all variables\n"
+  "  setenv KEY VALUE\t- set variable KEY to VALUE\n"
+  "  eraseenv\t\t- erase environment region\n"
 };
 
 void cmd_printenv (Link& link, int argc, const char** argv)
@@ -113,6 +119,14 @@ void cmd_printenv (Link& link, int argc, const char** argv)
   default:
     throw "incorect number of command arguments";
   }
+}
+
+void cmd_describe (Link& link, int argc, const char** argv)
+{
+  if (argc > 2)
+    throw "incorrect number of command arguments";
+
+  link.describe ((argc > 1) ? argv[1] : NULL);
 }
 
 void cmd_dump (Link& link, int argc, const char** argv)
@@ -148,6 +162,7 @@ void cmd_eraseenv (Link& link, int argc, const char** argv)
 }
 
 static struct command commands[] = {
+  { "describe",		cmd_describe },
   { "dump",		cmd_dump },
   { "printenv",		cmd_printenv },
   { "setenv",		cmd_setenv },

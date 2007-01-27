@@ -111,6 +111,7 @@ public:
 
   void show_environment (void);
 
+  void describe (const char* key);
   void dump (void);
   void eraseenv (void);
   void printenv (const char* key);

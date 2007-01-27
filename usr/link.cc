@@ -545,6 +545,19 @@ int Link::scan_environment (void)
 }
 
 
+void Link::describe (const char* key)
+{
+  for (int i = 0; i < c_env; ++i)
+    if (!key || strcasecmp (env[i].key, key) == 0) {
+      printf ("%s: %s\n", env[i].key, env[i].description);
+      if (key)
+	return;
+    }
+  if (key)
+    throw "unknown environment variable";
+}
+
+
 void Link::dump (void)
 {
   if (pvEnv && cbEnv)
