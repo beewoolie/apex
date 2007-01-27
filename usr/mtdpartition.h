@@ -49,6 +49,7 @@ struct MTDPartition {
 
   static const MTDPartition find (unsigned long addr);
   static const MTDPartition find (const char*);
+  static const MTDPartition first (void);
 
 };
 

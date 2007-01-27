@@ -78,15 +78,15 @@
    ------------------------------
 
    The MTD block device driver handles writes by caching a modified
-   eraseblock and performing the erase and write back as necessary.
-   While we *can* depend on this to support conveniently block device
-   likea behavior, we choose instead to be explicit in how we update
-   the environment.  Namely, this code will use the environment in the
-   same mode it does when there is no MTD driver.  Modifications to
-   the environment are handles in a NOR flash consistent manner.
-   Erasing the whole environment region is explicit.  However, we
-   depend on the kernel driver to maintain the contents of the
-   eraseblock that are not affected by the erasing the environment.
+   eraseblock and performing the erase and write back once another
+   eraseblock is written.  While we *can* depend on this to support
+   conveniently block device like behavior, we choose instead to be
+   explicit in how we update the environment.  Namely, this code will
+   use the environment in the same mode it does when there is no MTD
+   driver.  Modifications to the environment are handles in a NOR
+   flash consistent manner.  Erasing the whole environment region
+   would normally require a read/modify/write, so here we use the
+   block driver.
 
 */
 
@@ -105,12 +105,14 @@
 #include "mtdpartition.h"
 #include "link.h"
 
-#define TALK
+//#define TALK
 
 #if defined (TALK)
 # define PRINTF(f ...)	printf(f)
+# define DUMPW (a ...)  dumpw (a)
 #else
 # define PRINTF(f ...)
+# define DUMPW(a ...)
 #endif
 
 typedef unsigned short u16;
@@ -127,7 +129,6 @@ struct descriptor {
 
 void dumpw (const void* pv, int cb, unsigned long index, int width)
 {
-#if defined (TALK) || 1
   const unsigned char* rgb = (const unsigned char*) pv;
   int i;
 
@@ -166,7 +167,6 @@ void dumpw (const void* pv, int cb, unsigned long index, int width)
     index += 16;
     rgb += 16;
   }
-#endif
 }
 
 
@@ -180,7 +180,7 @@ static int compare_env (const void* pv1, const void* pv2)
 
 /* parse_region
 
-   performs a simplified parse of a region descriptor
+performs a simplified parse of a region descriptor
 
 */
 
@@ -223,23 +223,27 @@ static struct descriptor parse_region (const char* sz)
 
    opens the link by locating APEX, copying the loader, generating a
    fixed-up env_link structure, scanning for the environment variables
-   and therir defaults, and opening the flash instance of the
-   environment.  A tall order.
+   and their defaults, and opening the flash instance of the
+   environment.  It first looks for the "Loader" partition.  If there
+   is none, it uses the first partition with the assumption that APEX
+   may be the primary boot loader.
 
 */
 
-bool Link::open (void)
+void Link::open (void)
 {
-	  // Look for the loader by the name of the partition
+  // Look for the loader by the name of the partition
   MTDPartition mtd = MTDPartition::find ("Loader");
+
+  if (!mtd.is ())
+    mtd = MTDPartition::first ();
 
   bool fFound = mtd.is () && open_apex (mtd);
 
-  if (!fFound) {
-		// Scan all partitions for APEX
-    printf ("no Loader partition\n");
-    return false;
-  }
+  // *** FIXME: perhaps we should scan all partitions if there is no
+  // "Loader"?
+  if (!fFound)
+    throw "No APEX partition found";
 
   load_env ();
   map_environment ();
@@ -247,8 +251,6 @@ bool Link::open (void)
 
   PRINTF ("# %d entries in environment\n", entries->size ());
   //  show_environment (env, c_env, rgEntry, c_entry);
-
-  return true;
 }
 
 
@@ -267,15 +269,15 @@ int Link::load_env (void)
   memcpy (env, (const char*) pvApexSwab
 	  + ((char *) env_link->env_start - (char*) env_link->apex_start),
 	  c_env*sizeof (struct env_d));
-//  dumpw (env, c_env*sizeof (struct env_d), 0, 0);
+  //  dumpw (env, c_env*sizeof (struct env_d), 0, 0);
 
   long delta =  (long) pvApexSwab - (long) env_link->apex_start;
-  printf ("delta 0x%x\n", delta);
+  PRINTF ("delta 0x%x\n", delta);
   for (int i = 0; i < c_env; ++i) {
     env[i].key += delta;
     env[i].default_value += delta;
     env[i].description += delta;
-    printf ("# env %s %s (%s)\n",
+    PRINTF ("# env %s %s (%s)\n",
 	    env[i].key, env[i].default_value, env[i].description);
   }
 
@@ -314,13 +316,17 @@ int Link::map_environment (void)
   // environment.
   pvEnv = ::mmap (NULL, cbEnv, PROT_READ, MAP_SHARED, fhEnv,
 		  d.start - mtd.base);
-	// Open separate handle for writing to environment
-  fhEnvWrite = ::open (mtd.dev_char (), O_RDWR);
+  // Open separate handle for writing to environment
+  fhEnvChar = ::open (mtd.dev_char (), O_RDWR);
 
-  printf ("%s %s->(%d,%d) 0x%x+0x%x->%p [%x %x]\n",
-	  env_link->region, mtd.dev_block (), fhEnv, fhEnvWrite, ibEnv, cbEnv,
+  // And another for erasing the environment
+  fhEnvBlock = ::open (mtd.dev_block (), O_RDWR);
+
+  PRINTF ("%s %s->(%d,%d,%d) 0x%x+0x%x->%p [%x %x]\n",
+	  env_link->region, mtd.dev_block (),
+	  fhEnv, fhEnvChar, fhEnvBlock, ibEnv, cbEnv,
 	  pvEnv, d.start, mtd.base);
-  dumpw (pvEnv, 256, 0, 0);
+  DUMPW (pvEnv, 256, 0, 0);
 
   return cbEnv;
 }
@@ -335,7 +341,7 @@ int Link::map_environment (void)
 
 bool Link::open_apex (const MTDPartition& mtd)
 {
-  printf ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
+  PRINTF ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
   int fh = ::open (mtd.dev_block (), O_RDONLY);
   if (fh == -1) {
     printf ("unable to open mtd device %s.  Priviledges may be required.\n",
@@ -349,8 +355,6 @@ bool Link::open_apex (const MTDPartition& mtd)
     close (fh);
     return false;
   }
-
-  printf ("mmaped\n");
 
   int index_env_link = 0;
   env_link_version = 0;
@@ -513,11 +517,11 @@ int Link::scan_environment (void)
     if (!entries->contains (id)) {
       entry e;
       e.key = pb;
-//      (*entries)[id].key = pb;
+      //      (*entries)[id].key = pb;
 
-//      int cb = strlen ((char*) pb);
-//      rgEntry[id].key = new char [cb + 1];
-//      strcpy (rgEntry[id].key, (char*) pb);
+      //      int cb = strlen ((char*) pb);
+      //      rgEntry[id].key = new char [cb + 1];
+      //      strcpy (rgEntry[id].key, (char*) pb);
       PRINTF ("# found %s\n", e.key);
       pb += strlen (pb) + 1;
       for (int index = 0; index < c_env; ++index)
@@ -528,7 +532,7 @@ int Link::scan_environment (void)
       (*entries)[id] = e;
     }
     PRINTF ("# %s = %s\n", (*entries)[id].key, pb);
-//    int cb = strlen ((char*) pb);
+    //    int cb = strlen ((char*) pb);
     if (flags & 0x80) {
       (*entries)[id].value = pb;
       (*entries)[id].active = head;
@@ -541,15 +545,21 @@ int Link::scan_environment (void)
 }
 
 
+void Link::dump (void)
+{
+  if (pvEnv && cbEnv)
+    dumpw (pvEnv, cbEnv, 0, 0);
+  else
+    throw "no flash environment available";
+}
+
 void Link::eraseenv (void)
 {
   char rgb[cbEnv];
   memset (rgb, 0xff, sizeof (rgb));
 
-  // *** FIXME: doesn't work.  We may need to use the block device to
-  // *** erase.
-  if (::lseek (fhEnvWrite, ibEnv, SEEK_SET) != ibEnv
-      || ::write (fhEnvWrite, rgb, cbEnv) != cbEnv)
+  if (   ::lseek (fhEnvBlock, ibEnv, SEEK_SET) != ibEnv
+      || ::write (fhEnvBlock, rgb, cbEnv) != cbEnv)
       throw "failed to write environment";
 }
 
@@ -603,11 +613,11 @@ void Link::unsetenv (const char* key)
   if (it != entries->end () && (*it).second.active) {
     int ib = (*it).second.active - (const char*) pvEnv;
     char ch;
-    if (::lseek (fhEnvWrite, ibEnv + ib, SEEK_SET) == ibEnv + ib
-	&& ::read (fhEnvWrite, &ch, 1) == 1
-	&& ::lseek (fhEnvWrite, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
+    if (::lseek (fhEnvChar, ibEnv + ib, SEEK_SET) == ibEnv + ib
+	&& ::read (fhEnvChar, &ch, 1) == 1
+	&& ::lseek (fhEnvChar, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
       ch &= ~0x80;		// Clobber high bit indicating deletion
-      if (::write (fhEnvWrite, &ch, 1) != 1)
+      if (::write (fhEnvChar, &ch, 1) != 1)
 	throw "failed to write environment";
     }
     else
@@ -655,8 +665,8 @@ void Link::setenv (const char* key, const char* value)
     char rgb[cb + 2];
     rgb[0] = 0x80 + (*it).first;
     memcpy (rgb + 1, value, cb + 1);
-    if (::lseek (fhEnvWrite, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
-	|| ::write (fhEnvWrite, rgb, cb + 2) != cb + 2)
+    if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+	|| ::write (fhEnvChar, rgb, cb + 2) != cb + 2)
       throw "failed to write environment";
   }
   else {
@@ -668,8 +678,8 @@ void Link::setenv (const char* key, const char* value)
     rgb[0] = 0x80 + idNext;
     memcpy (rgb + 1, key, cbKey + 1);
     memcpy (rgb + 1 + cbKey + 1, value, cbValue + 1);
-    if (::lseek (fhEnvWrite, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
-	|| ::write (fhEnvWrite, rgb, cbKey + cbValue + 3)
+    if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+	|| ::write (fhEnvChar, rgb, cbKey + cbValue + 3)
 	!= cbKey + cbValue + 3)
       throw "failed to write environment";
   }

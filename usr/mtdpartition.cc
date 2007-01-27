@@ -57,16 +57,25 @@ const MTDPartition MTDPartition::find (const char* sz)
 
 
   for (MTDPartition* p = g_rg; p->device; ++p) {
-    printf ("'%s' '%s'\n", p->name, sz);
+//    printf ("'%s' '%s'\n", p->name, sz);
     if (strcasecmp (p->name, sz) == 0)
       return *p;
   }
 
-  printf ("nothing\n");
+//  printf ("nothing\n");
 
   return MTDPartition ();
 }
 
+
+const MTDPartition MTDPartition::first (void)
+{
+  if (!g_rgb[0])
+    init ();
+  if (!g_rgb[0])
+    return MTDPartition ();
+  return g_rg[0];
+}
 
 void MTDPartition::init (void)
 {

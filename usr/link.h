@@ -62,12 +62,13 @@ protected:
   struct env_d* env;		// APEX environment variables
   int c_env;			// Count of environment variables in APEX
 
-  int fhEnv;			// File handle of environment
+  int fhEnv;			// File handle for mmap'able environment
   void* pvEnv;			// mmap'd environment
   size_t cbEnv;			// Extent of mmap'd environment
   size_t cbEnvUsed;		// Bytes of environment that are in use
 
-  int fhEnvWrite;		// File handle of writable environment
+  int fhEnvChar;		// File handle for NOR-wise writes
+  int fhEnvBlock;		// File handle for erasing
   int ibEnv;			// Index of environment data in file handles
 
   EntryMap* entries;		// Entries found in flash
@@ -106,14 +107,15 @@ public:
     zero ();
     entries = new EntryMap; }
 
-  bool open (void);
+  void open (void);
 
   void show_environment (void);
 
+  void dump (void);
   void eraseenv (void);
+  void printenv (const char* key);
   void setenv (const char* key, const char* value);
   void unsetenv (const char* key);
-  void printenv (const char* key);
 
 };
 

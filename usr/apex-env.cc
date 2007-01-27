@@ -115,6 +115,14 @@ void cmd_printenv (Link& link, int argc, const char** argv)
   }
 }
 
+void cmd_dump (Link& link, int argc, const char** argv)
+{
+  if (argc == 1)
+    link.dump ();
+  else
+    return throw "incorrect number of command arguments";
+}
+
 void cmd_setenv (Link& link, int argc, const char** argv)
 {
   if (argc == 3)
@@ -140,6 +148,7 @@ void cmd_eraseenv (Link& link, int argc, const char** argv)
 }
 
 static struct command commands[] = {
+  { "dump",		cmd_dump },
   { "printenv",		cmd_printenv },
   { "setenv",		cmd_setenv },
   { "unsetenv",		cmd_unsetenv },
@@ -151,28 +160,22 @@ int main (int argc, char** argv)
   struct arguments args;
   argp_parse (&argp, argc, argv, 0, 0, &args);
 
-  Link link;
+  try {
+    Link link;
 
-  if (!link.open ()) {
-    printf ("unable to find APEX\n");
-    return -1;
-  }
+    link.open ();
 
-  if (args.argc == 0) {
-    ++args.argc;
-    args.argv[0] = "printenv";
-  }
-
-  //  printf ("argc %d  '%s'\n", args.argc, args.argv[0]);
-
-  for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i) {
-    if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
-      try {
-	commands[i].func (link, args.argc, args.argv);
-      } catch (char const* sz) {
-	printf ("error: %s\n", sz);
-      }
+    if (args.argc == 0) {
+      ++args.argc;
+      args.argv[0] = "printenv"; // Default command
     }
+
+    for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i)
+      if (strcasecmp (args.argv[0], commands[i].sz) == 0)
+	commands[i].func (link, args.argc, args.argv);
+  }
+  catch (char const* sz) {
+    printf ("error: %s\n", sz);
   }
 
   return 0;
