@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Jan 24 15:20:58 2007
+# Fri Jan 26 16:42:46 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -161,7 +161,7 @@ CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/mmcblk0p2 ro mtdparts=lh7a404-nandflash:128k(apex),4m(data),-(unused)"
 # CONFIG_ENV_DEFAULT_CMDLINE_ALT_P is not set
 CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE=y
-CONFIG_ENV_DEFAULT_STARTUP="clc bars ; clc splash ext2://2/splash.png ; clc on ; copy ext2://2/zImage $bootaddr ; wait 10 Booting ; boot"
+CONFIG_ENV_DEFAULT_STARTUP="clc bars ; -clc splash ext2://2/splash.png ; clc on ; copy ext2://2/zImage $bootaddr ; wait 10 Booting ; boot"
 # CONFIG_ENV_DEFAULT_STARTUP_ALT_P is not set
 CONFIG_USES_NAND_BOOTFLASH=y
 CONFIG_USES_COMPANION_EVT1_BOOT=y
