@@ -58,8 +58,6 @@
 
 const char* argp_program_version = "apex-env 1.0";
 
-const char* g_szArgsDoc;
-
 struct arguments {
   arguments () {
     bzero (this, sizeof (*this)); }
@@ -186,11 +184,15 @@ int main (int argc, char** argv)
     }
 
     for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i)
-      if (strcasecmp (args.argv[0], commands[i].sz) == 0)
+      if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
 	commands[i].func (link, args.argc, args.argv);
+	return 0;
+      }
+    throw "unknown command";
   }
   catch (char const* sz) {
     printf ("error: %s\n", sz);
+    argp_help (&argp, stderr, ARGP_HELP_SEE, "apex-env");
   }
 
   return 0;

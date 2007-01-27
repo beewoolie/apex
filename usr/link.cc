@@ -343,17 +343,13 @@ bool Link::open_apex (const MTDPartition& mtd)
 {
   PRINTF ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
   int fh = ::open (mtd.dev_block (), O_RDONLY);
-  if (fh == -1) {
-    printf ("unable to open mtd device %s.  Priviledges may be required.\n",
-	    mtd.dev_block ());
-    return false;
-  }
+  if (fh == -1)
+    throw "unable to open mtd device.  Root privileges may be required.";
 
   void* pv = mmap (NULL, CB_LINK_SCAN, PROT_READ, MAP_SHARED, fh, 0);
   if (pv == MAP_FAILED) {
-    printf ("failed to mmap\n");
-    close (fh);
-    return false;
+    ::close (fh);
+    throw "failed to mmap on open_apex";
   }
 
   int index_env_link = 0;
