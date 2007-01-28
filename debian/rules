@@ -37,6 +37,7 @@ build:
 	$(checkdir)
 	$(MAKE) $(CONFIG)
 	$(MAKE)
+	$(MAKE) -C usr CROSS_COMPILE=
 	touch build
 
 clean:
