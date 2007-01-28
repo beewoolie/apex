@@ -1,3 +1,15 @@
+2007-01-27  Marc Singer  <elf@cerise.buici.com>
+
+	* Makefile: 1.4.12 for new environment program and to prepare for
+	publishing a new release.
+
+	* usr/apex-env.cc: New user-mode program for updating the APEX
+	environment once the system is booted.  It replaces the printenv
+	program that was only able to print the environment as it stood,
+	combining the flash data with the defaults from APEX.  This
+	program is smart enough to be able to set/unset variables and
+	erase the whole environment.
+
 2007-01-25  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-lh7a40x/clcdc-companion.c: Removed the DDS hack form

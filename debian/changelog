@@ -1,3 +1,17 @@
+apex (1.4.12) unstable; urgency=low
+
+  * New user-mode application for modifying the APEX environment.
+  * Revisions to Companion setup.
+  * Revision to the memory test based on advice about what is useful and
+    what is not.
+  * Fixes to the FIS driver for swapped-ness and end-of-table detection.
+  * Applied rwhitby's patches for a couple of ixp4xx devices as well as
+    some other minor patches.
+  * Added variation support for alternative boot modes.
+  * Enhanced NAND support and made it more generic.
+
+ -- Marc Singer <elf@cerise.buici.com>  Sat, 27 Jan 2007 17:38:49 -0800
+
 apex (1.4.7) unstable; urgency=low
 
   * New command line starts RTC.
