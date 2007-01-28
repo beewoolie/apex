@@ -100,21 +100,29 @@ cmdline with a flag of 0x80 (active id=0).
 Writing an Environment from User Space
 --------------------------------------
 
-If you want to populate the environment with entries outside of APEX,
-there are a few things to make sure you do correctly.
+There is a user-mode application in the usr/ directory called
+apex-env.  It works in concert with the CONFIG_ENV_LINK option to
+allow safe and reliable modifications to the APEX environment once the
+system is booted.  There further discussion of the environment format
+in the usr/link.cc file.
 
-It is best to write your environment without deleted entries.  If you
-must add to an existing environment, make sure to clear the high bit
-of the Flags field for any existing entries and then reuse that id for
-the new entry that write starting with the the first 0xff after the
-last entry.
+More on the Environment in Flash
+--------------------------------
 
-Allocate new ids consecutively.  If the environment contains three
-Keys they must have ids 0, 1 and 2.  A new key must have the id of 3.
+It would be easiest to re-write the whole environment without
+including deleted entries.  apex-env doesn't do this because it is
+careful to properly manage the data structures.  
+
+IDs must be allocated consecutively as new variables are added the the
+flash environment.  If the flash environment contains three Keys they
+must have ids 0, 1 and 2.  A new key must have the id of 3.  Deleting
+values doesn't affect this ordering.  Unsetting a variable and then
+setting it again will reuse the id used the first time it was set.
+Only when the whole environment is erased can the id's be recycled.
 
 The magic number must be written to the first two bytes of the
 environment region.  The first bytes address must contain 'A' and the
-second mus contain 'e' regardless of the endian-ness of the CPU.n
+second mus contain 'e' regardless of the endian-ness of the CPU.
 
 If you write an entry with a Key that is not recognized by APEX, it
 will be harmlessly ignored.  This may be helpful if you want to
@@ -123,9 +131,9 @@ APEX, or if you need to upgrade APEX without modifying the
 environment.
 
 APEX interprets environment Keys without regard for case.  Thus,
-'cmdline' will be recognized as the same Key as 'cmdLine'.  The APEX
-command line only stores Key names as they are defined in the code, so
-that when the user executes
+'cmdline' will be recognized as the same Key as 'cmdLine' and
+'CMDLINE'.  The APEX command line only stores Key names as they are
+defined in the code, so that when the user executes
 
   apex> setenv CMDLINE console=ttyS0
 

@@ -5,6 +5,21 @@
 
    Copyright (C) 2007 Marc Singer
 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
+
    -----------
    DESCRIPTION
    -----------
@@ -29,22 +44,22 @@
    essential endian-ness of the system.  On systems where there is no
    ambiguity between the inherent endianness and the run-time
    endianness, all is equivalent.  On systems where we run in one
-   mode, but the system was engineers for the other, the flash drivers
-   ought to swap so that we can read the FIS Directory.
+   mode, but the system was engineered for the other, the flash
+   drivers ought to swap so that we can read the FIS Directory.
 
 
      +---+---+----------+------+
      | A | e | Entry... | 0xff |
      +---+---+----------+------+
 
-   The magic bytes, A and e preceed the environment.  Following it are
-   the entries with 0xff being the first byte after the last valid
+   The magic bytes, A and e prefix the environment data.  Following it
+   are the entries with 0xff being the first byte after the last valid
    entry.  Entries have one of two forms depending on whether or not
-   the key already exists in the environment.
+   the key already exists in the flash environment.
 
-     +----+-----+----+-------+----+
-     | ID | Key | \0 | Value | \0 |
-     +----+-----+----+-------+----+
+     +-----------+-----+----+-------+----+
+     | 0x80 + ID | Key | \0 | Value | \0 |
+     +-----------+-----+----+-------+----+
 
    The high bit of the ID is 1 when the entry is valid and zero when
    the entry is erased.  The lower seven bits are an index, starting
@@ -53,15 +68,15 @@
    and the above format is emitted.  The second time the same key is
    used, the Key string is omitted and the entry looks as follows.
 
-     +----+-------+----+
-     | ID | Value | \0 |
-     +----+-------+----+
+     +-----------+-------+----+
+     | 0x80 + ID | Value | \0 |
+     +-----------+-------+----+
 
-   This scheme replaces an earlier one that used the key values in the
-   APEX image as the Key values.  The trouble with that format is that
-   it required the in-flash format to match the APEX executable in a
-   way that was impossible to guarantee even though a checksum of the
-   available environment variables was used as the magic for the
+   This scheme replaces an earlier one that used the key indices in
+   the APEX image as the Key values.  The trouble with that format is
+   that it required the in-flash format to match the APEX executable
+   in a way that was impossible to guarantee even though a checksum of
+   the available environment variables was used as the magic for the
    environment.  The current format allows for APEX upgrades without
    losing the user's environment.
 
@@ -80,13 +95,35 @@
    The MTD block device driver handles writes by caching a modified
    eraseblock and performing the erase and write back once another
    eraseblock is written.  While we *can* depend on this to support
-   conveniently block device like behavior, we choose instead to be
-   explicit in how we update the environment.  Namely, this code will
+   conveniently block device like behavior, I choose instead to be
+   explicit in how I update the environment.  Namely, this code will
    use the environment in the same mode it does when there is no MTD
    driver.  Modifications to the environment are handles in a NOR
    flash consistent manner.  Erasing the whole environment region
-   would normally require a read/modify/write, so here we use the
-   block driver.
+   would normally require a read/modify/write, so here I use the block
+   driver.
+
+   safety
+   ------
+
+   While I don't access the environment as if it were bonafide without
+   checking for validiy, it is possible that the environment becomes
+   corrupted.  This code (nor APEX) can completely protect against
+   bogus updates.  I make a reasonable attempt to detect corruption.
+
+   mtd oddity
+   ----------
+
+   For reasons that I've never investigated, I was unable to read a
+   single character from a /dev/mtd device.  The unsetenv code used to
+   do something like this:
+
+      if (seek && ch = read(1) && seek) { ch &= ~0x80; write (ch); }
+
+   I found that the read was returning a zero instead of the expected
+   value.  There was a ready alternative in using the pvEnv array so
+   that is what the routine now does.  I suspect that this may be a
+   bug in the driver, but that investigation will not be done soon.
 
 */
 
@@ -109,7 +146,7 @@
 
 #if defined (TALK)
 # define PRINTF(f ...)	printf(f)
-# define DUMPW (a ...)  dumpw (a)
+# define DUMPW(a ...)  dumpw (a)
 #else
 # define PRINTF(f ...)
 # define DUMPW(a ...)
@@ -169,6 +206,22 @@ void dumpw (const void* pv, int cb, unsigned long index, int width)
   }
 }
 
+/* _strlen
+
+   is an enhanced version of strlen that stops scanning for the end of
+   the string when it finds a 0xff.  This is helpful in preventing
+   segfaults while parsing the flash environment.  It does nothing
+   more that terminating the string early in that case.
+
+*/
+
+size_t _strlen (const char* sz)
+{
+  const char* szStart = sz;
+  for (; *sz != '\0' && *sz != '\xff'; ++sz)
+    ;
+  return sz - szStart;
+}
 
 
 static int compare_env (const void* pv1, const void* pv2)
@@ -492,13 +545,17 @@ int Link::scan_environment (void)
 
   if (pb[0] == 0xff && pb[1] == 0xff) {
     PRINTF ("# empty environment\n");
+    m_state = envEmpty;
     return entries->size ();
   }
 
   if (pb[0] != ENV_MAGIC_0 || pb[1] != ENV_MAGIC_1) {
     PRINTF ("# environment contains unrecognized data\n");
+    m_state = envNoWrite;
     return -1;
   }
+
+  m_state = envInUse;
 
   pb += 2;
 
@@ -519,7 +576,12 @@ int Link::scan_environment (void)
       //      rgEntry[id].key = new char [cb + 1];
       //      strcpy (rgEntry[id].key, (char*) pb);
       PRINTF ("# found %s\n", e.key);
-      pb += strlen (pb) + 1;
+      pb += _strlen (pb);
+      if (*pb != '\0') {
+	m_state = envCorrupt;
+	break;
+      }
+      ++pb;
       for (int index = 0; index < c_env; ++index)
 	if (strcasecmp (e.key, env[index].key) == 0) {
 	  e.index = index;
@@ -533,7 +595,12 @@ int Link::scan_environment (void)
       (*entries)[id].value = pb;
       (*entries)[id].active = head;
     }
-    pb += strlen (pb) + 1;
+    pb += strlen (pb);
+    if (*pb != '\0') {
+      m_state = envCorrupt;
+      break;
+    }
+    ++pb;
   }
   cbEnvUsed = pb - (char*) pvEnv;
 
@@ -562,8 +629,13 @@ void Link::dump (void)
     throw "no flash environment available";
 }
 
-void Link::eraseenv (void)
+void Link::eraseenv (bool force)
 {
+  if (m_state == envNull)
+    throw "no writable environment available";
+  if (m_state == envNoWrite && !force)
+    throw "use force option to erase region containing foreign data";
+
   char rgb[cbEnv];
   memset (rgb, 0xff, sizeof (rgb));
 
@@ -607,6 +679,13 @@ void Link::printenv (const char* key)
 
 void Link::unsetenv (const char* key)
 {
+  if (m_state == envNull)
+    throw "no writable environment available";
+  if (m_state == envNoWrite)
+    throw "environment region contents unrecognized and unwritable";
+  if (m_state == envCorrupt)
+    throw "unable to update corrupt environment";
+
   if (key == NULL)
     throw "NULL key passed to unsetenv";
 
@@ -621,11 +700,9 @@ void Link::unsetenv (const char* key)
 
   if (it != entries->end () && (*it).second.active) {
     int ib = (*it).second.active - (const char*) pvEnv;
-    char ch;
-    if (::lseek (fhEnvChar, ibEnv + ib, SEEK_SET) == ibEnv + ib
-	&& ::read (fhEnvChar, &ch, 1) == 1
-	&& ::lseek (fhEnvChar, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
-      ch &= ~0x80;		// Clobber high bit indicating deletion
+    if (::lseek (fhEnvChar, ibEnv + ib, SEEK_SET) == ibEnv + ib) {
+      char ch = ((const char*) pvEnv)[ib];
+      ch &= ~0x80;		// Clear high bit indicating deletion
       if (::write (fhEnvChar, &ch, 1) != 1)
 	throw "failed to write environment";
     }
@@ -644,6 +721,13 @@ void Link::unsetenv (const char* key)
 
 void Link::setenv (const char* key, const char* value)
 {
+  if (m_state == envNull)
+    throw "no writable environment available";
+  if (m_state == envNoWrite)
+    throw "environment region contents unrecognized and unwritable";
+  if (m_state == envCorrupt)
+    throw "unable to update corrupt environment";
+
   if (key == NULL)
     throw "NULL key passed to setenv";
   if (value == NULL)
@@ -667,15 +751,22 @@ void Link::setenv (const char* key, const char* value)
   if (it != entries->end () && (*it).second.active)
     unsetenv (key);
 
+  char rgb[2 + 2 + strlen (key) + strlen (value) + 2];
+  char* pb = rgb;
+  if (m_state == envEmpty) {
+    *pb++ = ENV_MAGIC_0;
+    *pb++ = ENV_MAGIC_1;
+  }
+
   if (it != entries->end ()) {
     int cb = strlen (value);
     if (cbEnv - cbEnvUsed < cb + 2)
       throw "insufficient free space in environment";
-    char rgb[cb + 2];
-    rgb[0] = 0x80 + (*it).first;
-    memcpy (rgb + 1, value, cb + 1);
+    *pb++ = 0x80 + (*it).first;
+    memcpy (pb, value, cb + 1);
+    pb += cb + 1;
     if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
-	|| ::write (fhEnvChar, rgb, cb + 2) != cb + 2)
+	|| ::write (fhEnvChar, rgb, pb - rgb) != pb - rgb)
       throw "failed to write environment";
   }
   else {
@@ -683,13 +774,14 @@ void Link::setenv (const char* key, const char* value)
     int cbValue = strlen (value);
     if (cbEnv - cbEnvUsed < cbKey + cbValue + 3)
       throw "insufficient free space in environment";
-    char rgb[cbKey + cbValue + 3];
-    rgb[0] = 0x80 + idNext;
-    memcpy (rgb + 1, key, cbKey + 1);
-    memcpy (rgb + 1 + cbKey + 1, value, cbValue + 1);
+    *pb++ = 0x80 + idNext;
+    memcpy (pb, key, cbKey + 1);
+    pb += cbKey + 1;
+    memcpy (pb, value, cbValue + 1);
+    pb += cbValue + 1;
     if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
-	|| ::write (fhEnvChar, rgb, cbKey + cbValue + 3)
-	!= cbKey + cbValue + 3)
+	|| ::write (fhEnvChar, rgb, pb - rgb)
+	!= pb - rgb)
       throw "failed to write environment";
   }
 }

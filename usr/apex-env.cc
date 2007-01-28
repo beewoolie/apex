@@ -32,10 +32,9 @@
    TODO
    ----
 
-   o Need to decide how to update environment
-     o Writing can only be done as fh
-     o Or, perhaps mmap requires mtdblock though I doubt it
-     o May need to keep track of the last open entry per key
+   o Force option should be added to allow eraseenv to erase when
+     there is non-APEX data in the region.  This doesn't impeded
+     normal use of this application.
 
 */
 

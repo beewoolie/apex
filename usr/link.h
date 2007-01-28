@@ -5,6 +5,21 @@
 
    Copyright (C) 2007 Marc Singer
 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
+
    -----------
    DESCRIPTION
    -----------
@@ -49,7 +64,16 @@ class Link {
       return end (); }
   };
 
+  enum {
+    envNull = 0,		// Unknown and unusable state
+    envEmpty,			// 0xFF's fill the environment
+    envInUse,			// APEX environment present
+    envNoWrite,			// Something other than APEX using region
+    envCorrupt,
+  };
+
 protected:
+  int m_state;			// Evaluation of the APEX environment region
   void* pvApex;			/* Copy of APEX firmware from flash */
   void* pvApexSwab;		// Copy of APEX firmware swab'd
   size_t cbApex;		/* Length of APEX firmware */
@@ -113,7 +137,7 @@ public:
 
   void describe (const char* key);
   void dump (void);
-  void eraseenv (void);
+  void eraseenv (bool force = false);
   void printenv (const char* key);
   void setenv (const char* key, const char* value);
   void unsetenv (const char* key);

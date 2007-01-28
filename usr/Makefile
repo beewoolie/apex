@@ -6,7 +6,7 @@ CROSS_COMPILE ?= /usr/arm-linux/gcc3/arm-linux-
 
 CFLAGS += -I../include
 
-SRCS:=apex-env.cc ospartition.cc mtdpartition.cc link.cc
+SRCS:=apex-env.cc mtdpartition.cc link.cc
 OBJS:=$(SRCS:.cc=.o)
 
 DEPS:=$(SRCS:%.cc=%.d)
@@ -16,24 +16,20 @@ CXX=$(CROSS_COMPILE)g++
 LD=$(CROSS_COMPILE)ld
 STRIP=$(CROSS_COMPILE)strip
 
-CFLAGS+= -O0 -g -c
+CFLAGS+= -Os -g -c
 CFLAGS_LINK+= -g
 
 TARGETS:=apex-env
 
 .PHONY: all
-all: $(TARGETS)
-
-printenv: $(OBJS)
-	@echo linking $@
-	@$(CC) $(CFLAGS_LINK) -o $@ $(OBJS) $(LIBRARIES) $($@_LIB)
+all: $(TARGETS) groom
 
 apex-env: $(OBJS)
 	@echo linking $@
 	@$(CC) $(CFLAGS_LINK) -o $@ $(OBJS) $(LIBRARIES) $($@_LIB)
 
 %.o: %.cc
-	@echo compile $@ $(CCFLAGS)
+	@echo compile $<
 	@$(CXX) $(CFLAGS) -o $@ $<
 
 %.d: %.cc
@@ -44,6 +40,14 @@ apex-env: $(OBJS)
 
 .PHONY: clean
 clean:
-	-rm $(TARGETS) *.o
+	-rm $(wildcard $(TARGETS) *.o *.d)
+
+CRUFT:=$(wildcard  *.d.*)
+
+.PHONY: groom
+groom:
+ifneq ($(CRUFT),)
+	@rm $(CRUFT)
+endif
 
 -include $(DEPS)
