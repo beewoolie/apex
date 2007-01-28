@@ -99,7 +99,14 @@ protected:
   int idNext;			// Next available ID for flash environment
 
   void zero (void) {
-    bzero (this, sizeof (*this)); }
+    bzero (this, sizeof (*this));
+    fhEnv = fhEnvChar = fhEnvBlock == -1; }
+
+  void release_this (void) {
+    if (fhEnv      != -1)	{ ::close (fhEnv);	fhEnv      = -1; }
+    if (fhEnvChar  != -1)	{ ::close (fhEnvChar);	fhEnvChar  = -1; }
+    if (fhEnvBlock != -1)	{ ::close (fhEnvBlock); fhEnvBlock = -1; } 
+  }
 
   inline unsigned long swab32(unsigned long l) {
     return (  ((l & 0x000000ffUL) << 24)
@@ -130,6 +137,9 @@ public:
   Link () {
     zero ();
     entries = new EntryMap; }
+
+  ~Link () {
+    release_this (); }
 
   void open (void);
 
