@@ -67,8 +67,10 @@ binary-arch:	checkroot build
 #	tools/headerize $(ENDIAN) $$(pwd)/debian/tmp/boot/apex.flash
 #	cd debian/tmp && mv usr/info usr/man usr/share
 #	cp -a NEWS $(docdir)
-	cp -a debian/copyright $(docdir)
-	cp -a debian/changelog $(docdir)/changelog.Debian
+	dh_installdocs ChangeLog
+	dh_installman usr/apex-env.8
+#	cp -a debian/copyright $(docdir)
+#	cp -a debian/changelog $(docdir)/changelog.Debian
 	cp -a ChangeLog $(docdir)/changelog
 	cd $(docdir) && gzip -9 changelog changelog.Debian
 #	gzip -r9 debian/tmp/usr/share/man

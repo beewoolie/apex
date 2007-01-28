@@ -1,3 +1,10 @@
+2007-01-27  Marc Singer  <elf@buici.com>
+
+	* usr/apex-env.8: Man page.
+
+	* usr/link.h: Added cleanup code to Link object.  It isn't
+	strictly necessary, but it is good hygiene.
+
 2007-01-27  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile: 1.4.12 for new environment program and to prepare for
