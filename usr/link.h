@@ -34,6 +34,7 @@
 #include "environment.h"
 #include "mtdpartition.h"
 #include <map>
+#include <sys/mman.h>
 
 /* ----- Types */
 
@@ -103,9 +104,10 @@ protected:
     fhEnv = fhEnvChar = fhEnvBlock == -1; }
 
   void release_this (void) {
+    if (pvEnv)			{ ::munmap (pvEnv, cbEnv); pvEnv = NULL; }
     if (fhEnv      != -1)	{ ::close (fhEnv);	fhEnv      = -1; }
     if (fhEnvChar  != -1)	{ ::close (fhEnvChar);	fhEnvChar  = -1; }
-    if (fhEnvBlock != -1)	{ ::close (fhEnvBlock); fhEnvBlock = -1; } 
+    if (fhEnvBlock != -1)	{ ::close (fhEnvBlock); fhEnvBlock = -1; }
   }
 
   inline unsigned long swab32(unsigned long l) {

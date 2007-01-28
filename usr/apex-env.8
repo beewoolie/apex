@@ -12,7 +12,7 @@ COMMAND
 
 \fBapex-env\fR is a utility for viewing and modifying the environment
 used by the APEX Boot Loader to define how the system will boot.  APEX
-has a predefined set of environment variables, defined by the
+has a predefined set of environment variables, determined by the
 build-time configuration, that control operation of the boot loader.  
 
 Embedded in the APEX image is a linking structure that \fBapex-env\fR
@@ -27,21 +27,24 @@ APEX.  It first looks for a partition named 'Loader', but it will also
 check the first partition in case APEX is used as the primary boot
 loader.
 
+The user may need root privileges to run \fBapex-env\fR, even when
+only reading the environment.
+
 .SH COMMANDS
 
 .TP
-.I "describe [KEY]"
-Displays a description of KEY or descriptions of every environment
-variable is KEY is omitted.
+describe [\fBKEY\fR]
+Displays a description of \fBKEY\fR or descriptions of every environment
+variable is \fBKEY\fR is omitted.
 
 .TP
-.I "dump"
+dump
 Displays the contents of the flash environment region in a
 hexadecimal/ASCII format useful for troubleshooting.
 
 .TP
-.I "eraseenv"
-Clear the environment region by setting all of the bytes to 0xff.
+eraseenv
+Clears the environment region by setting all of the bytes to 0xff.
 Use this command with care.  Assuming that APEX was properly built for
 your system, it still relies on the caching feature of the MTD block
 driver to modify only a portion of a flash eraseblock.  Be mindful
@@ -50,21 +53,21 @@ the important data has been restored could render the system
 unbootable.
 
 .TP
-.I "printenv [KEY]"
-Displays the value of KEY or the values of every environment variable
-if KEY is omitted.  The separator between the key and the value is =*
+printenv [\fBKEY\fR]
+Displays the value of \fBKEY\fR or the values of every environment variable
+if \fBKEY\fR is omitted.  The separator between the key and the value is =*
 for default values or just = when the default value has been
 overridden by a value saved in the flash environment.
 
 .TP
-.I "setenv KEY VALUE"
-Overrides the default value of KEY with VALUE.  Use quoting to prevent
-the shell from splitting VALUE into separate words and from
-interpolation.  
+setenv \fBKEY VALUE\fR
+Overrides the default value of \fBKEY\fR with \fBVALUE\fR.  Use
+quoting to prevent the shell from splitting \fBVALUE\fR into separate
+words and from interpolation.  
 
 .TP
-.I "unsetenv KEY"
-Restores the default value of KEY by marking any value stored in flash
+unsetenv \fBKEY\fR
+Restores the default value of \fBKEY\fR by marking any value stored in flash
 as deleted.
 
 .SH EXAMPLES
@@ -79,7 +82,7 @@ Change the startup variable to copy the kernel and immediately boot.
 
 .TP
 apex-env dump | head
-Examine the first few bytes of the raw environment data.
+Examine the first few bytes of the environment data.
 
 .SH AUTHOR
 Marc Singer <elf@debian.org>
