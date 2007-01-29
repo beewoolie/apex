@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Marc Singer <elf@debian.org>
 Standards-Version: 3.7.2
-Build-Depends: perl
+Build-Depends: perl debhelper (>= 5)
 
 Package: apex-nslu2
 Architecture: arm armeb
