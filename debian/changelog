@@ -1,5 +1,6 @@
-apex (1.4.12) unstable; urgency=low
+apex (1.4.13) unstable; urgency=low
 
+  * Fixed ext2 driver caching s.t. multiple partitions work correctly.
   * New user-mode application for modifying the APEX environment.
   * Revisions to Companion setup.
   * Revision to the memory test based on advice about what is useful and
