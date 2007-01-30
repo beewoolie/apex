@@ -1,3 +1,7 @@
+2007-01-29  Marc Singer  <elf@cerise.buici.com>
+
+	* Added alternatives to Debian configs.
+
 2007-01-29  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (SUBLEVEL): Rolled rev for block cache fix.
