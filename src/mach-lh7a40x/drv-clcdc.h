@@ -78,8 +78,7 @@
 # define PWM_DC3_V	((BL_DUTY*(PWM_TC3_V + 1)/100) - 1)
 
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
-	({ printf ("backlight_enable\n");\
-	   PWM_TC3 = PWM_TC3_V; PWM_DC3 = PWM_DC3_V; \
+	({ PWM_TC3 = PWM_TC3_V; PWM_DC3 = PWM_DC3_V; \
 	   PWM_INV3 = 0; PWM_EN3 = 1; })
 #endif
 

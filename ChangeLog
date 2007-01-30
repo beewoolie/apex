@@ -1,3 +1,10 @@
+2007-01-29  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* Makefile (SUBLEVEL): Rolled rev for block cache fix.
+
+	* src/drivers/drv-ext2.c: inode/block cache flush was broken.
+	Now, it is not.
+
 2007-01-27  Marc Singer  <elf@buici.com>
 
 	* usr/apex-env.8: Man page.

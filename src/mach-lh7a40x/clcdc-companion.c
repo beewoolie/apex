@@ -177,7 +177,7 @@ static void spi_write (const char* rgb, int cb)
 
 void companion_clcdc_setup (void)
 {
-  printf ("%s\n", __FUNCTION__);
+//  printf ("%s\n", __FUNCTION__);
 
   dds_hack_enable ();
 
@@ -229,7 +229,7 @@ void companion_clcdc_setup (void)
 
 void companion_clcdc_wake (void)
 {
-  printf ("%s\n", __FUNCTION__);
+//  printf ("%s\n", __FUNCTION__);
   dds_hack_enable ();
   spi_write ("\x11", 1);
   /* 6 frames (2.7ms), one frame ~450us */
@@ -240,7 +240,7 @@ void companion_clcdc_wake (void)
 
 void companion_clcdc_sleep (void)
 {
-  printf ("%s\n", __FUNCTION__);
+//  printf ("%s\n", __FUNCTION__);
   dds_hack_enable ();
   spi_write ("\x28", 1);
   spi_write ("\x10", 1);

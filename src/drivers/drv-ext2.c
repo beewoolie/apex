@@ -334,8 +334,10 @@ inline int block_groups (struct ext2_info* ext2)
 
 inline void flush_cache (void)
 {
+//  memset (&ext2.inode, 0, sizeof (ext2.inode)); /* Probably excessive */
+  ext2.inode_number = EXT2_NULL_INO;
   ext2.blockCache = 0;
-  ext2.inode_number = 0;
+  ext2.cCache = 0;
 }
 
 inline int group_from_inode (struct ext2_info* ext2, int inode)
@@ -497,9 +499,7 @@ int ext2_find_inode (int inode)
   if (inode == ext2.inode_number)	/* Short circuit */
     return 0;
 
-  memset (&ext2.inode, 0, sizeof (ext2.inode));
-  ext2.cCache = 0;			/* Flush block cache */
-  ext2.inode_number = 0;
+  flush_cache ();
 
 	/* Fetch block_group structure for the inode  */
   ext2.d.driver->seek (&ext2.d,
