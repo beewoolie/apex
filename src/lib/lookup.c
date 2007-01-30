@@ -48,7 +48,7 @@ const char* lookup_alias_or_env (const char* szKey,
 
 # if defined (CONFIG_ENV)
   if (!szAlt)
-    szAlt == env_fetch ("variation");
+    szAlt = env_fetch ("variation");
 # endif
 
   if (szAlt) {
