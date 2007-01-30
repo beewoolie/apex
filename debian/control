@@ -6,7 +6,7 @@ Standards-Version: 3.7.2
 Build-Depends: perl, debhelper (>= 5)
 
 Package: apex-nslu2
-Architecture: arm armeb
+Architecture: arm armeb armel
 Depends:
 Description: APEX Boot Loader for Linksys NSLU2 
  The APEX Boot Loader is a modular and retargetable firmware loader

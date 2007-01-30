@@ -21,6 +21,9 @@ INSTALL_PROGRAM = install
 ifeq (arm,$(DEB_BUILD_ARCH))
  ENDIAN:=l
 endif
+ifeq (armel,$(DEB_BUILD_ARCH))
+ ENDIAN:=l
+endif
 ifeq (armeb,$(DEB_BUILD_ARCH))
  ENDIAN:=b
 endif
@@ -60,7 +63,7 @@ binary-arch:	checkroot build
 #	install -d debian/$(package)/DEBIAN $(docdir)
 	install -d debian/$(package)/boot
 	install -d debian/$(package)/usr/sbin
-	cp src/arch-arm/rom/apex.bin $$(pwd)/debian/$(package)/boot/apex.flash
+	install -m 0644 src/arch-arm/rom/apex.bin debian/$(package)/boot
 	install -m 0755 usr/apex-env debian/$(package)/usr/sbin
 	dh_strip
 	dh_installchangelogs ChangeLog
