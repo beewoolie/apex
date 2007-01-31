@@ -47,7 +47,9 @@
 
 #define NAKED		__attribute__((naked))
 
+#if defined (COMMANDLINE)
 const char __attribute__((section(".rodata"))) cmdline[] = COMMANDLINE;
+#endif
 
 void NAKED __attribute__((section(".boot"))) boot (u32 r0, u32 r1, u32 r2)
 {
@@ -105,6 +107,7 @@ int NAKED start (void)
 #endif
 
 	/* Command line */
+#if defined (COMMANDLINE)
   H_SIZE(pv)		= tag_size(tag_cmdline) + (sizeof (cmdline)+1+3)/4;
   H_TAG(pv)		= ATAG_CMDLINE;
   {
@@ -113,6 +116,7 @@ int NAKED start (void)
       P_CMDLINE(pv)->cmdline[i] = cmdline[i];
   }
   pv += H_SIZE(pv)*4;
+#endif
 
 	/* End */
   H_SIZE(pv)		= 0;
