@@ -1,3 +1,7 @@
+2007-01-30  Marc Singer  <elf@buici.com>
+
+	* Added support for BE/LE switching.
+
 2006-06-23  Marc Singer  <elf@buici.com>
 
 	* Initial release of the shim code.  It isn't tested, but it

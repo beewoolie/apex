@@ -8,7 +8,7 @@ CC=$(TOOLS)gcc
 LD=$(TOOLS)ld
 OBJCOPY=$(TOOLS)objcopy
 
-CFLAGS:=-g -Os  -nostartfiles -nostdlib
+CFLAGS:=-g -Os -nostartfiles -nostdlib
 LDFLAGS:= -g -X -Map shim.map -Ttext 0
 
 SRCS:= shim.lds main.c
@@ -26,7 +26,7 @@ $(PACKAGE): $(OBJS)
 
 .PHONY: clean
 clean:
-	-rm *.o $(PACKAGE) $(PACKAGE).bin *~
+	-rm *.o $(PACKAGE) $(PACKAGE).bin *~ *.map
 
 .PHONY: package
 package: $(PACKAGE)-$(VERSION).tar.gz

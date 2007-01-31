@@ -56,8 +56,30 @@ void NAKED __attribute__((section(".boot"))) boot (u32 r0, u32 r1, u32 r2)
 
 int NAKED start (void)
 {
-  void* pv = (void*) PHYS_PARAMS;
+  void* pv;
   extern char SHIM_VMA_END;
+
+#if defined (FORCE_BIGENDIAN)
+
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
+  }
+#endif
+
+#if defined (FORCE_LITTLEENDIAN)
+
+  {
+    unsigned long v;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
+		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
+		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
+  }
+#endif
+
+  pv = (void*) PHYS_PARAMS;
 
 	/* Always start with the CORE tag */
   H_SIZE(pv)		= tag_size (tag_core);
