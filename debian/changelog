@@ -1,3 +1,13 @@
+apex (1.4.14) unstable; urgency=low
+
+  * Revised the libfuncs1.S file for arm so that armel can build.
+  * Closes bug#408443
+  * Changed the rules file to drop the executble bit on the apex.flash
+    file written to /boot.
+  * Closes bug#396447
+
+ -- Marc Singer <elf@buici.com>  Tue, 30 Jan 2007 19:19:55 -0800
+
 apex (1.4.13) unstable; urgency=low
 
   * Fixed ext2 driver caching s.t. multiple partitions work correctly.
