@@ -1,3 +1,9 @@
+2007-01-30  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/lib/lib1funcs.S: New version of lib1funcs so that
+	armel is happy.  This code was pulled directly from the Linux
+	kernel source.
+
 2007-01-29  Marc Singer  <elf@cerise.buici.com>
 
 	* Added alternatives to Debian configs.
