@@ -637,8 +637,7 @@ libs-y		:= $(libs-y1) $(libs-y2) $(linklibs-y)
 # System.map is generated to document addresses of all kernel symbols
 
 apex-init := $(head-y) $(init-y)
-apex-main := $(core-y) $(libs-y) $(drivers-y) $(net-y)\
-  $(shell gcc -print-libgcc-file-name)
+apex-main := $(core-y) $(libs-y) $(drivers-y) $(net-y)
 apex-all  := $(apex-init) $(apex-main)
 apex-lds  := src/arch-$(ARCH)/entry/apex.lds
 
