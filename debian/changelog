@@ -1,3 +1,10 @@
+apex (1.4.15) unstable; urgency=low
+
+  * Modified the rules file to support cross-building.
+  * Closes bug#409189
+
+ --
+
 apex (1.4.14) unstable; urgency=low
 
   * Revised the libfuncs1.S file for arm so that armel can build.

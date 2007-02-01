@@ -1,3 +1,10 @@
+2007-01-31  Marc Singer  <elf@cerise.buici.com>
+
+	* debian/rules: Cross-building support.
+
+	* src/mach-ixp42x/serial.c: Minor change to the ixp42x serial
+	driver to raise RTS for the same of systems that use it.
+
 2007-01-30  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/lib/lib1funcs.S: New version of lib1funcs so that

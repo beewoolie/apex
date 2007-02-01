@@ -45,6 +45,7 @@
 #define UART_IER	__REG(UART_PHYS + 0x04)	/* Interrupt enable */
 #define UART_FCR	__REG(UART_PHYS + 0x08)	/* FIFO control */
 #define UART_LCR	__REG(UART_PHYS + 0x0c)	/* Line control */
+#define UART_MCR	__REG(UART_PHYS + 0x1c)	/* Modem control */
 #define UART_LSR	__REG(UART_PHYS + 0x14)	/* Line status */
 #define UART_ISR	__REG(UART_PHYS + 0X20)	/* Interrupt status */
 
@@ -59,6 +60,8 @@
 #define UART_FCR_RESETTF (1<<2)
 #define UART_FCR_RESETRF (1<<1)
 #define UART_FCR_TRFIFOE (1<<0)
+
+#define UART_MCR_RTS	 (1<<1)
 
 #define UART_LSR_TEMT	 (1<<6)
 #define UART_LSR_TDRQ	 (1<<5)
@@ -89,14 +92,16 @@ void ixp42x_serial_init (void)
 
   _L(LED6);
 
-  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
-  UART_DLL  = divisor_l;
-  UART_DLH  = divisor_h;
-  UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1;
-  UART_FCR  = UART_FCR_TRFIFOE;
+  UART_LCR = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
+  UART_DLL = divisor_l;
+  UART_DLH = divisor_h;
+  UART_LCR = UART_LCR_WLS_8 | UART_LCR_STB_1;
+  UART_FCR = UART_FCR_TRFIFOE;
 
-  UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
+  UART_IER = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
+
+  UART_MCR = UART_MCR_RTS;	/* Assert RTS in case someone uses it */
 
   _L(LED7);
 
