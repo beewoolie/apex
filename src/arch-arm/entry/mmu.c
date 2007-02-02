@@ -153,6 +153,8 @@ void mmu_init (void)
 #endif
 		    "(1<<2)|(1<<0))\n\t"		/* D-cache, MMU-EN */
 		    "orr %0, %0, #(1<<12)\n\t"		/* I-cache */
+/* RR doesn't appear to make the boot faster. */
+//		    "orr %0, %0, #(1<<14)\n\t"		/* RR, predictable */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
   COPROCESSOR_WAIT;

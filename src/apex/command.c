@@ -38,6 +38,17 @@
 
 const char* error_description;
 
+#if defined (CONFIG_TIME_COMMANDS)
+#define TIMECMD_INIT unsigned long time
+#define TIMECMD_START ({ time = timer_read (); })
+#define TIMECMD_REPORT \
+	({ printf ("%ld ms\n", timer_delta (time, timer_read ())); })
+#else
+#define TIMECMD_INIT
+#define TIMECMD_START
+#define TIMECMD_REPORT
+#endif
+
 #if defined (CONFIG_ALIAS) || defined (CONFIG_ENV)
 
 static char* expand_variables (const char* rgbSrc)
@@ -169,7 +180,6 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
   return result;
 }
 
-
 int call_command (int argc, const char** argv)
 {
   extern char APEX_COMMAND_START;
@@ -266,10 +276,13 @@ void exec_monitor (void)
   do {
     const char** argv;
     int argc;
+    TIMECMD_INIT;
 
     SPINNER_CLEAR;
     read_command ("\r" "apex> ", &argc, &argv);
+    TIMECMD_START;
     call_command (argc, argv);
+    TIMECMD_REPORT;
 
   } while (1);
 }

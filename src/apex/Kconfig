@@ -69,6 +69,15 @@ config COMMAND_EDITING
 	  middle of the command string.  See the on-line help for a
 	  description of the available key sequences.
 
+config TIME_COMMANDS
+	bool "Report elapsed time for each command executed"
+	depends on !SMALL
+	default n
+	help
+	  When enabled, this option causes APEX to report the elapsed
+	  time for every command entered at the prompt.  It is
+	  useful for debugging and profiling.
+
 config CMD_ALIAS
         bool "Define Alias Commands"
 	default y
