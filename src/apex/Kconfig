@@ -177,6 +177,9 @@ config CMD_PAUSE
 config CMD_WAIT
 	bool "Define Wait Command"
 	default y
+	  Wait prints a message, delays the specified numnber of 10ths
+	  of a second, and then continues execution.  It is useful in
+	  startup commands.
 
 config CMD_XRECEIVE
 	bool "Define Xmodem Receive Command"

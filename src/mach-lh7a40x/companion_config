@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jan 29 16:28:48 2007
+# Fri Feb  2 09:26:17 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -72,6 +72,7 @@ CONFIG_DEL_IS_BS=y
 CONFIG_ANSI_KEYS=y
 CONFIG_COMMAND_HISTORY=y
 CONFIG_COMMAND_EDITING=y
+# CONFIG_TIME_COMMANDS is not set
 CONFIG_CMD_ALIAS=y
 CONFIG_CMD_CHECKSUM=y
 CONFIG_CMD_COPY=y
@@ -162,9 +163,9 @@ CONFIG_ENV_DEFAULT_CMDLINE="console=ttyAM1 root=/dev/mmcblk0p2 ro mtdparts=lh7a4
 CONFIG_ENV_DEFAULT_CMDLINE_ALT_P=y
 CONFIG_ENV_DEFAULT_CMDLINE_ALT="console=ttyAM1 root=/dev/mmcblk0p3 ro mtdparts=lh7a404-nandflash:128k(apex),4m(data),-(unsused)"
 CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE=y
-CONFIG_ENV_DEFAULT_STARTUP="clc bars ; -clc splash ext2://2/splash.png ; clc on ; copy ext2://2/zImage $bootaddr ; wait 10 Booting ; boot"
+CONFIG_ENV_DEFAULT_STARTUP="clc bars ; -clc splash ext2://2/splash.png ; clc on ; copy ext2://2/zImage $bootaddr ; wait 0 Booting ; boot"
 CONFIG_ENV_DEFAULT_STARTUP_ALT_P=y
-CONFIG_ENV_DEFAULT_STARTUP_ALT="clc bars ; -clc splash ext2://3/splash.png ; clc on ; copy ext2://3/zImage $bootaddr ; wait 10 Booting ; boot"
+CONFIG_ENV_DEFAULT_STARTUP_ALT="clc bars ; -clc splash ext2://3/splash.png ; clc on ; copy ext2://3/zImage $bootaddr ; wait 0 Booting ; boot"
 CONFIG_USES_NAND_BOOTFLASH=y
 CONFIG_USES_COMPANION_EVT1_BOOT=y
 CONFIG_USES_COMPANION_EVT2_BOOT=y

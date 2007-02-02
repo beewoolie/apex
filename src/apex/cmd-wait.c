@@ -64,6 +64,9 @@ int cmd_wait (int argc, const char** argv)
 
   /* *** FIXME: we may want to flush input */
 
+  if (console->poll (0, 0)) /* ^C will terminate even when the timeout is 0 */
+    return 1;
+
   {
     unsigned long time = timer_read ();
     while (timer_delta (time, timer_read ()) < timeout) {
@@ -83,9 +86,9 @@ static __command struct command_d c_wait = {
   COMMAND_HELP(
 "wait TIMEOUT MESSAGE\n"
 "  Pauses to let the user interrupt an automated process.\n"
-"  The TIMEOUT value is in 10ths of a second.  Pressing a\n"
-"  key on the console will interrupt wait and cancel commands\n"
-"  being executed.\n"
+"  The TIMEOUT value is in 10ths of a second.  Pressing ^C\n"
+"  on the console will interrupt wait and cancel commands\n"
+"  being executed.  The TIMEOUT may be zero.\n"
 "  e.g.  wait 50 Press a key to cancel the automatic boot process.\n"
   )
 };

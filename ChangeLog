@@ -1,5 +1,7 @@
 2007-02-02  Marc Singer  <elf@zealous.synapsedev.com>
 
+	* src/apex/cmd-wait.c: Allowing a zero TIMEOUT. 
+
 	* src/apex/command.c (TIMECMD_INIT): Added command execution timer.
 
 2007-01-31  Marc Singer  <elf@cerise.buici.com>
