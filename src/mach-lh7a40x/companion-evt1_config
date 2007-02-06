@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Jan 24 20:30:26 2007
+# Mon Feb  5 18:43:43 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -72,6 +72,7 @@ CONFIG_DEL_IS_BS=y
 CONFIG_ANSI_KEYS=y
 CONFIG_COMMAND_HISTORY=y
 CONFIG_COMMAND_EDITING=y
+# CONFIG_TIME_COMMANDS is not set
 CONFIG_CMD_ALIAS=y
 CONFIG_CMD_CHECKSUM=y
 CONFIG_CMD_COPY=y
