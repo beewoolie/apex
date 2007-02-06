@@ -2,8 +2,10 @@ apex (1.4.15) unstable; urgency=low
 
   * Modified the rules file to support cross-building.
   * Closes bug#409189
-
- --
+  * Fixed the output file name.  It was inadvertently changed to /boot/apex.bin
+    from /boot/apex.flash.
+  * Closes bug#409747
+ -- Marc Singer <elf@buici.com>  Mon,  5 Feb 2007 18:35:11 -0800
 
 apex (1.4.14) unstable; urgency=low
 
