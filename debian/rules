@@ -55,7 +55,8 @@ binary-arch:	checkroot build
 	dh_installdirs
 	install -d debian/$(package)/boot
 	install -d debian/$(package)/usr/sbin
-	install -m 0644 src/arch-arm/rom/apex.bin debian/$(package)/boot
+	install -m 0644 src/arch-arm/rom/apex.bin\
+                  debian/$(package)/boot/apex.flash
 	install -m 0755 usr/apex-env debian/$(package)/usr/sbin
 	dh_strip
 	dh_installchangelogs ChangeLog
