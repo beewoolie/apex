@@ -1,3 +1,8 @@
+2007-02-05  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): 1.4.15, allows a wait of 0 for a check for
+	^C before continuing.  Mainly done to release to debian.
+	
 2007-02-05    <elf@baker.buici.com>
 
 	* debian/rules: Dumb typo when I revised the rules.  The name of
