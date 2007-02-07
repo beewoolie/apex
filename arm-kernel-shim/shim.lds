@@ -13,7 +13,7 @@ SECTIONS
 	.rodata : {
 		*(.rodata)
 	}
-	.text : {
+	.boot : {
 		*(.boot)
 	}
 	/* Segments we don't want */
