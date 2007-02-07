@@ -14,16 +14,19 @@
 #if !defined (__CONFIG_H__)
 #    define   __CONFIG_H__
 
-#define PHYS_PARAMS		0xc0000100 /* Address for the parameter list */
+#define PHYS_PARAMS		0x00000100 /* Address for the parameter list */
 
-#define RAM_BANK0_START		0xc0000000
-#define RAM_BANK0_LENGTH	0x10000000
+#define RAM_BANK0_START		0x00000000
+#define RAM_BANK0_LENGTH	(32*1024*1024)
 
 //#define RAM_BANK1_START	   0xd0000000
 //#define RAM_BANK1_LENGTH   0x10000000
 
+#define INITRD_START		(0x01000000)
+#define INITRD_LENGTH		(0x00400000)
+
 #define COMMANDLINE\
- "console=ttyAMA0 root=/dev/memblk0 rootfstype=jffs"
+ "console=ttyS0,115200 rtc-x1205,probe0,0x6f noirgdebug"
 
 #define MACH_TYPE		   999
 

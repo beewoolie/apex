@@ -9,7 +9,11 @@ SECTIONS
 	. = 0;  /* Really, this code must be PIC */
 	.text : {
 		*(.text)
+        }
+	.rodata : {
 		*(.rodata)
+	}
+	.text : {
 		*(.boot)
 	}
 	/* Segments we don't want */

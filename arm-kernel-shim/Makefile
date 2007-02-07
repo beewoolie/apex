@@ -23,6 +23,9 @@ $(PACKAGE): $(OBJS)
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+%.s: %.c
+	$(CC) -S $(CFLAGS) $< -o $@
+
 
 .PHONY: clean
 clean:

@@ -38,13 +38,6 @@
 #include "types.h"		/* include/asm-arm/types.h */
 #include "setup.h"		/* include/asm-arm/setup.h */
 
-#define H_SIZE(pv)	(((struct tag_header*)pv)->size)
-#define H_TAG(pv)	(((struct tag_header*)pv)->tag)
-
-#define P_CORE(pv)	((struct tag_core*)(pv + sizeof (struct tag_header)))
-#define P_MEM32(pv)	((struct tag_mem32*)(pv + sizeof (struct tag_header)))
-#define P_CMDLINE(pv)  ((struct tag_cmdline*)(pv + sizeof (struct tag_header)))
-
 #define NAKED		__attribute__((naked))
 
 #if defined (COMMANDLINE)
@@ -58,8 +51,9 @@ void NAKED __attribute__((section(".boot"))) boot (u32 r0, u32 r1, u32 r2)
 
 int NAKED start (void)
 {
-  void* pv;
-  extern char SHIM_VMA_END;
+  struct tag* p;
+//  void* pv;
+  //  extern char SHIM_VMA_END;
 
 #if defined (FORCE_BIGENDIAN)
 
@@ -81,46 +75,54 @@ int NAKED start (void)
   }
 #endif
 
-  pv = (void*) PHYS_PARAMS;
+  p = (struct tag*) PHYS_PARAMS;
 
 	/* Always start with the CORE tag */
-  H_SIZE(pv)		= tag_size (tag_core);
-  H_TAG(pv)		= ATAG_CORE;
-  P_CORE(pv)->flags = 0;
-  P_CORE(pv)->pagesize = 0;
-  P_CORE(pv)->rootdev = 0;
-  pv += H_SIZE(pv)*4;
+  p->hdr.tag		= ATAG_CORE;
+  p->hdr.size		= tag_size (tag_core);
+  p->u.core.flags	= 0;
+  p->u.core.pagesize	= 0;
+  p->u.core.rootdev	= 0;
+  p = tag_next (p);
 
 	/* Memory tags are always second */
-  H_SIZE(pv)		= tag_size (tag_mem32);
-  H_TAG(pv)		= ATAG_MEM;
-  P_MEM32(pv)->size	= RAM_BANK0_LENGTH;
-  P_MEM32(pv)->start	= RAM_BANK0_START;
-  pv += H_SIZE(pv)*4;
+  p->hdr.tag		= ATAG_MEM;
+  p->hdr.size		= tag_size (tag_mem32);
+  p->u.mem.size		= RAM_BANK0_LENGTH;
+  p->u.mem.start	= RAM_BANK0_START;
+  p = tag_next (p);
 
 #if defined (RAM_BANK1_START)
-  H_SIZE(pv)		= tag_size (tag_mem32);
-  H_TAG(pv)		= ATAG_MEM;
-  P_MEM32(pv)->size	= RAM_BANK1_LENGTH;
-  P_MEM32(pv)->start	= RAM_BANK1_START;
-  pv += H_SIZE(pv)*4;
+  p->hdr.tag		= ATAG_MEM;
+  p->hdr.size		= tag_size (tag_mem32);
+  p->u.mem.size		= RAM_BANK1_LENGTH;
+  p->u.mem.start	= RAM_BANK1_START;
+  p = tag_next (p);
+#endif
+
+#if defined (INITRD_START)
+  p->hdr.tag		= ATAG_INITRD2;
+  p->hdr.size		= tag_size (tag_initrd);
+  p->u.initrd.start	= INITRD_START;
+  p->u.initrd.size	= INITRD_LENGTH;
+  p = tag_next (p);
 #endif
 
 	/* Command line */
 #if defined (COMMANDLINE)
-  H_SIZE(pv)		= tag_size(tag_cmdline) + (sizeof (cmdline)+1+3)/4;
-  H_TAG(pv)		= ATAG_CMDLINE;
+  p->hdr.tag		= ATAG_CMDLINE;
+  p->hdr.size		= tag_size (tag_cmdline) + (sizeof (cmdline)+1+3)/4;
   {
     int i;
     for (i = 0; i < sizeof (cmdline); ++i)
-      P_CMDLINE(pv)->cmdline[i] = cmdline[i];
+      p->u.cmdline.cmdline[i] = cmdline[i];
   }
-  pv += H_SIZE(pv)*4;
+  p = tag_next (p);
 #endif
 
 	/* End */
-  H_SIZE(pv)		= 0;
-  H_TAG(pv)		= ATAG_NONE;
+  p->hdr.tag		= ATAG_NONE;
+  p->hdr.size		= 0;
 
 	/* Pass control to the kernel */
   boot (0, MACH_TYPE, PHYS_PARAMS);
