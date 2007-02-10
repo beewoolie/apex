@@ -9,7 +9,7 @@ LD=$(CROSS_COMPILE)ld
 OBJCOPY=$(CROSS_COMPILE)objcopy
 
 CFLAGS:=-g -Os -nostartfiles -nostdlib
-LDFLAGS:= -g -X -Map shim.map
+LDFLAGS:= -g -Ttext 0 -X -Map shim.map
 
 SRCS:= shim.lds main.c
 OBJS:=$(SRCS:.c=.o)

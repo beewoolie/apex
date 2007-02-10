@@ -6,16 +6,10 @@ ENTRY(start)
 
 SECTIONS
 {
-	. = 0x1000;  /* Actually, this code must be PIC */
-	.start : {
-		*(.start)
-        }
-	. = ALIGN (4);
-	.rodata : {
+	. = 0;  /* Actually, this code must be PIC */
+	.text : {
+		*(.text)
 		*(.rodata)
-	}
-	. = ALIGN (4);
-	.boot : {
 		*(.boot)
 	}
 	. = ALIGN (4);

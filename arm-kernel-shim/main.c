@@ -48,12 +48,11 @@
 #include "setup.h"		/* include/asm-arm/setup.h */
 
 #define NAKED		__attribute__((naked))
-#define START		__attribute__((section(".start")))
+#define START//		__attribute__((section(".start")))
 #define BOOT		__attribute__((section(".boot")))
-#define RODATA		__attribute__((section(".rodata")))
 
 #if defined (COMMANDLINE)
-const char RODATA cmdline[] = COMMANDLINE;
+const char cmdline[] = COMMANDLINE;
 #endif
 
 
@@ -62,7 +61,7 @@ void NAKED BOOT boot (u32 r0, u32 r1, u32 r2)
   __asm volatile (" nop");
 }
 
-int NAKED START start (void)
+int NAKED start (void)
 {
   struct tag* p;
 
