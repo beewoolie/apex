@@ -30,6 +30,14 @@
    the ATAGS and the machine type in the EXTREME circumstance that the
    platform bootloader cannot be replaced.
 
+   Offset
+   ------
+
+   Because we don't know where we're going to be executing, we do a
+   little shenanigans to figure out the execution offset.  With it, we
+   can reference data that was fixed-up with an absolute address even
+   though we are not executing from that address.
+
    Endianness
    ----------
 
@@ -64,6 +72,9 @@ void NAKED BOOT boot (u32 r0, u32 r1, u32 r2)
 int NAKED start (void)
 {
   struct tag* p;
+  extern unsigned long reloc;
+  unsigned long offset = (unsigned long) &reloc;
+
 
 #if defined (FORCE_BIGENDIAN)
 
@@ -84,6 +95,12 @@ int NAKED start (void)
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
   }
 #endif
+
+  __asm volatile ("bl reloc\n\t"
+	   "reloc: sub %0, lr, %0\n\t"
+	   ".globl reloc\n\t"
+		  :  "+r" (offset)
+		  :: "lr", "cc");
 
   p = (struct tag*) PHYS_PARAMS;
 
@@ -121,11 +138,13 @@ int NAKED start (void)
 	/* Command line */
 #if defined (COMMANDLINE)
   p->hdr.tag		= ATAG_CMDLINE;
-  p->hdr.size		= tag_size (tag_cmdline) + (sizeof (cmdline)+1+3)/4;
+  p->hdr.size		= tag_size (tag_cmdline)
+    + (sizeof (cmdline)+3)/4 - 1;
   {
+    const char* sz = cmdline + offset;
     int i;
     for (i = 0; i < sizeof (cmdline); ++i)
-      p->u.cmdline.cmdline[i] = cmdline[i];
+      p->u.cmdline.cmdline[i] = sz[i];
   }
   p = tag_next (p);
 #endif

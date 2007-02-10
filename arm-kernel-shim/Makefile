@@ -14,6 +14,8 @@ LDFLAGS:= -g -Ttext 0 -X -Map shim.map
 SRCS:= shim.lds main.c
 OBJS:=$(SRCS:.c=.o)
 
+all: $(PACKAGE).bin $(PACKAGE).bin-swapped
+
 $(PACKAGE).bin: $(PACKAGE)
 	$(OBJCOPY) -O binary -R .bss -R .comment $< $@
 
