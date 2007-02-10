@@ -56,7 +56,6 @@
 #include "setup.h"		/* include/asm-arm/setup.h */
 
 #define NAKED		__attribute__((naked))
-#define START//		__attribute__((section(".start")))
 #define BOOT		__attribute__((section(".boot")))
 
 #if defined (COMMANDLINE)
@@ -74,7 +73,6 @@ int NAKED start (void)
   struct tag* p;
   extern unsigned long reloc;
   unsigned long offset = (unsigned long) &reloc;
-
 
 #if defined (FORCE_BIGENDIAN)
 

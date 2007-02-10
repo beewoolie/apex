@@ -39,7 +39,7 @@ clean:
 .PHONY: tag
 tag:
 	svn cp file:///svn/tools/trunk/apex/$(PACKAGE)\
-               file:///svn/tools/tags/$(PACKAGE)/$(VERSION)
+	       file:///svn/tools/tags/$(PACKAGE)/$(VERSION)
 
 .PHONY: remove-tag
 remove-tag:
