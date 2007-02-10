@@ -30,6 +30,15 @@
    the ATAGS and the machine type in the EXTREME circumstance that the
    platform bootloader cannot be replaced.
 
+   Endianness
+   ----------
+
+   This code can be used with either big or little endian kernels, and
+   it can be used to switch the endan-ness of the system from the
+   boot-up default to the desired orientation for the kernel.
+   However, you must swap the bytes of this file and the kernel if you
+   are going to write this data to flash.
+
 */
 
 #define __KERNEL__
@@ -39,21 +48,23 @@
 #include "setup.h"		/* include/asm-arm/setup.h */
 
 #define NAKED		__attribute__((naked))
+#define START		__attribute__((section(".start")))
+#define BOOT		__attribute__((section(".boot")))
+#define RODATA		__attribute__((section(".rodata")))
 
 #if defined (COMMANDLINE)
-const char __attribute__((section(".rodata"))) cmdline[] = COMMANDLINE;
+const char RODATA cmdline[] = COMMANDLINE;
 #endif
 
-void NAKED __attribute__((section(".boot"))) boot (u32 r0, u32 r1, u32 r2)
+
+void NAKED BOOT boot (u32 r0, u32 r1, u32 r2)
 {
   __asm volatile (" nop");
 }
 
-int NAKED start (void)
+int NAKED START start (void)
 {
   struct tag* p;
-//  void* pv;
-  //  extern char SHIM_VMA_END;
 
 #if defined (FORCE_BIGENDIAN)
 

@@ -3,19 +3,19 @@
 PACKAGE:=arm-kernel-shim
 VERSION:=1.0
 
-TOOLS:=/usr/arm-linux/gcc3/arm-linux-
-CC=$(TOOLS)gcc
-LD=$(TOOLS)ld
-OBJCOPY=$(TOOLS)objcopy
+CROSS_COMPILE:=/usr/arm-linux/gcc3/arm-linux-
+CC=$(CROSS_COMPILE)gcc
+LD=$(CROSS_COMPILE)ld
+OBJCOPY=$(CROSS_COMPILE)objcopy
 
 CFLAGS:=-g -Os -nostartfiles -nostdlib
-LDFLAGS:= -g -X -Map shim.map -Ttext 0
+LDFLAGS:= -g -X -Map shim.map
 
 SRCS:= shim.lds main.c
 OBJS:=$(SRCS:.c=.o)
 
 $(PACKAGE).bin: $(PACKAGE)
-	$(OBJCOPY) -O binary $< $@
+	$(OBJCOPY) -O binary -R .bss -R .comment $< $@
 
 $(PACKAGE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@
