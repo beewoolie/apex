@@ -25,7 +25,7 @@ SECTIONS
 		*(.preinit)
 	}
 	. = ALIGN (4);			/* should be redundant */
-	.bootstrap : {		/* Bootstrap initialzation */
+	.bootstrap : {		/* Bootstrap initialization */
 		*(.bootstrap)		
 	}		
 		/* Everything up to this point must fit in the first
