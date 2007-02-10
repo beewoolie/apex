@@ -38,14 +38,19 @@ clean:
 
 .PHONY: tag
 tag:
-	svn cp file:///svn/tools/trunk/$(PACKAGE)\
+	svn cp file:///svn/tools/trunk/apex/$(PACKAGE)\
                file:///svn/tools/tags/$(PACKAGE)/$(VERSION)
+
+.PHONY: remove-tag
+remove-tag:
+	svn rm file:///svn/tools/tags/$(PACKAGE)/$(VERSION)
 
 .PHONY: package
 package: $(PACKAGE)-$(VERSION).tar.gz
 
 $(PACKAGE)-$(VERSION).tar.gz:
 	[ ! -d $(PACKAGE)-$(VERSION) ] || rm -rf $(PACKAGE)-$(VERSION)
-	svn export -q file:///svn/tools/trunk/$(PACKAGE) $(PACKAGE)-$(VERSION)
+	svn export -q file:///svn/tools/tags/$(PACKAGE)\
+	  $(PACKAGE)-$(VERSION)
 	tar zcvf $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
