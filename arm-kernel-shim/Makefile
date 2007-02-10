@@ -1,7 +1,7 @@
 # Makefile
 
 PACKAGE:=arm-kernel-shim
-VERSION:=1.0
+VERSION:=1.3
 
 CROSS_COMPILE:=/usr/arm-linux/gcc3/arm-linux-
 CC=$(CROSS_COMPILE)gcc
@@ -16,6 +16,9 @@ OBJS:=$(SRCS:.c=.o)
 
 $(PACKAGE).bin: $(PACKAGE)
 	$(OBJCOPY) -O binary -R .bss -R .comment $< $@
+
+$(PACKAGE).bin-swapped: $(PACKAGE).bin
+	cat $< | ./wordswap > $@
 
 $(PACKAGE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@
