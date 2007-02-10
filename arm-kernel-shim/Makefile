@@ -36,6 +36,11 @@ $(PACKAGE): $(OBJS)
 clean:
 	-rm *.o $(PACKAGE) $(PACKAGE).bin *~ *.map
 
+.PHONY: tag
+tag:
+	svn cp file:///svn/tools/trunk/$(PACKAGE)\
+               file:///svn/tools/tags/$(PACKAGE)/$(VERSION)
+
 .PHONY: package
 package: $(PACKAGE)-$(VERSION).tar.gz
 
