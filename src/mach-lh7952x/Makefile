@@ -28,9 +28,10 @@ obj-$(CONFIG_MACH_LPD79524)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_MACH_KEV79524)     += init-kev79524.o timer-lh79524.o
 obj-$(CONFIG_MACH_LPD79525)     += init-lpd79524.o timer-lh79524.o
 obj-$(CONFIG_MACH_KEV79525)     += init-kev79524.o timer-lh79524.o
+obj-$(CONFIG_MACH_MOTO_EDGE)    += init-motoedge.o timer-lh79524.o
 
 obj-x$(CONFIG_INTERRUPTS)$(CONFIG_ARCH_LH79524)	+= exception_vectors.o
-obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
+#obj-$(CONFIG_DRIVER_NAND)	+= drv-nand.o
 obj-$(CONFIG_DRIVER_CPLD_SPI)	+= drv-cpld-spi.o
 obj-$(CONFIG_DRIVER_EMAC_LH79524) += drv-emac.o
 obj-$(CONFIG_RELOCATE_NAND)	+= relocate-nand.o

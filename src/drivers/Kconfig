@@ -98,6 +98,29 @@ config DRIVER_NAND
 	  This driver implements a NAND driver based on a
 	  mach-specific header.
 
+choice
+	prompt "NAND Type"
+	default DRIVER_NAND_TYPE_TOSHIBA
+
+config DRIVER_NAND_TYPE_TOSHIBA
+	bool "Toshiba-type NAND Flash"
+
+config DRIVER_NAND_TYPE_ST
+	bool "ST-type NAND Flash"
+
+endchoice	
+
+config DRIVER_NAND_ADDRESS_BYTES
+	int "Address bytes of underlying NAND device"
+	depends on DRIVER_NAND
+	default 2
+	help
+	  NAND chips vary in the number of address bytes each accepts.
+	  While we can detect the size of the NAND chip and the mach-
+	  customization can account for some platform specific access
+	  methods, this configuration option is neither detectable nor
+	  is it optional.
+
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"
 	depends on USES_COMPACTFLASH=y

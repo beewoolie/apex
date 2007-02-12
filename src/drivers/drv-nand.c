@@ -51,7 +51,78 @@
 
 #include "mach/drv-nand.h"
 
-#include "nand.h"
+#define TALK
+
+static void wait_on_busy (void);
+
+#if defined (CONFIG_DRIVER_NAND_TYPE_ST)
+
+#define NAND_Reset	(0xff)
+#define NAND_ReadID	(0x90)
+#define NAND_Status	(0x70)
+#define NAND_ReadSetup	(0x00)
+#define NAND_Read	(0x30)
+#define NAND_Erase	(0x60)
+#define NAND_EraseConfirm (0xd0)
+//#define NAND_AutoProgram (0x10)
+//#define NAND_SerialInput (0x80)
+//#define NAND_CopyBack	 (0x8a)
+
+#define NAND_Fail	(1<<0)
+#define NAND_CacheErr	(1<<1)
+#define NAND_CacheReady (1<<5)
+#define NAND_Ready	(1<<6)
+#define NAND_Writable	(1<<7)
+
+inline void nand_read_setup (unsigned long page, int index)
+{
+  NAND_CLE = NAND_ReadSetup;
+  NAND_ALE = index & 0xff;
+  NAND_ALE = (index >> 8) & 0xff;
+  NAND_ALE = page & 0xff;
+  NAND_ALE = (page >>  8) & 0xff;
+//  NAND_ALE = (page >> 16) & 0xff;
+  NAND_CLE = NAND_Read;
+  wait_on_busy ();
+  NAND_CLE = NAND_Read;
+}
+
+#endif
+
+#if defined (CONFIG_DRIVER_NAND_TYPE_TOSHIBA)
+
+#define NAND_Reset	(0xff)
+#define NAND_ReadID	(0x90)
+#define NAND_Status	(0x70)
+#define NAND_Read1	(0x00)	/* Start address in first 256 bytes of page */
+#define NAND_Read2	(0x01)	/* Start address in second 256 bytes of page */
+#define NAND_Read3	(0x50)	/* Start address in last 16 bytes of page */
+#define NAND_Erase	(0x60)
+#define NAND_EraseConfirm (0xd0)
+#define NAND_AutoProgram (0x10)
+#define NAND_SerialInput (0x80)
+#define NAND_CopyBack	 (0x8a)
+
+#define NAND_Fail	(1<<0)
+#define NAND_Ready	(1<<6)
+#define NAND_Writable	(1<<7)
+
+inline void nand_read_setup (unsigned long page, int index)
+{
+  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
+  NAND_ALE = (index & 0xff);
+  NAND_ALE = ( page        & 0xff);
+  NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+  NAND_ALE = ((page >> 16) & 0xff);
+#endif
+  wait_on_busy ();
+
+		/* Switch back to read mode */
+  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
+}
+
+#endif
 
 #if !defined (NAND_WP_ENABLE)
 # define NAND_WP_ENABLE
@@ -60,15 +131,26 @@
 # define NAND_WP_DISABLE
 #endif
 
+#if defined (CONFIG_NAND_ADDRESS_BYTES)
+# define NAND_ADDRESSES		CONFIG_DRIVER_NAND_ADDRES_BYTES
+#else
+# define NAND_ADDRESSES		(2)
+#endif
+
 struct nand_chip {
-  unsigned char device;
+  int id_len;
+  unsigned short id[4];
   unsigned long total_size;
   int erase_size;
+  int page_size;
   //  int address_size;	/* *** FIXME: Better than Boot code */
 };
 
 const static struct nand_chip chips[] = {
-  { 0x75, 32*1024*1024, 16*1024 },
+  { 2, { 0x98, 0x75 },			/* Toshiba */
+    32*1024*1024, 16*1024, 512 },
+  { 4, { 0x20, 0xf1, 0x80, 0x15},	/* ST */
+    128*1024*1024, 128*1024, 2048 },
 };
 
 const static struct nand_chip* chip;
@@ -102,11 +184,13 @@ static void wait_on_busy (void)
 
 static void nand_init (void)
 {
-  unsigned char manufacturer;
-  unsigned char device;
+  unsigned short id[4];
+//  unsigned short manufacturer;
+//  unsigned short device;
+//  unsigned short third;
+//  unsigned short fourth;
 
-  /* *** FIXME: this must be moved to the platform setup code */
-//  SMC_BCR6 = 0xffef;
+  NAND_ENABLE;			/* Optional setup for NAND flash */
 
   NAND_CS_ENABLE;
 
@@ -121,13 +205,15 @@ static void nand_init (void)
   NAND_CLE = NAND_ReadID;
   NAND_ALE = 0;
 
-  manufacturer = NAND_DATA;
-  device       = NAND_DATA;
+  id[0] = NAND_DATA;
+  id[1] = NAND_DATA;
+  id[2] = NAND_DATA;
+  id[3] = NAND_DATA;
 
   for (chip = &chips[0];
        chip < chips + sizeof(chips)/sizeof (struct nand_chip);
        ++chip)
-    if (chip->device == device)
+    if (memcmp (id, chip->id, chip->id_len*sizeof (chip->id[0])) == 0)
       break;
   if (chip >= chips + sizeof(chips)/sizeof (chips[0]))
       chip = NULL;
@@ -136,10 +222,12 @@ static void nand_init (void)
   printf ("NAND flash ");
 
   if (chip)
-    printf (" %ldMiB total, %dKiB erase\n",
-	    chip->total_size/(1024*1024), chip->erase_size/1024);
+    printf (" %ld MiB total, %d KiB erase, %d B page\n",
+	    chip->total_size/(1024*1024), chip->erase_size/1024,
+	    chip->page_size);
   else
-    printf (" unknown 0x%x/0x%x\n", manufacturer, device);
+    printf (" unknown 0x%02x/0x%02x/0x%02x/0x%02x\n",
+	    id[0], id[1], id[2], id[3]);
 #endif
 
  exit:
@@ -169,9 +257,9 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     cb = d->length - d->index;
 
   while (cb) {
-    unsigned long page  = (d->start + d->index)/512;
-    int index = (d->start + d->index)%512;
-    int available = 512 - index;
+    unsigned long page  = (d->start + d->index)/chip->page_size;
+    int index = (d->start + d->index)%chip->page_size;
+    int available = chip->page_size - index;
 
     if (available > cb)
       available = cb;
@@ -182,15 +270,8 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
 
     NAND_CLE = NAND_Reset;
     wait_on_busy ();
-    NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
-    NAND_ALE = (index & 0xff);
-    NAND_ALE = ( page        & 0xff);
-    NAND_ALE = ((page >>  8) & 0xff);
-    wait_on_busy ();
-    //#if !defined (CONFIG_NAND_LPD)
-		/* Switch back to read mode */
-    NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
-    //#endif
+    nand_read_setup (page, index);
+
     while (available--)		/* May optimize with assembler...later */
       *((char*) pv++) = NAND_DATA;
   }
@@ -216,9 +297,9 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
   SPINNER_STEP;
 
   while (cb) {
-    unsigned long page  = (d->start + d->index)/512;
-    unsigned long index = (d->start + d->index)%512;
-    int available = 512 - index;
+    unsigned long page  = (d->start + d->index)/chip->page_size;
+    unsigned long index = (d->start + d->index)%chip->page_size;
+    int available = chip->page_size - index;
     int tail;
 
     if (available > cb)
@@ -227,7 +308,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
        including the auxiliary region.  This is no longer the case.
        Now, we only write to the end of the data area.  */
 //    tail = 528 - index - available;
-    tail = 512 - index - available;
+    tail = chip->page_size - index - available;
 
 	/* Reset and read to perform I/O on the data region  */
     NAND_CLE = NAND_Reset;
@@ -236,6 +317,9 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     NAND_ALE = 0;
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
     wait_on_busy ();
 
 	/* Perform write */
@@ -243,6 +327,9 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     NAND_ALE = 0;	/* Always start at page beginning */
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
 
     while (index--)	   /* Skip to the portion we want to change */
       NAND_DATA = 0xff;
@@ -291,13 +378,16 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
   SPINNER_STEP;
 
   do {
-    unsigned long page = (d->start + d->index)/512;
+    unsigned long page = (d->start + d->index)/chip->page_size;
     unsigned long available
       = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
 
     NAND_CLE = NAND_Erase;
     NAND_ALE = ( page & 0xff);
     NAND_ALE = ((page >> 8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
     NAND_CLE = NAND_EraseConfirm;
 
     wait_on_busy ();
@@ -346,8 +436,9 @@ static void nand_report (void)
   status = NAND_DATA;
   NAND_CS_DISABLE;
 
-  printf ("  nand:   %ldMiB total, %dKiB erase %s%s%s\n",
+  printf ("  nand:   %ld MiB total, %d KiB erase, %d B page %s%s%s\n",
 	  chip->total_size/(1024*1024), chip->erase_size/1024,
+	  chip->page_size,
 	  (status & NAND_Fail) ? " FAIL" : "",
 	  (status & NAND_Ready) ? " RDY" : "",
 	  (status & NAND_Writable) ? " R/W" : " R/O"
@@ -387,8 +478,8 @@ int cmd_nand (int argc, const char** argv)
     int c;
     int last = -1;
 
-    for (c = 0; c < cb; c += 512) {
-      char rgb[512];
+    for (c = 0; c < cb; c += chip->page_size) {
+      char rgb[chip->page_size];
       char sz[20];
       int result;
       struct descriptor_d d;
@@ -402,18 +493,18 @@ int cmd_nand (int argc, const char** argv)
 
       {
 	int i;
-	for (i = 0; i < 512; i += 4)
+	for (i = 0; i < chip->page_size; i += 4)
 	  *(unsigned long*)&rgb[i] = i + c;
       }
 
-      sprintf (sz, "nand:0x%x+512", c);
+      sprintf (sz, "nand:0x%x+%d", c, chip->page_size);
       if (   (result = parse_descriptor (sz, &d))
 	     || (result = open_descriptor (&d))) {
 	printf ("Unable to open target %s\n", sz);
 	return ERROR_FAILURE;
       }
 
-      nand_write (&d, rgb, 512);
+      nand_write (&d, rgb, chip->page_size);
       close_descriptor (&d);
     }
   }
@@ -424,13 +515,16 @@ int cmd_nand (int argc, const char** argv)
 
     NAND_CS_ENABLE;
     for (index = 0; index < chip->total_size; index += chip->erase_size) {
-      int page = index/512;
+      int page = index/chip->page_size;
       NAND_CLE = NAND_Reset;
       wait_on_busy ();
       NAND_CLE = NAND_Read3;
       NAND_ALE = (index & 0xff);
       NAND_ALE = ( page        & 0xff);
       NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+      NAND_ALE = ((page >> 16) & 0xff);
+#endif
       wait_on_busy ();
       NAND_CLE = NAND_Read3;
       {

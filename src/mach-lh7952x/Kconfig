@@ -54,6 +54,18 @@ config MACH_KEV79525
 	select HAS_LH_ADC
 	select HAS_LH_CLCDC
 
+config MACH_MOTO_EDGE
+	bool "Edge Integration - LPD79524"
+	select ARCH_LH79524
+	select MACH_LPD7952X
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select USES_NAND_BOOTFLASH
+	select DRIVERS_LH
+	select HAS_LH_ADC
+	select HAS_LH_CLCDC
+	select USES_NAND
+
 endchoice
 
 menu "Platform Setup"

@@ -1,9 +1,9 @@
-/* init-lpd79524.c
+/* init-motoedge.c
 
    written by Marc Singer
-   28 Oct 2004
+   9 Feb 2007
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2007 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -33,13 +33,6 @@
      refresh cycles very 64ms.  Which is a refresh cycle (AUTOREFRESH
      command) every 64ms/8192 or 7.812us.  I assume that this is what
      the SDRAM controller does when the refresh timer expires.
-
-   CompactFlash Timing
-
-     I've tightened the timing on the ISA/CF region of memory.  The
-     read and write cycles use a 180ns delay instead of the default
-     which is 640ns.  The faster timing is well within the CF spec of
-     150ns/165ns for write/read minimum hold times.
 
 */
 
@@ -201,14 +194,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_SWAITOEN0   = 1;
   EMC_SWAITRD0    = 2;
   EMC_SWAITPAGE0  = 2;
-  EMC_SWAITWR0    = 2;
+  EMC_SWAITWR0	  = 2;
   EMC_STURN0      = 2;
-  //  EMC_SWAITWEN0   = 1;
-  //  EMC_SWAITOEN0   = 3;
-  //  EMC_SWAITRD0    = 5;
-  //  EMC_SWAITPAGE0  = 2;
-  //  EMC_SWAITWR0    = 3;
-  //  EMC_STURN0      = 1;
+
 
 	/* NOR flash, 16 bit */
   EMC_SCONFIG1    = 0x81;
@@ -218,25 +206,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_SWAITPAGE1  = 2;
   EMC_SWAITWR1    = 6;
   EMC_STURN1      = 1;
-
-	/* CF and ISA, 16 bit */
-  EMC_SCONFIG2    = 0x81;
-//  EMC_SWAITWEN2   = 1;
-//  EMC_SWAITOEN2   = 1;
-  EMC_SWAITRD2    = 8;
-//  EMC_SWAITPAGE2  = 2;
-  EMC_SWAITWR2     = 8;
-//  EMC_STURN2      = 1;
-
-	/* CPLD, 16 bit */
-  EMC_SCONFIG3    = 0x81;
-
-#if defined (CONFIG_NAND_LPD)
-  IOCON_MUXCTL7  = IOCON_MUXCTL7_V;		/* A */
-  IOCON_RESCTL7  = IOCON_RESCTL7_V;		/* no pull */
-  IOCON_MUXCTL14 = IOCON_MUXCTL14_V;		/* nCS0 norm */
-  CPLD_FLASH	&= ~(CPLD_FLASH_NANDSPD);	/* Fast NAND */
-#endif
 
   PUTC_LL('x');
 
@@ -315,46 +284,14 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 static void target_init (void)
 {
   PUTC_LL('T');
-#if !defined (CONFIG_NAND_LPD)
-	/* IOCON to clear special NAND modes.  These modes must be
-	   controlled explicitly within driver code. */
-  IOCON_MUXCTL7  = IOCON_MUXCTL7_V;   /* A23,A22 */
-  IOCON_RESCTL7  = IOCON_RESCTL7_V;   /* pull-down */
-  IOCON_MUXCTL14 = IOCON_MUXCTL14_V;  /* nCS0 normalize */
-#else
-  /* *** FIXME: I'm not sure why I need these.  It ought to default to
-     *** these modes when not using NAND. */
-  IOCON_MUXCTL7  = IOCON_MUXCTL7_V;   /* A23,A22 */
-  IOCON_RESCTL7  = IOCON_RESCTL7_V;   /* pull-down */
-  IOCON_MUXCTL14 = IOCON_MUXCTL14_V;  /* nCS0 normalize */
+
+#if 0
+  IOCON_MUXCTL7  = 0xf555;
+  IOCON_RESCTL7  = 0xa555;
+  IOCON_MUXCTL14 = 0x0100;
 #endif
 
-  PUTC_LL('a');
-
-	/* CompactFlash, 16 bit */
-  EMC_SCONFIG2    = 0x81;
-  //  EMC_SWAITWEN2   = 2;
-  //  EMC_SWAITOEN2   = 2;
-  //  EMC_SWAITRD2    = 6;
-  //  EMC_SWAITPAGE2  = 2;
-  //  EMC_SWAITWR2    = 6;
-  //  EMC_STURN2      = 1;
-  EMC_SWAITWEN2   = 2;
-  EMC_SWAITOEN2   = 2;
-  EMC_SWAITRD2    = 0x1f;
-  EMC_SWAITPAGE2  = 0x1f;
-  EMC_SWAITWR2    = 0x1f;
-  EMC_STURN2      = 0xf;
-
-  PUTC_LL('b');
-
-	/* CPLD, 16 bit */
-  EMC_SWAITWEN3   = 2;
-  EMC_SWAITOEN3   = 2;
-  EMC_SWAITRD3    = 5;
-  EMC_SWAITPAGE3  = 2;
-  EMC_SWAITWR3    = 5;
-  EMC_STURN3      = 2;
+  IOCON_MUXCTL5  = 0xaaa0;	/* *** Doc? */
 
   PUTC_LL('c');
 
@@ -363,15 +300,13 @@ static void target_init (void)
   PUTC_LL('d');
 }
 
+#if 0
 static void target_release (void)
 {
-#if defined (CONFIG_NAND_LPD)
-  /* Flash is enabled for the kernel */
-  CPLD_FLASH |= CPLD_FLASH_FL_VPEN;
-#endif
 }
+#endif
 
 static __service_0 struct service_d lh79524_target_service = {
   .init    = target_init,
-  .release = target_release,
+  //  .release = target_release,
 };

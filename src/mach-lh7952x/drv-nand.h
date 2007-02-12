@@ -34,7 +34,7 @@
 /* ----- Includes */
 
 #include "mach/hardware.h"
-#include "nand.h"
+#include <nand.h>
 
 /* ----- Types */
 
@@ -42,22 +42,36 @@
 
 /* ----- Prototypes */
 
-#define NAND_PHYS	(0x60000000)
+#define NAND_TYPE_ST		/* *** FIXME: make it config'd */
+
+/* 8 bit flash */
+#define NAND_PHYS	(0x40000000 | (1<<23))
 #define NAND_DATA	__REG8(NAND_PHYS + 0x00)
-#define NAND_CLE	__REG8(NAND_PHYS + (1<<21))
-#define NAND_ALE	__REG8(NAND_PHYS + (1<<20))
-#define NAND_ADDRESSES	(2)
+#define NAND_CLE	__REG8(NAND_PHYS + (1<<4))
+#define NAND_ALE	__REG8(NAND_PHYS + (1<<3))
+
+#define NAND_ENABLE\
+	({ IOCON_MUXCTL14 |=  (1<<8);\
+	   GPIO_MN_PHYS   &= ~(1<<0);\
+	   IOCON_MUXCTL7  &= ~(0xf<<12);\
+	   IOCON_MUXCTL7  |=  (0xa<<12); /* Boot ROM uses 0xf */ \
+	   /*  IOCON_MUXCTL7  |=  (0xf<<12); */\
+	   IOCON_RESCTL7  &= ~(0xf<<12);\
+	   IOCON_RESCTL7  |=  (0xa<<12); })
 
 #define NAND_WP_DISABLE\
-	({ GPIO_PCD |=  (1<<2); })
+
+//	({ GPIO_PCD |=  (1<<2); })
 
 #define NAND_WP_ENABLE\
-	({ GPIO_PCD |= ~(1<<2); })
+//	({ GPIO_PCD |= ~(1<<2); })
 
 #define NAND_CS_ENABLE\
-	({ GPIO_PCD &= ~(1<<6); })
+
+//	({ GPIO_PCD &= ~(1<<6); })
 #define NAND_CS_DISABLE\
-	({ GPIO_PCD |= 1<<6; })
+
+//	({ GPIO_PCD |= 1<<6; })
 
 #define NAND_ISBUSY   ({ NAND_CLE = NAND_Status;\
 			 (NAND_DATA & NAND_Ready) == 0; })
@@ -83,10 +97,8 @@
 
 #define _NAM(bootcode,address_bytes) \
 	    ((((address_bytes) - 2)&0x3)<<(((bootcode) & 0xf)*2))
-//#define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)
-//		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
-#define NAND_ADDR_MAP (_NAM(0,3) | _NAM(1,4) | _NAM(2,5)\
-		      |_NAM(8,3) | _NAM(9,4) | _NAM(10,5))
+#define NAND_ADDR_MAP ( _NAM(4,3) | _NAM(5,4)  | _NAM(6,5)\
+		      | _NAM(7,3) | _NAM(12,4) | _NAM(13,5))
 #define NAM_DECODE(bootcode) (((NAND_ADDR_MAP >> ((bootcode)*2)) & 0x3) + 2)
 
 #endif  /* __DRV_NAND_H__ */

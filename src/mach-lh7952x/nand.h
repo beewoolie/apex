@@ -48,7 +48,7 @@
 
 */
 
-#if !defined (__NAND_H__)
+#if !defined (__NAND_H__) && 0
 #    define   __NAND_H__
 
 /* ----- Includes */

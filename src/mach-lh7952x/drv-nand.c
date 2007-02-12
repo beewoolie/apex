@@ -197,6 +197,9 @@ static ssize_t nand_read (struct descriptor_d* d, void* pv, size_t cb)
     NAND_ALE = (index & 0xff);
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
     wait_on_busy ();
 #if !defined (CONFIG_NAND_LPD)
 		/* Switch back to read mode */
@@ -239,6 +242,9 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     NAND_ALE = 0;	/* Always start at page beginning */
     NAND_ALE = ( page        & 0xff);
     NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
 
     while (index--)	   /* Skip to the portion we want to change */
       NAND_DATA = 0xff;
@@ -292,6 +298,9 @@ static void nand_erase (struct descriptor_d* d, size_t cb)
     NAND_CLE = Erase;
     NAND_ALE = ( page & 0xff);
     NAND_ALE = ((page >> 8) & 0xff);
+#if NAND_ADDRESSES > 2
+    NAND_ALE = ((page >> 16) & 0xff);
+#endif
     NAND_CLE = EraseConfirm;
 
     wait_on_busy ();
