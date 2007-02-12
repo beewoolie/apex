@@ -1,3 +1,9 @@
+2007-02-12  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/drv-nand.c: Augmented NAND driver to allow for both
+	Toshiba style command and ST style commands.  The ST stuff is
+	incomplete, but reading ought to be OK.
+
 2007-02-05  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): 1.4.15, allows a wait of 0 for a check for
