@@ -313,6 +313,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 	/* Reset and read to perform I/O on the data region  */
     NAND_CLE = NAND_Reset;
     wait_on_busy ();
+#if defined (NAND_Read1) && defined (NAND_SerialInput)
     NAND_CLE = NAND_Read1;
     NAND_ALE = 0;
     NAND_ALE = ( page        & 0xff);
@@ -334,10 +335,13 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     while (index--)	   /* Skip to the portion we want to change */
       NAND_DATA = 0xff;
 
+#endif
+
     d->index += available;
     cb -= available;
     cbWrote += available;
 
+#if defined (NAND_AutoProgram)
     while (available--)
       NAND_DATA = *((char*) pv++);
 
@@ -347,6 +351,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     NAND_CLE = NAND_AutoProgram;
 
     wait_on_busy ();
+#endif
 
     SPINNER_STEP;
 

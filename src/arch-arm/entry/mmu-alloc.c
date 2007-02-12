@@ -36,6 +36,8 @@
 #include <asm/mmu.h>
 #include <drv-mem.h>
 
+//#define TALK
+
 void* pvAlloc;			/* Address of next allocatable address */
 
 void* alloc_uncached (size_t cb, size_t alignment)
@@ -54,6 +56,10 @@ void* alloc_uncached (size_t cb, size_t alignment)
   pv = (void*) (((unsigned long) pvAlloc + (alignment - 1))
 		& ~(alignment - 1));
   pvAlloc = pv + cb;
+
+#if defined (TALK)
+  printf ("%s: <- %p, 0x%x (%u)\n", __FUNCTION__, pv, cb, cb);
+#endif
 
 #if defined (CONFIG_MMU)
   mmu_protsegment (pv, 0, 0);

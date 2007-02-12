@@ -285,12 +285,6 @@ static void target_init (void)
 {
   PUTC_LL('T');
 
-#if 0
-  IOCON_MUXCTL7  = 0xf555;
-  IOCON_RESCTL7  = 0xa555;
-  IOCON_MUXCTL14 = 0x0100;
-#endif
-
   IOCON_MUXCTL5  = 0xaaa0;	/* *** Doc? */
 
   PUTC_LL('c');
