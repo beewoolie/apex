@@ -90,6 +90,27 @@ config DRIVER_NOR_CFI_NO_BUFFERED
 	  Leave this option set to 'N' unless your target is
 	  experiencing problems using the buffered write routine.
 
+choice
+	prompt "NOR Flash Type"
+	depends on DRIVER_NOR_CFI
+	default DRIVER_NOR_CFI_TYPE_INTEL
+	help
+	  Select the NOR flash protocol.
+
+config DRIVER_NOR_CFI_TYPE_INTEL
+	bool "Intel-type NOR Flash"
+	help
+	  This is the NOR flash protocol use by Intel and many other
+	  CFI compliant devices. 
+
+config DRIVER_NOR_CFI_TYPE_SPANSION
+	bool "Spansion-type NOR Flash"
+	help
+	  This is the NOR flash protocol used by Spansion and some
+	  Sharp parts.
+
+endchoice	
+
 config DRIVER_NAND
 	bool "NAND Flash"
 	depends on USES_NAND=y
@@ -99,14 +120,19 @@ config DRIVER_NAND
 	  mach-specific header.
 
 choice
-	prompt "NAND Type"
+	prompt "NAND Flash Type"
+	depends on DRIVER_NAND
 	default DRIVER_NAND_TYPE_TOSHIBA
 
 config DRIVER_NAND_TYPE_TOSHIBA
 	bool "Toshiba-type NAND Flash"
+	help
+	  Implements Toshiba compatible command set.
 
 config DRIVER_NAND_TYPE_ST
 	bool "ST-type NAND Flash"
+	help
+	  Implements ST compatible command set.
 
 endchoice	
 

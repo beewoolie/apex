@@ -1,3 +1,9 @@
+2007-02-13  Marc Singer  <elf@cerise.buici.com>
+
+	* src/drivers/drv-nor-cfi.c: Added Spansion command support to the
+	nor-cfi driver.  This is a configuration time option.  Only one
+	command set/protocol may be selected at a time.
+
 2007-02-12  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/drv-nand.c: Augmented NAND driver to allow for both

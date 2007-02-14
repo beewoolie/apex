@@ -81,6 +81,24 @@
      commands appear to be correctly understood without this
      transformation.
 
+   o Spansion support
+
+     Some work has been done to support the Spansion commands set for
+     NOR flash.  It hasn't been tested by me because I don't have any
+     Spansion memories.  The support also lacks buffered write code
+     and unlock code as these were not present in the patch provided
+     by (and thanks to) Jean Pierre Lepine.
+
+     I chose to make this a compile-time option as doing so makes the
+     code smaller and simpler.  In fact, the code size should not have
+     changed for the Intel path since adding support for Spansion.
+
+     Unlock support may be unnecessary for the MirrorBit parts because
+     the devices power-on with the block unlocked.
+
+     This work is based, in part, on information gleaned from the
+     S29GLxxxN MirrorBitTM Flash Family data sheet.
+
 */
 
 #include <driver.h>
@@ -152,15 +170,17 @@
 #if NOR_WIDTH == 16
 /* *** This has only be tested to work with a single chip and a bus
    width of 16. */
-# if ! defined (CONFIG_SMALL) && ! defined (CONFIG_DRIVER_NOR_CFI_NO_BUFFERED)
+# if ! defined (CONFIG_SMALL)\
+  && ! defined (CONFIG_DRIVER_NOR_CFI_NO_BUFFERED)\
+  && ! defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
 #  define USE_BUFFERED_WRITE	/* Use write buffer for faster operation */
 # endif
 #endif
 
 #define WIDTH_SHIFT	(NOR_WIDTH>>4)	/* Bit shift for device width */
 
-/* CFI compliant parameters */
-
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
+	/* CFI compliant parameters */
 #define ReadArray	0xff
 #define ReadID		0x90
 #define ReadQuery	0x98
@@ -178,6 +198,41 @@
 #define LockSet		0x01
 #define LockClear	0xd0
 #define ProgramOTP	0xc0
+
+#endif
+
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+
+#define ReadArray	0xff
+#define ReadID		0x90
+#define ReadQuery	0x98
+#define ReadStatus	0x70
+#define ClearStatus	0x50
+#define EraseSetup	0x80
+#define Erase		0x30
+#define Program		0xa0
+#define ProgramBuffered 0xe8
+#define ProgramConfirm  0xd0
+#define Suspend		0xb0
+#define Resume		0x30
+#define STSConfig	0xb8
+#define Configure	0x60
+#define LockSet		0x01
+#define LockClear	0xd0
+#define ProgramOTP	0xc0
+#define UnlockData1	0xaa
+#define UnlockData2	0x55
+#define DQ1		(1<<1)
+#define DQ2		(1<<2)
+#define DQ3		(1<<3)
+#define DQ5		(1<<5)
+#define DQ6		(1<<6)
+
+#endif
+
+/* Status bits.  While these are really Intel protocol status bits,
+   the Spansion code returns these values to emulate the Intel
+   behavior. */
 
 #define Ready		(1<<7)
 #define EraseSuspended	(1<<6)
@@ -247,6 +302,27 @@ static void nor_write_one (unsigned long index, unsigned long v)
 
 #define CLEAR_STATUS(i) nor_write_one(i, CMD (ClearStatus))
 
+/* nor_region
+
+   returns a pointer to the erase region structure for the given index.
+
+*/
+
+static const struct nor_region* nor_region (unsigned long index)
+{
+  int i;
+  for (i = 0; i < chip->regions; ++i)
+    if (index < chip->region[i].next)
+      return &chip->region[i];
+  return &chip->region[0];		/* A very serious error */
+}
+
+
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
+
+/* intel:nor_status
+*/
+
 static unsigned long nor_status (unsigned long index)
 {
   unsigned long status;
@@ -258,6 +334,115 @@ static unsigned long nor_status (unsigned long index)
   return status;
 }
 
+static inline void nor_write_perform (unsigned long index, unsigned long data)
+{
+  WRITE_ONE (index, CMD (Program));
+  WRITE_ONE (index, data);
+}
+
+static inline void nor_erase_perform (unsigned long index)
+{
+  WRITE_ONE (index, CMD (Erase));
+  WRITE_ONE (index, CMD (EraseConfirm));
+}
+
+/* intel:nor_unlock_page
+
+   will conditionally unlock the page if it is locked.  Conditionally
+   performing this operation results in minimal wear.
+
+   We check if either block is locked and unlock both if one is
+   locked.
+
+*/
+
+static unsigned long nor_unlock_page (unsigned long index)
+{
+  index &= ~ (nor_region (index)->size - 1);
+
+  WRITE_ONE (index, CMD (ReadID));
+  PRINTF ("nor_unlock_page 0x%lx %x\n", index,
+	  REGA (index + (0x02 << WIDTH_SHIFT)));
+  if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
+    return STAT (Ready);
+
+  WRITE_ONE (index, CMD (Configure));
+  WRITE_ONE (index, CMD (LockClear));
+  return nor_status (index);
+}
+
+#endif
+
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+
+/* spansion:nor_status
+
+   while Spansion flash memories are busy successive reads to any
+   address return a toggling DQ6 bit.  When this bit stops toggling,
+   the function has completed.
+
+   This function, on recommendation of the data sheet, rechecks the
+   toggling of DQ6 after it sees the DQ5.  I suppose we could also
+   check that DQ5 was set in both dq and dqPrev, but this way is the
+   'recommended' flow.
+
+*/
+
+static unsigned long nor_status (unsigned long index)
+{
+  nor_t dqPrev;
+  nor_t dq;
+
+//  usleep (4);			/* Required delay before reading status */
+
+  dqPrev = READ_ONE (index);
+
+  while (((dq = READ_ONE (index)) ^ dqPrev) & STAT (DQ6)) {
+    if (dq & STAT (DQ5)) {
+      dqPrev = READ_ONE (index);
+      dq = READ_ONE (index);
+      if (!((dq ^ dqPrev) & STAT (DQ5)))
+	break;			/* No longer toggling -> Ready */
+      return ((dq ^ dqPrev) & STAT (DQ2))
+	? STAT (EraseError)
+	: STAT (ProgramError);
+    }
+    dqPrev = dq;
+  }
+
+  return STAT (Ready);
+}
+
+static inline void nor_write_perform (unsigned long index, unsigned long data)
+{
+  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (Program));
+  WRITE_ONE (index, data);
+}
+
+static inline void nor_erase_perform (unsigned long index)
+{
+  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (EraseSetup));
+  WRITE_ONE (phys_from_index( 0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (index, CMD (Erase));
+}
+
+/* spansion:nor_unlock_page
+
+   is a NULL operation for the time being.
+
+*/
+
+static unsigned long nor_unlock_page (unsigned long index)
+{
+  return STAT (Ready);
+}
+
+#endif
 
 #if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
 
@@ -296,47 +481,6 @@ void copy_from (void* _dst, const void* _src, size_t cb)
 #else
 # define copy_from memcpy
 #endif
-
-/* nor_region
-
-   returns a pointer to the erase region structure for the given index.
-
-*/
-
-static const struct nor_region* nor_region (unsigned long index)
-{
-  int i;
-  for (i = 0; i < chip->regions; ++i)
-    if (index < chip->region[i].next)
-      return &chip->region[i];
-  return &chip->region[0];		/* A very serious error */
-}
-
-
-/* nor_unlock_page
-
-   will conditionally unlock the page if it is locked.  Conditionally
-   performing this operation results in minimal wear.
-
-   We check if either block is locked and unlock both if one is
-   locked.
-
-*/
-
-static unsigned long nor_unlock_page (unsigned long index)
-{
-  index &= ~ (nor_region (index)->size - 1);
-
-  WRITE_ONE (index, CMD (ReadID));
-  PRINTF ("nor_unlock_page 0x%lx %x\n", index,
-	  REGA (index + (0x02 << WIDTH_SHIFT)));
-  if ((REGA (index + (0x02 << WIDTH_SHIFT)) & QRY (0x1)) == 0)
-    return STAT (Ready);
-
-  WRITE_ONE (index, CMD (Configure));
-  WRITE_ONE (index, CMD (LockClear));
-  return nor_status (index);
-}
 
 static void nor_init_chip (unsigned long phys)
 {
@@ -643,7 +787,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 #if defined (NO_WRITE)
 	printf ("0x%lx := 0x%04x\n", index + i, ((nor_t*)pv)[i/(NOR_WIDTH/8)]);
 #else
-        nor_t v = SWAP_ONE (((nor_t*)pv)[i/(NOR_WIDTH/8)]);
+	nor_t v = SWAP_ONE (((nor_t*)pv)[i/(NOR_WIDTH/8)]);
 	WRITE_ONE (index + i, v);
 #endif
       }
@@ -651,7 +795,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     else {
       int i;
       char __aligned rgb[chip->writebuffer_size];
-      memset (rgb, 0xff, chip->writebuffer_size);	/* Fill with FFs to mask the unwritten bytes */
+		     /* Fill with FFs to mask the unwritten bytes */
+      memset (rgb, 0xff, chip->writebuffer_size);
 //      rgb[0] = 0xff;						/* First */
 //      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);
@@ -659,7 +804,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
       for (i = 0; i < available + (index & 1); i += NOR_WIDTH/8) {
 #if defined (NO_WRITE)
 	printf ("0x%lx #= 0x%04x\n",
-		(index & ~(NOR_WIDTH/8 - 1)) + i, ((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
+		(index & ~(NOR_WIDTH/8 - 1)) + i,
+		((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
 #else
 	nor_t v = SWAP_ONE (((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
 	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i, v);
@@ -748,13 +894,13 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 	goto fail;
       pageLast = page;
     }
+
 #if defined (NO_WRITE)
     printf ("nor_write 0x%0*lx index 0x%lx  page 0x%lx  step %d  cb 0x%x\n",
 	    NOR_WIDTH/4, data, index, page, step, cb);
     status = STAT (Ready);
 #else
-    WRITE_ONE (index, CMD (Program));
-    WRITE_ONE (index, data);
+    nor_write_perform (index, data);
     status = nor_status (index);
 #endif
     vpen_disable ();
@@ -813,8 +959,7 @@ static void nor_erase (struct descriptor_d* d, size_t cb)
 	    index, available);
     status = STAT (Ready);
 #else
-    WRITE_ONE (index, CMD (Erase));
-    WRITE_ONE (index, CMD (EraseConfirm));
+    nor_erase_perform (index);
     status = nor_status (index);
 #endif
     vpen_disable ();
@@ -891,8 +1036,16 @@ static void nor_report (void)
   if (!chip)
     return;
 
-  printf ("  nor:    %ldMiB total  %dB write buffer\n",
-	  chip->total_size/(1024*1024), chip->writebuffer_size);
+  printf ("  nor:    %ldMiB total  %dB write buffer"
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
+	  " (Intel)"
+#endif
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+	  " (Spansion)"
+#endif
+	  "\n",
+	  chip->total_size/(1024*1024), chip->writebuffer_size
+	  );
   for (i = 0; i < chip->regions; ++i)
     printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",
 	    i,
