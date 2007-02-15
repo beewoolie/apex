@@ -523,6 +523,12 @@ void emac_init (void)
 
 void static emac_release (void)
 {
+  /* We *must* disable the Ethernet MAC before passing control the the
+     next piece or software or we may be vulnerable to spurrious DMA
+     transfers on the part of the EMAC.  The kernel driver will enable
+     the clock and it will set the EMAC control register when it
+     initializes the device.  */
+
   EMAC_NETCTL = 0;
   EMAC_RXBQP = 0;
   EMAC_TXBQP = 0;

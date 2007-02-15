@@ -1,3 +1,13 @@
+2007-02-14  Marc Singer  <elf@cerise.buici.com>
+
+	* src/drivers/drv-mem.c (memory_scan): Fixed error in memory scan
+	that wasn't accoounting for the last block in a region.  This
+	probably would never have been a problem, but was noticed while
+	testing the memscan function.
+	(cmd_memscan): New command that scans a region of memory as if
+	we're scanning memory when APEX starts.  This is useful when
+	debugging memory initialization issues.
+
 2007-02-13  Marc Singer  <elf@cerise.buici.com>
 
 	* src/drivers/drv-nor-cfi.c: Added Spansion command support to the

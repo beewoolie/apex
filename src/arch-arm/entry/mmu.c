@@ -95,6 +95,11 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define MMUEN (1<<0)
 
 
+void mmu_cache_flush (void)
+{
+  CACHE_FLUSH;
+}
+
 /* mmu_init
 
    performs MMU initialization.  We don't do anything very complex

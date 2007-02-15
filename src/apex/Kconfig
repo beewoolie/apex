@@ -221,6 +221,13 @@ config CMD_MEMLIMIT
 	  kernel.  It is useful for testing how the kernel
 	  responds to a limited memory resource.
 
+config CMD_MEMSCAN
+	bool "Define Memscan Command"
+	default n
+	help
+	  This command scans memory as APEX does when initializing.
+	  It is used primarily for debugging.
+
 config CMD_CLCDC_SPLASH
 	bool "Define CLCDC Splash sub-command"
 	depends on DRIVER_LH_CLCDC

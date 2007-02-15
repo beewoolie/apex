@@ -61,6 +61,7 @@
 #define SDR_IR_NORMAL		0x6 /* *** undocumented? *** */
 
 #define SDR_CONFIG_64MIB	(1<<5) /* 64 Mib chip enable */
+#define SDR_CONFIG_RAS3		(1<<4) /* Enable RAS3 (always set) */
 #define SDR_CONFIG_CAS3		(1<<3) /* Enable CAS3, CAS2 default */
 #define SDR_CONFIG_2x8Mx16       0
 #define SDR_CONFIG_4x8Mx16       1

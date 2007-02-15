@@ -49,6 +49,7 @@
 #include <error.h>
 #include <command.h>
 #include <apex.h>
+#include <asm/mmu.h>
 
 #if defined (CONFIG_ATAG)
 # include <atag.h>
@@ -75,11 +76,13 @@ static unsigned memlimit;
 
 #define CB_BLOCK	     (1024*1024)
 
-static int memory_scan (int i, unsigned long start, unsigned long length)
+static int memory_scan (struct mem_region* regions, int c,
+			unsigned long start, unsigned long length)
 {
   extern char APEX_VMA_START;
   extern char APEX_VMA_PROBE_END;
   unsigned long* pl;
+  int i = 0;
 
 //  length = 1024*1024*36;
   PUTC_LL ('k');
@@ -91,7 +94,7 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
 			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
        1;
        pl -= CB_BLOCK/sizeof (*pl)) {
-//    PRINTF ("   %p\n", pl);
+    PRINTF ("   %p\n", pl);
     *pl = (unsigned long) pl;
 
 				/* Prevents integer wrapping at zero */
@@ -102,25 +105,28 @@ static int memory_scan (int i, unsigned long start, unsigned long length)
   PUTC_LL ('i');
   PRINTF ("  identifying\n");
 
+  mmu_cache_flush ();
+
 	/* Identify */
   for (pl = (unsigned long*) (start
 			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
-       pl < (unsigned long*) (start + length)
-	 && i < sizeof (memory_regions)/sizeof (*memory_regions);
+       pl < (unsigned long*) (start + length) && i < c;
        pl += CB_BLOCK/sizeof (*pl)) {
-    //    PRINTF ("   %p %p\n", pl, *pl);
+    PRINTF ("   %p %08lx\n", pl, *pl);
     //    if (testram ((u32) pl) != 0)
     //      continue;
     if (*pl == (unsigned long) pl) {
-      if (memory_regions[i].length == 0)
-	memory_regions[i].start
+      if (regions[i].length == 0)
+	regions[i].start
 	  = (unsigned long) pl - (&APEX_VMA_PROBE_END - &APEX_VMA_START);
-      memory_regions[i].length += CB_BLOCK;
+      regions[i].length += CB_BLOCK;
     }
     else
-      if (memory_regions[i].length)
+      if (regions[i].length)
 	++i;
   }
+  if (regions[i].length)
+    ++i;
   return i;
 }
 
@@ -135,7 +141,9 @@ static void memory_init (void)
   PUTC_LL ('0');
   PRINTF ("Scanning bank 0 %x %x\n",
 	  RAM_BANK0_START, RAM_BANK0_LENGTH);
-  i = memory_scan (i, RAM_BANK0_START, RAM_BANK0_LENGTH);
+  i = memory_scan (memory_regions + i,
+		   sizeof (memory_regions)/sizeof (*memory_regions) - i,
+		   RAM_BANK0_START, RAM_BANK0_LENGTH);
   PRINTF ("  %d block%s\n", i, i != 1 ? "s" : "");
 #endif
 
@@ -143,17 +151,23 @@ static void memory_init (void)
   PUTC_LL ('1');
   PRINTF ("Scanning bank 1 %x %x\n",
 	  RAM_BANK1_START, RAM_BANK1_LENGTH);
-  i = memory_scan (i, RAM_BANK1_START, RAM_BANK1_LENGTH);
+  i = memory_scan (memory_regions + i,
+		   sizeof (memory_regions)/sizeof (*memory_regions) - i,
+		   RAM_BANK1_START, RAM_BANK1_LENGTH);
 #endif
 
 #if defined (RAM_BANK2_START)
   PUTC_LL ('2');
-  i = memory_scan (i, RAM_BANK2_START, RAM_BANK2_LENGTH);
+  i = memory_scan (memory_regions + i,
+		   sizeof (memory_regions)/sizeof (*memory_regions) - i,
+		   RAM_BANK2_START, RAM_BANK2_LENGTH);
 #endif
 
 #if defined (RAM_BANK3_START)
   PUTC_LL ('3');
-  i = memory_scan (i, RAM_BANK3_START, RAM_BANK3_LENGTH);
+  i = memory_scan (memory_regions + i,
+		   sizeof (memory_regions)/sizeof (*memory_regions) - i,
+		   RAM_BANK3_START, RAM_BANK3_LENGTH);
 #endif
 
   PUTC_LL ('m');
@@ -288,7 +302,6 @@ static int cmd_memlimit (int argc, const char** argv)
   return 0;
 }
 
-
 static __command struct command_d c_memlimit = {
   .command = "memlimit",
   .description = "limit memory passed to Linux",
@@ -302,6 +315,58 @@ static __command struct command_d c_memlimit = {
 "  the command will display the current limit.  The limit is always rounded\n"
 "  to an even number of 4KiB pages.\n\n"
 "  e.g.  memlimit 8m\n"
+  )
+};
+
+#endif
+
+#if defined (CONFIG_CMD_MEMSCAN)
+
+static int cmd_memscan (int argc, const char** argv)
+{
+  struct descriptor_d d;
+  int result;
+  int i;
+  int c;
+  struct mem_region regions[8];
+
+  if (argc != 2)
+    return ERROR_PARAM;
+
+  result = parse_descriptor (argv[1], &d);
+  if (result) {
+    printf ("Unable to open descriptor %s\n", argv[1]);
+    return result;
+  }
+
+  if (strcmp (d.driver_name, "memory"))
+    ERROR_RETURN (ERROR_UNSUPPORTED, "descriptor must refer to memory");
+
+  memset (regions, 0, sizeof (regions));
+  c = memory_scan (regions, sizeof (regions)/sizeof (*regions),
+		   d.start, d.length);
+
+  for (i = 0; i < c; ++i)
+    if (regions[i].length)
+      printf (" 0x%lx 0x%08x (%d MiB)\n",
+	      regions[i].start, regions[i].length,
+	      regions[i].length/(1024*1024));
+
+  mmu_cache_flush ();		/* Actually, a secondary feature */
+
+  return 0;
+}
+
+static __command struct command_d c_memscan = {
+  .command = "memscan",
+  .description = "scan a region of memory for aliasing",
+  .func = cmd_memscan,
+  COMMAND_HELP(
+"memscan"
+" REGION\n"
+"  Scans the region of memory, looking for aliases, to detect the extent\n"
+"  of available memory resources.\n"
+"  e.g.  memscan 0xc0000000+64m\n"
   )
 };
 

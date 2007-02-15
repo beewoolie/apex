@@ -41,6 +41,7 @@
 
 void* alloc_uncached (size_t cb, size_t alignment);
 void* alloc_uncached_top_retain (size_t cb, size_t alignment);
+void mmu_cache_flush (void);
 void mmu_protsegment (void* pv, int cacheable, int bufferable);
 
 #endif  /* __MMU_H__ */
