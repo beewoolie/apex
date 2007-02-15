@@ -49,7 +49,9 @@
 #include <error.h>
 #include <command.h>
 #include <apex.h>
-#include <asm/mmu.h>
+#if defined (CONFIG_MMU)
+# include <asm/mmu.h>
+#endif
 
 #if defined (CONFIG_ATAG)
 # include <atag.h>
@@ -105,7 +107,9 @@ static int memory_scan (struct mem_region* regions, int c,
   PUTC_LL ('i');
   PRINTF ("  identifying\n");
 
+#if defined (CONFIG_MMU)
   mmu_cache_flush ();
+#endif
 
 	/* Identify */
   for (pl = (unsigned long*) (start
@@ -370,7 +374,9 @@ static int cmd_memscan (int argc, const char** argv)
 	      regions[i].start, regions[i].length,
 	      regions[i].length/(1024*1024));
 
+#if defined (CONFIG_MMU)
   mmu_cache_flush ();		/* Actually, a secondary feature */
+#endif
 
   if (update) {
     memset (memory_regions, sizeof (memory_regions), 0);
