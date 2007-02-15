@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Feb  5 18:43:39 2007
+# Wed Feb 14 23:52:00 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -33,6 +33,7 @@ CONFIG_STACK_SIZE=0x1000
 # CONFIG_MACH_LPD79524 is not set
 # CONFIG_MACH_KEV79524 is not set
 CONFIG_MACH_KEV79525=y
+# CONFIG_MACH_MOTO_EDGE is not set
 
 #
 # Platform Setup
@@ -80,6 +81,7 @@ CONFIG_CMD_GO=y
 # CONFIG_CMD_WAIT is not set
 # CONFIG_CMD_XRECEIVE is not set
 # CONFIG_CMD_MEMLIMIT is not set
+# CONFIG_CMD_MEMSCAN is not set
 
 #
 # Generic Drivers

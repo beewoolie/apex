@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Feb  5 18:43:43 2007
+# Wed Feb 14 23:52:00 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -89,6 +89,7 @@ CONFIG_CMD_WAIT=y
 CONFIG_CMD_XRECEIVE=y
 CONFIG_CMD_ETH_DM9000=y
 CONFIG_CMD_MEMLIMIT=y
+# CONFIG_CMD_MEMSCAN is not set
 CONFIG_CMD_CLCDC_SPLASH=y
 CONFIG_CMD_CLCDC_TEST=y
 # CONFIG_CMD_ARM920_TEST is not set
