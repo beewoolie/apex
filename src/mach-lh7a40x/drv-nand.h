@@ -34,7 +34,7 @@
 /* ----- Includes */
 
 #include "mach/hardware.h"
-#include "nand.h"
+#include <drv-nand-base.h>
 
 /* ----- Types */
 
