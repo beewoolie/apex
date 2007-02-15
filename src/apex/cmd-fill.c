@@ -44,18 +44,34 @@ int cmd_fill (int argc, const char** argv)
   struct descriptor_d dout;
   char __aligned rgb[4];
   int result = 0;
+  static int width;
+
+  /* Parse arguments */
+  while (argc > 1 && *argv[1] == '-') {
+    switch (argv[1][1]) {
+    case '1':
+    case '2':
+    case '4':
+      width = argv[1][1] - '0';
+      break;
+    default:
+      return ERROR_PARAM;
+      break;
+    }
+    --argc;
+    ++argv;
+  }
 
   if (argc != 3)
     return ERROR_PARAM;
 
-  rgb[0] = simple_strtoul (argv[1], NULL, 0);
+  *(unsigned long*) rgb = simple_strtoul (argv[1], NULL, 0);
 
   if (   (result = parse_descriptor (argv[2], &dout))
       || (result = open_descriptor (&dout))) {
     printf ("Unable to open target %s\n", argv[2]);
     goto fail_early;
   }
-
 
   if (!dout.driver->write) {
     result = ERROR_UNSUPPORTED;
@@ -64,6 +80,10 @@ int cmd_fill (int argc, const char** argv)
 
   if (!dout.length)
     result = ERROR_PARAM;
+
+  if (width == 0)
+    width = 1;
+  dout.width = width;
 
   {
     //    char rgb[512];
@@ -75,10 +95,10 @@ int cmd_fill (int argc, const char** argv)
 
 //    printf ("%s: writing\n", __FUNCTION__);
 
-    while (cb--) {
+    for (; cb > 0; cb -= width) {
       size_t cbWrote;
       SPINNER_STEP;
-      cbWrote = dout.driver->write (&dout, rgb, 1);
+      cbWrote = dout.driver->write (&dout, rgb, width);
       if (!cbWrote) {
 	result = ERROR_FAILURE;
 	goto fail;
