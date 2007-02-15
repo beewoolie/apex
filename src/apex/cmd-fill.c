@@ -62,6 +62,7 @@ int cmd_fill (int argc, const char** argv)
     ++argv;
   }
 
+  printf (" argc %d\n", argc);
   if (argc != 3)
     return ERROR_PARAM;
 
