@@ -62,7 +62,6 @@ int cmd_fill (int argc, const char** argv)
     ++argv;
   }
 
-  printf (" argc %d\n", argc);
   if (argc != 3)
     return ERROR_PARAM;
 
@@ -79,12 +78,12 @@ int cmd_fill (int argc, const char** argv)
     goto fail;
   }
 
-  if (!dout.length)
-    result = ERROR_PARAM;
-
   if (width == 0)
     width = 1;
   dout.width = width;
+
+  if (!dout.length)
+    dout.length = width;
 
   {
     //    char rgb[512];
@@ -119,9 +118,15 @@ static __command struct command_d c_fill = {
   .func = cmd_fill,
   COMMAND_DESCRIPTION ("fill a region with a byte")
   COMMAND_HELP(
-"fill VALUE DST\n"
-"  Fills the DST region with the byte value VALUE.  This command\n"
-"  cannot be used to erase flash.\n"
-"  e.g.  fill 0xe5 0x100+256\n"
+"fill [-1|-2|-4] VALUE DST\n"
+"  Fills the DST region with the value VALUE.\n"
+"  The default DST region length is the fill width.  The default\n"
+"  fill width is 1 byte.  The -# options change the fill width.\n"
+"  The width option is sticky for this command--once set it will\n"
+"  remain in effect until changed with another fill command.\n"
+"  This command cannot be used to erase flash.\n\n"
+"  e.g.  fill 0xe5 0x100           # Write one 0xe5 byte\n"
+"        fill -4 0xe5 0x100+256    # Write 64 0x000000e5's\n"
+"                                  #  & set default fill width to 4\n"
   )
 };

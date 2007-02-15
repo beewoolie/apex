@@ -244,9 +244,12 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 //  printf ("%s: %p +%d -> %lx\n", __FUNCTION__, pv, cb, d->start + d->index);
 
-  if (cb == 1 && d->start + d->index == 0x50000000)
-    *((unsigned char*)(d->start + d->index)) = *(unsigned char*) pv;
-  else
+  /* This code appears to be legacy from some exploration of writing
+     to CF.  It is removed since it could not possibly be correct.
+     The memcpy will do the right thing given a cb==1 in any event. */
+//  if (cb == 1 && d->start + d->index == 0x50000000)
+//    *((unsigned char*)(d->start + d->index)) = *(unsigned char*) pv;
+//  else
     memcpy ((void*) (d->start + d->index), pv, cb);
   d->index += cb;
 
@@ -329,6 +332,21 @@ static int cmd_memscan (int argc, const char** argv)
   int i;
   int c;
   struct mem_region regions[8];
+  int update = 0;
+
+  /* Parse arguments */
+  while (argc > 1 && *argv[1] == '-') {
+    switch (argv[1][1]) {
+    case 'u':
+      update = 1;
+      break;
+    default:
+      return ERROR_PARAM;
+      break;
+    }
+    --argc;
+    ++argv;
+  }
 
   if (argc != 2)
     return ERROR_PARAM;
@@ -354,6 +372,11 @@ static int cmd_memscan (int argc, const char** argv)
 
   mmu_cache_flush ();		/* Actually, a secondary feature */
 
+  if (update) {
+    memset (memory_regions, sizeof (memory_regions), 0);
+    memcpy (memory_regions, regions, sizeof (*memory_regions)*c);
+  }
+
   return 0;
 }
 
@@ -362,11 +385,13 @@ static __command struct command_d c_memscan = {
   .description = "scan a region of memory for aliasing",
   .func = cmd_memscan,
   COMMAND_HELP(
-"memscan"
-" REGION\n"
-"  Scans the region of memory, looking for aliases, to detect the extent\n"
-"  of available memory resources.\n"
-"  e.g.  memscan 0xc0000000+64m\n"
+"memscan [-u] REGION\n"
+"  Scans for valid memory.\n"
+"  This command is used to rescan memory, identifying aliased regions\n"
+"  in order to report the contiguous blocks.  With the -u switch,\n"
+"  the command will update the memory map given to the kernel when\n"
+"  it boots.\n"
+"  e.g.  memscan -u 0xc0000000+512m\n"
   )
 };
 

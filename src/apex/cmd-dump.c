@@ -144,9 +144,10 @@ static __command struct command_d c_dump = {
 "  Display SRC region data on the console.\n"
 "  The default SRC region length is 64 bytes.  The -# options\n"
 "  change the width of the displayed values.  The width option\n"
-"  is sticky.  Once set it will remain in effect until changed\n"
+"  is sticky--once set it will remain in effect until changed\n"
 "  again.\n\n"
 "  e.g.  dump -4 nor:0		# Display 32 bit words\n"
+"                               #  & set default dump width to 4\n"
 "        dump 0x20200000\n"
   )
 };
