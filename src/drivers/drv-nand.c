@@ -109,7 +109,7 @@ inline void nand_read_setup (unsigned long page, int index)
 #endif
 
 struct nand_chip {
-  int id_len;
+  int id_mask;			/* Bits indicating which ID bytes to match */
   unsigned short id[4];
   unsigned long total_size;
   int erase_size;
@@ -118,9 +118,11 @@ struct nand_chip {
 };
 
 const static struct nand_chip chips[] = {
-  { 2, { 0x98, 0x75 },			/* Toshiba */
+  { (1<<1),
+    { 0x98, 0x75 },		/* Toshiba - 256 MiB*/
     32*1024*1024, 16*1024, 512 },
-  { 4, { 0x20, 0xf1, 0x80, 0x15},	/* ST */
+  { (1<<0) | (1<<1) | (1<<2) | (1<<3),
+    { 0x20, 0xf1, 0x80, 0x15},	/* ST - 1 GiB */
     128*1024*1024, 128*1024, 2048 },
 };
 
@@ -184,8 +186,11 @@ static void nand_init (void)
   for (chip = &chips[0];
        chip < chips + sizeof(chips)/sizeof (struct nand_chip);
        ++chip)
-    if (memcmp (id, chip->id, chip->id_len*sizeof (chip->id[0])) == 0)
+#define _M(i)\
+	(!(chip->id_mask & (1<<(i))) || id[i] == chip->id[i])
+    if (_M (0) && _M (1) && _M (1) && _M (1))
       break;
+#undef _M
   if (chip >= chips + sizeof(chips)/sizeof (chips[0]))
       chip = NULL;
 

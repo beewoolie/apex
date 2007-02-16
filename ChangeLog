@@ -1,3 +1,11 @@
+2007-02-15  Marc Singer  <elf@cerise.buici.com>
+
+	* src/drivers/drv-nand.c: Revised the NAND flash initialization
+	code to allow for better/more flexible detection of NAND chip
+	organizations.  Without a comprehensive directory of chip IDs,
+	we're looking for an easy way represent the ID->organization
+	mapping.
+
 2007-02-14  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile (SUBLEVEL): 1.4.16.  Rev for fat-slug support.
