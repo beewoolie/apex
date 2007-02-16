@@ -41,7 +41,7 @@
      CPLD JTAG chain from crashing the board.  See the target_init ()
      code. */
 
-#if defined (CONFIG_MAC_LPD7A40X)
+#if defined (CONFIG_MACH_LPD7A40X)
 # define DRV_CLCDC_SETUP\
 	({ GPIO_PINMUX |= (1<<1) | (1<<0); }) /* LCDVD[15:4] */
 #endif
