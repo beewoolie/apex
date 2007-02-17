@@ -100,6 +100,10 @@ int NAKED start (void)
 		  :  "+r" (offset)
 		  :: "lr", "cc");
 
+#if defined (IXP4XX_SDR_CONFIG)
+  *(volatile unsigned long*) 0xcc000000 = IXP4XX_SDR_CONFIG;
+#endif
+
   p = (struct tag*) PHYS_PARAMS;
 
 	/* Always start with the CORE tag */

@@ -35,4 +35,12 @@
 #define FORCE_LITTLEENDIAN
 //#define FORCE_BIGENDIAN
 
+/* Uncomment on of these if you want to reprogram the SDRAM controller
+   to take advantage of memory installed, but not detected by the
+   primary boot loader.  Also, make sure to se the RAM_BANK0_LENGTH
+   appropriately */
+
+//#define IXP4XX_SDR_CONFIG	0x18 /* 64MiB */
+//#define IXP4XX_SDR_CONFIG	0x1c /* 128MiB */
+
 #endif  /* __CONFIG_H__ */
