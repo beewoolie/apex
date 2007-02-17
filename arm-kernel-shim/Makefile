@@ -1,7 +1,7 @@
 # Makefile
 
 PACKAGE:=arm-kernel-shim
-VERSION:=1.3
+VERSION:=1.4
 
 CROSS_COMPILE:=/usr/arm-linux/gcc3/arm-linux-
 CC=$(CROSS_COMPILE)gcc
