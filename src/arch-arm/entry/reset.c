@@ -97,30 +97,12 @@ void __naked __section (.reset) reset (void)
   }
 #endif
 
-#if 0
-  /* Like most code that seems like a good idea, this isn't used
-     because it cannot make a difference.  The only way it is valid for
-     the loader to start is when the processor is already in
-     supervisor mode with interrupts disabled. */
-
-  /* First things first.  We coerce the system into supervisor mode
-     and disable interrupts in the first few instructions.  Really,
-     this cannot be done if we're not already in supervisor mode.  The
-     important thing is that we want to disable interrupts.
-  */
-  {
-    unsigned long l;
-    __asm volatile ("mov %0, #0xd3\n\t"
-		    "msr cpsr_c, %0" : "=&r" (l));
-  }
-#endif
-
 #if defined (CONFIG_DISABLE_MMU_AT_BOOT)
 
   CACHE_UNLOCK;
 
-  /* This disables the MMU, but there should be no reason to include
-     it.  However, there are some instances where it is necessary
+  /* This disables the MMU, though there should be no reason to do
+     this.  Still, there are some instances where it is necessary
      because: a preexisting bootloader fails to disable the MMU before
      calling other programs, the OS jumps to the bootloader to restart
      the machine, something else is screwy.  If the MMU mappings are

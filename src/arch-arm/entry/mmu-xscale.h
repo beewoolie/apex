@@ -48,4 +48,13 @@
 #define CACHE_FLUSH\
   ({ CACHE_CLEAN_D (0) ; CACHE_CLEAN_D (1); })
 
+#define CACHE_UNLOCK\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
+		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
+
+#define CACHE_LOCK_I(a)\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
+#define CACHE_INVALIDATE_I(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
+
 #endif  /* __MMU_XSCALE_H__ */

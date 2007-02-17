@@ -31,6 +31,14 @@
    me that we need to do this, though the cache and tlb flushing might
    require it.
 
+   o Cache Lockdown.  In order to allow reinitialization of SDRAM when
+     APEX is not the primary boot loader, we use the I-cache to hold a
+     portion of the APEX code while the SDRAM controller is off-line.
+     The constraints of the Xscale architecture require that we only
+     lock code that we are not executing.  So, we copy the first N-KiB
+     of APEX to another place in memory, lock it down, jump to it,
+     perform the updates, jump back, and unlock the cache.
+
 */
 
 #include <config.h>
@@ -183,6 +191,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   COPROCESSOR_WAIT;
 #endif
 
+#if 0
 	/* Fixup the CP15 control word.  This is done for the cases
 	   where we are bootstrapping from redboot which does not
 	   cleanup before jumping to code.  */
@@ -195,7 +204,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 //		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
 		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
   COPROCESSOR_WAIT;
-
+#endif
 
 	/* Configure flash access, slowest timing */
   /* *** FIXME: do we really need this?  We're already running in
