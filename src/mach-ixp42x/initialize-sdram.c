@@ -17,13 +17,13 @@
 
     There are several requirements for locking down code:
       7.[sic] the routine used to lock lines down in the cache must be
-        placed in non-cacheable memory, which means the MMU is
-        enabled. As a corollary: no fetches of cacheable code should
-        occur while locking instructions into the cache.the code being
-        locked into the cache must be cacheable.
+	placed in non-cacheable memory, which means the MMU is
+	enabled. As a corollary: no fetches of cacheable code should
+	occur while locking instructions into the cache.the code being
+	locked into the cache must be cacheable.
 
       8.[sic] the instruction cache must be enabled and invalidated
-        prior to locking down lines
+	prior to locking down lines
 
     Failure to follow these requirements will produce unpredictable
     results when accessing the instruction cache.
@@ -74,11 +74,31 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 		  "cmp %0, %2\n\t"
 		  "bls 0b\n\t"
 	       : "+r" (s),
-	         "+r" (d)
+		 "+r" (d)
 	       :  "r" (&APEX_VMA_COPY_END)
 	       : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 	       );
   mmu_cache_flush ();		/* Force copy to SDRAM */
+
+  {
+    extern unsigned long __r;
+    unsigned long offset = (unsigned long) &__r;
+    unsigned long v;
+
+    /* *** I think that loading the PC returns the address of the
+       *** current instruction plus 8. IIRC, this is guaranteed in the
+       *** ARM reference manuals, but we need to make sure that this
+       *** is guaranteed.  It is easy enough to determine in code that
+       *** we may not have to care.  Note that this means that if we
+       *** have a copy of our program at delta bytes offset, we load
+       *** pc with pc + delta - 84 to jump to the next instruction in
+       *** the other copy. */
+
+    __asm volatile ("__r: mov %0, pc\n\t"
+		    "     sub %1, %0, %1\n\t"
+		    : "=r" (v), "+r" (offset));
+    printf ("offset 0x%lx\n", offset);
+  }
 
   /* *** Jump to 0x0 copy of APEX  */
   /* *** Perform lockdown on this function.  Also should read it into
@@ -110,5 +130,3 @@ static __command struct command_d c_initialize_sdram = {
 "  program code while SDRAM is off-line.\n"
   )
 };
-
-
