@@ -101,11 +101,11 @@ void __naked __section (.reset) reset (void)
 
   CACHE_UNLOCK;
 
-  /* This disables the MMU, though there should be no reason to do
-     this.  Still, there are some instances where it is necessary
-     because: a preexisting bootloader fails to disable the MMU before
-     calling other programs, the OS jumps to the bootloader to restart
-     the machine, something else is screwy.  If the MMU mappings are
+  /* This disables the MMU, though there should be no reason to do so.
+     Still, there are some instances where it is necessary because: a
+     preexisting bootloader fails to disable the MMU before calling
+     other programs, the OS jumps to the bootloader to restart the
+     machine, something else is screwy.  If the MMU mappings are
      wonky, disabling the MMU may have dire consequences.
 
      This is really much worse than that.  In the case of a system

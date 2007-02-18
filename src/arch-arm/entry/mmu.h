@@ -25,6 +25,9 @@
 # include "mmu-xscale.h"
 #endif
 
+#define TLB_FLUSH\
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+
 #if !defined (CACHE_FLUSH)
 # define CACHE_FLUSH
 #endif

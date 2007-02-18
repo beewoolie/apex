@@ -46,6 +46,7 @@
 #include <service.h>
 #include <debug_ll.h>
 #include <sdramboot.h>
+//#include "../src/arch-arm/entry/mmu.h"
 
 #include "hardware.h"
 
@@ -141,11 +142,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "b 0b");
 #endif
 
-
-
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-#if defined (CONFIG_DEBUG_LL)
+#if defined (CONFIG_STARTUP_UART)
   UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
   UART_DLL  = 8;	// divisor_l;
   UART_DLH  = 0;	// divisor_h;
@@ -153,7 +152,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   UART_IER  = UART_IER_UUE;	/* Enable UART, mask all interrupts */
 				/* Clear interrupts? */
-  PUTC_LL('A');
+  PUTC('A');
 #endif
 
   _L(LEDf);			/* Start with all on */

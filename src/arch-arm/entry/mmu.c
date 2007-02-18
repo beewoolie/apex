@@ -100,6 +100,11 @@ void mmu_cache_flush (void)
   CACHE_FLUSH;
 }
 
+void mmu_tlb_flush (void)
+{
+  TLB_FLUSH;
+}
+
 /* mmu_init
 
    performs MMU initialization.  We don't do anything very complex
