@@ -194,6 +194,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 	/* Fixup the CP15 control word.  This is done for the cases
 	   where we are bootstrapping from redboot which does not
 	   cleanup before jumping to code.  */
+  /* This isn't done here any more since we can disable the MMU in the
+     reset() code with a configuration option.  Caches are enabled
+     elsewhere as well based on configuration option. */
   __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
 		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
 //		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
@@ -230,8 +233,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL ('\r');PUTC_LL ('\n');
 
 
-	  /* Exit now if executing in SDRAM */
-  if (EXP_CNFG0 & (1<<31)) {
+
+  if (EXP_CNFG0 & (1<<31)) {	/* Exit now if executing in SDRAM */
     PUTC_LL ('b');
     _L(LED1);
 
@@ -253,7 +256,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     }
 
 	/* Disable interrupts and set supervisor mode */
-    __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
+//    __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
 
 	/* Drain write buffer */
     __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
@@ -263,7 +266,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
     PUTC_LL ('#');
   }
-  else {
+  else {			/* Exit now if executing in SDRAM */
     PUTC_LL ('n');
     _L(LED2);
 

@@ -28,7 +28,7 @@
 #define _DASSOC(l)	((l>>(12+3))&7)
 #define _DM(l)		((l>>(12+2))&1)
 
-#define CACHE_FLUSH\
+#define CACHE_CLEAN\
   ({ unsigned long cache; int set, index; int linelen; int assoc;\
     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));\
     linelen = _DLEN(cache) + 3;\

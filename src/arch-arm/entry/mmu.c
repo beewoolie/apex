@@ -55,7 +55,7 @@
    XSCALE
    ------
 
-   o Uses a different method for flushing caches than ARMV4.
+   o Uses a different method for cleaning cache than ARMV4.
 
 
 */
@@ -95,14 +95,14 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define MMUEN (1<<0)
 
 
-void mmu_cache_flush (void)
+void mmu_cache_clean (void)
 {
-  CACHE_FLUSH;
+  CACHE_CLEAN;
 }
 
-void mmu_tlb_flush (void)
+void mmu_tlb_purge (void)
 {
-  TLB_FLUSH;
+  TLB_PURGE;
 }
 
 /* mmu_init
@@ -187,8 +187,8 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
   ttbl[i] = (i<<20)
     | (3<<10)			/* AP(R/W) */
     | (0<<5)			/* domain(0) */
-    | (bufferable ? (1<<2) : 0)
-    | (cacheable  ? (1<<3) : 0)
+    | (bufferable ? Btt : 0)
+    | (cacheable  ? Ctt : 0)
     | (2<<0);			/* type(section) */
 }
 
@@ -205,7 +205,7 @@ void mmu_release (void)
 
   __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
 
-  CACHE_FLUSH;
+  CACHE_CLEAN;
 
 	/* Disable MMU */
   {

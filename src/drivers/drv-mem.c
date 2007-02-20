@@ -108,7 +108,7 @@ static int memory_scan (struct mem_region* regions, int c,
   PRINTF ("  identifying\n");
 
 #if defined (CONFIG_MMU)
-  mmu_cache_flush ();
+  mmu_cache_clean ();
 #endif
 
 	/* Identify */
@@ -375,7 +375,7 @@ static int cmd_memscan (int argc, const char** argv)
 	      regions[i].length/(1024*1024));
 
 #if defined (CONFIG_MMU)
-  mmu_cache_flush ();		/* Actually, a secondary feature */
+  mmu_cache_clean ();		/* Actually, a secondary feature */
 #endif
 
   if (update) {

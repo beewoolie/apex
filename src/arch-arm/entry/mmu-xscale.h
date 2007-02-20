@@ -44,8 +44,8 @@
      for (line = CACHE_SIZE/CACHE_LINE_SIZE; line--; p += CACHE_LINE_SIZE) \
        __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p)); })
 
-	/* Flush all entries in data cache twice */
-#define CACHE_FLUSH\
+	/* Clean all sets in data cache twice as per recommendation. */
+#define CACHE_CLEAN\
   ({ CACHE_CLEAN_D (0) ; CACHE_CLEAN_D (1); })
 
 #define CACHE_UNLOCK\

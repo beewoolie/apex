@@ -88,7 +88,23 @@
 
 #endif
 
-#define PUTC(c)		({ UART_DR = c; \
+/* Assembler coded PUTC optimizes out one load and one unneeded
+   register.  Silly GCC.  Then again, this version causes the program
+   to misbehave and I'm not sure why. */
+#if 0
+#define PUTC(c)\
+  ({ unsigned long v;\
+     __asm volatile ("str %2, [%1]\n\t"\
+		  "00: ldr %0, [%1, #20]\n\t"\
+		     "tst %0, #64\n\t"\
+		     "beq 00b\n\t"\
+		     : "=r" (v)\
+		     : "r"  (UART_PHYS),\
+		       "r"  (c)); })
+
+#else
+#define PUTC(c)		({ UART_DR = c;\
 			   while ((UART_LSR & UART_LSR_TEMT) == 0) ; })
+#endif
 
 #endif  /* __DEBUG_LL_H__ */

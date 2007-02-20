@@ -1,5 +1,4 @@
 /* mmu.h
-     $Id$
 
    written by Marc Singer
    19 Dec 2005
@@ -41,8 +40,8 @@
 
 void* alloc_uncached (size_t cb, size_t alignment);
 void* alloc_uncached_top_retain (size_t cb, size_t alignment);
-void mmu_cache_flush (void);
-void mmu_tlb_flush (void);
+void mmu_cache_clean (void);
+void mmu_tlb_purge (void);
 void mmu_protsegment (void* pv, int cacheable, int bufferable);
 
 #endif  /* __MMU_H__ */

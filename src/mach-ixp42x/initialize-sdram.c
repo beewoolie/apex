@@ -57,17 +57,22 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 {
   unsigned long s = (unsigned long) &APEX_VMA_COPY_START;
   unsigned long d = (unsigned long) 0;
+  const unsigned long diff = d - s;
 
   PUTC ('A');
 
-  //  mmu_cache_flush ();
+  mmu_cache_clean ();
+//  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
+//  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
+//  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
+
   __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0)); /* Inv I&BTB */
   mmu_protsegment ((void*) d, 0, 0);			  /* Disable caching */
-  mmu_tlb_flush ();
+  mmu_tlb_purge ();
 
   PUTC ('B');
 
-		/* Copy all of APEX to uncacheable memory  */
+		/* Copy APEX to uncacheable memory  */
   __asm volatile (
 	       "0: ldmia %0!, {r3-r10}\n\t"
 		  "stmia %1!, {r3-r10}\n\t"
@@ -78,8 +83,9 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 	       :  "r" (&APEX_VMA_COPY_END)
 	       : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 	       );
-  mmu_cache_flush ();		/* Force copy to SDRAM */
+  mmu_cache_clean ();		/* Force copy to SDRAM */
 
+#if 0
   {
     extern unsigned long __r;
     unsigned long offset = (unsigned long) &__r;
@@ -99,6 +105,14 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 		    : "=r" (v), "+r" (offset));
     printf ("offset 0x%lx\n", offset);
   }
+#endif
+
+  __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
+  PUTC ('C');
+  PUTC ('C');
+  __asm volatile ("sub pc, pc, %0\n\t" :: "r" (diff + 4));
+  PUTC ('X');
+  PUTC ('Y');
 
   /* *** Jump to 0x0 copy of APEX  */
   /* *** Perform lockdown on this function.  Also should read it into
@@ -109,10 +123,10 @@ static int cmd_initialize_sdram (int argc, const char** argv)
   /* *** Reenable caching at 0x0 */
   /* *** Return. */
 
-  PUTC ('C');
+  PUTC ('E');
 
-//  mmu_protsegment ((void*) d, 1, 1);			  /* Enable caching */
-//  mmu_tlb_flush ();
+  mmu_protsegment ((void*) d, 1, 1);			  /* Enable caching */
+  mmu_tlb_purge ();
 
   PUTC ('\r');
   PUTC ('\n');
