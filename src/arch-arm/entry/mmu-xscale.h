@@ -56,5 +56,8 @@
   __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
 #define CACHE_INVALIDATE_I(a)\
   __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
+#define CACHE_INVALIDATE_IBTB\
+    __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0))
+
 
 #endif  /* __MMU_XSCALE_H__ */
