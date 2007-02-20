@@ -31,12 +31,31 @@
 
 /* ----- Includes */
 
+
+#if defined (CONFIG_CPU_ARMV4)
+# include <asm/mmu-armv4.h>
+#endif
+
+#if defined (CONFIG_CPU_XSCALE)
+# include <asm/mmu-xscale.h>
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */
 
 /* ----- Prototypes */
 
+#define TLB_PURGE\
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+
+#if !defined (CACHE_FLUSH)
+# define CACHE_FLUSH
+#endif
+
+#if !defined (CACHE_UNLOCK)
+# define CACHE_UNLOCK
+#endif
 
 void* alloc_uncached (size_t cb, size_t alignment);
 void* alloc_uncached_top_retain (size_t cb, size_t alignment);

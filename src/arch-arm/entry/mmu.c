@@ -68,7 +68,7 @@
 #include <apex.h>
 #include <mach/memory.h>	/* protection_for() function/macro */
 #include <debug_ll.h>
-#include "mmu.h"
+#include <asm/mmu.h>
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT

@@ -61,14 +61,13 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 
   PUTC ('A');
 
-  mmu_cache_clean ();
+  CACHE_CLEAN;
 //  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
 //  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
 //  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0)); /* Inv I&BTB */
   mmu_protsegment ((void*) d, 0, 0);			  /* Disable caching */
-  mmu_tlb_purge ();
+  TLB_PURGE;
 
   PUTC ('B');
 
@@ -83,41 +82,29 @@ static int cmd_initialize_sdram (int argc, const char** argv)
 	       :  "r" (&APEX_VMA_COPY_END)
 	       : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 	       );
-  mmu_cache_clean ();		/* Force copy to SDRAM */
+  CACHE_CLEAN;			/* Force copy to SDRAM */
 
-#if 0
-  {
-    extern unsigned long __r;
-    unsigned long offset = (unsigned long) &__r;
-    unsigned long v;
-
-    /* *** I think that loading the PC returns the address of the
-       *** current instruction plus 8. IIRC, this is guaranteed in the
-       *** ARM reference manuals, but we need to make sure that this
-       *** is guaranteed.  It is easy enough to determine in code that
-       *** we may not have to care.  Note that this means that if we
-       *** have a copy of our program at delta bytes offset, we load
-       *** pc with pc + delta - 84 to jump to the next instruction in
-       *** the other copy. */
-
-    __asm volatile ("__r: mov %0, pc\n\t"
-		    "     sub %1, %0, %1\n\t"
-		    : "=r" (v), "+r" (offset));
-    printf ("offset 0x%lx\n", offset);
-  }
-#endif
-
+  /* *** Jump to 0x0 copy of APEX  */
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
   PUTC ('C');
-  PUTC ('C');
-  __asm volatile ("sub pc, pc, %0\n\t" :: "r" (diff + 4));
+
+  /* *** Perform lockdown on this function.  Also should read it into
+     *** dcache.  */
+  {
+    unsigned long p = (unsigned long) (&cmd_initialize_sdram) & ~3;
+    unsigned long c = 1024;
+
+    //    CACHE_INVALIDATE_IBTB;
+    for (; c; p += 32, c -= 32)
+      CACHE_LOCK_I (p);
+  }
+
+  /* *** Jump back to original copy of APEX. */
+
+   __asm volatile ("sub pc, pc, %0\n\t" :: "r" (diff + 4));
   PUTC ('X');
   PUTC ('Y');
 
-  /* *** Jump to 0x0 copy of APEX  */
-  /* *** Perform lockdown on this function.  Also should read it into
-     *** dcache.  */
-  /* *** Jump back to original copy of APEX. */
   /* *** Reinitialize SDRAM. */
   /* *** Unlock caches */
   /* *** Reenable caching at 0x0 */
@@ -126,7 +113,7 @@ static int cmd_initialize_sdram (int argc, const char** argv)
   PUTC ('E');
 
   mmu_protsegment ((void*) d, 1, 1);			  /* Enable caching */
-  mmu_tlb_purge ();
+  TLB_PURGE;
 
   PUTC ('\r');
   PUTC ('\n');
