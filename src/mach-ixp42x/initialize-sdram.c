@@ -50,21 +50,20 @@
 #include <service.h>
 #include "hardware.h"
 #include <asm/mmu.h>
+#include "sdram.h"
 
 #include <debug_ll.h>
 
-static int cmd_initialize_sdram (int argc, const char** argv)
+static int __section (.bootstrap)
+     cmd_initialize_sdram (int argc, const char** argv)
 {
-  unsigned long s = (unsigned long) &APEX_VMA_COPY_START;
+  unsigned long s = (unsigned long) &APEX_VMA_START;
   unsigned long d = (unsigned long) 0;
   const unsigned long diff = d - s;
 
   PUTC ('A');
 
   CACHE_CLEAN;
-//  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
-//  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
-//  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
 
   mmu_protsegment ((void*) d, 0, 0);			  /* Disable caching */
   TLB_PURGE;
@@ -88,33 +87,73 @@ static int cmd_initialize_sdram (int argc, const char** argv)
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
   PUTC ('C');
 
+//  CACHE_INVALIDATE_IBTB;
+
+#if 1
   /* *** Perform lockdown on this function.  Also should read it into
      *** dcache.  */
   {
-    unsigned long p = (unsigned long) (&cmd_initialize_sdram) & ~3;
-    unsigned long c = 1024;
+    unsigned long p = (unsigned long) (&cmd_initialize_sdram) & ~0x1f;
+    unsigned long c = 4096/32;
 
-    //    CACHE_INVALIDATE_IBTB;
-    for (; c; p += 32, c -= 32)
-      CACHE_LOCK_I (p);
+    CACHE_INVALIDATE_IBTB;
+    CACHE_D_SETLOCK;
+
+    for (; c--; p += 32) {
+      CACHE_I_LOCK (p);
+      CACHE_D_LOCK (p);
+    }
+
+    CACHE_D_UNSETLOCK;
   }
 
-  /* *** Jump back to original copy of APEX. */
+#endif
+  /* *** Jump back to original copy of APEX; we're running from cache. */
 
    __asm volatile ("sub pc, pc, %0\n\t" :: "r" (diff + 4));
   PUTC ('X');
   PUTC ('Y');
 
   /* *** Reinitialize SDRAM. */
-  /* *** Unlock caches */
-  /* *** Reenable caching at 0x0 */
-  /* *** Return. */
+
+  SDR_CONFIG = SDR_CONFIG_RAS3 | SDR_CONFIG_CAS3 | SDR_CONFIG_CHIPS;
+//  SDR_REFRESH = 0;		/* Disable refresh */
+//  SDR_IR = SDR_IR_NOP;
+//  usleep (200);			/* datasheet: maintain 200us of NOP */
+
+  /* 133MHz timer cycle count, 0x81->969ns == ~1us */
+  /* datasheet: not clear what the refresh requirement is.  */
+  SDR_REFRESH = 0x81;		/* *** FIXME: calc this */
+
+  SDR_IR = SDR_IR_PRECHARGE_ALL;
+
+  usleep (1);			/* datasheet: wait for Trp (<=20ns)
+				   before starting AUTO REFRESH */
+
+  /* datasheet: needs at least 8 refresh (bus) cycles.  Timing diagram
+     shows only two AUTO_REFRESH commands, each is Trc (20ns) long. */
+
+  SDR_IR = SDR_IR_AUTO_REFRESH;
+  usleep (1);
+  SDR_IR = SDR_IR_AUTO_REFRESH;
+  usleep (1);
+
+  SDR_IR = SDR_IR_MODE_CAS3;
+  SDR_IR = SDR_IR_NORMAL;
+  usleep (1);			/* Must wait for 3 CPU cycles before
+				   SDRAM access */
 
   PUTC ('E');
 
+  /* *** Reenable caching at 0x0 */
+  d = 0;
   mmu_protsegment ((void*) d, 1, 1);			  /* Enable caching */
   TLB_PURGE;
 
+  /* *** Unlock caches */
+  CACHE_UNLOCK;
+
+  /* *** Return. */
   PUTC ('\r');
   PUTC ('\n');
 

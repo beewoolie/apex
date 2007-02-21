@@ -49,7 +49,7 @@
 #include <mach/coprocessor.h>
 #include <arch-arm.h>
 #include <memtest.h>
-#include "mmu.h"
+#include <asm/mmu.h>
 
 #if !defined (COPROCESSOR_WAIT)
 # define COPROCESSOR_WAIT

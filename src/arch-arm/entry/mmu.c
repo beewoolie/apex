@@ -95,6 +95,7 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define MMUEN (1<<0)
 
 
+#if 0
 void mmu_cache_clean (void)
 {
   CACHE_CLEAN;
@@ -104,6 +105,7 @@ void mmu_tlb_purge (void)
 {
   TLB_PURGE;
 }
+#endif
 
 /* mmu_init
 
@@ -146,11 +148,9 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
   COPROCESSOR_WAIT;
 
-#if defined (CONFIG_CPU_XSCALE)
 		/* The XScale core guide says to do this.  It isn't
 		   clear why it should be necessary, but we oblige. */
-  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
-#endif
+  CACHE_DRAIN_D;
 
 	/* Enable MMU */
   {
@@ -203,8 +203,7 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
 void mmu_release (void)
 {
 
-  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain buffer
-
+  CACHE_DRAIN_D;
   CACHE_CLEAN;
 
 	/* Disable MMU */

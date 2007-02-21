@@ -38,7 +38,10 @@
 #define CACHE_LINE_SIZE		(32)
 #define CACHE_SIZE		(32768)
 
-#define CACHE_CLEAN_D(b) \
+#define CACHE_D_DRAIN\
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)) // Drain buffer
+
+#define CACHE_D_CLEAN(b) \
   ({ unsigned long p = MVA_CACHE_CLEAN ^ (b ? CACHE_SIZE : 0);\
      int line;\
      for (line = CACHE_SIZE/CACHE_LINE_SIZE; line--; p += CACHE_LINE_SIZE) \
@@ -46,18 +49,28 @@
 
 	/* Clean all sets in data cache twice as per recommendation. */
 #define CACHE_CLEAN\
-  ({ CACHE_CLEAN_D (0) ; CACHE_CLEAN_D (1); })
+  ({ CACHE_D_CLEAN (0) ; CACHE_D_CLEAN (1); })
 
 #define CACHE_UNLOCK\
   __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
 		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
 
-#define CACHE_LOCK_I(a)\
+#define CACHE_I_LOCK(a)\
   __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
-#define CACHE_INVALIDATE_I(a)\
+#define CACHE_I_INVALIDATE(a)\
   __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
 #define CACHE_INVALIDATE_IBTB\
     __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0))
 
+#define CACHE_D_SETLOCK\
+    ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (1));\
+       COPROCESSOR_WAIT; })
+#define CACHE_D_UNSETLOCK\
+    ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (0));\
+       COPROCESSOR_WAIT; })
+
+#define CACHE_D_LOCK(a)\
+    __asm volatile ("mcr p15, 0, %0, c7, c10, 1\n\t"\
+		    "mcr p15, 0, %0, c7, c6, 1\n\t" :: "r" (a))
 
 #endif  /* __MMU_XSCALE_H__ */

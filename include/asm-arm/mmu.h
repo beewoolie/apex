@@ -31,6 +31,7 @@
 
 /* ----- Includes */
 
+#include <linux/types.h>
 
 #if defined (CONFIG_CPU_ARMV4)
 # include <asm/mmu-armv4.h>
@@ -49,6 +50,10 @@
 #define TLB_PURGE\
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
 
+#if !defined (CACHE_DRAIN_D)
+# define CACHE_DRAIN_D
+#endif
+
 #if !defined (CACHE_FLUSH)
 # define CACHE_FLUSH
 #endif
@@ -59,8 +64,8 @@
 
 void* alloc_uncached (size_t cb, size_t alignment);
 void* alloc_uncached_top_retain (size_t cb, size_t alignment);
-void mmu_cache_clean (void);
-void mmu_tlb_purge (void);
+//void mmu_cache_clean (void);
+//void mmu_tlb_purge (void);
 void mmu_protsegment (void* pv, int cacheable, int bufferable);
 
 #endif  /* __MMU_H__ */
