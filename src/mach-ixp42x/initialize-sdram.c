@@ -87,10 +87,10 @@ static int __section (.bootstrap)
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
   PUTC ('C');
 
-  CACHE_INVALIDATE_IBTB;
-  COPROCESSOR_WAIT;
+  //  CACHE_INVALIDATE_IBTB;
+  //  COPROCESSOR_WAIT;
 
-#if 0
+#if 1
   /* *** Perform lockdown on this function.  Also should read it into
      *** dcache.  */
   {
@@ -98,6 +98,7 @@ static int __section (.bootstrap)
     unsigned long c = 4096/32;
 
     CACHE_INVALIDATE_IBTB;
+    COPROCESSOR_WAIT;
     CACHE_D_SETLOCK;
 
     for (; c--; p += 32) {
@@ -118,14 +119,17 @@ static int __section (.bootstrap)
   /* *** Reinitialize SDRAM. */
 
   SDR_CONFIG = SDR_CONFIG_RAS3 | SDR_CONFIG_CAS3 | SDR_CONFIG_CHIPS;
-//  SDR_REFRESH = 0;		/* Disable refresh */
-//  SDR_IR = SDR_IR_NOP;
-//  usleep (200);			/* datasheet: maintain 200us of NOP */
+  PUTC ('a');
+  SDR_REFRESH = 0;		/* Disable refresh */
+  SDR_IR = SDR_IR_NOP;
+  usleep (200);			/* datasheet: maintain 200us of NOP */
 
+  PUTC ('b');
   /* 133MHz timer cycle count, 0x81->969ns == ~1us */
   /* datasheet: not clear what the refresh requirement is.  */
   SDR_REFRESH = 0x81;		/* *** FIXME: calc this */
 
+  PUTC ('c');
   SDR_IR = SDR_IR_PRECHARGE_ALL;
 
   usleep (1);			/* datasheet: wait for Trp (<=20ns)
@@ -134,11 +138,13 @@ static int __section (.bootstrap)
   /* datasheet: needs at least 8 refresh (bus) cycles.  Timing diagram
      shows only two AUTO_REFRESH commands, each is Trc (20ns) long. */
 
+  PUTC ('d');
   SDR_IR = SDR_IR_AUTO_REFRESH;
   usleep (1);
   SDR_IR = SDR_IR_AUTO_REFRESH;
   usleep (1);
 
+  PUTC ('e');
   SDR_IR = SDR_IR_MODE_CAS3;
   SDR_IR = SDR_IR_NORMAL;
   usleep (1);			/* Must wait for 3 CPU cycles before
