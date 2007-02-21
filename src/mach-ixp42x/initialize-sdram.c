@@ -87,9 +87,10 @@ static int __section (.bootstrap)
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
   PUTC ('C');
 
-//  CACHE_INVALIDATE_IBTB;
+  CACHE_INVALIDATE_IBTB;
+  COPROCESSOR_WAIT;
 
-#if 1
+#if 0
   /* *** Perform lockdown on this function.  Also should read it into
      *** dcache.  */
   {
