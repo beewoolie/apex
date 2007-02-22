@@ -19,6 +19,6 @@
 #   USA.
 #
 
-obj-y := initialize.o serial.o timer.o env.o cpuinfo.o
+obj-y := initialize.o serial-sc16c652.o timer.o env.o cpuinfo.o
 obj-y				+= cmd-reset.o
 #obj-y				+= cmd-standby.o

@@ -39,7 +39,6 @@
 #define UARTB_PHYS		(0xb4010010) /* DUART port B */
 #define UART_PHYS		UARTA_PHYS
 
-
 #define UART_HR			__REG8(UART + 0x00)
 #define UART_IER		__REG8(UART + 0x01)
 #define UART_ISR		__REG8(UART + 0x02)
