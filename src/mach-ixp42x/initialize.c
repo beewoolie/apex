@@ -180,9 +180,10 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   COPROCESSOR_WAIT;
 #endif
 
-	/* Configure flash access, slowest timing */
-  /* *** FIXME: do we really need this?  We're already running in
-     *** flash.  Moreover, I'd rather make it fast instead of slow. */
+	/* Configure flash access */
+#if 0
+  /* The following is the original flash timing as set by RedBoot.
+     These are very pessimistic timings, about 6.6us per access. */
   EXP_TIMING_CS0 = 0
     | (( 3 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
     | (( 3 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
@@ -195,6 +196,26 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | EXP_WR_EN
     | EXP_CS_EN
     ;
+#endif
+
+  /* Expansion bus clock is 66MHz for a 15ns cycle time.  The flash
+     memory has a 120ns minimum read timing requirement.  With more
+     aggressive timing we will see about 180ns per access.  This took
+     the read of the ramdisk from 4300ms to 2600ms. */
+#if 1
+  EXP_TIMING_CS0 = 0
+    | (( 0 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
+    | (( 0 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
+    | (( 7 & EXP_T3_MASK)	<<EXP_T3_SHIFT)
+    | (( 0 & EXP_T4_MASK)	<<EXP_T4_SHIFT)
+    | (( 0 & EXP_T5_MASK)	<<EXP_T5_SHIFT)
+    | ((15 & EXP_CNFG_MASK)	<<EXP_CNFG_SHIFT)	/* 16MiB window */
+    | (( 0 & EXP_CYC_TYPE_MASK)	<<EXP_CYC_TYPE_SHIFT)	/* Intel cycling */
+    | EXP_BYTE_RD16
+    | EXP_WR_EN
+    | EXP_CS_EN
+    ;
+#endif
 
   PUTC_LL ('\r');PUTC_LL ('\n');
   PUTHEX_LL (*(unsigned long *) 0x50000000);

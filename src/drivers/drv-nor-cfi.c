@@ -99,6 +99,22 @@
      This work is based, in part, on information gleaned from the
      S29GLxxxN MirrorBitTM Flash Family data sheet.
 
+   o Cache support
+
+     I figured that we might be able to get some extra performance out
+     of the nor flash driver by using the cache.  Turns out that this
+     is true.  The USE_CACHE option enables cachability for the
+     segment where the cache resides while reading.  It disables it on
+     exit as this would interfere with normal memory driver reads as
+     well as writing.  There is some mess involved as we need to
+     invalidate a cache entry after writing the 0xff to enable
+     ReadArray.  Perhaps, we could be smarter about this, but we
+     really don't know if a given block is in read mode or not.
+
+     The performance improvement is noteworthy.  Without the cache,
+     reading the 6MiB ramdisk image on the NSLU2 takes about 2600ms.
+     With the cache it takes about 1800ms.
+
 */
 
 #include <driver.h>
@@ -112,10 +128,15 @@
 
 #include <mach/nor-cfi.h>
 
-//#define TALK
-//#define NOISY
+#if defined (CONFIG_MMU)
+# define USE_CACHE		/* Use cache to speed flash reading */
+# include <asm/mmu.h>
+#endif
 
 #define USE_DETECT_ENDIAN_MISMATCH
+
+//#define TALK
+//#define NOISY
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -242,6 +263,13 @@
 #define ProgramSuspended (1<<2)
 #define DeviceProtected	(1<<1)
 
+#if !defined (VPEN_ENABLE)
+# define VPEN_ENABLE
+#endif
+#if !defined (VPEN_DISABLE)
+# define VPEN_DISABLE
+#endif
+
 struct nor_region {
   int size;
   int count;
@@ -274,18 +302,23 @@ static unsigned long phys_from_index (unsigned long index)
 #endif
 }
 
+
+/* vpen_enable/vpen_disable
+
+   while it wouldn't be much to implement these as inline macros, the
+   code size tends to be larger.  In this case, size is the primary
+   optimization goal.
+
+*/
+
 static void vpen_enable (void)
 {
-#if defined (VPEN_ENABLE)
   VPEN_ENABLE;
-#endif
 }
 
 static void vpen_disable (void)
 {
-#if defined (VPEN_DISABLE)
   VPEN_DISABLE;
-#endif
 }
 
 static unsigned long nor_read_one (unsigned long index)
@@ -671,6 +704,10 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+#if defined (USE_CACHE)
+  mmu_protsegment ((void*) phys_from_index (d->start + d->index), 1, 0);
+#endif
+
   while (cb) {
     unsigned long index = d->start + d->index;
     int available = cb;
@@ -684,10 +721,18 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     WRITE_ONE (index, CMD (ReadArray));
+#if defined (USE_CACHE)
+    CACHE_D_INVALIDATE (index);
+    COPROCESSOR_WAIT;
+#endif
     copy_from (pv, (void*) index, available);
 
     pv += available;
   }
+
+#if defined (USE_CACHE)
+  mmu_protsegment ((void*) phys_from_index (d->start + d->index), 0, 0);
+#endif
 
   return cbRead;
 }

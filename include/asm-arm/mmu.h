@@ -41,6 +41,8 @@
 # include <asm/mmu-xscale.h>
 #endif
 
+#include <mach/coprocessor.h>
+
 /* ----- Types */
 
 /* ----- Globals */
@@ -49,6 +51,10 @@
 
 #define TLB_PURGE\
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+#define TLB_I_INVALIDATE(a)\
+    __asm volatile ("mcr p15, 0, %0, c8, c5, 1\n\t" :: "r" (a))
+#define TLB_D_INVALIDATE(a)\
+    __asm volatile ("mcr p15, 0, %0, c8, c6, 1\n\t" :: "r" (a))
 
 #if !defined (CACHE_DRAIN_D)
 # define CACHE_DRAIN_D

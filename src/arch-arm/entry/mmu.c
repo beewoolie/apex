@@ -190,6 +190,14 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
     | (bufferable ? Btt : 0)
     | (cacheable  ? Ctt : 0)
     | (2<<0);			/* type(section) */
+
+  TLB_I_INVALIDATE (pv);
+  TLB_D_INVALIDATE (pv);
+  if (!Ctt) {
+    CACHE_D_CLEAN (pv);
+    CACHE_I_INVALIDATE (pv);
+  }
+  COPROCESSOR_WAIT;
 }
 
 
