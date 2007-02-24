@@ -26,57 +26,48 @@
 
 #include "mach/memory.h"
 
-/* ----- Types */
+/* This coprocessor wait is require on the XScale when it is necessary
+   to guarantee that the coprocessor has finished before continuing.
+   AFAIK, this is not required on other ARM architectures. */
 
-/* ----- Globals */
+#undef CP15_WAIT
+#define CP15_WAIT\
+ ({ unsigned long v; \
+    __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
+		    "mov %0, %0\n\t" \
+		    "sub pc, pc, #4" : "=r" (v)); })
 
-/* ----- Prototypes */
 
+  /* The cache cleaning algorithm comes from the XScale documentation
+     as well as from the Linux kernel.  */
 #undef  MVA_CACHE_CLEAN
 #define MVA_CACHE_CLEAN		(0xfffe0000)
 
 #define CACHE_LINE_SIZE		(32)
 #define CACHE_SIZE		(32768)
 
-#define CACHE_D_DRAIN\
-  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)) // Drain buffer
-
-#define CACHE_D_CLEAN(a)\
-  __asm volatile ("mcr p15, 0, %0, c7, c10, 1\n\t" :: "r" (a))
-
-#define CACHE_D_CLEANALL(b) \
+#define _CLEANALL_DCACHE(b) \
   ({ unsigned long p = MVA_CACHE_CLEAN ^ (b ? CACHE_SIZE : 0);\
      int line;\
      for (line = CACHE_SIZE/CACHE_LINE_SIZE; line--; p += CACHE_LINE_SIZE) \
        __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p)); })
 
-	/* Clean all sets in data cache twice as per recommendation. */
-#define CACHE_CLEAN\
-  ({ CACHE_D_CLEANALL (0) ; CACHE_D_CLEANALL (1); })
+#define CLEANALL_DCACHE\
+  ({ _CLEANALL_DCACHE (0) ; _CLEANALL_DCACHE (1); })
 
-#define CACHE_UNLOCK\
-  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
-		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
-
-#define CACHE_I_LOCK(a)\
-  __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
-#define CACHE_I_INVALIDATE(a)\
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
-#define CACHE_INVALIDATE_IBTB\
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0))
-
-#define CACHE_D_INVALIDATE(a)\
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 1\n\t" :: "r" (a))
-
-#define CACHE_D_SETLOCK\
+#define ENABLE_DCACHE_LOCK\
     ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (1));\
-       COPROCESSOR_WAIT; })
-#define CACHE_D_UNSETLOCK\
+       CP15_WAIT; })
+#define DISABLE_DCACHE_LOCK\
     ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (0));\
-       COPROCESSOR_WAIT; })
+       CP15_WAIT; })
 
-#define CACHE_D_LOCK(a)\
+#define LOCK_DCACHE_VA(a)\
     __asm volatile ("mcr p15, 0, %0, c7, c10, 1\n\t"\
-		    "mcr p15, 0, %0, c7, c6, 1\n\t" :: "r" (a))
+		    "mcr p15, 0, %0, c7,  c6, 1\n\t" :: "r" (a))
+
+#define LOCK_ICACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
+
 
 #endif  /* __MMU_XSCALE_H__ */

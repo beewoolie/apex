@@ -44,7 +44,7 @@ CFLAGS_npe-interface.o\
 
 obj-y := serial.o env.o cpuinfo.o
 obj-y += initialize.o timer.o pci.o
-obj-y += initialize-sdram.o
+obj-$(CONFIG_MMU) += initialize-sdram.o
 
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_SPINNER) += spinner-nslu2.o
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_VARIATIONS) += variation-nslu2.o

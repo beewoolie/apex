@@ -63,10 +63,12 @@ static int __section (.bootstrap)
 
   PUTC ('A');
 
-  CACHE_CLEAN;
+  CLEANALL_DCACHE;
+  DRAIN_WRITE_BUFFER;
 
   mmu_protsegment ((void*) d, 0, 0);			  /* Disable caching */
-  TLB_PURGE;
+  INVALIDATE_DTLB_VA (0);
+  INVALIDATE_ITLB_VA (0);
 
   PUTC ('B');
 
@@ -81,7 +83,7 @@ static int __section (.bootstrap)
 	       :  "r" (&APEX_VMA_COPY_END)
 	       : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
 	       );
-  CACHE_CLEAN;			/* Force copy to SDRAM */
+  CLEANALL_DCACHE;			/* Force copy to SDRAM */
 
   /* *** Jump to 0x0 copy of APEX  */
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
@@ -97,16 +99,16 @@ static int __section (.bootstrap)
     unsigned long p = (unsigned long) (&cmd_initialize_sdram) & ~0x1f;
     unsigned long c = 4096/32;
 
-    CACHE_INVALIDATE_IBTB;
-    COPROCESSOR_WAIT;
-    CACHE_D_SETLOCK;
+    INVALIDATE_ICACHE;
+    CP15_WAIT;
+    ENABLE_DCACHE_LOCK;
 
     for (; c--; p += 32) {
-      CACHE_I_LOCK (p);
-      CACHE_D_LOCK (p);
+      LOCK_ICACHE_VA (p);
+      LOCK_DCACHE_VA (p);
     }
 
-    CACHE_D_UNSETLOCK;
+    DISABLE_DCACHE_LOCK;
   }
 
 #endif
@@ -155,10 +157,11 @@ static int __section (.bootstrap)
   /* *** Reenable caching at 0x0 */
   d = 0;
   mmu_protsegment ((void*) d, 1, 1);			  /* Enable caching */
-  TLB_PURGE;
+  INVALIDATE_ITLB_VA (0);
+  INVALIDATE_DTLB_VA (0);
 
   /* *** Unlock caches */
-  CACHE_UNLOCK;
+  UNLOCK_CACHE;
 
   /* *** Return. */
   PUTC ('\r');

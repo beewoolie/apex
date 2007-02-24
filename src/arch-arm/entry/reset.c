@@ -46,14 +46,9 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <debug_ll.h>
-#include <mach/coprocessor.h>
 #include <arch-arm.h>
 #include <memtest.h>
 #include <asm/mmu.h>
-
-#if !defined (COPROCESSOR_WAIT)
-# define COPROCESSOR_WAIT
-#endif
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
@@ -78,9 +73,7 @@ void __naked __section (.reset) reset (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
-    COPROCESSOR_WAIT;
-    /* *** FIXME: the redboot code performed a read from the ttb
-       register as a delay.  Not sure why. */
+    CP15_WAIT;
   }
 #endif
 
@@ -91,7 +84,7 @@ void __naked __section (.reset) reset (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
-    COPROCESSOR_WAIT;
+    CP15_WAIT;
     /* *** FIXME: the redboot code performed a read from the ttb
        register as a delay.  Not sure why. */
   }
@@ -99,7 +92,7 @@ void __naked __section (.reset) reset (void)
 
 #if defined (CONFIG_DISABLE_MMU_AT_BOOT)
 
-  CACHE_UNLOCK;
+  UNLOCK_CACHE;
 
   /* This disables the MMU, though there should be no reason to do so.
      Still, there are some instances where it is necessary because: a
@@ -125,17 +118,15 @@ void __naked __section (.reset) reset (void)
 		    "bic %0, %0, #1\n\t"
 		    "mcr p15, 0, %0, c1, c0, 0\n\t" : "=&r" (l)
 		    );
-    COPROCESSOR_WAIT;
+    CP15_WAIT;
   }
 
-  CACHE_FLUSH;
-
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
-  __asm volatile ("mcr p15, 0, %0, c7, c10, 4" : : "r" (0)); // Drain WB
-  COPROCESSOR_WAIT;
-
+  CLEANALL_DCACHE;
+  DRAIN_WRITE_BUFFER;
+  INVALIDATE_ICACHE;
+  INVALIDATE_DCACHE;
+  INVALIDATE_TLB;
+  CP15_WAIT;
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
 
 #endif
@@ -152,7 +143,7 @@ void __naked __section (.reset) reset (void)
 		    "mcr p15, 0, %0, c1, c0, 0\n\t" : "=&r" (l)
 		    );
   }
-  COPROCESSOR_WAIT;
+  CP15_WAIT;
 #endif
 
 #if defined (CONFIG_PREINITIALIZATION)

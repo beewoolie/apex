@@ -50,7 +50,9 @@
      buffer is enabled by the MMU Btt bits for each page or section.
    o The Linux kernel doesn't use the write-through code for the 922.
      Not sure why.
-
+   o The TRM shows that two instructions are fetched with flat
+     addressng after enabling the MMU.  We don't do anything special
+     because our MMU tables are flat as well.
 
    XSCALE
    ------
@@ -61,7 +63,6 @@
 */
 
 #include <config.h>
-#include <mach/coprocessor.h>
 #include <attributes.h>
 #include <linux/string.h>
 #include <service.h>
@@ -69,10 +70,6 @@
 #include <mach/memory.h>	/* protection_for() function/macro */
 #include <debug_ll.h>
 #include <asm/mmu.h>
-
-#if !defined (COPROCESSOR_WAIT)
-# define COPROCESSOR_WAIT
-#endif
 
 #if !defined (PROTECTION_FOR)
 #warning "There's not much point in enabling the MMU without declaring a PROTECTION_FOR macro."
@@ -94,18 +91,6 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define Ctt   (1<<3)
 #define MMUEN (1<<0)
 
-
-#if 0
-void mmu_cache_clean (void)
-{
-  CACHE_CLEAN;
-}
-
-void mmu_tlb_purge (void)
-{
-  TLB_PURGE;
-}
-#endif
 
 /* mmu_init
 
@@ -143,14 +128,11 @@ void mmu_init (void)
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (ttbl));
   __asm volatile ("mcr p15, 0, %0, c3, c0" : : "r" (domain));
 
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
-  COPROCESSOR_WAIT;
-
-		/* The XScale core guide says to do this.  It isn't
-		   clear why it should be necessary, but we oblige. */
-  CACHE_DRAIN_D;
+  CLEANALL_DCACHE;
+  DRAIN_WRITE_BUFFER;
+  INVALIDATE_ICACHE;
+  INVALIDATE_DCACHE;
+  INVALIDATE_TLB;
 
 	/* Enable MMU */
   {
@@ -165,9 +147,10 @@ void mmu_init (void)
 		    "orr %0, %0, #(1<<12)\n\t"		/* I-cache */
 /* RR doesn't appear to make the boot faster. */
 //		    "orr %0, %0, #(1<<14)\n\t"		/* RR, predictable */
-		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
+		    "mcr p15, 0, %0, c1, c0, 0\n\t"
+		    : "=&r" (l));
   }
-  COPROCESSOR_WAIT;
+  CP15_WAIT;
 }
 
 
@@ -191,13 +174,14 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
     | (cacheable  ? Ctt : 0)
     | (2<<0);			/* type(section) */
 
-  TLB_I_INVALIDATE (pv);
-  TLB_D_INVALIDATE (pv);
+  INVALIDATE_DTLB_VA (pv);
+  INVALIDATE_ITLB_VA (pv);
   if (!Ctt) {
-    CACHE_D_CLEAN (pv);
-    CACHE_I_INVALIDATE (pv);
+    CLEAN_DCACHE_VA (pv);
+    INVALIDATE_DCACHE_VA (pv);
+    INVALIDATE_ICACHE_VA (pv);
   }
-  COPROCESSOR_WAIT;
+  CP15_WAIT;
 }
 
 
@@ -211,8 +195,8 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
 void mmu_release (void)
 {
 
-  CACHE_DRAIN_D;
-  CACHE_CLEAN;
+  CLEANALL_DCACHE;
+  DRAIN_WRITE_BUFFER;
 
 	/* Disable MMU */
   {
@@ -227,12 +211,11 @@ void mmu_release (void)
 		    "bic %0, %0, #1<<12\n\t"		/* I-cache */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
-  COPROCESSOR_WAIT;
 
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r" (0));  // Inv. I cache
-  __asm volatile ("mcr p15, 0, %0, c7, c6, 0" : : "r" (0));  // Inv. D cache
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0" : : "r" (0));  // Inv. TLBs
-  COPROCESSOR_WAIT;
+  INVALIDATE_ICACHE;
+  INVALIDATE_DCACHE;
+  INVALIDATE_TLB;
+  CP15_WAIT;
 
   __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
 }

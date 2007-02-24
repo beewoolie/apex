@@ -722,8 +722,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     WRITE_ONE (index, CMD (ReadArray));
 #if defined (USE_CACHE)
-    CACHE_D_INVALIDATE (index);
-    COPROCESSOR_WAIT;
+    INVALIDATE_DCACHE_VA (index);
+    CP15_WAIT;
 #endif
     copy_from (pv, (void*) index, available);
 

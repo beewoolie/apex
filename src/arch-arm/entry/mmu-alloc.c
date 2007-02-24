@@ -28,7 +28,6 @@
 
 #include <config.h>
 #include <debug_ll.h>
-#include <mach/coprocessor.h>
 #include <attributes.h>
 #include <linux/string.h>
 #include <service.h>

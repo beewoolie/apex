@@ -28,7 +28,7 @@
 #define _DASSOC(l)	((l>>(12+3))&7)
 #define _DM(l)		((l>>(12+2))&1)
 
-#define CACHE_CLEAN\
+#define CLEANALL_DCACHE\
   ({ unsigned long cache; int set, index; int linelen; int assoc;\
     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));\
     linelen = _DLEN(cache) + 3;\
@@ -40,9 +40,5 @@
       for (index = 1<<_DASSOC(cache); index--;) {\
 	 __asm volatile ("mcr p15, 0, %0, c7, c10, 2" \
 			:: "r" ((index<<assoc)|(set<<linelen))); } })
-
-#define CACHE_UNLOCK\
-  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
-		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
 
 #endif  /* __MMU_ARMV4_H__ */
