@@ -24,22 +24,18 @@
    DESCRIPTION
    -----------
 
-   The macros are here mainly for the MMU and cache control specific
-   code.  Functions within the body of the program should use function
-   calls instead of the macros, but this may not be feasible depending
-   on the nature of thos functions.
+   The macros here are for accessing registers and functions of the
+   standard CP15 coprocessor.  These registers control the MMU and
+   cache functions of most ARM microprocessors.
 
-   Also keep in mind that some of these macros are *not* available on
-   some architectures.  The specific mmu-*.h should be written to
-   undefine those macros that are unavailable.
-
-   Whenever adding new macros to this file, be sure to exclude them
-   from architectures that don't support them.
+   Standard MACROS are here that will tend to be a superset of those
+   supported by any given core.  Be careful to #undef macros that are
+   not available on a given architecture.
 
 */
 
-#if !defined (__MMU_H__)
-#    define   __MMU_H__
+#if !defined (__CP15_H__)
+#    define   __CP15_H__
 
 /* ----- Includes */
 
@@ -133,11 +129,11 @@
 	/* ----- Architecture specific functions */
 
 #if defined (CONFIG_CPU_ARMV4)
-# include <asm/mmu-armv4.h>
+# include <asm/cp15-armv4.h>
 #endif
 
 #if defined (CONFIG_CPU_XSCALE)
-# include <asm/mmu-xscale.h>
+# include <asm/cp15-xscale.h>
 #endif
 
 #if !defined (CP15_WAIT)
@@ -148,4 +144,4 @@ void* alloc_uncached (size_t cb, size_t alignment);
 void* alloc_uncached_top_retain (size_t cb, size_t alignment);
 void mmu_protsegment (void* pv, int cacheable, int bufferable);
 
-#endif  /* __MMU_H__ */
+#endif  /* __CP15_H__ */

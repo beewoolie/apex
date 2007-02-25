@@ -32,7 +32,7 @@
 #include <linux/string.h>
 #include <service.h>
 #include <apex.h>
-#include <asm/mmu.h>
+#include <asm/cp15.h>
 #include <drv-mem.h>
 
 //#define TALK

@@ -48,7 +48,7 @@
 #include <debug_ll.h>
 #include <arch-arm.h>
 #include <memtest.h>
-#include <asm/mmu.h>
+#include <asm/cp15.h>
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);

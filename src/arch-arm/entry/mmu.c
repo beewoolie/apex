@@ -69,7 +69,7 @@
 #include <apex.h>
 #include <mach/memory.h>	/* protection_for() function/macro */
 #include <debug_ll.h>
-#include <asm/mmu.h>
+#include <asm/cp15.h>
 
 #if !defined (PROTECTION_FOR)
 #warning "There's not much point in enabling the MMU without declaring a PROTECTION_FOR macro."
@@ -103,7 +103,6 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 void mmu_init (void)
 {
   int i;
-  unsigned long domain;
 
   /* Fill with 1:1 mapping sections */
   for (i = 0; i < C_PTE; ++i) {
@@ -124,9 +123,8 @@ void mmu_init (void)
       | (2<<0);			/* type(section) */
   }
 
-  domain = 0xffffffff;
-  __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (ttbl));
-  __asm volatile ("mcr p15, 0, %0, c3, c0" : : "r" (domain));
+  STORE_TTB (ttbl);
+  STORE_DOMAIN (0xffffffff);
 
   CLEANALL_DCACHE;
   DRAIN_WRITE_BUFFER;
@@ -217,7 +215,7 @@ void mmu_release (void)
   INVALIDATE_TLB;
   CP15_WAIT;
 
-  __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
+  STORE_TTB (0);		/* Clear ttbl */
 }
 
 static __service_1 struct service_d mmu_service = {

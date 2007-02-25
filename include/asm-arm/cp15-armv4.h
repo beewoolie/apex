@@ -1,5 +1,4 @@
-/* mmu-armv4.h
-     $Id$
+/* cp15-armv4.h
 
    written by Marc Singer
    13 Jan 2006
@@ -12,16 +11,8 @@
 
 */
 
-#if !defined (__MMU_ARMV4_H__)
-#    define   __MMU_ARMV4_H__
-
-/* ----- Includes */
-
-/* ----- Types */
-
-/* ----- Globals */
-
-/* ----- Prototypes */
+#if !defined (__CP15_ARMV4_H__)
+#    define   __CP15_ARMV4_H__
 
 #define _DLEN(l)	((l>>(12+0))&3)
 #define _DSIZE(l)	((l>>(12+6))&7)
@@ -42,8 +33,8 @@
 			:: "r" ((index<<assoc)|(set<<linelen))); } })
 
 
-
 	/* ---- Some function are not available */
+
 #undef INVALIDATE_ICACHE_I
 #undef INVALIDATE_DCACHE_I
 #undef INVALIDATE_CACHE_VA
@@ -53,4 +44,4 @@
 #undef CLEAN_INV_CACHE_VA
 #undef CLEAN_INV_CACHE_I
 
-#endif  /* __MMU_ARMV4_H__ */
+#endif  /* __CP15_ARMV4_H__ */

@@ -31,6 +31,7 @@
 #include <service.h>
 #include <arch-arm.h>
 #include "hardware.h"
+#include <asm/mmu.h>
 
 #if !defined (CONFIG_SMALL)
 
@@ -52,11 +53,11 @@ static void cpuinfo_report (void)
   case 0x20: sz = "lh7a404"; break;
   }
 
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (id));
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
-  __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (ctrl));
-  __asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbl));
-  __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
+  LOAD_CP15_ID (id);
+  LOAD_CP15_CACHE (cache);
+  LOAD_CP15_CTRL (ctrl);
+  LOAD_TTB (ttbl);
+  LOAD_DOMAIN (domain);
   __asm volatile ("mrc p15, 0, %0, c15, c0, 0" : "=r" (test));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
   printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx (%s)   cpsr 0x%08lx\n"

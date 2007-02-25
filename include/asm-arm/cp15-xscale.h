@@ -1,5 +1,4 @@
-/* mmu-xscale.h
-     $Id$
+/* cp15-xscale.h
 
    written by Marc Singer
    13 Jan 2006
@@ -19,8 +18,8 @@
 
 */
 
-#if !defined (__MMU_XSCALE_H__)
-#    define   __MMU_XSCALE_H__
+#if !defined (__CP15_XSCALE_H__)
+#    define   __CP15_XSCALE_H__
 
 /* ----- Includes */
 
@@ -70,4 +69,4 @@
   __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
 
 
-#endif  /* __MMU_XSCALE_H__ */
+#endif  /* __CP15_XSCALE_H__ */

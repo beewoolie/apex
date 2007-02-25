@@ -50,7 +50,7 @@
 #include <command.h>
 #include <apex.h>
 #if defined (CONFIG_MMU)
-# include <asm/mmu.h>
+# include <asm/cp15.h>
 #endif
 
 #if defined (CONFIG_ATAG)
