@@ -41,4 +41,16 @@
 	 __asm volatile ("mcr p15, 0, %0, c7, c10, 2" \
 			:: "r" ((index<<assoc)|(set<<linelen))); } })
 
+
+
+	/* ---- Some function are not available */
+#undef INVALIDATE_ICACHE_I
+#undef INVALIDATE_DCACHE_I
+#undef INVALIDATE_CACHE_VA
+#undef INVALIDATE_CACHE_I
+#undef CLEAN_CACHE_VA
+#undef CLEAN_CACHE_I
+#undef CLEAN_INV_CACHE_VA
+#undef CLEAN_INV_CACHE_I
+
 #endif  /* __MMU_ARMV4_H__ */

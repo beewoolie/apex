@@ -1,4 +1,4 @@
-/* mmu.h
+/* cp15.h
 
    written by Marc Singer
    19 Dec 2005
@@ -33,6 +33,9 @@
    some architectures.  The specific mmu-*.h should be written to
    undefine those macros that are unavailable.
 
+   Whenever adding new macros to this file, be sure to exclude them
+   from architectures that don't support them.
+
 */
 
 #if !defined (__MMU_H__)
@@ -41,6 +44,23 @@
 /* ----- Includes */
 
 #include <linux/types.h>
+
+#define LOAD_CP15_ID(id)\
+  __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (id))
+#define LOAD_CP15_CACHE(id)\
+  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache))
+#define LOAD_CP15_CTRL(id)\
+  __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (ctrl))
+
+#define STORE_TTB(a)\
+  __asm volatile ("mcr p15, 0, %0, c2, c0, 0\n\t" :: "r" (a))
+#define LOAD_TTB(a)\
+  __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" :  "=r" (a))
+
+#define STORE_DOMAIN(a)\
+  __asm volatile ("mcr p15, 0, %0, c3, c0, 0\n\t" :: "r" (a))
+#define LOAD_DOMAIN(a)\
+  __asm volatile ("mrc p15, 0, %0, c3, c0, 0\n\t" :  "=r" (a))
 
 	/* ---- Cache control */
 
@@ -100,10 +120,14 @@
 
 #define INVALIDATE_TLB\
   __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+#define INVALIDATE_ITLB\
+  __asm volatile ("mcr p15, 0, %0, c8, c5, 0\n\t" :: "r" (0))
 #define INVALIDATE_ITLB_VA(a)\
-    __asm volatile ("mcr p15, 0, %0, c8, c5, 1\n\t" :: "r" (a))
+  __asm volatile ("mcr p15, 0, %0, c8, c5, 1\n\t" :: "r" (a))
+#define INVALIDATE_DTLB\
+  __asm volatile ("mcr p15, 0, %0, c8, c6, 0\n\t" :: "r" (0))
 #define INVALIDATE_DTLB_VA(a)\
-    __asm volatile ("mcr p15, 0, %0, c8, c6, 1\n\t" :: "r" (a))
+  __asm volatile ("mcr p15, 0, %0, c8, c6, 1\n\t" :: "r" (a))
 
 
 	/* ----- Architecture specific functions */
