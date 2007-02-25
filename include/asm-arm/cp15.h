@@ -136,6 +136,10 @@
 # include <asm/cp15-xscale.h>
 #endif
 
+#if defined (CONFIG_CPU_ARMV6)
+# include <asm/cp15-armv6.h>
+#endif
+
 #if !defined (CP15_WAIT)
 # define CP15_WAIT
 #endif

@@ -100,15 +100,18 @@ static int __section (.bootstrap)
     unsigned long c = 4096/32;
 
     INVALIDATE_ICACHE;
-    CP15_WAIT;
     ENABLE_DCACHE_LOCK;
+    CP15_WAIT;
 
     for (; c--; p += 32) {
       LOCK_ICACHE_VA (p);
-      LOCK_DCACHE_VA (p);
+      CLEAN_DCACHE_VA (p);
+      INVALIDATE_DCACHE_VA (p);
+      *(volatile unsigned long*) p;
     }
 
     DISABLE_DCACHE_LOCK;
+    CP15_WAIT;
   }
 
 #endif

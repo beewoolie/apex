@@ -25,11 +25,24 @@
 
 #include "mach/memory.h"
 
+#define INVALIDATE_BTB(i)\
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 6\n\t" :: "r" (i))
+
+#define ALLOCATE_DCACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (a));
+
+#define LOCK_ICACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
+#define ENABLE_DCACHE_LOCK\
+  __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (1));
+#define DISABLE_DCACHE_LOCK\
+  __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (0));
+
+
 /* This coprocessor wait is require on the XScale when it is necessary
    to guarantee that the coprocessor has finished before continuing.
    AFAIK, this is not required on other ARM architectures. */
 
-#undef CP15_WAIT
 #define CP15_WAIT\
  ({ unsigned long v; \
     __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" \
@@ -49,24 +62,21 @@
   ({ unsigned long p = MVA_CACHE_CLEAN ^ (b ? CACHE_SIZE : 0);\
      int line;\
      for (line = CACHE_SIZE/CACHE_LINE_SIZE; line--; p += CACHE_LINE_SIZE) \
-       __asm volatile ("mcr p15, 0, %0, c7, c2, 5" :: "r" (p)); })
+       ALLOCATE_DCACHE_VA (p); })
 
 #define CLEANALL_DCACHE\
   ({ _CLEANALL_DCACHE (0) ; _CLEANALL_DCACHE (1); })
 
-#define ENABLE_DCACHE_LOCK\
-    ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (1));\
-       CP15_WAIT; })
-#define DISABLE_DCACHE_LOCK\
-    ({ __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (0));\
-       CP15_WAIT; })
-
-#define LOCK_DCACHE_VA(a)\
-    __asm volatile ("mcr p15, 0, %0, c7, c10, 1\n\t"\
-		    "mcr p15, 0, %0, c7,  c6, 1\n\t" :: "r" (a))
-
-#define LOCK_ICACHE_VA(a)\
-  __asm volatile ("mcr p15, 0, %0, c9, c1, 0\n\t" :: "r" (a))
-
+#undef INVALIDATE_ICACHE_I
+#undef INVALIDATE_DCACHE_I
+#undef INVALIDATE_CACHE_VA
+#undef INVALIDATE_CACHE_I
+#undef CLEAN_DCACHE_I
+#undef CLEAN_CACHE_VA
+#undef CLEAN_CACHE_I
+#undef CLEAN_INV_DCACHE_VA
+#undef CLEAN_INV_DCACHE_I
+#undef CLEAN_INV_CACHE_VA
+#undef CLEAN_INV_CACHE_I
 
 #endif  /* __CP15_XSCALE_H__ */
