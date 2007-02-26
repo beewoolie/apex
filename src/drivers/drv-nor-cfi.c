@@ -134,9 +134,12 @@
 
 #include <mach/nor-cfi.h>
 
+/* *** We should also check for ARM since the CP15 stuff is arm
+   *** specific. */
 #if defined (CONFIG_MMU) && !defined (CONFIG_SMALL)
 # define USE_CACHE		/* Use cache to speed flash reading */
 # include <asm/mmu.h>
+# include <asm/cp15.h>
 #endif
 
 #define USE_DETECT_ENDIAN_MISMATCH

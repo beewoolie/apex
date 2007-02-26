@@ -144,8 +144,4 @@
 # define CP15_WAIT
 #endif
 
-void* alloc_uncached (size_t cb, size_t alignment);
-void* alloc_uncached_top_retain (size_t cb, size_t alignment);
-void mmu_protsegment (void* pv, int cacheable, int bufferable);
-
 #endif  /* __CP15_H__ */

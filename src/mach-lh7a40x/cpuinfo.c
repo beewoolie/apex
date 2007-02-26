@@ -31,7 +31,7 @@
 #include <service.h>
 #include <arch-arm.h>
 #include "hardware.h"
-#include <asm/mmu.h>
+#include <asm/cp15.h>
 
 #if !defined (CONFIG_SMALL)
 
