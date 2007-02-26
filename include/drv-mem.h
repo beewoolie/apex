@@ -25,6 +25,9 @@ struct mem_region {
 
 extern struct mem_region memory_regions[32];
 
+int memory_scan (struct mem_region* regions, int c,
+		 unsigned long start, unsigned long length);
+
 /* ----- Globals */
 
 /* ----- Prototypes */

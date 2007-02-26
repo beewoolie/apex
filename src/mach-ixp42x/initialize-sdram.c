@@ -49,19 +49,21 @@
 #include <command.h>
 #include <service.h>
 #include "hardware.h"
+#include <linux/kernel.h>
 #include <asm/mmu.h>
 #include "sdram.h"
+#include <drv-mem.h>
+#include <linux/string.h>
 
 #include <debug_ll.h>
 
-static int __section (.bootstrap)
-     cmd_initialize_sdram (int argc, const char** argv)
+static void __section (.bootstrap) do_sdram_initialization (int mode)
 {
   unsigned long s = (unsigned long) &APEX_VMA_START;
   unsigned long d = (unsigned long) 0;
   const unsigned long diff = d - s;
 
-  PUTC ('A');
+//  PUTC ('A');
 
   CLEANALL_DCACHE;
   DRAIN_WRITE_BUFFER;
@@ -70,7 +72,7 @@ static int __section (.bootstrap)
   INVALIDATE_DTLB_VA (0);
   INVALIDATE_ITLB_VA (0);
 
-  PUTC ('B');
+//  PUTC ('B');
 
 		/* Copy APEX to uncacheable memory  */
   __asm volatile (
@@ -87,16 +89,13 @@ static int __section (.bootstrap)
 
   /* *** Jump to 0x0 copy of APEX  */
   __asm volatile ("add pc, pc, %0\n\t" :: "r" (diff - 4));
-  PUTC ('C');
-
-  //  CACHE_INVALIDATE_IBTB;
-  //  COPROCESSOR_WAIT;
+//  PUTC ('C');
 
 #if 1
   /* *** Perform lockdown on this function.  Also should read it into
      *** dcache.  */
   {
-    unsigned long p = (unsigned long) (&cmd_initialize_sdram) & ~0x1f;
+    unsigned long p = (unsigned long) (&APEX_VMA_START) & ~0x1f;
     unsigned long c = 4096/32;
 
     INVALIDATE_ICACHE;
@@ -118,23 +117,23 @@ static int __section (.bootstrap)
   /* *** Jump back to original copy of APEX; we're running from cache. */
 
    __asm volatile ("sub pc, pc, %0\n\t" :: "r" (diff + 4));
-  PUTC ('X');
-  PUTC ('Y');
+//  PUTC ('X');
+//  PUTC ('Y');
 
   /* *** Reinitialize SDRAM. */
 
-  SDR_CONFIG = SDR_CONFIG_RAS3 | SDR_CONFIG_CAS3 | SDR_CONFIG_CHIPS;
-  PUTC ('a');
+  SDR_CONFIG = SDR_CONFIG_RAS3 | SDR_CONFIG_CAS3 | mode;
+//  PUTC ('a');
   SDR_REFRESH = 0;		/* Disable refresh */
   SDR_IR = SDR_IR_NOP;
   usleep (200);			/* datasheet: maintain 200us of NOP */
 
-  PUTC ('b');
+//  PUTC ('b');
   /* 133MHz timer cycle count, 0x81->969ns == ~1us */
   /* datasheet: not clear what the refresh requirement is.  */
   SDR_REFRESH = 0x81;		/* *** FIXME: calc this */
 
-  PUTC ('c');
+//  PUTC ('c');
   SDR_IR = SDR_IR_PRECHARGE_ALL;
 
   usleep (1);			/* datasheet: wait for Trp (<=20ns)
@@ -143,19 +142,19 @@ static int __section (.bootstrap)
   /* datasheet: needs at least 8 refresh (bus) cycles.  Timing diagram
      shows only two AUTO_REFRESH commands, each is Trc (20ns) long. */
 
-  PUTC ('d');
+//  PUTC ('d');
   SDR_IR = SDR_IR_AUTO_REFRESH;
   usleep (1);
   SDR_IR = SDR_IR_AUTO_REFRESH;
   usleep (1);
 
-  PUTC ('e');
+//  PUTC ('e');
   SDR_IR = SDR_IR_MODE_CAS3;
   SDR_IR = SDR_IR_NORMAL;
   usleep (1);			/* Must wait for 3 CPU cycles before
 				   SDRAM access */
 
-  PUTC ('E');
+//  PUTC ('E');
 
   /* *** Reenable caching at 0x0 */
   d = 0;
@@ -167,8 +166,76 @@ static int __section (.bootstrap)
   UNLOCK_CACHE;
 
   /* *** Return. */
-  PUTC ('\r');
-  PUTC ('\n');
+//  PUTC ('\r');
+//  PUTC ('\n');
+}
+
+#define MODE(size,banks) (((ffs ((size)/128) - 1) << 1)\
+			  | ((banks) == 2 ? 1 : 0))
+
+static int cmd_initialize_sdram (int argc, const char** argv)
+{
+  int size = 0;
+  int banks =
+#if defined (CONFIG_SDRAM_BANK1)
+    2
+#else
+    1
+#endif
+    ;
+  int mode = -1;
+
+//  PUTC ('A');
+
+	/* This code only supports 128Mib,256MiB, and 512MiB. */
+  if (argc > 1) {
+    size = simple_strtoul (argv[1], NULL, 10);
+    if (size >= 512)
+      size = 512;
+    else if (size >= 256)
+      size = 256;
+    else
+      size = 128;
+  }
+  if (argc > 2) {
+    banks = simple_strtoul (argv[2], NULL, 10);
+    if (banks >= 2)
+      banks = 2;
+    else
+      banks = 1;
+  }
+
+  if (size == 0) {
+    struct mem_region regions[8];
+    int c;
+    memset (regions, 0, sizeof (regions));
+    do_sdram_initialization (MODE (512, 1));
+    c = memory_scan (regions, sizeof (regions)/sizeof (*regions),
+		     0, 256*1024*1024);
+    if (regions[0].length >= 128*1024*1024)
+      size = 512;
+    else if (regions[0].length >= 64*1024*1024)
+      size = 256;
+    else
+      size = 128;
+    do_sdram_initialization (MODE (size, 2));
+    memset (regions, 0, sizeof (regions));
+    c = memory_scan (regions, sizeof (regions)/sizeof (*regions),
+		     0, 256*1024*1024);
+//    printf ("size %d\n", regions[0].length);
+    if (regions[0].length >= 2*size*1024*1024*2/8)
+      banks = 2;
+    else
+      banks = 1;
+//    printf ("banks %d\n", regions[0].length);
+  }
+
+  mode = MODE (size, banks);
+//  printf ("(%d,%d) -> %d\n", size, banks, mode);
+  do_sdram_initialization (mode);
+
+  printf (" %d bank%s of 2 %dMib chips\n",
+	  banks, banks > 1 ? "s" : "", size);
 
   return 0;
 }

@@ -78,8 +78,8 @@ static unsigned memlimit;
 
 #define CB_BLOCK	     (1024*1024)
 
-static int memory_scan (struct mem_region* regions, int c,
-			unsigned long start, unsigned long length)
+int memory_scan (struct mem_region* regions, int c,
+		 unsigned long start, unsigned long length)
 {
   extern char APEX_VMA_START;
   extern char APEX_VMA_PROBE_END;

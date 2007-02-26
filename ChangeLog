@@ -1,3 +1,10 @@
+2007-02-25  Marc Singer  <elf@cerise.buici.com>
+
+	* src/mach-ixp42x/initialize-sdram.c (cmd_initialize_sdram): SDRAM
+	initialization code for the ixp42x so that we can initialize SDRAM
+	even though we're not the primary boot loader.  It *looks* OK, but
+	I haven't been able to test it with multi-chip slugs.
+ 
 2007-02-15  Marc Singer  <elf@cerise.buici.com>
 
 	* src/drivers/drv-nand.c: Revised the NAND flash initialization
