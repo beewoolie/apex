@@ -9,12 +9,19 @@
    DESCRIPTION
    -----------
 
+   Addresses in the range 0x40000000-0x7fffffff are mapped there by
+   the peripheral port remapping register.  Without loading the
+   peripheral port remap register, those peripherals would be
+   inaccessible.
+
 */
 
 #if !defined (__MX31_H__)
 #    define   __MX31_H__
 
 /* ----- Includes */
+
+#include <asm/reg.h>
 
 /* ----- Types */
 
@@ -73,8 +80,7 @@
 #define PHYS_RTIC		(0x53fec000)
 #define PHYS_ROMPATCH		(0x60000000)
 #define PHYS_AVIC		(0x68000000)
-#define PHYS_IPU		(0x70000000) /* LCD controller */
-
+//#define PHYS_IPU		(0x70000000) /* LCD controller */
 
 #define PHYS_M3IF		(0xb8003000)
 #define PHYS_ESDCTL		(0xb8001000)
@@ -106,7 +112,6 @@
 #define ESDCDLY5		__REG(0xb8001030)
 #define ESDCDLYL		__REG(0xb8001034)
 
-
 #define NAND_RAM_PAGE0		(0xcc000000)
 #define NAND_RAM_PAGE1		(0xb8000200)
 #define NAND_RAM_PAGE2		(0xb8000400)
@@ -131,6 +136,10 @@
 #define NFC_FLASH_CONFIG1	__REG16(0xb8000e1a)
 #define NFC_FLASH_CONFIG2	__REG16(0xb8000e1c)
 
+#define CCM_CTRL		__REG(PHYS_CCM + 0x00)
+#define CCM_SET			__REG(PHYS_CCM + 0x04)
+#define CCM_RES			__REG(PHYS_CCM + 0x08)
+#define CCM_L2MV		__REG(PHYS_CCM + 0x10)
 #define CCM_CGR0		__REG(PHYS_CCM + 0x20)
 #define CCM_CGR1		__REG(PHYS_CCM + 0x24)
 #define CCM_CGR2		__REG(PHYS_CCM + 0x28)
@@ -185,6 +194,17 @@
 #define GPT_CR_FREERUN		(1<<9)
 
 #define GPT_SR_ROV		(1<<5) /* Roll-over */
+
+#define WEIM_UCR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x00)
+#define WEIM_LCR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x04)
+#define WEIM_ACR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x08)
+
+#define CCM_CTRL_533_V		(0xff871d58)
+#define CCM_L2MV_533_V		(0x0033280c)
+#define CCM_CTRL_399_V		(0xff871d50)
+#define CCM_L2MV_399_V		(0x00271c1b)
+#define CCM_CTRL_208_V		(0xff871d48)
+#define CCM_L2MV_208_V		(0x04002000)
 
 
 #endif  /* __MX31_H__ */

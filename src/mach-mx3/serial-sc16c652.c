@@ -34,59 +34,7 @@
 #include <apex.h>		/* printf, only */
 #include "hardware.h"
 
-		/* External DUART SC16C652 */
-#define UARTA_PHYS		(0xb4010000) /* DUART port A */
-#define UARTB_PHYS		(0xb4010010) /* DUART port B */
-#define UART_PHYS		UARTA_PHYS
-
-#define UART_HR			__REG8(UART + 0x00)
-#define UART_IER		__REG8(UART + 0x01)
-#define UART_ISR		__REG8(UART + 0x02)
-#define UART_FCR		__REG8(UART + 0x02)
-#define UART_LCR		__REG8(UART + 0x03)
-#define UART_MCR		__REG8(UART + 0x04)
-#define UART_LSR		__REG8(UART + 0x05)
-#define UART_MSR		__REG8(UART + 0x06)
-#define UART_SPR		__REG8(UART + 0x07)
-
-#define UART_DLL		__REG8(UART + 0x00)
-#define UART_DLM		__REG8(UART + 0x01)
-
-#define UART_EFR		__REG8(UART + 0x02)
-#define UART_XON1		__REG8(UART + 0x04)
-#define UART_XON2		__REG8(UART + 0x05)
-#define UART_XOFF1		__REG8(UART + 0x06)
-#define UART_XOFF2		__REG8(UART + 0x07)
-
-#define UART_FCR_FEN		(1<<0)
-#define UART_FCR_RX_RESET	(1<<1)
-#define UART_FCR_TX_RESET	(1<<2)
-#define UART_FCR_DMA		(1<<3)
-
-#define UART_LCR_WLEN_SH	(0) /* word length shift */
-#define UART_LCR_WLEN_MASK	(0x3 << 0)
-#define UART_LCR_WLEN_8		(0x3 << 0)
-#define UART_LCR_STOP		(1<<2)
-#define UART_LCR_PEN		(1<<3) /* parity enable */
-#define UART_LCR_P_EVEN		(1<<4)
-#define UART_LCR_P_SET		(1<<5)
-#define UART_LCR_BREAK		(1<<6)
-#define UART_LCR_DLE		(1<<7) /* divisor latch enable */
-
-#define UART_LSR_RDR		(1<<0) /* receive data ready */
-#define UART_LSR_OVR		(1<<1) /* overrun */
-#define UART_LSR_PE		(1<<2) /* parity error */
-#define UART_LSR_FE		(1<<3) /* framing error */
-#define UART_LSR_BI		(1<<4) /* break interrupt */
-#define UART_LSR_TXE		(1<<5) /* transmit fifo empty */
-#define UART_LSR_TXIDLE		(1<<6) /* transmitter idle */
-#define UART_LSR_FIFOE		(1<<7) /* fifo data error */
-
-#define UART_EFR_CTS		(1<<7) /* auto cts */
-#define UART_EFR_RTS		(1<<6) /* auto rts */
-#define UART_EFR_EFEN		(1<<4) /* enhanced function enable */
-
-#define UART_CLK		((int) (1.8432*1000*1000))
+#include "sc16c652.h"
 
 //#include <debug_ll.h>
 
@@ -97,18 +45,18 @@ static struct driver_d sc16c652_serial_driver;
 void sc16c652_serial_init (void)
 {
   u32 baudrate = 115200;
-  u32 divisor = UART_CLK/(baudrate*16);
+  u32 divisor = SC_UART_CLK/(baudrate*16);
 
-  u8 lcr = UART_LCR_WLEN_8;
+  u8 lcr = SC_UART_LCR_WLEN_8;
 
-  UART_LCR = lcr | UART_LCR_DLE;
-  UART_DLL = divisor & 0xff;
-  UART_DLM = ((divisor >> 8) & 0xff);
-  UART_LCR = lcr;
+  SC_UART_LCR = lcr | SC_UART_LCR_DLE;
+  SC_UART_DLL = divisor & 0xff;
+  SC_UART_DLM = ((divisor >> 8) & 0xff);
+  SC_UART_LCR = lcr;
 
-  UART_IER = 0;			/* Mask all interrupts */
-  UART_FCR = UART_FCR_FEN | UART_FCR_RX_RESET | UART_FCR_TX_RESET;
-  UART_LSR = 0;
+  SC_UART_IER = 0;			/* Mask all interrupts */
+  SC_UART_FCR = SC_UART_FCR_FEN | SC_UART_FCR_RX_RESET | SC_UART_FCR_TX_RESET;
+  SC_UART_LSR = 0;
 
   if (console_driver == 0)
     console_driver = &sc16c652_serial_driver;
@@ -120,14 +68,14 @@ void sc16c652_serial_init (void)
 void sc16c652_serial_release (void)
 {
 	/* flush serial output */
-  while (!(UART_LSR & UART_LSR_TXIDLE))
+  while (!(SC_UART_LSR & SC_UART_LSR_TXIDLE))
     ;
 }
 
 ssize_t sc16c652_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb
-    ? ((UART_LSR & UART_LSR_RDR) ? 1 : 0)
+    ? ((SC_UART_LSR & SC_UART_LSR_RDR) ? 1 : 0)
     : 0;
 }
 
@@ -138,12 +86,12 @@ ssize_t sc16c652_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   for (pb = (unsigned char*) pv; cb--; ++pb) {
     u8 v;
     u8 lsr;
-    while (!(UART_LSR & UART_LSR_RDR))
+    while (!(SC_UART_LSR & SC_UART_LSR_RDR))
       ;				/* block until character is available */
 
-    lsr = UART_LSR;
-    v = UART_HR;
-    if (lsr & (UART_LSR_OVR | UART_LSR_PE | UART_LSR_FE))
+    lsr = SC_UART_LSR;
+    v = SC_UART_HR;
+    if (lsr & (SC_UART_LSR_OVR | SC_UART_LSR_PE | SC_UART_LSR_FE))
       return -1;		/* -ESERIAL */
     *pb = v;
     ++cRead;
@@ -159,17 +107,17 @@ ssize_t sc16c652_serial_write (struct descriptor_d* d,
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
-    while (!(UART_LSR & UART_LSR_TXE))
+    while (!(SC_UART_LSR & SC_UART_LSR_TXE))
       ;
 
-    UART_DATA = *pb;
+    SC_UART_HR = *pb;
 
     ++cWrote;
   }
 
 #if 1
 	/* flush serial output */
-  while (!(UART_LSR & UART_LSR_TXIDLE))
+  while (!(SC_UART_LSR & SC_UART_LSR_TXIDLE))
     ;
 #endif
 

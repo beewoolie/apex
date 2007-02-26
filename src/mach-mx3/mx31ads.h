@@ -16,6 +16,8 @@
 
 /* ----- Includes */
 
+#include <asm/reg.h>
+
 /* ----- Types */
 
 /* ----- Globals */
@@ -44,6 +46,5 @@
 #define CPLD_CS8900_MEM	__REG16(CPLD_PHYS + 0x21000)
 #define CPLD_CS8900_DMA	__REG16(CPLD_PHYS + 0x22000)
 #define CPLD_AUDIO	__REG16(CPLD_PHYS + 0x30000)
-
 
 #endif  /* __MX31ADS_H__ */

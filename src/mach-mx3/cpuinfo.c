@@ -70,8 +70,8 @@ static void cpuinfo_report (void)
 #if defined (CPLD_VERSION)
   {
     unsigned char v = CPLD_VERSION;
-    printf ("  cpld:   version 0x%x, PCB %c\n", v, 'A' + ((c >> 8) & 0xff));
-    printf ("          stat1 0x%x  stat2 0x%x\n", CPLD_STAT1, CPLD_STAT2);
+    printf ("  cpld:   version 0x%x, PCB %c\n", v, 'A' + ((v >> 8) & 0xff));
+    printf ("          stat1 0x%x  stat2 0x%x\n", CPLD_STATUS1, CPLD_STATUS2);
   }
 #endif
 }

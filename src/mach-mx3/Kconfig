@@ -6,6 +6,7 @@ choice
 
 config MACH_MX31ADS
 	bool "Freescale MX31 Development Board"
+	select ARCH_MX31
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_CS8900
@@ -84,7 +85,7 @@ endmenu
 
 config MACH
 	string
-	default "mx31ads"
+	default "mx3"
 
 config ARCH_MX31
 	bool
