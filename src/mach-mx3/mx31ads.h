@@ -47,4 +47,16 @@
 #define CPLD_CS8900_DMA	__REG16(CPLD_PHYS + 0x22000)
 #define CPLD_AUDIO	__REG16(CPLD_PHYS + 0x30000)
 
+#define CPLD_CTRL1_ENET_RST		  (1<<1)
+#define CPLD_CTRL1_XUART_RST		  (1<<1)
+#define CPLD_CTRL1_UARTA_EN		  (1<<2)
+#define CPLD_CTRL1_UARTB_EN		  (1<<3)
+#define CPLD_CTRL1_UARTC_EN		  (1<<4)
+#define CPLD_CTRL1_LED0			  (1<<6)
+#define CPLD_CTRL1_LED1			  (1<<7)
+
+#define LED_ON(i)  ({ CPLD_CTRL1_CLR = CPLD_CTRL1_LED0<<(i&1); })
+#define LED_OFF(i) ({ CPLD_CTRL1_SET = CPLD_CTRL1_LED0<<(i&1); })
+
+
 #endif  /* __MX31ADS_H__ */

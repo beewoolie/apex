@@ -138,6 +138,15 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   CCM_CGR0 |= CCM_CGR_RUN << CCM_CGR0_EPIT1_SH;	/* Enable EPIT1 clock  */
 
+  /* NOR flash initialization, though this shouldn't be necessary
+     unless we're going to reduce timing latencies.  */
+  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
+  WEIM_LCR(0) = 0xa0330D01; //
+  WEIM_ACR(0) = 0x00220800; //
+  WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
+  WEIM_LCR(4) = 0x444A4541; //
+  WEIM_ACR(4) = 0x44443302; //
+
 #if defined (CONFIG_STARTUP_UART)
 # define _DIVISOR (SC_UART_CLK/(115200*16))
   SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;
@@ -152,14 +161,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 # undef _DIVISOR
 #endif
 
-  /* NOR flash initialization, though this shouldn't be necessary
-     unless we're going to reduce timing latencies.  */
-  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
-  WEIM_LCR(0) = 0xa0330D01; //
-  WEIM_ACR(0) = 0x00220800; //
-  WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
-  WEIM_LCR(4) = 0x444A4541; //
-  WEIM_ACR(4) = 0x44443302; //
+  LED_ON (0);
 
   __asm volatile ("cmp %0, %1\n\t"
 #if defined (CONFIG_SDRAMBOOT_REPORT)
