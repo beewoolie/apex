@@ -39,6 +39,8 @@
   __asm volatile ("mcr p15, 0, %0, c7, c14, 1\n\t" :: "r" (0))
 
 
+#define CLEANALL_DCACHE CLEAN_DCACHE
+
 #undef DRAIN_WRITE_BUFFER
 #define DRAIN_WRITE_BUFFER DATA_SYNCHRONIZATION_BARRIER
 #undef INVALIDATE_CACHE_VA
@@ -46,6 +48,9 @@
 #undef CLEAN_CACHE_VA
 #undef CLEAN_CACHE_I
 #undef PREFETCH_ICACHE_VA
+
+#define STORE_REMAP_PERIPHERAL_PORT(v)\
+  __asm volatile ("mcr p15, 0, %0, c15, c2, 4\n\t" :: "r" (v))
 
 
 #endif  /* __CP15_ARMV6_H__ */

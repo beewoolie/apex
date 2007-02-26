@@ -33,6 +33,7 @@
 #include <service.h>
 #include <apex.h>
 #include <asm/cp15.h>
+#include <asm/mmu.h>
 #include <drv-mem.h>
 
 //#define TALK
