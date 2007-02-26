@@ -158,6 +158,10 @@ void mmu_init (void)
    the region.  With segments defined in the MMU tables, this means
    each 1MiB defines a section.
 
+   If a region in marked as uncacheable, it is incumbent on the caller
+   to purge those rows from the cache.  We cannot do it here because
+   we don't know the range addresses that were accessed.
+
 */
 
 void mmu_protsegment (void* pv, int cacheable, int bufferable)
@@ -174,11 +178,6 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
 
   INVALIDATE_DTLB_VA (pv);
   INVALIDATE_ITLB_VA (pv);
-  if (!Ctt) {
-    CLEAN_DCACHE_VA (pv);
-    INVALIDATE_DCACHE_VA (pv);
-    INVALIDATE_ICACHE_VA (pv);
-  }
   CP15_WAIT;
 }
 

@@ -115,6 +115,12 @@
      reading the 6MiB ramdisk image on the NSLU2 takes about 2600ms.
      With the cache it takes about 1800ms.
 
+     It is also important to note that the cache invalidation at the
+     end of the nor_read () function is crucial to keeping the driver
+     working properly.  Without it, the erase and write functions fail
+     because the cache still has resident rows for the flash memory
+     and the status reads fail as well as the ID reads.
+
 */
 
 #include <driver.h>
@@ -128,7 +134,7 @@
 
 #include <mach/nor-cfi.h>
 
-#if defined (CONFIG_MMU)
+#if defined (CONFIG_MMU) && !defined (CONFIG_SMALL)
 # define USE_CACHE		/* Use cache to speed flash reading */
 # include <asm/mmu.h>
 #endif
@@ -364,6 +370,7 @@ static unsigned long nor_status (unsigned long index)
     status = READ_ONE (index);
   } while (   (status & STAT (Ready)) != STAT (Ready)
 	   && timer_delta (time, timer_read ()) < 6*1000);
+//  PRINTF ("status: 0x%02lx\n", status);
   return status;
 }
 
@@ -375,6 +382,7 @@ static inline void nor_write_perform (unsigned long index, unsigned long data)
 
 static inline void nor_erase_perform (unsigned long index)
 {
+  PRINTF ("%s: %lx\n", __FUNCTION__, index);
   WRITE_ONE (index, CMD (Erase));
   WRITE_ONE (index, CMD (EraseConfirm));
 }
@@ -700,12 +708,15 @@ static int nor_open (struct descriptor_d* d)
 static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cbRead = 0;
+#if defined (USE_CACHE)
+  unsigned long base = phys_from_index (d->start + d->index);
+#endif
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
 #if defined (USE_CACHE)
-  mmu_protsegment ((void*) phys_from_index (d->start + d->index), 1, 0);
+  mmu_protsegment ((void*) base, 1, 0);
 #endif
 
   while (cb) {
@@ -731,7 +742,13 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
   }
 
 #if defined (USE_CACHE)
+  /* Uncache the segment and then invalidate the DCACHE rows we read. */
   mmu_protsegment ((void*) phys_from_index (d->start + d->index), 0, 0);
+  cb = (cbRead + 31) & ~0x1f;
+  base = base & ~0x1f;
+  for (; cb; base += 32, cb -= 32)
+    INVALIDATE_DCACHE_VA (base);
+  CP15_WAIT;
 #endif
 
   return cbRead;

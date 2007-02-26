@@ -1,5 +1,15 @@
 2007-02-25  Marc Singer  <elf@cerise.buici.com>
 
+	* src/drivers/drv-nor-cfi.c (nor_read): Fixed the nor-cfi driver
+	cache support.  It wasn't properly purging cache entries so the
+	write and erase code was failing.  Now, we invalidate entries for
+	the area we've read.  We still see the significant improvement in
+	read throughput.
+
+	* src/arch-arm/entry/mmu.c: Added comment about how it is the
+	called who must purge the cache on marking a block uncacheable.
+	This also removes a bit of code that did nothing.
+
 	* src/mach-ixp42x/initialize-sdram.c (cmd_initialize_sdram): SDRAM
 	initialization code for the ixp42x so that we can initialize SDRAM
 	even though we're not the primary boot loader.  It *looks* OK, but
