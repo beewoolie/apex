@@ -149,6 +149,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 #if defined (CONFIG_STARTUP_UART)
 # define _DIVISOR (SC_UART_CLK/(115200*16))
+//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_CLR;
+//  usleep (50);
+//  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
   SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;
   SC_UART_DLL = _DIVISOR & 0xff;
   SC_UART_DLM = ((_DIVISOR >> 8) & 0xff);
