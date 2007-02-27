@@ -82,22 +82,28 @@
    Note that this function is neither __naked nor static.  It is
    available to the rest of the application as is.
 
+   This source frequency for the timer is 133.03MHz.  This easily gives
+   us a resolution of 1us with a divisor of 133.03.
+
+   (Verified that the HIGH clock source is HCLK.)
+
  */
 
 void __section (.bootstrap) usleep (unsigned long us)
 {
-  unsigned long c = (us - us/2);
-  __asm volatile ("str %2, [%1, #8]\n\t"
-		  "str %0, [%1, #0]\n\t"
-		  "str %3, [%1, #8]\n\t"
-	       "0: ldr %0, [%1, #4]\n\t"
-		  "tst %0, %4\n\t"
-		  "beq 0b\n\t"
-		  : "+r" (c)
+  //  unsigned long c =
+  __asm volatile ("str %2, [%1, #0]\n\t" /* EPITCR */
+		  "str %0, [%1, #8]\n\t" /* EPITLR */
+	       "0: ldr %0, [%1, #16]\n\t" /* EPITCNT */
+		  "cmp %0, #0\n\t"
+		  "bmi 0b\n\t"
+		  : "+r" (us)
 		  : "r" (PHYS_EPIT1),
-		    "r" (0),
-		    "r" ((1<<7)|(1<<3)), /* Enable, Free, 508 KHz */
-		    "I" (0x8000)
+		    "r" (EPT_CR_CLKSRC_HIGH
+			 | EPT_IOVW
+			 | ((133 - 1) << EPT_CR_PRESCALE_SH)
+			 | EPT_CR_DBGEN
+			 | EPT_CR_EN)
 		  : "cc");
 }
 
@@ -124,8 +130,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
 
-  CCM_SET  = CCM_CTRL_399_V;
-  CCM_L2MV = CCM_L2MV_399_V;
+  CCM_PDR0  = CCM_PDR0_V;
+  CCM_MPCTL = CCM_MPCTL_V;
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
   //WM32  0x53F80000 0x074B0B7D             ; init_ccm
@@ -153,7 +159,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   usleep (50);
   CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
   usleep (50);
-//  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
+  //  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
   SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;
   SC_UART_DLL = _DIVISOR & 0xff;
   SC_UART_DLM = ((_DIVISOR >> 8) & 0xff);
@@ -167,6 +173,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 
   LED_ON (0);
+
+  while (1)
+    ;
 
   __asm volatile ("cmp %0, %1\n\t"
 #if defined (CONFIG_SDRAMBOOT_REPORT)

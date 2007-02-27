@@ -136,10 +136,10 @@
 #define NFC_FLASH_CONFIG1	__REG16(0xb8000e1a)
 #define NFC_FLASH_CONFIG2	__REG16(0xb8000e1c)
 
-#define CCM_CTRL		__REG(PHYS_CCM + 0x00)
-#define CCM_SET			__REG(PHYS_CCM + 0x04)
-#define CCM_RES			__REG(PHYS_CCM + 0x08)
-#define CCM_L2MV		__REG(PHYS_CCM + 0x10)
+#define CCM_CCMR		__REG(PHYS_CCM + 0x00)
+#define CCM_PDR0		__REG(PHYS_CCM + 0x04)
+#define CCM_PDR1		__REG(PHYS_CCM + 0x08)
+#define CCM_MPCTL		__REG(PHYS_CCM + 0x10)
 #define CCM_CGR0		__REG(PHYS_CCM + 0x20)
 #define CCM_CGR1		__REG(PHYS_CCM + 0x24)
 #define CCM_CGR2		__REG(PHYS_CCM + 0x28)
@@ -168,10 +168,12 @@
 #define EPT_CR_CLKSRC_SH	(24)
 #define EPT_CR_CLKSRC_MSK	(0x3<<24)
 #define EPT_CR_CLKSRC_32K	(0x3<<24)
-#define EPT_CR_CLKSRC_HIGH	(0x2<<24)
+#define EPT_CR_CLKSRC_HIGH	(0x2<<24) /* AHB clock */
+#define EPT_CR_CLKSRC_IPG	(0x1<<24) /* Peripheral (ipg) clock */
 #define EPT_CR_FREERUN		(1<<9)
 #define EPT_CR_PRESCALE_SH	(4)
 #define EPT_CR_PRESCALE_MSK	(0xfff<<4)
+#define EPT_CR_DBGEN		(1<<18)
 #define EPT_IOVW		(1<<17)
 #define EPT_RLD			(1<<3)
 
@@ -199,12 +201,31 @@
 #define WEIM_LCR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x04)
 #define WEIM_ACR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x08)
 
-#define CCM_CTRL_533_V		(0xff871d58)
-#define CCM_L2MV_533_V		(0x0033280c)
-#define CCM_CTRL_399_V		(0xff871d50)
-#define CCM_L2MV_399_V		(0x00271c1b)
-#define CCM_CTRL_208_V		(0xff871d48)
-#define CCM_L2MV_208_V		(0x04002000)
+#define CCM_PDR0_533_V		(0xff871d58)
+#define CCM_MPCTL_533_V		(0x0033280c)
+#define CCM_PDR0_399_V		(0xff871d50)
+#define CCM_MPCTL_399_V		(0x00271c1b)
+#define CCM_PDR0_208_V		(0xff871d48)
+#define CCM_MPCTL_208_V		(0x04002000)
+
+#if defined (CONFIG_FREQ_533)
+# define CCM_PDR0_V		CCM_PDR0_533_V
+# define CCM_MPCTL_V		CCM_MPCTL_533_V
+#endif
+
+#if defined (CONFIG_FREQ_399) || 1
+# define CCM_PDR0_V		CCM_PDR0_399_V
+# define CCM_MPCTL_V		CCM_MPCTL_399_V
+
+# define MPLLCLK		399100000
+# define HCLK			133033333
+# define IPGCLK			 66516666
+#endif
+
+#if defined (CONFIG_FREQ_208)
+# define CCM_PDR0_V		CCM_PDR0_208_V
+# define CCM_MPCTL_V		CCM_MPCTL_208_V
+#endif
 
 
 #endif  /* __MX31_H__ */
