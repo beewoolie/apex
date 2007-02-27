@@ -51,6 +51,7 @@
 #include "hardware.h"
 #include <linux/kernel.h>
 #include <asm/mmu.h>
+#include <asm/cp15.h>
 #include "sdram.h"
 #include <drv-mem.h>
 #include <linux/string.h>
