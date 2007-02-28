@@ -19,6 +19,11 @@
 #define _DASSOC(l)	((l>>(12+3))&7)
 #define _DM(l)		((l>>(12+2))&1)
 
+/* *** This code may not work on the ARM720T.  According to the TRM
+   *** documentation, the only operation available in the cache is
+   *** invalidatation of the combined cache in one statement.
+   *** Cleaning isn't addressed at all. */
+
 #define CLEANALL_DCACHE\
   ({ unsigned long cache; int set, index; int linelen; int assoc;\
     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));\
@@ -43,5 +48,13 @@
 #undef CLEAN_CACHE_I
 #undef CLEAN_INV_CACHE_VA
 #undef CLEAN_INV_CACHE_I
+
+#if defined (CONFIG_CPU_ARM720T)
+# undef INVALIDATE_ICACHE_VA
+# undef INVALIDATE_ICACHE_i
+# undef INVALIDATE_DCACHE_VA
+# undef INVALIDATE_DCACHE_i
+#endif
+
 
 #endif  /* __CP15_ARMV4_H__ */
