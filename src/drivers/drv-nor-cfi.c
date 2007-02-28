@@ -136,7 +136,7 @@
 
 /* *** We should also check for ARM since the CP15 stuff is arm
    *** specific. */
-#if defined (CONFIG_MMU) && !defined (CONFIG_SMALL)
+#if defined (CONFIG_DRIVER_NOR_CFI_USE_CACHE)
 # define USE_CACHE		/* Use cache to speed flash reading */
 # include <asm/mmu.h>
 # include <asm/cp15.h>
@@ -774,7 +774,7 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
 static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   size_t cbWrote = 0;
-  unsigned long pageLast = -1;
+  unsigned long pageLast = ~0;
 
   if (!chip->writebuffer_size)
     ERROR_RETURN (ERROR_UNSUPPORTED,

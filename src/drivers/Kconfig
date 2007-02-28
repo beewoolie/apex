@@ -90,6 +90,23 @@ config DRIVER_NOR_CFI_NO_BUFFERED
 	  Leave this option set to 'N' unless your target is
 	  experiencing problems using the buffered write routine.
 
+config DRIVER_NOR_CFI_USE_CACHE
+	bool "Allow cache enable during reads"
+	depends on DRIVER_NOR_CFI && MMU && !SMALL
+	default n
+	help
+	  This option enables the use of the cache while reading from
+	  NOR flash.  On systems where this works, the read
+	  performance is significantly increased.  Beware, though,
+	  enabling this on systems where the cache purging doesn't
+	  work correctly may cause spurrious errors during write. 
+
+	  At the moment, we cannot use the cache for NOR flash on the
+	  ARM720T architecture because the cache entries cannot be
+	  selectively invalidated.  It may be possible to use the
+	  cache anyway, but the full cache purge after writing the
+	  ReadArray command will be a big performance killer.
+
 choice
 	prompt "NOR Flash Type"
 	depends on DRIVER_NOR_CFI
