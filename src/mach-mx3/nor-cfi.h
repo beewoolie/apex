@@ -45,7 +45,7 @@
 # define NOR_WIDTH		(16)
 #endif
 #if !defined (NOR_0_PHYS)
-# define NOR_0_PHYS		(0x00000000)
+# define NOR_0_PHYS		(0xa0000000)
 #endif
 
 #if !defined (NOR_CHIP_MULTIPLIER)
