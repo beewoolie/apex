@@ -267,7 +267,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
 
-#if 1
+#if 0
   {
     unsigned long a = 0x1fffc000;
     unsigned long b = 0x80200000;
@@ -282,9 +282,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 
   PUTC ('s');
-
-  while (1)
-    ;
 
 #if defined (CONFIG_SDRAMBOOT_REPORT)
   barrier ();

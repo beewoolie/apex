@@ -28,6 +28,7 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
+#include <asm/cp15.h>
 
 #if defined (CONFIG_MACH_IXP42X)
 # include <mach/hardware.h>
@@ -43,6 +44,8 @@
 # define USE_COPY_VERIFY	/* Verify all of the time */
 #endif
 
+//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+
 /* relocate_apex
 
    performs a memory move of the whole loader, presumed to be from NOR
@@ -56,6 +59,9 @@
    *** when we jump to the relocated code.
 
    This function does not check for source overlapping destination.
+
+   The value lr - offset is the source location of the return address.
+   We should be able to jump to lr and continue with our work.
 
 */
 
@@ -148,21 +154,9 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
   PUTC_LL ('j');
 
-#if defined (CONFIG_MACH_IXP42X)
-	/* Drain write buffer */
-  {
-    unsigned long v;
-    __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : "=r" (v) );
-  }
-//  COPROCESSOR_WAIT;
-
-	/* Invalidate caches (I&D) and branch buffer (BTB) */
- {
-   unsigned long v;
-   __asm volatile ("mcr p15, 0, %0, c7, c7, 0" : "=r" (v));
-   COPROCESSOR_WAIT;
- }
-#endif
+  DRAIN_WRITE_BUFFER;
+  INVALIDATE_ICACHE;
+  CP15_WAIT;
 
 				/* Return to SDRAM */
   //  __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
