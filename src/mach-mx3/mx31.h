@@ -90,6 +90,7 @@
 
 #define SDRAM_BANK0_PHYS	(0x80000000)
 #define SDRAM_BANK1_PHYS	(0x90000000)
+#define SDRAM_END_PHYS		(0xa0000000)
 
 #define WEIM0_PHYS		(0xa0000000)
 #define WEIM1_PHYS		(0xa8000000)
@@ -99,18 +100,6 @@
 #define WEIM5_PHYS		(0xb6000000)
 
 #define NAND_PHYS		(0xb8000000)
-
-#define ESDCTL0			__REG(0xb8001000)
-#define ESDCFG0			__REG(0xb8001004)
-#define ESDCTL1			__REG(0xb8001008)
-#define ESDCFG1			__REG(0xb800100c)
-#define ESDMISC			__REG(0xb8001010)
-#define ESDCDLY1		__REG(0xb8001020)
-#define ESDCDLY2		__REG(0xb8001024)
-#define ESDCDLY3		__REG(0xb8001028)
-#define ESDCDLY4		__REG(0xb800102c)
-#define ESDCDLY5		__REG(0xb8001030)
-#define ESDCDLYL		__REG(0xb8001034)
 
 #define NAND_RAM_PAGE0		(0xcc000000)
 #define NAND_RAM_PAGE1		(0xb8000200)
@@ -196,6 +185,25 @@
 #define GPT_CR_FREERUN		(1<<9)
 
 #define GPT_SR_ROV		(1<<5) /* Roll-over */
+
+#define ESDCTL_CTL0		__REG (PHYS_ESDCTL + 0x00)
+#define ESDCTL_CFG0		__REG (PHYS_ESDCTL + 0x04)
+#define ESDCTL_CTL1		__REG (PHYS_ESDCTL + 0x08)
+#define ESDCTL_CFG1		__REG (PHYS_ESDCTL + 0x0c)
+#define ESDCTL_MISC		__REG (PHYS_ESDCTL + 0x10)
+#define ESDCTL_CDLY1		__REG (PHYS_ESDCTL + 0x20)
+#define ESDCTL_CDLY2		__REG (PHYS_ESDCTL + 0x14)
+#define ESDCTL_CDLY3		__REG (PHYS_ESDCTL + 0x28)
+#define ESDCTL_CDLY4		__REG (PHYS_ESDCTL + 0x2c)
+#define ESDCTL_CDLY5		__REG (PHYS_ESDCTL + 0x30)
+#define ESDCTL_CDLYL		__REG (PHYS_ESDCTL + 0x34)
+
+#define ESDCTL_MISC_SDRAMRDY	(1<<31)
+#define ESDCTL_MISC_LHD		(1<<5)
+#define ESDCTL_MISC_MDDR_MDIS	(1<<4)
+#define ESDCTL_MISC_MDDR_DL_RST	(1<<3)
+#define ESDCTL_MISC_MDDREN	(1<<2)
+#define ESDCTL_MISC_RST		(1<<1)
 
 #define WEIM_UCR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x00)
 #define WEIM_LCR(i)		__REG (PHYS_WEIM + (i)*0x10 + 0x04)

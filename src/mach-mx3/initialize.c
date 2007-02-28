@@ -130,11 +130,11 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
 
+  CCM_CCMR  = 0x074b0b7d;			/* Default value */
   CCM_PDR0  = CCM_PDR0_V;
   CCM_MPCTL = CCM_MPCTL_V;
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
-  //WM32  0x53F80000 0x074B0B7D             ; init_ccm
 
   //;WM32  0xb8002050 0x0000dcf6            ; Configure PSRAM on CS5
   //;WM32  0xb8002054 0x444a4541
@@ -155,10 +155,10 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 #if defined (CONFIG_STARTUP_UART)
 # define _DIVISOR (SC_UART_CLK/(115200*16))
-  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
-  usleep (50);
-  CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
-  usleep (50);
+//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+//  CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
   //  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
   SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;
   SC_UART_DLL = _DIVISOR & 0xff;
@@ -174,31 +174,34 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   LED_ON (0);
 
-  while (1)
-    ;
-
   __asm volatile ("cmp %0, %1\n\t"
+		  "bls 1f\n\t"
+		  "cmp %0, %2\n\t"
+		  "bhi 1f\n\t"
 #if defined (CONFIG_SDRAMBOOT_REPORT)
-		  "movhi r0, #1\n\t"
-		  "strhi r0, [%2]\n\t"
+		  "mov r0, #1\n\t"
+		  "str r0, [%3]\n\t"
 #endif
-		  "movhi r0, #0\n\t"
-		  "movhi pc, %0\n\t"
-		  "1:" :: "r" (lr), "I" (SDRAM_BANK0_PHYS)
+		  "mov r0, #0\n\t"
+		  "mov pc, %0\n\t"
+		  "1:"
+		  :: "r" (lr),
+		     "I" (SDRAM_BANK0_PHYS),
+		     "I" (SDRAM_END_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
-		  , "r" (&fSDRAMBoot)
+		  ,  "r" (&fSDRAMBoot)
 #endif
 		  : "cc");
 
-  PUTC_LL ('S');
+  PUTC ('S');
 
-	/* Initialize SDRAM */
-  __REG (0x43FAC26C) = 0; // ; SDCLK
-  __REG (0x43FAC270) = 0; // ; CAS
-  __REG (0x43FAC274) = 0; // ; RAS
+		/* Initialize IOMUX for SDRAM */
+  __REG (0x43FAC26C) = 0; // SDCLK
+  __REG (0x43FAC270) = 0; // CAS
+  __REG (0x43FAC274) = 0; // RAS
   __REG (0x43FAC27C) = 0x1000; // ; CS2 (CSD0)
-  __REG (0x43FAC284) = 0; // ; DQM3
-  __REG (0x43FAC288) = 0; // ; DQM2, DQM1, DQM0, SD31-SD0, A25-A0, MA10 (0x288..0x2DC)
+  __REG (0x43FAC284) = 0; // DQM3
+  __REG (0x43FAC288) = 0; // DQM2, DQM1, DQM0, SD31-SD0, A25-A0, MA10 (0x288..0x2DC)
   __REG (0x43FAC28C) = 0; //
   __REG (0x43FAC290) = 0; //
   __REG (0x43FAC294) = 0; //
@@ -220,22 +223,68 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (0x43FAC2D4) = 0; //
   __REG (0x43FAC2D8) = 0; //
   __REG (0x43FAC2DC) = 0; //
-  __REG (0xB8001010) = 0x00000004; // ; Initialization script for 32 bit DDR on Tortola EVB
-  __REG (0xB8001004) = 0x006ac73a; //
-  __REG (0xB8001000) = 0x92100000; //
-  __REG (0x80000f00) = 0x12344321; //
-  __REG (0xB8001000) = 0xa2100000; //
-  __REG (0x80000000) = 0x12344321; //
-  __REG (0x80000000) = 0x12344321; //
-  __REG (0xB8001000) = 0xb2100000; //
-  __REG (0x80000033) = 0xda; //
-  __REG (0x81000000) = 0xff; //
-  __REG (0xB8001000) = 0x82226080; //
-  __REG (0x80000000) = 0xDEADBEEF; //
-  __REG (0xB8001010) = 0x0000000c; //
-  //WGPR  15         0x83F00000             ; boot secret
 
-  PUTC_LL ('s');
+
+  //WM32  0xB8001010 0x00000004
+  //WM32  0xB8001004 0x006ac73a
+  //WM32  0xB8001000 0x92100000
+  //WM32  0x80000f00 0x12344321
+  //WM32  0xB8001000 0xa2100000
+  //WM32  0x80000000 0x12344321
+  //WM32  0x80000000 0x12344321
+  //WM32  0xB8001000 0xb2100000
+  //WM8   0x80000033 0xda
+  //WM8   0x81000000 0xff
+  //WM32  0xB8001000 0x82226080
+  //WM32  0x80000000 0xDEADBEEF
+  //WM32  0xB8001010 0x0000000c
+
+
+	// ; Initialization script for 32 bit DDR on Tortola EVB
+//  ESDCTL_CFG0 = 0x0075e73a;
+// ESDCTL_CFG0 = 0x0076eb3a; // Reset value
+  ESDCTL_CFG0 = 0x006ac73a; // BDI value
+
+  ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
+  ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
+  usleep (200);
+
+  ESDCTL_CTL0 = 0x92100000;
+  __REG (0x80000f00) = 0;		/* DDR */
+  ESDCTL_CTL0 = 0xa2100000;
+  __REG (0x80000000) = 0;
+  __REG (0x80000000) = 0;
+  ESDCTL_CTL0 = 0xb2100000;
+  __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
+  __REG8 (0x81000000) = 0xff;
+
+  ESDCTL_CTL0 = 0x82116080
+    + 0x00100000		/* DDR */
+    + 0x00010000		/* x32 */
+    ;
+  __REG (0x80000000) = 0;
+  ESDCTL_MISC = 0xc;		/* DDR and delay line reset */
+  __REG (0x80000000) = 0x55555555;
+  __REG (0x80000004) = 0xaaaaaaaa;
+
+#if 1
+  {
+    unsigned long a = 0x1fffc000;
+    unsigned long b = 0x80200000;
+    __asm volatile ("ldmia %0!, {r3-r10}\n\t"
+		    "stmia %1!, {r3-r10}\n\t"
+		    : "+r" (a),
+		      "+r" (b)
+		    :
+		  : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
+		    );
+  }
+#endif
+
+  PUTC ('s');
+
+  while (1)
+    ;
 
 #if defined (CONFIG_SDRAMBOOT_REPORT)
   barrier ();
@@ -267,3 +316,94 @@ static __service_0 struct service_d mx3x_target_service = {
   .init    = target_init,
   .release = target_release,
 };
+
+
+#if 0
+
+;; 0x10 MISC
+;;  WM32  0xB8001010 0x00000004		; Initialization script for 32 bit DDR on Tortola EVB
+;; 0x04 CFG0
+;;  WM32  0xB8001004 0x006ac73a
+;; 0x00 CTL0
+;;  WM32  0xB8001000 0x92100000
+;;  WM32  0x80000f00 0x12344321
+;;  WM32  0xB8001000 0xa2100000
+;;  WM32  0x80000000 0x12344321
+;;  WM32  0x80000000 0x12344321
+;;  WM32  0xB8001000 0xb2100000
+;;  WM8   0x80000033 0xda
+;;  WM8   0x81000000 0xff
+;;  WM32  0xB8001000 0x82226080
+;;  WM32  0x80000000 0xDEADBEEF
+;;  WM32  0xB8001010 0x0000000c
+;;  WGPR  15         0x83F00000		; boot secret
+
++    setup_sdram ddr X32 DDR 0
+
++    .macro setup_sdram, name, bus_width, mode, full_page
++        /* It sets the "Z" flag in the CPSR at the end of the macro */
++        ldr r0, ESDCTL_BASE_W
++        mov r2, #SDRAM_BASE_ADDR
++        ldr r1, SDRAM_0x0075E73A
++        str r1, [r0, #0x4]
++        ldr r1, =0x2            // reset
++        str r1, [r0, #0x10]
++        ldr r1, SDRAM_PARAM1_\mode
++        str r1, [r0, #0x10]
++        // Hold for more than 200ns
++        ldr r1, =0x10000
++1:
++        subs r1, r1, #0x1
++        bne 1b
++
++        ldr r1, SDRAM_0x92100000
++        str r1, [r0]
++        ldr r1, =0x0
++        ldr r12, SDRAM_PARAM2_\mode
++        str r1, [r12]
++        ldr r1, SDRAM_0xA2100000
++        str r1, [r0]
++        ldr r1, =0x0
++        str r1, [r2]
++        ldr r1, SDRAM_0xB2100000
++        str r1, [r0]
++
++        ldr r1, =0x0
++        .if \full_page
++        strb r1, [r2, #SDRAM_FULL_PAGE_MODE]
++        .else
++        strb r1, [r2, #SDRAM_BURST_MODE]
++        .endif
++
++        ldr r1, =0xFF
++        ldr r12, =0x81000000
++        strb r1, [r12]
++        ldr r3, SDRAM_0x82116080
++        ldr r4, SDRAM_PARAM3_\mode
++        add r3, r3, r4
++        ldr r4, SDRAM_PARAM4_\bus_width
++        add r3, r3, r4
++        .if \full_page
++        add r3, r3, #0x100   /* Force to full page mode */
++        .endif
++
++        str r3, [r0]
++        ldr r1, =0x0
++        str r1, [r2]
++        /* Below only for DDR */
++        ldr r1, [r0, #0x10]
++        ands r1, r1, #0x4
++        ldrne r1, =0x0000000C
++        strne r1, [r0, #0x10]
++        /* Testing if it is truly DDR */
++        ldr r1, SDRAM_0x55555555
++        ldr r0, =SDRAM_BASE_ADDR
++        str r1, [r0]
++        ldr r2, SDRAM_0xAAAAAAAA
++        str r2, [r0, #0x4]
++        ldr r2, [r0]
++        cmp r1, r2
++    .endm
+
+
+#endif

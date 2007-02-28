@@ -78,6 +78,6 @@
 #define SC_UART_EFR_EFEN		(1<<4) /* enhanced function enable */
 
 //#define SC_UART_CLK		((int) (1.8432*1000*1000))
-#define SC_UART_CLK		((int) (14.7456*1000*1000))
+#define SC_UART_CLK		((int) (14.7456*1000.0*1000.0))
 
 #endif  /* __SC16C652_H__ */
