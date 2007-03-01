@@ -158,7 +158,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   INITIALIZE_CONSOLE_UART;
 
   PUTC('A');
-# undef _DIVISOR
+
 #endif
 
   LED_ON (0);

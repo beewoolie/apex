@@ -56,12 +56,12 @@
 
 #define SC_UART_LCR_WLEN_SH	(0) /* word length shift */
 #define SC_UART_LCR_WLEN_MASK	(0x3 << 0)
-#define SC_UART_LCR_WLEN_8		(0x3 << 0)
-#define SC_UART_LCR_STOP		(1<<2)
+#define SC_UART_LCR_WLEN_8	(0x3 << 0)
+#define SC_UART_LCR_STOP	(1<<2)
 #define SC_UART_LCR_PEN		(1<<3) /* parity enable */
-#define SC_UART_LCR_P_EVEN		(1<<4)
-#define SC_UART_LCR_P_SET		(1<<5)
-#define SC_UART_LCR_BREAK		(1<<6)
+#define SC_UART_LCR_P_EVEN	(1<<4)
+#define SC_UART_LCR_P_SET	(1<<5)
+#define SC_UART_LCR_BREAK	(1<<6)
 #define SC_UART_LCR_DLE		(1<<7) /* divisor latch enable */
 
 #define SC_UART_LSR_RDR		(1<<0) /* receive data ready */
@@ -70,14 +70,31 @@
 #define SC_UART_LSR_FE		(1<<3) /* framing error */
 #define SC_UART_LSR_BI		(1<<4) /* break interrupt */
 #define SC_UART_LSR_TXE		(1<<5) /* transmit fifo empty */
-#define SC_UART_LSR_TXIDLE		(1<<6) /* transmitter idle */
-#define SC_UART_LSR_FIFOE		(1<<7) /* fifo data error */
+#define SC_UART_LSR_TXIDLE	(1<<6) /* transmitter idle */
+#define SC_UART_LSR_FIFOE	(1<<7) /* fifo data error */
 
 #define SC_UART_EFR_CTS		(1<<7) /* auto cts */
 #define SC_UART_EFR_RTS		(1<<6) /* auto rts */
-#define SC_UART_EFR_EFEN		(1<<4) /* enhanced function enable */
+#define SC_UART_EFR_EFEN	(1<<4) /* enhanced function enable */
 
 //#define SC_UART_CLK		((int) (1.8432*1000*1000))
 #define SC_UART_CLK		((int) (14.7456*1000.0*1000.0))
+
+# define UART_DIVISOR (SC_UART_CLK/(115200*16))
+//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+//  CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+  //  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
+# define INITIALIZE_CONSOLE_UART\
+  ({ SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;\
+     SC_UART_DLL = UART_DIVISOR & 0xff;\
+     SC_UART_DLM = ((UART_DIVISOR >> 8) & 0xff);\
+     SC_UART_LCR = SC_UART_LCR_WLEN_8;\
+     SC_UART_IER = 0;\
+     SC_UART_FCR = SC_UART_FCR_FEN | SC_UART_FCR_RX_RESET\
+       | SC_UART_FCR_TX_RESET;\
+     SC_UART_LSR = 0; })
+
 
 #endif  /* __SC16C652_H__ */
