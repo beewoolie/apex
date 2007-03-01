@@ -77,6 +77,21 @@ config SDRAM_BANK1
 	depends on SDRAM_BANK0
 	default n 
 
+choice
+	prompt "Console UART"
+	default MX31_UART1
+
+config MX31_UART1
+	bool "MX31 internal UART1"
+
+config MX31ADS_UARTA
+	bool "MX31ADS external UARTA"
+	depends on MACH_MX31ADS
+
+endchoice
+
+
+
 endmenu
 
 menu "Platform Drivers"

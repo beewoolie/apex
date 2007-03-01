@@ -154,19 +154,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   WEIM_ACR(4) = 0x44443302; //
 
 #if defined (CONFIG_STARTUP_UART)
-# define _DIVISOR (SC_UART_CLK/(115200*16))
-//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
-//  usleep (50);
-//  CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
-//  usleep (50);
-  //  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
-  SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;
-  SC_UART_DLL = _DIVISOR & 0xff;
-  SC_UART_DLM = ((_DIVISOR >> 8) & 0xff);
-  SC_UART_LCR = SC_UART_LCR_WLEN_8;
-  SC_UART_IER = 0;			/* Mask all interrupts */
-  SC_UART_FCR = SC_UART_FCR_FEN | SC_UART_FCR_RX_RESET | SC_UART_FCR_TX_RESET;
-  SC_UART_LSR = 0;
+
+  INITIALIZE_CONSOLE_UART;
 
   PUTC('A');
 # undef _DIVISOR
@@ -224,22 +213,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (0x43FAC2D8) = 0; //
   __REG (0x43FAC2DC) = 0; //
 
-
-  //WM32  0xB8001010 0x00000004
-  //WM32  0xB8001004 0x006ac73a
-  //WM32  0xB8001000 0x92100000
-  //WM32  0x80000f00 0x12344321
-  //WM32  0xB8001000 0xa2100000
-  //WM32  0x80000000 0x12344321
-  //WM32  0x80000000 0x12344321
-  //WM32  0xB8001000 0xb2100000
-  //WM8   0x80000033 0xda
-  //WM8   0x81000000 0xff
-  //WM32  0xB8001000 0x82226080
-  //WM32  0x80000000 0xDEADBEEF
-  //WM32  0xB8001010 0x0000000c
-
-
 	// ; Initialization script for 32 bit DDR on Tortola EVB
 //  ESDCTL_CFG0 = 0x0075e73a;
 // ESDCTL_CFG0 = 0x0076eb3a; // Reset value
@@ -259,27 +232,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG8 (0x81000000) = 0xff;
 
   ESDCTL_CTL0 = 0x82116080
-    + 0x00100000		/* DDR */
-    + 0x00010000		/* x32 */
+    + 0x00100000			/* DDR */
+    + 0x00010000			/* x32 */
     ;
   __REG (0x80000000) = 0;
   ESDCTL_MISC = 0xc;		/* DDR and delay line reset */
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
-
-#if 0
-  {
-    unsigned long a = 0x1fffc000;
-    unsigned long b = 0x80200000;
-    __asm volatile ("ldmia %0!, {r3-r10}\n\t"
-		    "stmia %1!, {r3-r10}\n\t"
-		    : "+r" (a),
-		      "+r" (b)
-		    :
-		  : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
-		    );
-  }
-#endif
 
   PUTC ('s');
 

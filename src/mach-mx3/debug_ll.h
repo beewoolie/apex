@@ -33,17 +33,57 @@
 
 #include <config.h>
 #include <asm/reg.h>
+#include <mach/uart.h>
 
-#include "sc16c652.h"
+#if defined (CONFIG_MX31_UART1)
+# define PUTC(c)\
+  ({ __REG (UART + UART_TXD) = c;\
+     while (!(__REG (UART + UART_SR2) & UART_SR2_TXDC)) ; })
 
-/* ----- Types */
+# define INITIALIZE_CONSOLE_UART\
+  ({ MASK_AND_SET (__REG (0x43fac080), 0xffff, 0x1210); /* txd1/rxd1 */\
+     __REG (UART + UART_CR1) = 0;\
+     __REG (UART + UART_CR2) = UART_CR2_IRTS | UART_CR2_CTSC | UART_CR2_WS\
+			     | UART_CR2_TXEN | UART_CR2_RXEN;\
+     __REG (UART + UART_CR3) = UART_CR3_RXDMUXSEL;\
+     __REG (UART + UART_CR4) = (32<<UART_CR4_CTSTL_SH)\
+			     | UART_CR4_LPBYP | UART_CR4_DREN;\
+     __REG (UART + UART_FCR) = (1<<UART_FCR_RXTL_SH)\
+			     | (0<<UART_FCR_RFDIV_SH)\
+			     | (16<<UART_FCR_TXTL_SH);\
+     __REG (UART + UART_SR1) = ~0;\
+     __REG (UART + UART_SR2) = ~0;\
+     __REG (UART + UART_BIR) = UART_BIR_115200;\
+     __REG (UART + UART_BMR) = UART_BMR_115200;\
+     __REG (UART + UART_CR1) = UART_CR1_EN;\
+     CPLD_CTRL1_CLR = 1<<4;\
+     CPLD_CTRL2_SET = 1<<2;\
+   })
 
-/* ----- Globals */
+#endif
 
-/* ----- Prototypes */
-
-#define PUTC(c)\
+#if defined (CONFIG_MX31ADS_UARTA)
+# include "sc16c652.h"
+# define PUTC(c)\
   ({ SC_UART_HR = c;\
      while (!(SC_UART_LSR & SC_UART_LSR_TXE)) ; })
+
+# define UART_DIVISOR (SC_UART_CLK/(115200*16))
+//  CPLD_CTRL1_SET = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+//  CPLD_CTRL1_CLR = CPLD_CTRL1_XUART_RST;
+//  usleep (50);
+  //  CPLD_CTRL1_CLR = CPLD_CTRL1_UARTC_EN;
+# define INITIALIZE_CONSOLE_UART\
+  ({ SC_UART_LCR = SC_UART_LCR_WLEN_8 | SC_UART_LCR_DLE;\
+     SC_UART_DLL = UART_DIVISOR & 0xff;\
+     SC_UART_DLM = ((UART_DIVISOR >> 8) & 0xff);\
+     SC_UART_LCR = SC_UART_LCR_WLEN_8;\
+     SC_UART_IER = 0;\
+     SC_UART_FCR = SC_UART_FCR_FEN | SC_UART_FCR_RX_RESET\
+       | SC_UART_FCR_TX_RESET;\
+     SC_UART_LSR = 0; })
+
+#endif
 
 #endif  /* __DEBUG_LL_H__ */
