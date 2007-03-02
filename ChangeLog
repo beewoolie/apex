@@ -1,3 +1,10 @@
+2007-03-01  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/drv-mem.c (memory_write): Revised the drv-mem write
+	function so that it does it's best to match the requested IO width
+	when we're writing from the fill command.  Other users should be
+	unaffected.
+	
 2007-02-25  Marc Singer  <elf@cerise.buici.com>
 
 	* src/drivers/drv-nor-cfi.c (nor_read): Fixed the nor-cfi driver

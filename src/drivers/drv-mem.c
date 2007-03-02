@@ -246,15 +246,23 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-//  printf ("%s: %p +%d -> %lx\n", __FUNCTION__, pv, cb, d->start + d->index);
-
-  /* This code appears to be legacy from some exploration of writing
-     to CF.  It is removed since it could not possibly be correct.
-     The memcpy will do the right thing given a cb==1 in any event. */
-//  if (cb == 1 && d->start + d->index == 0x50000000)
-//    *((unsigned char*)(d->start + d->index)) = *(unsigned char*) pv;
-//  else
+  /* Make sure when we write bytes and shorts that we write exactly
+     those at the requested address. */
+  switch (cb) {
+  case 1:
+    *(char*) (d->start + d->index) = *(char*) pv;
+    break;
+  case 2:
+    *(unsigned short*) (d->start + d->index) = *(unsigned short*) pv;
+    break;
+  case 4:
+    *(unsigned long*) (d->start + d->index) = *(unsigned long*) pv;
+    break;
+  default:
     memcpy ((void*) (d->start + d->index), pv, cb);
+    break;
+  }
+
   d->index += cb;
 
   return cb;
