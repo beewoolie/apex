@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y := initialize.o timer.o env.o cpuinfo.o
+obj-y := initialize.o timer.o env.o cpuinfo.o cmd-nand.o
 obj-$(CONFIG_MX31ADS_UARTA) += serial-sc16c652.o
 obj-$(CONFIG_MX31_UART1) += serial-mx31.o
 #obj-y				+= cmd-reset.o
