@@ -132,7 +132,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   CCM_CCMR  = 0x074b0b7d;			/* Default value */
   CCM_PDR0  = CCM_PDR0_V;
+  CCM_PDR1  = 0x49fcfe7f;			/* Default value */
   CCM_MPCTL = CCM_MPCTL_V;
+  CCM_UPCTL = CCM_UPCTL_V;
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
 
@@ -140,7 +142,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   //;WM32  0xb8002054 0x444a4541
   //;WM32  0xb8002058 0x44443302
   //;WM32  0xB6000000 0xCAFECAFE
-
 
   CCM_CGR0 |= CCM_CGR_RUN << CCM_CGR0_EPIT1_SH;	/* Enable EPIT1 clock  */
 
@@ -190,7 +191,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (0x43FAC274) = 0; // RAS
   __REG (0x43FAC27C) = 0x1000; // ; CS2 (CSD0)
   __REG (0x43FAC284) = 0; // DQM3
-  __REG (0x43FAC288) = 0; // DQM2, DQM1, DQM0, SD31-SD0, A25-A0, MA10 (0x288..0x2DC)
+  __REG (0x43FAC288) = 0; // DQM2,1,0, SD31-SD0, A25-A0, MA10 (0x288..0x2DC)
   __REG (0x43FAC28C) = 0; //
   __REG (0x43FAC290) = 0; //
   __REG (0x43FAC294) = 0; //
