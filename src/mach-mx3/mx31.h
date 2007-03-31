@@ -101,7 +101,8 @@
 
 #define NAND_PHYS		(0xb8000000)
 
-#define NAND_RAM_PAGE0		(0xcc000000)
+//#define NAND_RAM_PAGE0	(0xcc000000) /* According to the docs */
+#define NAND_RAM_PAGE0		(0xb8000000) /* According to the BSP */
 #define NAND_RAM_PAGE1		(0xb8000200)
 #define NAND_RAM_PAGE2		(0xb8000400)
 #define NAND_RAM_PAGE3		(0xb8000600)

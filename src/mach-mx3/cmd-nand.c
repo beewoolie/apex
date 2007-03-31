@@ -125,6 +125,8 @@
 
 static void cmd_nand (int argc, const char** argv)
 {
+  printf ("cmd_nand\n");
+
   NFC_CONFIG1   = NFC_INT_MSK;
   NFC_CONFIG1  |= NFC_ECC_EN;
 
@@ -136,17 +138,42 @@ static void cmd_nand (int argc, const char** argv)
   /* Reset NAND */
   //  this->cmdfunc(mtd, NFC_CMD_RESET, -1, -1);
 
-  NFC_CONFIG = 0x2;		/* Unlock first two internal pages */
+  NFC_CONFIG = 0x2;		/* Unlock first two (all) internal pages */
 
 		/* Unlock all of the flash blocks */
   NFC_UNLOCK_START = 0x0;
-  NFC_UNLOCK_END = 0x4000;
+  //  NFC_UNLOCK_END = 0x4000;
+  NFC_UNLOCK_END = 0x800;
   NFC_WP = 0x4;
 
   usleep (1000);
 
+  /* From the kernel */
+#if 0
+
+        /* NANDFC buffer 0 is used for device ID output */
+        NFC_BUF_ADDR = 0x0;
+
+        /* Read ID into main buffer */
+        NFC_CONFIG1 &= (~(NFC_SP_EN));
+        NFC_CONFIG2 = NFC_ID;
+#endif
+
+  /* From RedBoot */
+#if 0
+    NFC_PRESET(flash_dev_info->block_count - 1);
+    NFC_CMD_INPUT(FLASH_Read_ID); // 0x90
+     // 0x90 ==> CMD_REG
+     //  1   ==> CONFIG2_REG
+    start_nfc_addr_ops(ADDRESS_INPUT_READ_ID, 0, 0); // NFC_ADDR_INPUT(0)
+    // writes FLASH_ADD_REG and then FLASH_CONFIG2_REG with FADD_EN
+    NFC_DATA_OUTPUT(SCRATCH_BUF == RAM_BUF_3 == 3, FDO_FLASH_ID == 0x10);
+
+    *id = readw(nand_main_buf[SCRATCH_BUF]);
+#endif
+
   NFC_BUFFER_ADDR = 0;
-  NFC_CONFIG1 &= (~(NFC_SP_EN));
+  NFC_CONFIG1 = 0x10;
   NFC_CONFIG2 = NFC_ID;
 }
 

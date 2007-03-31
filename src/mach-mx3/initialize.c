@@ -147,9 +147,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   /* NOR flash initialization, though this shouldn't be necessary
      unless we're going to reduce timing latencies.  */
-  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
-  WEIM_LCR(0) = 0xa0330D01; //
-  WEIM_ACR(0) = 0x00220800; //
+  //  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
+  //  WEIM_LCR(0) = 0xa0330D01; //
+  //  WEIM_ACR(0) = 0x00220800; //
   WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
   WEIM_LCR(4) = 0x444A4541; //
   WEIM_ACR(4) = 0x44443302; //
