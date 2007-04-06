@@ -315,9 +315,10 @@ static void dm9000_report (void)
 
   for (dm = 0; dm < C_DM; ++dm) {
     if (dm9000[dm].present) {
-      printf ("  dm9000: [%d] "
+      printf ("  dm9000: [%d]"
 //	      " phy_addr %d  phy_id 0x%lx"
-	      " mac_addr %02x:%02x:%02x:%02x:%02x:%02x  %s\n",
+	      "  mac_addr %02x:%02x:%02x:%02x:%02x:%02x"
+	      " (0x%x 0x%x 0x%x) %s\n",
 	      dm,
 //	      -1, (unsigned long)-1,
 	      (dm9000[dm].rgs_eeprom[0]) & 0xff,
@@ -326,6 +327,7 @@ static void dm9000_report (void)
 	      (dm9000[dm].rgs_eeprom[1] >> 8) & 0xff,
 	      (dm9000[dm].rgs_eeprom[2]) & 0xff,
 	      (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff,
+	      dm9000[dm].vendor, dm9000[dm].product, dm9000[dm].chip,
 	      dm9000[dm].name ? dm9000[dm].name : "");
     }
   }

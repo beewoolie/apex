@@ -155,7 +155,6 @@
 #define EPT2_CMPR		__REG(PHYS_EPIT2 + 0x0c)
 #define EPT2_CNT		__REG(PHYS_EPIT2 + 0x10)
 
-#define EPT_CR_EN		(1<<0)
 #define EPT_CR_CLKSRC_SH	(24)
 #define EPT_CR_CLKSRC_MSK	(0x3<<24)
 #define EPT_CR_CLKSRC_32K	(0x3<<24)
@@ -165,8 +164,11 @@
 #define EPT_CR_PRESCALE_SH	(4)
 #define EPT_CR_PRESCALE_MSK	(0xfff<<4)
 #define EPT_CR_DBGEN		(1<<18)
-#define EPT_IOVW		(1<<17)
-#define EPT_RLD			(1<<3)
+#define EPT_CR_IOVW		(1<<17)
+#define EPT_CR_SWR		(1<<16)
+#define EPT_CR_RLD		(1<<3)
+#define EPT_CR_ENMOD		(1<<1)
+#define EPT_CR_EN		(1<<0)
 
 #define GPT_CR			__REG(PHYS_GPT + 0x00)
 #define GPT_PR			__REG(PHYS_GPT + 0x04)

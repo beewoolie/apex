@@ -218,6 +218,11 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
      and width is non-zero.  We should force IO to be the requested
      width.  memcpy is unreliable. */
 
+  /* *** FIXME: this code needs to get an overhaul so that we can be
+     *** sure thayt the right access mode is used.  It has been found
+     *** that the word access code in memcpy isn't activated, perhaps
+     *** because we're not using the optimized implementation. */
+
   switch (d->width) {
   case 1:
   /* *** Dumber version of the memory read function which serves to
@@ -234,9 +239,22 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
 
   default:
   case 2:
-  case 4:
+//  case 4:
     /* memcpy performs an optimal copy, probably at machine word width */
     memcpy (pv, (void*) (d->start + d->index), cb);
+    break;
+
+  case 4:
+    if (((d->start + d->index) & 3)
+	|| ((unsigned long) pv & 3)
+	|| (cb & 3))
+      memcpy (pv, (void*) (d->start + d->index), cb);
+    else {
+      unsigned long* plSrc = (unsigned long*) (d->start + d->index);
+      int i = cb/4;
+      while (i--)
+	*(unsigned long*) pv = *plSrc++, pv += 4;
+    }
     break;
   }
 

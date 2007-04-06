@@ -82,28 +82,34 @@
    Note that this function is neither __naked nor static.  It is
    available to the rest of the application as is.
 
-   This source frequency for the timer is 133.03MHz.  This easily gives
-   us a resolution of 1us with a divisor of 133.03.
-
-   (Verified that the HIGH clock source is HCLK.)
+   The source for the timer is really the IPG clock and not the high
+   clock regardless of the setting for CLKSRC as either HIGH or IPG.
+   In both cases, the CPU uses the IPG clock.  The value for IPGCLK
+   comes from the main PLL and is available in a constant.  We divide
+   down to get a 1us interval.
 
  */
 
 void __section (.bootstrap) usleep (unsigned long us)
 {
-  //  unsigned long c =
-  __asm volatile ("str %2, [%1, #0]\n\t" /* EPITCR */
-		  "str %0, [%1, #8]\n\t" /* EPITLR */
-	       "0: ldr %0, [%1, #16]\n\t" /* EPITCNT */
-		  "cmp %0, #0\n\t"
-		  "bmi 0b\n\t"
+  unsigned long mode =
+    EPT_CR_CLKSRC_IPG
+    | EPT_CR_IOVW
+    | ((IPGCLK/1000000 - 1) << EPT_CR_PRESCALE_SH)
+    | EPT_CR_DBGEN
+    | EPT_CR_SWR
+    ;
+  __asm volatile ("str %1, [%2, #0]\n\t"	/* EPITCR <- mode w/reset */
+		  "orr %1, %1, #1\n\t"		/* |=  EPT_CR_EN */
+		  "bic %1, %1, #0x10000\n\t"	/* &= ~EPT_CR_SWR  */
+		  "str %1, [%2, #0]\n\t"	/* EPITCR <- mode w/EN */
+		  "str %0, [%2, #8]\n\t"	/* EPITLR <- count */
+	       "0: ldr %0, [%2, #4]\n\t"	/* EPITSR */
+		  "tst %0, #1\n\t"
+		  "beq 0b\n\t"
 		  : "+r" (us)
-		  : "r" (PHYS_EPIT1),
-		    "r" (EPT_CR_CLKSRC_HIGH
-			 | EPT_IOVW
-			 | ((133 - 1) << EPT_CR_PRESCALE_SH)
-			 | EPT_CR_DBGEN
-			 | EPT_CR_EN)
+		  :  "r" (mode),
+		     "r" (PHYS_EPIT1)
 		  : "cc");
 }
 
@@ -150,9 +156,19 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   //  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
   //  WEIM_LCR(0) = 0xa0330D01; //
   //  WEIM_ACR(0) = 0x00220800; //
+
+#if defined (CONFIG_MACH_MX31ADS)
   WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
   WEIM_LCR(4) = 0x444A4541; //
   WEIM_ACR(4) = 0x44443302; //
+#endif
+
+#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
+  /* *** Unoptimized access times */
+  WEIM_UCR(4) = 0x0000DCF6; // ; Configure DM9000 on CS4
+  WEIM_LCR(4) = 0x444A4541; //
+  WEIM_ACR(4) = 0x44443302; //
+#endif
 
 #if defined (CONFIG_STARTUP_UART)
 

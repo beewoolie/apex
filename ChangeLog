@@ -1,3 +1,15 @@
+2007-04-06  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/drv-mem.c (memory_read): Fixed the memory read
+	function so that it properly reads from word width regions.
+
+	* src/mach-mx3/initialize.c: Fixed the usleep timer programming.
+	There were two problems.  First, the base frequency is not as
+	advertized.  The CPU can only use the IPG clock as the basis.
+	Second, our programming of the timer was wrong and needed to be
+	reworked so that we properly detected the timer expiration.
+	(__section): Added DM9000 region initialization.
+
 2007-03-01  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/drv-mem.c (memory_write): Revised the drv-mem write
