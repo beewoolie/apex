@@ -11,6 +11,10 @@ config MACH_MX31ADS
 	select USES_COMPACTFLASH
 	select USES_CS8900
 
+config MACH_EXBIBLIO_ROSENCRANTZ
+	bool "Exbiblio Rosencrantz Board"
+	select ARCH_MX31
+
 endchoice
 
 menu "Platform Setup"
@@ -28,6 +32,7 @@ config ATAG_PHYS
 config ARCH_NUMBER
 	int
 	default 447 if MACH_MX31ADS
+	default 1161 if MACH_EXBIBLIO_ROSENCRANTZ
 
 config APEX_VMA
 	hex "APEX Runtime Address"

@@ -214,6 +214,10 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
+  /* *** FIXME: this should optimize for the case where cb == width
+     and width is non-zero.  We should force IO to be the requested
+     width.  memcpy is unreliable. */
+
   switch (d->width) {
   case 1:
   /* *** Dumber version of the memory read function which serves to

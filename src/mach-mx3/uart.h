@@ -77,6 +77,13 @@
 #define UART_BMR_115200		(5968 - 1)
 #define UART_BIR_115200		(1000 - 0)
 
+#if defined (CPLD_CTRL1_CLR)
+# define INITIALIZE_CONSOLE_UART_MX31ADS \
+     CPLD_CTRL1_CLR = 1<<4; CPLD_CTRL2_SET = 1<<2;
+#else
+# define INITIALIZE_CONSOLE_UART_MX31ADS
+#endif
+
 # define INITIALIZE_CONSOLE_UART\
   ({ MASK_AND_SET (__REG (0x43fac080), 0xffff, 0x1210); /* txd1/rxd1 */\
      __REG (UART + UART_CR1) = 0;\
@@ -93,8 +100,7 @@
      __REG (UART + UART_BIR) = UART_BIR_115200;\
      __REG (UART + UART_BMR) = UART_BMR_115200;\
      __REG (UART + UART_CR1) = UART_CR1_EN;\
-     CPLD_CTRL1_CLR = 1<<4;\
-     CPLD_CTRL2_SET = 1<<2;\
+     INITIALIZE_CONSOLE_UART_MX31ADS;\
    })
 
 #endif  /* __UART_H__ */

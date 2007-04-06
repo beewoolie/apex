@@ -558,7 +558,7 @@ config ENV_REGION_KERNEL_ALT
 
 config ENV_REGION_RAMDISK
 	string "Source region for ramdisk image"
-	depends on ENV && USE_RAMDISK
+	depends on ENV && ATAG && USE_RAMDISK
 	default "nor:1280k+1536k" if MACH_M7200
 	default "nor:1280k+1536k" if MACH_LNODE80
 	default "nor:0x160010+0x69fff0" if MACH_NSLU2
@@ -582,7 +582,7 @@ comment "   Overrides"
 
 config ENV_DEFAULT_CMDLINE_OVERRIDE
 	bool "Override the target default kernel command line"
-	depends on ENV
+	depends on ENV && ATAG
 	default false
 	help
 	  Set this option so that you can override the target's

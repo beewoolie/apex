@@ -37,7 +37,7 @@
 
 __env struct env_d e_cmdline = {
   .key = "cmdline",
-  .default_value = "console=ttyS0 root=/dev/hda1 "
+  .default_value = "console=ttymxc0 root=/dev/hda1 "
   //		   "mtdparts=flash.0:2m(boot),-(root)"
   ,
   .description = "Linux kernel command line",

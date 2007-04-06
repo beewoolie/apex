@@ -98,7 +98,7 @@ int o = ((dou)->driver->flags >> DRIVER_WRITEPROGRESS_SHIFT)\
 
 #define descriptor_query(d,i,pv)\
 	((d)->driver->query\
- 	 ? (d)->driver->query ((d),(i),(pv))\
+	 ? (d)->driver->query ((d),(i),(pv))\
 	 : ERROR_UNSUPPORTED)
 
 struct driver_d {

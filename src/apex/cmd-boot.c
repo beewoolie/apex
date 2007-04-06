@@ -29,6 +29,7 @@
 
 */
 
+#include <config.h>
 #include <linux/types.h>
 #include <linux/string.h>
 #include <apex.h>
@@ -119,7 +120,9 @@ int cmd_boot (int argc, const char** argv)
 
   ((void (*)(int, int, int)) address) (0, arch_number, CONFIG_ATAG_PHYS);
 
+#if !defined (CONFIG_SMALL)
   printf ("Uh, oh.  Linux returned.\n");
+#endif
 
   return 0;
 }

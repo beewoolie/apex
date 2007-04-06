@@ -162,7 +162,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 #endif
 
+#if defined LED_ON
   LED_ON (0);
+#endif
 
   __asm volatile ("cmp %0, %1\n\t"
 		  "bls 1f\n\t"
