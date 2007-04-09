@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Apr  5 17:31:26 2007
+# Mon Apr  9 16:24:41 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -78,6 +78,7 @@ CONFIG_CMD_GO=y
 # CONFIG_CMD_PAUSE is not set
 # CONFIG_CMD_WAIT is not set
 # CONFIG_CMD_XRECEIVE is not set
+# CONFIG_CMD_ETH_DM9000 is not set
 # CONFIG_CMD_MEMLIMIT is not set
 # CONFIG_CMD_MEMSCAN is not set
 
@@ -88,6 +89,7 @@ CONFIG_CMD_GO=y
 # CONFIG_DRIVER_EXT2 is not set
 # CONFIG_DRIVER_JFFS2 is not set
 # CONFIG_DRIVER_FIS is not set
+CONFIG_USES_DM9000=y
 
 #
 # Environment

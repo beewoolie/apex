@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Feb 14 23:52:00 2007
+# Mon Apr  9 16:24:38 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -111,6 +111,7 @@ CONFIG_DRIVER_EXT2_BLOCKDEVICE="cf"
 # CONFIG_DRIVER_FIS is not set
 CONFIG_DRIVER_NOR_CFI=y
 # CONFIG_DRIVER_NOR_CFI_NO_BUFFERED is not set
+# CONFIG_DRIVER_NOR_CFI_USE_CACHE is not set
 CONFIG_DRIVER_NOR_CFI_TYPE_INTEL=y
 # CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION is not set
 CONFIG_DRIVER_NAND=y

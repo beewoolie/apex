@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Feb 28 11:58:19 2007
+# Mon Apr  9 16:24:40 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -39,10 +39,13 @@ CONFIG_SDRAM_BANK0=y
 # CONFIG_SDRAM_BANK1 is not set
 CONFIG_MACH="mx3"
 CONFIG_MACH_MX31ADS=y
+# CONFIG_MACH_EXBIBLIO_ROSENCRANTZ is not set
 
 #
 # Platform Setup
 #
+CONFIG_MX31_UART1=y
+# CONFIG_MX31ADS_UARTA is not set
 
 #
 # Platform Drivers
@@ -85,8 +88,6 @@ CONFIG_CMD_GO=y
 # CONFIG_DRIVER_JFFS2 is not set
 # CONFIG_DRIVER_FIS is not set
 # CONFIG_DRIVER_NOR_CFI is not set
-# CONFIG_DRIVER_NOR_CFI_TYPE_INTEL is not set
-# CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION is not set
 # CONFIG_DRIVER_COMPACTFLASH is not set
 CONFIG_USES_NOR_CFI=y
 CONFIG_USES_COMPACTFLASH=y
@@ -117,5 +118,4 @@ CONFIG_ENV_REGION_KERNEL=""
 #
 #    Overrides
 #
-# CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE is not set
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
