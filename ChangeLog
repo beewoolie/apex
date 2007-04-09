@@ -1,3 +1,7 @@
+2007-04-09  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* 1.4.18 for mx31 changes.
+
 2007-04-06  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/drv-mem.c (memory_read): Fixed the memory read
@@ -18,6 +22,8 @@
 	unaffected.
 	
 2007-02-25  Marc Singer  <elf@cerise.buici.com>
+
+	* 1.4.17
 
 	* src/drivers/drv-nor-cfi.c (nor_read): Fixed the nor-cfi driver
 	cache support.  It wasn't properly purging cache entries so the
