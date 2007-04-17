@@ -75,7 +75,7 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
     p[mark] = pattern_a;
   }
 
-#if defined (BOOTSTRAP_MEMTEST_FULL)
+#if defined (CONFIG_BOOTSTRAP_MEMTEST_FULL)
 
 		/* Full memory test.  This is probably unnecessary
 		   given the fact that failures in memory these days
