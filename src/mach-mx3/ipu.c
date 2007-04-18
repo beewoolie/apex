@@ -9,20 +9,20 @@
    DESCRIPTION
    -----------
 
-   o Timing.  This code appears to have a slightly different wave form
-     from the code in Matt Jakuc's test code.  The start of the frame,
-     signaled by the initial falling clock pulse from the master has a
-     long delay in this code, but a very short delay in Matt's.  I'm
-     not sure why and it doesn't appear to make a difference in the
-     correctness of the I2C frames.
+   o I2C Timing.  This code appears to have a slightly different wave
+     form from the code in Matt Jakuc's test code.  The start of the
+     frame, signaled by the initial falling clock pulse from the
+     master has a long delay in this code, but a very short delay in
+     Matt's.  I'm not sure why and it doesn't appear to make a
+     difference in the correctness of the I2C frames.
 
-   o Releasing the bus.  It appears to take some time for the bus to
-     go not-busy once it is released (in i2c_stop).  The trouble with
-     this code is that we should allow for the bus to be taken over by
-     another master.  In this boot loader, it isn't really an issue,
-     but a driver should cope with the fact that sending STOP is
-     enough and we really need to wait for the bus to go idle when we
-     want to start a transaction.
+   o Releasing the I2C bus.  It appears to take some time for the bus
+     to go not-busy once it is released (in i2c_stop).  The trouble
+     with this code is that we should allow for the bus to be taken
+     over by another master.  In this boot loader, it isn't really an
+     issue, but a driver should cope with the fact that sending STOP
+     is enough and we really need to wait for the bus to go idle when
+     we want to start a transaction.
 
    o Calculating the IFDR divisor.  Unfortunately, the Freescale I2C
      core doesn't use a simple divisor register to divide the base
@@ -30,10 +30,14 @@
      52KHz as the I2C clock.  If we want to be able to calculate the
      divisor from the target frequency, we'll have a tough row to hoe.
 
-   o Node addressing.  The I2C bus uses a seven bit address field
+   o I2C Node Addressing.  The I2C bus uses a seven bit address field
      where the node address is in the upper seven bits of the byte and
      the R/W bit is in the lowest bit.  The addresses passed around
      are the 'real' address of 0-127.
+
+   o I2C_I2SR_RXAK.  This bit is set when the ACK is not found on the
+     transfer of a byte.  It really should be named NRXAK.  We use the
+     name that exists in the documentation.
 
 */
 
@@ -92,7 +96,6 @@ static void i2c_stop (void)
   I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX);
   I2C_I2SR = 0;
 
-//  printf ("waiting for stop\n");
   while (I2C_I2SR & I2C_I2SR_IBB) 	/* Wait for STOP condition */
     ;
 }
@@ -103,8 +106,6 @@ static void i2c_setup (void)
 
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_I2C_CLK);
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_I2C_DAT);
-
-//  printf ("iomux's 0x%lx\n", __REG (0x43fac0a0));
 
   I2C_IFDR = I2C_IFDR_V;
 
@@ -134,7 +135,7 @@ static void i2c_setup_sensor_i2c (void)
   MASK_AND_SET (CCM_PDR0, (0x1ff << 23), (0x58 << 23));
 }
 
-static void i2c_setup_sensor (void)
+static void ipu_setup_sensor (void)
 {
   ENTRY;
 
@@ -202,6 +203,9 @@ static int i2c_wait_for_interrupt (void)
    sends the slave the frame START and target address.  Return value
    is 0 on success.
 
+   *** FIXME: the check for IAL isn't really necessary since this is
+   *** really a slave issue, I think.
+
 */
 
 static int i2c_start (char address, int reading)
@@ -216,23 +220,14 @@ static int i2c_start (char address, int reading)
       break;
     if (sr & I2C_I2SR_IAL)	/* Arbitration lost */
       return 1;
-    //    printf ("waiting for acquire\n");
     usleep (10);
   } while (1);
-  CLEAR_IIF;
+  I2C_I2SR = 0;
   I2C_I2CR |= I2C_I2CR_MTX;	/* Prepare for transmit */
-  {
-    u16 val = (address << 1) | (reading ? 1 : 0);
-//    printf ("  dr <- %x\n", val);
-    I2C_I2DR = val;
-  }
+  I2C_I2DR = (address << 1) | (reading ? 1 : 0);
 
-  {
-    int sr = i2c_wait_for_interrupt ();
-
-//    printf ("  sr 0x%x %s\n", sr, i2c_status_decode (sr));
-    return (sr & I2C_I2SR_RXAK) ? 1 : 0;	    /* Address must be ACK'd */
-  }
+				/* Address must be ACK'd */
+  return (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) ? 1 : 0;
 }
 
 
@@ -247,13 +242,12 @@ static int i2c_write (char address, char* rgb, int cb)
   int i;
   ENTRY;
   if (I2C_I2SR & I2C_I2SR_IBB) {
-    printf ("i2c bus busy %d\n", address);
+    printf ("error: i2c bus busy %d\n", address);
     i2c_stop ();
     return 1;
   }
 
   if (i2c_start (address, 0)) {
-//    printf ("failed to start\n");
     i2c_stop ();
     return 1;
   }
@@ -281,6 +275,7 @@ static int cmd_ipu (int argc, const char** argv)
   if (strcmp (argv[1], "i") == 0) {
     i2c_setup_sensor_i2c ();
     i2c_setup ();
+    ipu_setup_sensor ();
   }
 
   if (strcmp (argv[1], "i2c") == 0) {
