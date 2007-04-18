@@ -262,6 +262,6 @@
 #define I2C_I2SR_IAL		(1<<4) /* Arbitration lost */
 #define I2C_I2SR_SRW		(1<<2) /* Slave transmit */
 #define I2C_I2SR_IIF		(1<<1) /* Interrupt */
-#define I2C_I2SR_RXAK		(1<<1) /* No ACK received */
+#define I2C_I2SR_RXAK		(1<<0) /* No ACK received */
 
 #endif  /* __MX31_H__ */

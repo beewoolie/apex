@@ -54,12 +54,20 @@ static void i2c_setup_sensor (void)
 {
   ENTRY;
 
-  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_CSI_VSYNC);
-  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_CSI_HSYNC);
+  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_CSI_D4);
+  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_KEY_ROW4);
   GPIO_PIN_CONFIG_OUTPUT (MX31_PIN_CSI_D4);	/* SENSOR_PWR_EN */
   GPIO_PIN_CONFIG_OUTPUT (MX31_PIN_KEY_ROW4);	/* SENSOR_BUF_EN */
   GPIO_PIN_SET (MX31_PIN_CSI_D4);		/* SENSOR_PWR_EN */
   GPIO_PIN_SET (MX31_PIN_KEY_ROW4);		/* SENSOR_BUF_EN */
+
+  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_KEY_ROW7);
+  GPIO_PIN_CONFIG_OUTPUT (MX31_PIN_KEY_ROW7);
+  GPIO_PIN_SET (MX31_PIN_KEY_ROW7); /* Release camera from standby */
+
+  IOMUX_PIN_CONFIG_GPIO (MX31_PIN_KEY_ROW6);
+  GPIO_PIN_CONFIG_OUTPUT (MX31_PIN_KEY_ROW6);
+  GPIO_PIN_SET (MX31_PIN_KEY_ROW6); /* Release camera from standby */
 
   usleep (1000);		/* delay 1ms while camera powers on */
 
@@ -72,6 +80,12 @@ static void i2c_setup_sensor (void)
 
 	/* Post divider for CSI. */
   MASK_AND_SET (CCM_PDR0, (0x1ff << 23), (0x58 << 23));
+
+  GPIO_PIN_CLEAR (MX31_PIN_KEY_ROW6);
+  udelay (1);
+  GPIO_PIN_SET (MX31_PIN_KEY_ROW6);
+  udelay (1);
+  GPIO_PIN_CLEAR (MX31_PIN_KEY_ROW7); /* Release camera from standby */
 }
 
 /* i2c_wait_for_interrupt
@@ -85,6 +99,7 @@ static int i2c_wait_for_interrupt (void)
   ENTRY;
   while (!(I2C_I2SR & I2C_I2SR_IIF))	/* Wait for interrupt */
     ;
+  printf ("  returning %x\n", I2C_I2SR);
   return I2C_I2SR;
 }
 
@@ -101,7 +116,6 @@ static int i2c_start (char address, int reading)
   ENTRY;
   address &= 0x7f;
 
-  printf ("setting master\n");
   I2C_I2CR |= I2C_I2CR_MSTA;	/* Acquire bus */
   do {
     int sr = I2C_I2SR;
@@ -114,7 +128,12 @@ static int i2c_start (char address, int reading)
   I2C_I2SR = 0;
   I2C_I2DR = (address << 1) | (reading ? 1 : 0);
 
-  return (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) ? 1 : 0;
+  {
+    int sr = i2c_wait_for_interrupt ();
+
+    printf ("  sr 0x%x\n", sr);
+    return (sr & I2C_I2SR_RXAK) ? 1 : 0;
+  }
 }
 
 
@@ -128,14 +147,17 @@ static int i2c_write (char address, char* rgb, int cb)
 {
   int i;
   ENTRY;
-  if (i2c_start (address, 0))
+  if (i2c_start (address, 0)) {
+    printf ("failed to start\n");
     return 1;
+  }
 
   I2C_I2CR |= I2C_I2CR_MTX;
   for (i = 0; i < cb; ++i) {
     I2C_I2DR = *rgb++;
     if (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) {
       i2c_stop ();
+      printf ("failed to receive ack\n");
       return 1;
     }
   }
@@ -159,7 +181,30 @@ static int cmd_ipu (int argc, const char** argv)
     int address;
     i2c_setup_sensor ();
     i2c_setup ();
-    for (address = 0; address < 128; ++address) {
+    for (address = 0; address < 4; ++address) {
+      char rgb[2] = { 0, 0 };
+      int result = i2c_write (address, rgb, 2);
+      if (result == 0)
+	printf ("success at address %d (0x%x)\n", address, address);
+    }
+  }
+
+  if (strcmp (argv[1], "a") == 0) {
+    int address = 0x5c >> 1;
+    i2c_setup_sensor ();
+    i2c_setup ();
+    {
+      char rgb[2] = { 0, 0 };
+      int result = i2c_write (address, rgb, 2);
+      if (result == 0)
+	printf ("success at address %d (0x%x)\n", address, address);
+    }
+  }
+  if (strcmp (argv[1], "b") == 0) {
+    int address = 0;
+    i2c_setup_sensor ();
+    i2c_setup ();
+    {
       char rgb[2] = { 0, 0 };
       int result = i2c_write (address, rgb, 2);
       if (result == 0)
