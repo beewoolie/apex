@@ -44,7 +44,6 @@
      none is 0
    GPIO field is bits 15-11.
  */
-
 #define __P(mux_r,mux_f,pad_r,pad_f,gpio_r,gpio_f)\
 	(((((mux_r) & 0x7f) + (0x00c >>2)) << 2) /* MUX register */\
 	|( ((mux_f) & 0x3 )		  << 0)	 /* MUX field w/in register */\
@@ -54,11 +53,11 @@
 	|( ((gpio_f)      & 0x1f)	  << 11))/* GPIO field w/in reg. */\
 
 #define __G(mux_r,mux_f,pad_r,pad_f,gpio_r,gpio_f)\
- 	__P(mux_r,mux_f,pad_r,pad_f,gpio_r,gpio_f)
+	__P (mux_r, mux_f, pad_r, pad_f, gpio_r, gpio_f)
 #define __N(mux_r,mux_f,pad_r,pad_f)	  __P(mux_r,mux_f,pad_r,pad_f,0,0)
 
 enum {
-  MX31_PIN_CSPI3_MISO     = __N( 0, 3,   1, 2),
+  MX31_PIN_CSPI3_MISO     = __N ( 0, 3,   1, 2),
   MX31_PIN_CSPI3_SCLK	  = __N ( 0, 2,   1, 1),
   MX31_PIN_CSPI3_SPI_RDY  = __N ( 0, 1,   1, 0),
   MX31_PIN_TTM_PAD	  = __N ( 0, 0,   0, 2),
@@ -392,12 +391,13 @@ enum {
 #undef __P
 #undef __G
 
+#define _GPIO_R(i) "\x00\xcc\xd0\xa4"[i&0x3]
 #define _PIN_MUX_R(v)	((v) & 0x1fc)
 #define _PIN_MUX_F(v)	((v) & 0x3)
 #define _PIN_PAD_R(v)	(((v) >> 16) & 0x3fc)
 #define _PIN_PAD_F(v)	(((v) >> 16) & 0x3)
 #define _PIN_IS_GPIO(v)	(((v) & (3<<28)) != 0)
-#define _PIN_GPIO_R(v)	(((v) >> 26) & 0x3f)		/* See comments */
+#define _PIN_GPIO_R(v)	(((v) >> 28) & 0x3)		/* See comments */
 #define _PIN_GPIO_F(v)	(((v) >> 11) & 0x1f)
 
   /* These registers are indexed from bases in the PIN macros.  There
@@ -405,10 +405,9 @@ enum {
      the base.  That's why the MUX and PAD register references are
      identical.  The GPIO indices include the bits needed to find each
      of the GPIO regions. */
-#define _GPIO_R(i) "\xcc\xd0\xa4\x00"[i&0x3]
 #define _SW_MUX_CTL(r)	__REG(PHYS_IOMUXC + (r))
 #define _SW_PAD_CTL(r)	__REG(PHYS_IOMUXC + (r))
-#define _GPIO_BASE(r)	((PHYS_GPIO1 & 0xfff00000) + (_GPIO_R(r)<<26))
+#define _GPIO_BASE(r)	((PHYS_GPIO1 & 0xfff00000) | (_GPIO_R(r)<<12))
 #define _GPIO_DR(r)	__REG(_GPIO_BASE(r) + 0x00)
 #define _GPIO_GDIR(r)	__REG(_GPIO_BASE(r) + 0x04)
 #define _GPIO_PSR(r)	__REG(_GPIO_BASE(r) + 0x08)
@@ -420,14 +419,19 @@ enum {
   /* Configure ping as GPIO. */
 #define IOMUX_PIN_CONFIG_GPIO(p)\
 	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
-	(0x7f<<(_PIN_MUX_F (p)*8)),\
-	((0<<4)|(1<<0))<<(_PIN_MUX_F (p)*8))
+		     (0x7f<<(_PIN_MUX_F (p)*8)),\
+		     ((0<<4)|(1<<0))<<(_PIN_MUX_F (p)*8))
 
   /* Configure pin as functional. */
 #define IOMUX_PIN_CONFIG_FUNC(p)\
 	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
-	(0x7f<<(_PIN_MUX_F (p)*8)),\
-	((1<<4)|(2<<0))<<(_PIN_MUX_F (p)*8))
+		     (0x7f<<(_PIN_MUX_F (p)*8)),\
+		     ((1<<4)|(2<<0))<<(_PIN_MUX_F (p)*8))
+
+#define IOMUX_PAD_CONFIG(p,v)\
+	MASK_AND_SET(_SW_PAD_CTL(_PIN_PAD_R (p)),\
+		     (0x3ff<<(_PIN_PAD_F (p)*10)),\
+		     (v)   <<(_PIN_MUX_F (p)*10))
 
 #define GPIO_PIN_CONFIG_OUTPUT(p)\
 	(_GPIO_GDIR(_PIN_GPIO_R (p)) |=   (1 << _PIN_GPIO_F (p)))
