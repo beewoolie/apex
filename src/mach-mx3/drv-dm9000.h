@@ -1,8 +1,7 @@
-/* hardware.h
-     $Id$
+/* drv-dm9000.h
 
    written by Marc Singer
-   22 Dec 2006
+   6 April 2006
 
    Copyright (C) 2006 Marc Singer
 
@@ -27,19 +26,10 @@
 
 */
 
-#if !defined (__HARDWARE_H__)
-#    define   __HARDWARE_H__
+#if !defined (__MACH_DRV_DM9000_H__)
+#    define   __MACH_DRV_DM9000_H__
 
 /* ----- Includes */
-
-#include <config.h>
-
-#if defined (CONFIG_MACH_MX31ADS)
-# include "mx31ads.h"
-#endif
-
-#include "mx31.h"
-#include "mx31-pins.h"
 
 /* ----- Types */
 
@@ -47,6 +37,11 @@
 
 /* ----- Prototypes */
 
+#define DM_WIDTH	16
 
+#define DM_PHYS		(0xb4000000) /* Dev MAC/PHY */
+#define DM_PHYS_INDEX	(DM_PHYS + 0)
+#define DM_PHYS_DATA	(DM_PHYS + 8)
+#define DM_NAME		"dev"
 
-#endif  /* __HARDWARE_H__ */
+#endif  /* __MACH_DRV_DM9000_H__ */

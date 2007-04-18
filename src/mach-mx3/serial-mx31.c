@@ -28,6 +28,7 @@
 
 */
 
+#include <config.h>
 #include <driver.h>
 #include <service.h>
 #include <apex.h>		/* printf, only */

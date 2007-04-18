@@ -233,8 +233,8 @@ static __command struct command_d c_eth = {
 "  save  - saves the MAC address to the mac: EEPROM device.\n"
 "    A saved MAC address will be used to automatically configure the MAC\n"
 "    at startup.  For this feature to work, there must be a mac: driver.\n"
-"  e.g.  emac mac 01:23:45:67:89:ab         # Never use this MAC address\n"
-"        emac save\n"
+"  e.g.  eth mac 01:23:45:67:89:ab         # Never use this MAC address\n"
+"        eth save\n"
   )
 };
 

@@ -244,5 +244,24 @@
 # define CCM_UPCTL_V		CCM_UPCTL_208_V
 #endif
 
+#define I2C_IADR		__REG16(PHYS_I2C + 0x00)
+#define I2C_IFDR		__REG16(PHYS_I2C + 0x04)
+#define I2C_I2CR		__REG16(PHYS_I2C + 0x08)
+#define I2C_I2SR		__REG16(PHYS_I2C + 0x0c)
+#define I2C_I2DR		__REG16(PHYS_I2C + 0x10)
+
+#define I2C_I2CR_IEN		(1<<7)
+#define I2C_I2CR_MSTA		(1<<5)
+#define I2C_I2CR_MTX		(1<<4) /* Master transmit */
+#define I2C_I2CR_TXAK		(1<<3)
+#define I2C_I2CR_RSATA		(1<<2) /* Generate START condition */
+
+#define I2C_I2SR_ICF		(1<<7) /* Transfer in progress */
+#define I2C_I2SR_IAAS		(1<<6) /* Slave address match */
+#define I2C_I2SR_IBB		(1<<5) /* Bus busy */
+#define I2C_I2SR_IAL		(1<<4) /* Arbitration lost */
+#define I2C_I2SR_SRW		(1<<2) /* Slave transmit */
+#define I2C_I2SR_IIF		(1<<1) /* Interrupt */
+#define I2C_I2SR_RXAK		(1<<1) /* No ACK received */
 
 #endif  /* __MX31_H__ */
