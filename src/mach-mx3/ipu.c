@@ -47,6 +47,7 @@
 #include <service.h>
 #include <error.h>
 #include <linux/string.h>
+#include <asm/mmu.h>
 
 #include "hardware.h"
 
@@ -169,14 +170,29 @@
 #define IC_CONF_PRPENC_CSC1		(1<<1)
 #define IC_CONF_PRPENC_EN		(1<<0)
 
+#define CB_FRAME			(1024*1024)
+static char* rgbFrameA;
+static char* rgbFrameB;
 
-static compose_control_word (char* rgb, unsigned long value,
-			     int width, int shift)
+
+/* compose_control_word
+
+   writes the given value to the very long control word buffer.  This
+   code only works in little-endian mode.
+
+*/
+
+static void compose_control_word (char* rgb, unsigned long value,
+				  int shift, int width)
 {
+  int index = 0;
+  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
+
 	/* Cope with leader */
-  while (shift > 8) {
+  while (shift >= 8) {
     ++rgb;
     shift -= 8;
+    ++index;
   }
 
   while (width > 0) {
@@ -185,13 +201,53 @@ static compose_control_word (char* rgb, unsigned long value,
     if (avail > 8 - shift)
       avail = 8 - shift;
     mask = ((1 << avail) - 1);
-    printf ("writing 0x%x, mask 0x%x with shift %d\n",
-	    value & mask, mask, shift);
+    printf ("writing 0x%08lx [%2d] 0x%02lx, mask 0x%02lx"
+	    " with shift %d (0x%02lx)\n",
+	    value, index, value & mask, mask, shift, mask << shift);
     *rgb++ |= (value & mask) << shift;
     width -= avail;
+    value >>= avail;
     shift = 0;			/* Always zero after first byte */
+    ++index;
   }
 }
+
+/* ipu_write_ima
+
+   writes the given number of bits from rgb to the Internal Memory
+   Access register.  We depend on the feature of the IMA hardware to
+   increment the word pointer after each write.  We also depend on the
+   fact that the endian-ness of the ARM matches the endian-ness of the
+   of the register.
+
+*/
+
+static void ipu_write_ima (int mem_nu, int row_nu, const char* rgb, int bits)
+{
+  IPU_IMA_ADDR
+    = ((mem_nu & 0xf) << 16)
+    | ((row_nu & 0x1fff) << 3);
+
+  while (bits > 0) {
+    IPU_IMA_DATA = *(unsigned long*) rgb;
+    rgb += 4;
+    bits -= 32;
+  }
+}
+
+static void ipu_read_ima (int mem_nu, int row_nu, const char* rgb, int bits)
+{
+  IPU_IMA_ADDR
+    = ((mem_nu & 0xf) << 16)
+    | ((row_nu & 0x1fff) << 3);
+
+  while (bits > 0) {
+    *(unsigned long*) rgb = IPU_IMA_DATA;
+    rgb += 4;
+    bits -= 32;
+  }
+}
+
 
 #if 0
 static const char* i2c_status_decode (int sr)
@@ -224,7 +280,7 @@ static void i2c_stop (void)
   I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX);
   I2C_I2SR = 0;
 
-  while (I2C_I2SR & I2C_I2SR_IBB) 	/* Wait for STOP condition */
+  while (I2C_I2SR & I2C_I2SR_IBB)	/* Wait for STOP condition */
     ;
 }
 
@@ -326,8 +382,8 @@ static void ipu_setup (void)
     ;
 
   CSI_SENS_FRM_SIZE = 0
-    | (FRAME_WIDTH  << CSI_FRM_SIZE_WIDTH_SH)
-    | (FRAME_HEIGHT << CSI_FRM_SIZE_HEIGHT_SH);
+    | ((FRAME_WIDTH - 1)  << CSI_FRM_SIZE_WIDTH_SH)
+    | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH);
 
 
   /* TASK Configure and initialize CSI IC IDMAC */
@@ -345,71 +401,80 @@ static void ipu_setup (void)
 	/* Initialize IDMAC register file */
   {
     char rgb[(132 + 7)/8];
+
+#if 0
+    /* Non-Interleaved */
     memset (rgb, 0, sizeof (rgb));
+    compose_control_word (rgb, 0,   0, 10);	/* XV */
+    compose_control_word (rgb, 0,  10, 10);	/* YV */
+    compose_control_word (rgb, 0,  20, 12);	/* XB */
+    compose_control_word (rgb, 0,  32, 12);	/* YB */
+    compose_control_word (rgb, 1,  46,  1);	/* NSB */
+    compose_control_word (rgb, 0,  47,  6);	/* LNPB */
+    compose_control_word (rgb, 0,  53, 26);	/* UBO */
+    compose_control_word (rgb, 0,  79, 26);	/* VBO */
+    compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
+    compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    /* Write the word */
 
-    compose_control_word (rgb, 0, 10, 0);	/* XV */
-    compose_control_word (rgb, 0, 10, 10);	/* YV */
+    memset (rgb, 0, sizeof (rgb));
+    compose_control_word (rgb, rgbFrameA,   0, 32);	/* EBA0 */
+    compose_control_word (rgb, rgbFrameB,  32, 32);	/* EBA1 */
+    compose_control_word (rgb, 3,  64, 3);	/* BPP */
+    compose_control_word (rgb, FRAME_WIDTH/3 - 1,  67, 14);	/* SL */
+    compose_control_word (rgb, 3,  81, 3);	/* PFS */
+    compose_control_word (rgb, 0,  84, 3);	/* BAM */
+    compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
+    compose_control_word (rgb, 2,  96, 2);	/* SAT */
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    /* Write the word */
+#endif
+
+    /* Interleaved */
+    memset (rgb, 0, sizeof (rgb));
+    compose_control_word (rgb, 0,   0, 10);	/* XV */
+    compose_control_word (rgb, 0,  10, 10);	/* YV */
+    compose_control_word (rgb, 0,  20, 12);	/* XB */
+    compose_control_word (rgb, 0,  32, 12);	/* YB */
+    compose_control_word (rgb, 0,  44,  1);	/* SCE */
+    compose_control_word (rgb, 1,  46,  1);	/* NSB */
+    compose_control_word (rgb, 0,  47,  6);	/* LNPB */
+    compose_control_word (rgb, 0,  53, 10);	/* SX */
+    compose_control_word (rgb, 0,  63, 10);	/* SY */
+    compose_control_word (rgb, 0,  73, 10);	/* NS */
+    compose_control_word (rgb, 0,  83, 10);	/* SM */
+    compose_control_word (rgb, 0,  93,  5);	/* SDX */
+    compose_control_word (rgb, 0,  98,  5);	/* SDY */
+    compose_control_word (rgb, 0, 103,  1);	/* SDRX */
+    compose_control_word (rgb, 0, 104,  1);	/* SDRY */
+    compose_control_word (rgb, 0, 105,  1);	/* SCRQ */
+    compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
+    compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    ipu_write_ima (1, 2*7, rgb, 132);
+
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*7, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
+
+    memset (rgb, 0, sizeof (rgb));
+    compose_control_word (rgb, 0x80300000,   0, 32);	/* EBA0 */
+    compose_control_word (rgb, 0x80400000,  32, 32);	/* EBA1 */
+    compose_control_word (rgb, 2,  64, 3);	/* BPP */
+    compose_control_word (rgb, FRAME_WIDTH - 1,  67, 14);	/* SL */
+    compose_control_word (rgb, 7,  81, 3);	/* PFS */
+    compose_control_word (rgb, 0,  84, 3);	/* BAM */
+    compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
+    compose_control_word (rgb, 2,  96, 2);	/* SAT */
+    compose_control_word (rgb, 2,  98, 1);	/* SCC */
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    ipu_write_ima (1, 2*7 + 1, rgb, 132);
+
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*7 + 1, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
   }
-  ipu_write_ima (1, 7*(0 + 1), 0,
-		 0
-		 | 0 << 0	/* XV */
-		 | 0 << 10	/* YV */
-		 | 0 << 20	/* XB */
-		 );
-  ipu_write_ima (1, 7*(0 + 1), 0,
-		 0
-		 | 0 << 0	/* XV */
-		 | 0 << 10	/* YV */
-		 | 0 << 20	/* XB */
-		 );
-
-
-		regData = 0;
-		regData |= (params->XV << 0);
-		regData |= (params->YV << 10);
-		regData |= (params->XB << 20);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 0, regData);
-
-		regData = 0;
-		regData |= (params->YB << 0);
-		regData |= (params->NSB << 14);
-		regData |= (params->LNPB << 15);
-		regData |= ((params->UBO & 0x7FF)  << 21);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 1, regData);
-
-		regData = 0;
-		regData |= (params->UBO  >> 11);
-		regData |= ((params->VBO & 0x3FFFF) << 15);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 2, regData);
-
-		regData = 0;
-		regData |= (params->VBO >> 18);
-		regData |= (params->FW <<  12);
-		regData |= ((params->FH & 0xFF) << 24);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 3, regData);
-
-		regData = 0;
-		regData |= (params->FH >> 8);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 4, regData);
-
-		regData = 0;
-		regData |= (params->EBA0 << 0);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 0, regData);
-
-		regData = 0;
-		regData |= (params->EBA1 << 0);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 1, regData);
-
-		regData = 0;
-		regData |= (params->BPP << 0);
-		regData |= (params->SL  << 3);
-		regData |= (params->PFS << 17);
-		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 2, regData);
-
-
-
-
-
 
   IDMAC_CHA_PRI |= 1<<7;	/* Channel 7 is high priority */
 
@@ -521,10 +586,20 @@ static int cmd_ipu (int argc, const char** argv)
   if (argc < 2)
     return ERROR_PARAM;
 
+  if (rgbFrameA == 0) {
+    rgbFrameA = alloc_uncached (CB_FRAME, 4096);
+    rgbFrameB = alloc_uncached (CB_FRAME, 4096);
+    memset ((void*) rgbFrameA, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameB, 0xa5, CB_FRAME);
+
+    printf ("FrameA %p  FrameB %p\n", rgbFrameA, rgbFrameB);
+  }
+
   if (strcmp (argv[1], "i") == 0) {
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     ipu_setup_sensor ();
+    ipu_setup ();
   }
 
   if (strcmp (argv[1], "i2c") == 0) {
