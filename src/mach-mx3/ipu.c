@@ -54,6 +54,9 @@
 //#define ENTRY printf ("%s\n", __FUNCTION__)
 #define ENTRY
 
+#define FRAME_WIDTH	(720)
+#define FRAME_HEIGHT	(480)
+
 	/* Definitions for GPIO pins to make the code readable. */
 #define PIN_SENSOR_PWR_EN     MX31_PIN_CSI_D4
 #define PIN_SENSOR_BUF_EN     MX31_PIN_KEY_ROW4
@@ -64,6 +67,131 @@
 #define PIN_ILLUMINATION_EN2  MX31_PIN_KEY_COL4
 
 #define I2C_IFDR_V	      (0x19)		/* Divisor of 1280 */
+
+
+#define IPU_CONF		__REG(PHYS_IPU + 0x00)
+#define IPU_CHA_BUF0_RDY	__REG(PHYS_IPU + 0x04)
+#define IPU_CHA_BUF1_RDY	__REG(PHYS_IPU + 0x08)
+#define IPU_CHA_DB_MODE_SEL	__REG(PHYS_IPU + 0x0c)
+#define IPU_CHA_CUR_BUF		__REG(PHYS_IPU + 0x10)
+#define IPU_FS_PROC_FLOW	__REG(PHYS_IPU + 0x14)
+#define IPU_DISP_PROC_FLOW	__REG(PHYS_IPU + 0x18)
+#define IPU_TASK_STAT		__REG(PHYS_IPU + 0x1c)
+#define IPU_IMA_ADDR		__REG(PHYS_IPU + 0x20)
+#define IPU_IMA_DATA		__REG(PHYS_IPU + 0x24)
+#define IPU_INT_CTRL1		__REG(PHYS_IPU + 0x28)
+#define IPU_INT_CTRL2		__REG(PHYS_IPU + 0x2c)
+#define IPU_INT_CTRL3		__REG(PHYS_IPU + 0x30)
+#define IPU_INT_CTRL4		__REG(PHYS_IPU + 0x34)
+#define IPU_INT_CTRL5		__REG(PHYS_IPU + 0x38)
+#define IPU_INT_STAT1		__REG(PHYS_IPU + 0x3c)
+#define IPU_INT_STAT2		__REG(PHYS_IPU + 0x40)
+#define IPU_INT_STAT3		__REG(PHYS_IPU + 0x44)
+#define IPU_INT_STAT4		__REG(PHYS_IPU + 0x48)
+#define IPU_INT_STAT5		__REG(PHYS_IPU + 0x4c)
+#define IPU_BRK_CTRL1		__REG(PHYS_IPU + 0x50)
+#define IPU_BRK_CTRL2		__REG(PHYS_IPU + 0x54)
+#define IPU_BRK_STAT		__REG(PHYS_IPU + 0x58)
+#define IPU_DIAGB_CTRL		__REG(PHYS_IPU + 0x5c)
+#define CSI_CONF		__REG(PHYS_IPU + 0x60)
+#define CSI_SENS_CONF		__REG(PHYS_IPU + 0x60)
+#define CSI_SENS_FRM_SIZE	__REG(PHYS_IPU + 0x64)
+#define CSI_ACT_FRM_SIZE	__REG(PHYS_IPU + 0x68)
+#define CSI_OUT_FRM_CTRL	__REG(PHYS_IPU + 0x6c)
+#define CSI_TST_CTRL		__REG(PHYS_IPU + 0x70)
+#define CSI_CCIR_CODE1		__REG(PHYS_IPU + 0x74)
+#define CSI_CCIR_CODE2		__REG(PHYS_IPU + 0x78)
+#define CSI_CCIR_CODE3		__REG(PHYS_IPU + 0x7c)
+#define CSI_FLASH_STROBE1	__REG(PHYS_IPU + 0x80)
+#define CSI_FLASH_STROBE2	__REG(PHYS_IPU + 0x84)
+#define IC_CONF			__REG(PHYS_IPU + 0x88)
+#define IC_PRP_ENC_RSC		__REG(PHYS_IPU + 0x8c)
+#define IC_PRP_VF_RSC		__REG(PHYS_IPU + 0x90)
+#define	IC_PP_RSC		__REG(PHYS_IPU + 0x94)
+#define	PF_CONF			__REG(PHYS_IPU + 0xa0)
+#define	IDMAC_CONF		__REG(PHYS_IPU + 0xa4)
+#define	IDMAC_CHA_EN		__REG(PHYS_IPU + 0xa8)
+#define	IDMAC_CHA_PRI		__REG(PHYS_IPU + 0xac)
+#define	IDMAC_CHA_BUSY		__REG(PHYS_IPU + 0xb0)
+
+#define IPU_CONF_CSI_EN		(1<<0)
+#define IPU_CONF_IC_EN		(1<<1)
+#define IPU_CONF_PXL_ENDIAN	(1<<8)
+
+#define IDMAC_CONF_PRYM_RR		(0<<0) /* Round robin */
+#define IDMAC_CONF_PRYM_RAND		(1<<0) /* Random */
+#define IDMAC_CONF_SRCNT_SH		(4)
+#define IDMAC_CONF_SRCNT_MSK		(0x7)
+#define IDMAC_CONF_SINGLE_AHB_M_EN	(1<<8)
+
+#define CSI_CONF_VSYNC_POL		(1<<0)
+#define CSI_CONF_HSYNC_POL		(1<<1)
+#define CSI_CONF_DATA_POL		(1<<2)
+#define CSI_CONF_SENS_PIX_CLK_POL	(1<<3)
+#define CSI_CONF_SENS_PRTCL_SH		(4)
+#define CSI_CONF_SENS_PRTCL_GATED	(0<<4)
+#define CSI_CONF_SENS_PRTCL_NOGATED	(1<<4)
+#define CSI_CONF_SENS_PRTCL_CCIR_P	(2<<4)
+#define CSI_CONF_SENS_PRTCL_CCIR_NP	(3<<4)
+#define CSI_CONF_SENS_CLK_SRC		(1<<7)
+#define CSI_CONF_SENS_DATA_FORMAT_RGB	(0<<8)
+#define CSI_CONF_SENS_DATA_FORMAT_YUV444 (0<<8)
+#define CSI_CONF_SENS_DATA_FORMAT_YUV422 (2<<8)
+#define CSI_CONF_SENS_DATA_FORMAT_BAYER (3<<8)
+#define CSI_CONF_SENS_DATA_FORMAT_GENERIC (3<<8)
+#define CSI_CONF_DATA_WIDTH_4BIT	(0<<10)
+#define CSI_CONF_DATA_WIDTH_8BIT	(1<<10)
+#define CSI_CONF_DATA_WIDTH_10BIT	(2<<10)
+#define CSI_CONF_DATA_WIDTH_15BIT	(3<<10)	/* Bayer or generic */
+#define CSI_CONF_EXT_VSYNC		(1<<15)
+#define CSI_CONF_DIV_RATIO_SH		(16)
+
+#define CSI_FRM_SIZE_WIDTH_SH		(0)
+#define CSI_FRM_SIZE_HEIGHT_SH		(16)
+#define CSI_FRM_SIZE_WIDTH_MSK		(0xfff)
+#define CSI_FRM_SIZE_HEIGHT_MSK		(0xfff)
+
+#define IC_CONF_CSI_MEM_WR_EN		(1<<31)
+#define IC_CONF_CSI_RWS_EN		(1<<30)
+#define IC_CONF_IC_KEY_COLOR_EN		(1<<29)
+#define IC_CONF_IC_GLB_LOC_A		(1<<28)
+#define IC_CONF_PP_PROT_EN		(1<<20)
+#define IC_CONF_PP_CMB			(1<<19)
+#define IC_CONF_PP_CSC2			(1<<18)
+#define IC_CONF_PP_CSC1			(1<<17)
+#define IC_CONF_PP_EN			(1<<16)
+#define IC_CONF_PRPVF_ROT_EN		(1<<12)
+#define IC_CONF_PRPVF_CMB		(1<<11)
+#define IC_CONF_PRPVF_CSC2		(1<<10)
+#define IC_CONF_PRPVF_CSC1		(1<<9)
+#define IC_CONF_PRPVF_PRPVF_EN		(1<<8)
+#define IC_CONF_PRPENC_ROT_EN		(1<<2)
+#define IC_CONF_PRPENC_CSC1		(1<<1)
+#define IC_CONF_PRPENC_EN		(1<<0)
+
+
+static compose_control_word (char* rgb, unsigned long value,
+			     int width, int shift)
+{
+	/* Cope with leader */
+  while (shift > 8) {
+    ++rgb;
+    shift -= 8;
+  }
+
+  while (width > 0) {
+    int avail = width;
+    unsigned long mask;
+    if (avail > 8 - shift)
+      avail = 8 - shift;
+    mask = ((1 << avail) - 1);
+    printf ("writing 0x%x, mask 0x%x with shift %d\n",
+	    value & mask, mask, shift);
+    *rgb++ |= (value & mask) << shift;
+    width -= avail;
+    shift = 0;			/* Always zero after first byte */
+  }
+}
 
 #if 0
 static const char* i2c_status_decode (int sr)
@@ -180,6 +308,127 @@ static void ipu_setup_sensor (void)
   GPIO_PIN_CLEAR	 (PIN_CMOS_STBY); /* Release camera from standby */
 }
 
+
+static void ipu_setup (void)
+{
+  /* Configure common parameters */
+
+  IPU_CONF	= 0;				/* Setting endian-ness only */
+  IDMAC_CONF	= IDMAC_CONF_SINGLE_AHB_M_EN;
+
+  /* SYSTEM Configure sensor interface */
+
+  CSI_CONF	= 0
+    | CSI_CONF_SENS_PRTCL_GATED
+    | CSI_CONF_SENS_DATA_FORMAT_GENERIC
+    | CSI_CONF_DATA_WIDTH_15BIT
+    | CSI_CONF_EXT_VSYNC
+    ;
+
+  CSI_SENS_FRM_SIZE = 0
+    | (FRAME_WIDTH  << CSI_FRM_SIZE_WIDTH_SH)
+    | (FRAME_HEIGHT << CSI_FRM_SIZE_HEIGHT_SH);
+
+
+  /* TASK Configure and initialize CSI IC IDMAC */
+
+  CSI_ACT_FRM_SIZE = 0
+    | (FRAME_WIDTH  << CSI_FRM_SIZE_WIDTH_SH)
+    | (FRAME_HEIGHT << CSI_FRM_SIZE_HEIGHT_SH)
+    ;
+
+				/* IC Task options */
+  IC_CONF = 0
+    | IC_CONF_CSI_MEM_WR_EN	/* Allow direct write from CSI to memory */
+    ;
+
+	/* Initialize IDMAC register file */
+  {
+    char rgb[(132 + 7)/8];
+    memset (rgb, 0, sizeof (rgb));
+
+    compose_control_word (rgb, 0, 10, 0);	/* XV */
+    compose_control_word (rgb, 0, 10, 10);	/* YV */
+  }
+  ipu_write_ima (1, 7*(0 + 1), 0,
+		 0
+		 | 0 << 0	/* XV */
+		 | 0 << 10	/* YV */
+		 | 0 << 20	/* XB */
+		 );
+  ipu_write_ima (1, 7*(0 + 1), 0,
+		 0
+		 | 0 << 0	/* XV */
+		 | 0 << 10	/* YV */
+		 | 0 << 20	/* XB */
+		 );
+
+
+		regData = 0;
+		regData |= (params->XV << 0);
+		regData |= (params->YV << 10);
+		regData |= (params->XB << 20);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 0, regData);
+
+		regData = 0;
+		regData |= (params->YB << 0);
+		regData |= (params->NSB << 14);
+		regData |= (params->LNPB << 15);
+		regData |= ((params->UBO & 0x7FF)  << 21);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 1, regData);
+
+		regData = 0;
+		regData |= (params->UBO  >> 11);
+		regData |= ((params->VBO & 0x3FFFF) << 15);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 2, regData);
+
+		regData = 0;
+		regData |= (params->VBO >> 18);
+		regData |= (params->FW <<  12);
+		regData |= ((params->FH & 0xFF) << 24);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 3, regData);
+
+		regData = 0;
+		regData |= (params->FH >> 8);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel, 4, regData);
+
+		regData = 0;
+		regData |= (params->EBA0 << 0);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 0, regData);
+
+		regData = 0;
+		regData |= (params->EBA1 << 0);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 1, regData);
+
+		regData = 0;
+		regData |= (params->BPP << 0);
+		regData |= (params->SL  << 3);
+		regData |= (params->PFS << 17);
+		writeIPUIntMem(IPU_IMA_CH_PAR_MEM, 2*channel+1, 2, regData);
+
+
+
+
+
+
+  IDMAC_CHA_PRI |= 1<<7;	/* Channel 7 is high priority */
+
+
+  /* Initialize sensors */
+
+	/* Initialize sensor via i2c if needed. */
+
+  /* Enabling tasks */
+
+  IPU_CONF	= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
+  IDMAC_CHA_EN |= 1<<7;	/* Enable channel 7 */
+
+  /* Resuming tasks */
+
+  /* Reconfiguring and resuming tasks */
+
+  /* Disabling tasks */
+}
 
 /* i2c_wait_for_interrupt
 
