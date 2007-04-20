@@ -186,7 +186,7 @@ static void compose_control_word (char* rgb, unsigned long value,
 				  int shift, int width)
 {
   int index = 0;
-  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
+//  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
 
 	/* Cope with leader */
   while (shift >= 8) {
@@ -201,9 +201,9 @@ static void compose_control_word (char* rgb, unsigned long value,
     if (avail > 8 - shift)
       avail = 8 - shift;
     mask = ((1 << avail) - 1);
-    printf ("writing 0x%08lx [%2d] 0x%02lx, mask 0x%02lx"
-	    " with shift %d (0x%02lx)\n",
-	    value, index, value & mask, mask, shift, mask << shift);
+//    printf ("writing 0x%08lx [%2d] 0x%02lx, mask 0x%02lx"
+//	    " with shift %d (0x%02lx)\n",
+//	    value, index, value & mask, mask, shift, mask << shift);
     *rgb++ |= (value & mask) << shift;
     width -= avail;
     value >>= avail;
@@ -242,6 +242,7 @@ static void ipu_read_ima (int mem_nu, int row_nu, const char* rgb, int bits)
     | ((row_nu & 0x1fff) << 3);
 
   while (bits > 0) {
+//    printf ("read %d\n", bits);
     *(unsigned long*) rgb = IPU_IMA_DATA;
     rgb += 4;
     bits -= 32;
@@ -272,6 +273,24 @@ static const char* i2c_status_decode (int sr)
   return sz;
 }
 #endif
+
+static void ipu_report_irq (void)
+{
+  printf ("0x%08lx 0x%08lx 0x%08lx 0x%08lx 0x%08lx\n",
+	  IPU_INT_STAT1, IPU_INT_STAT2, IPU_INT_STAT3,
+	  IPU_INT_STAT4, IPU_INT_STAT5);
+  printf (" pf7_eof %d  adc7_eof %d  ic7_eof %d\n",
+	  (IPU_INT_STAT1 & (1<<31)) != 0,
+	  (IPU_INT_STAT1 & (1<<23)) != 0,
+	  (IPU_INT_STAT1 & (1<<7)) != 0);
+  printf (" pf7_nfack %d  adc7_nfack %d  ic7_nfack %d  \n",
+	  (IPU_INT_STAT2 & (1<<31)) != 0,
+	  (IPU_INT_STAT2 & (1<<23)) != 0,
+	  (IPU_INT_STAT2 & (1<<7)) != 0);
+  printf (" csi_eof %d  csi_nf %d\n",
+	  (IPU_INT_STAT3 & (1<<6)) != 0,
+	  (IPU_INT_STAT3 & (1<<5)) != 0);
+}
 
 static void i2c_stop (void)
 {
@@ -415,7 +434,7 @@ static void ipu_setup (void)
     compose_control_word (rgb, 0,  79, 26);	/* VBO */
     compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
     compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
     /* Write the word */
 
     memset (rgb, 0, sizeof (rgb));
@@ -427,7 +446,7 @@ static void ipu_setup (void)
     compose_control_word (rgb, 0,  84, 3);	/* BAM */
     compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
     compose_control_word (rgb, 2,  96, 2);	/* SAT */
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
     /* Write the word */
 #endif
 
@@ -451,12 +470,12 @@ static void ipu_setup (void)
     compose_control_word (rgb, 0, 105,  1);	/* SCRQ */
     compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
     compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*7, rgb, 132);
 
-    memset (rgb, 0, sizeof (rgb));
-    ipu_read_ima (1, 2*7, rgb, 132);
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    memset (rgb, 0, sizeof (rgb));
+//    ipu_read_ima (1, 2*7, rgb, 132);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
 
     memset (rgb, 0, sizeof (rgb));
     compose_control_word (rgb, 0x80300000,   0, 32);	/* EBA0 */
@@ -468,16 +487,18 @@ static void ipu_setup (void)
     compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
     compose_control_word (rgb, 2,  96, 2);	/* SAT */
     compose_control_word (rgb, 2,  98, 1);	/* SCC */
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*7 + 1, rgb, 132);
 
-    memset (rgb, 0, sizeof (rgb));
-    ipu_read_ima (1, 2*7 + 1, rgb, 132);
-    dumpw (rgb, sizeof (rgb), 0, 0);
+//    memset (rgb, 0, sizeof (rgb));
+//    ipu_read_ima (1, 2*7 + 1, rgb, 132);
+//    dumpw (rgb, sizeof (rgb), 0, 0);
   }
 
   IDMAC_CHA_PRI |= 1<<7;	/* Channel 7 is high priority */
-
+  IPU_CHA_DB_MODE_SEL |= 1<<7;
+  IPU_CHA_BUF0_RDY |= 1<<7;
+  IPU_CHA_BUF1_RDY |= 1<<7;
 
   /* Initialize sensors */
 
@@ -595,11 +616,34 @@ static int cmd_ipu (int argc, const char** argv)
     printf ("FrameA %p  FrameB %p\n", rgbFrameA, rgbFrameB);
   }
 
+  /* Initialize */
   if (strcmp (argv[1], "i") == 0) {
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     ipu_setup_sensor ();
     ipu_setup ();
+  }
+
+  /* Query */
+  if (strcmp (argv[1], "q") == 0) {
+    ipu_report_irq ();
+  }
+
+  /* Clear */
+  if (strcmp (argv[1], "c") == 0) {
+    IPU_INT_STAT3 = (1<<6);   /* CSI_EOF */
+    IPU_INT_STAT3 = (1<<5);   /* CSI_NF */
+    IPU_INT_STAT5 = (1<<11);  /* BAYER_FRM_LOST_ERR */
+    IPU_INT_STAT2 = (1<<7);   /* IC7_NFACK */
+  }
+
+  /* Dump */
+  if (strcmp (argv[1], "d") == 0) {
+    char rgb[96*64/8];
+    memset (rgb, 0, sizeof (rgb));
+//    ipu_read_ima (7, 0, rgb, sizeof (rgb)*8);
+    ipu_read_ima (8, 0, rgb, 64);
+    dumpw (rgb, sizeof (rgb), 0, 0);
   }
 
   if (strcmp (argv[1], "i2c") == 0) {

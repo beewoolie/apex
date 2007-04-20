@@ -54,7 +54,7 @@
 #define PROTECTION_FOR(p) \
 ({ int v = 0;   /* uncacheable, unbuffered */ \
    if (   (p) >= SDRAM_BANK0_PHYS \
-       && (p) <= SDRAM_BANK1_PHYS + RAM_BANK0_LENGTH)\
+       && (p) <  SDRAM_BANK1_PHYS + RAM_BANK0_LENGTH)\
      v = 3<<2;/* cacheable, buffered */ \
    v; })
 

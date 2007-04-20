@@ -38,12 +38,15 @@
 
 #include "hardware.h"
 
-#define NAND_BASE	(0xa0000000)
-#define NAND_BOOTRAM	(NAND_BASE + 0x0000*4)
-#define NAND_DATARAM0	(NAND_BASE + 0x0200*4)
-#define NAND_DATARAM1	(NAND_BASE + 0x0800*4)
+#define MULTIPLIER	2
+//#define MULTIPLER	4	/* Helps debug broken NFF */
 
-#define REG(x)		__REG16 (NAND_BASE + (x)*4)
+#define NAND_BASE	(0xa0000000)
+#define NAND_BOOTRAM	(NAND_BASE + 0x0000*MULTIPLIER)
+#define NAND_DATARAM0	(NAND_BASE + 0x0200*MULTIPLIER)
+#define NAND_DATARAM1	(NAND_BASE + 0x0800*MULTIPLIER)
+
+#define REG(x)		__REG16 (NAND_BASE + (x)*MULTIPLIER)
 
 #define NAND_OP		REG(0x0000)
 #define NAND_MAN_ID	REG(0xf000)
@@ -141,7 +144,7 @@ static int cmd_onenand (int argc, const char** argv)
   }
 
   if (strcmp (argv[1], "reset") == 0) {
-    NAND_OP = 0xf0;
+    NAND_OP = NAND_CMD_RESET_CORE;
   }
 
   if (strcmp (argv[1], "load") == 0) {
@@ -155,6 +158,7 @@ static int cmd_onenand (int argc, const char** argv)
     NAND_SB = BSA_BSC (1,0,4);
     NAND_INTR = 0;
     NAND_CMD = NAND_CMD_LOAD;
+    printf ("NAND_INTR 0x%x  NAND_STATUS 0x%x\n", NAND_INTR, NAND_STATUS);
     while (IS_BUSY)
       ;
     if (IS_ERROR)
@@ -205,6 +209,7 @@ static int cmd_onenand (int argc, const char** argv)
       |  (1<<7)			/* EW */
       ;
   }
+
   return 0;
 }
 
