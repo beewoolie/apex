@@ -55,7 +55,7 @@
 //#define ENTRY printf ("%s\n", __FUNCTION__)
 #define ENTRY
 
-#define FRAME_WIDTH	(720)
+#define FRAME_WIDTH	(752)
 #define FRAME_HEIGHT	(480)
 
 	/* Definitions for GPIO pins to make the code readable. */
@@ -471,15 +471,15 @@ static void ipu_setup (void)
     compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
     compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
 //    dumpw (rgb, sizeof (rgb), 0, 0);
-    ipu_write_ima (1, 2*7, rgb, 132);
+    ipu_write_ima (1, 2*7 + 0, rgb, 132);
 
 //    memset (rgb, 0, sizeof (rgb));
-//    ipu_read_ima (1, 2*7, rgb, 132);
+//    ipu_read_ima (1, 2*7 + 0, rgb, 132);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
 
     memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, 0x80300000,   0, 32);	/* EBA0 */
-    compose_control_word (rgb, 0x80400000,  32, 32);	/* EBA1 */
+    compose_control_word (rgb, (unsigned long)rgbFrameA,   0, 32); /* EBA0 */
+    compose_control_word (rgb, (unsigned long)rgbFrameB,  32, 32); /* EBA1 */
     compose_control_word (rgb, 2,  64, 3);	/* BPP */
     compose_control_word (rgb, FRAME_WIDTH - 1,  67, 14);	/* SL */
     compose_control_word (rgb, 7,  81, 3);	/* PFS */
@@ -506,8 +506,8 @@ static void ipu_setup (void)
 
   /* Enabling tasks */
 
-  IPU_CONF	= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
   IDMAC_CHA_EN |= 1<<7;	/* Enable channel 7 */
+  IPU_CONF	= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
 
   /* Resuming tasks */
 
