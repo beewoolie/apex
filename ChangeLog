@@ -1,3 +1,8 @@
+2007-04-27  Marc Singer  <elf@buici.com>
+
+	* include/asm/cp15-armv6.h: Fixed the cache control macros for the
+	ARMV6.
+
 2007-04-27  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-mx3/ipu.c: More IPU debug code.  The report function
