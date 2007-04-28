@@ -14,6 +14,56 @@
 #if !defined (__CP15_ARMV4_H__)
 #    define   __CP15_ARMV4_H__
 
+	/* ---- Cache control */
+
+#define INVALIDATE_ICACHE\
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0))
+#define INVALIDATE_ICACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
+
+#define INVALIDATE_DCACHE\
+  __asm volatile ("mcr p15, 0, %0, c7, c6, 0\n\t" :: "r" (0))
+#define INVALIDATE_DCACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c6, 1\n\t" :: "r" (a))
+
+#define INVALIDATE_CACHE\
+  __asm volatile ("mcr p15, 0, %0, c7, c7, 0\n\t" :: "r" (0))
+
+#define CLEAN_DCACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 1\n\t" :: "r" (a))
+#define CLEAN_DCACHE_I(i)\
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 2\n\t" :: "r" (i))
+#define DRAIN_WRITE_BUFFER\
+  __asm volatile ("mcr p15, 0, %0, c7, c10, 4\n\t" :: "r" (0))
+
+#define PREFETCH_ICACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c13, 1\n\t" :: "r" (a))
+
+#define CLEAN_INV_DCACHE_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c7, c14, 1\n\t" :: "r" (a))
+#define CLEAN_INV_DCACHE_I(i)\
+  __asm volatile ("mcr p15, 0, %0, c7, c14, 2\n\t" :: "r" (i))
+
+	/* ---- Cache lockdown */
+
+#define UNLOCK_CACHE\
+  __asm volatile ("mcr p15, 0, %0, c9, c1, 1\n\t"\
+		  "mcr p15, 0, %0, c9, c2, 1\n\t" :: "r" (0))
+
+	/* ---- TLB control */
+
+#define INVALIDATE_TLB\
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+#define INVALIDATE_ITLB\
+  __asm volatile ("mcr p15, 0, %0, c8, c5, 0\n\t" :: "r" (0))
+#define INVALIDATE_ITLB_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c8, c5, 1\n\t" :: "r" (a))
+#define INVALIDATE_DTLB\
+  __asm volatile ("mcr p15, 0, %0, c8, c6, 0\n\t" :: "r" (0))
+#define INVALIDATE_DTLB_VA(a)\
+  __asm volatile ("mcr p15, 0, %0, c8, c6, 1\n\t" :: "r" (a))
+
+
 #define _DLEN(l)	((l>>(12+0))&3)
 #define _DSIZE(l)	((l>>(12+6))&7)
 #define _DASSOC(l)	((l>>(12+3))&7)
@@ -37,17 +87,7 @@
 	 __asm volatile ("mcr p15, 0, %0, c7, c10, 2" \
 			:: "r" ((index<<assoc)|(set<<linelen))); } })
 
-
 	/* ---- Some function are not available */
-
-#undef INVALIDATE_ICACHE_I
-#undef INVALIDATE_DCACHE_I
-#undef INVALIDATE_CACHE_VA
-#undef INVALIDATE_CACHE_I
-#undef CLEAN_CACHE_VA
-#undef CLEAN_CACHE_I
-#undef CLEAN_INV_CACHE_VA
-#undef CLEAN_INV_CACHE_I
 
 #if defined (CONFIG_CPU_ARM720T)
 # undef INVALIDATE_ICACHE_VA
