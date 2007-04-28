@@ -1,3 +1,27 @@
+2007-04-27  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-mx3/ipu.c: More IPU debug code.  The report function
+	has a clean rendering of the registers. 
+
+	* src/mach-mx3/mx31.h (CCM_PDR0_533_V): Switched to 533MHz CPU
+	clock.
+
+	* src/mach-mx3/uart.h (INITIALIZE_CONSOLE_UART): extended the
+	FIFOS to 16 bytes.
+
+	* src/mach-mx3/initialize.c: Added initialization of COSR even
+	though we don't use it.
+
+	* src/mach-mx3/Kconfig: New architecture number for Rosencrantz.
+
+2007-04-24  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/apex/services.c: Created this file to hold service
+	init/release code.
+
+	* src/apex/env.c: Added a "" to the startup command so that we can
+	have an empty startup command.
+
 2007-04-09  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* 1.4.18 for mx31 changes.

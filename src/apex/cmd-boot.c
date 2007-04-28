@@ -41,6 +41,8 @@
 #include <service.h>
 #include <lookup.h>
 
+#include <debug_ll.h>
+
 //#define CONFIG_ICACHE_BOOT
 
 #if defined (CONFIG_ATAG)
@@ -117,6 +119,8 @@ int cmd_boot (int argc, const char** argv)
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
 #endif
+
+  PUTC_LL ('L');
 
   ((void (*)(int, int, int)) address) (0, arch_number, CONFIG_ATAG_PHYS);
 

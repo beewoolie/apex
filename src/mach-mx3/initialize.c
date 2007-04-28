@@ -141,6 +141,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   CCM_PDR1  = 0x49fcfe7f;			/* Default value */
   CCM_MPCTL = CCM_MPCTL_V;
   CCM_UPCTL = CCM_UPCTL_V;
+  CCM_COSR  = CCM_COSR_V;
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
 

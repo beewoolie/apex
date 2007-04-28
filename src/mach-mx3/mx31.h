@@ -131,6 +131,7 @@
 #define CCM_PDR1		__REG(PHYS_CCM + 0x08)
 #define CCM_MPCTL		__REG(PHYS_CCM + 0x10)
 #define CCM_UPCTL		__REG(PHYS_CCM + 0x14)
+#define CCM_COSR		__REG(PHYS_CCM + 0x1c)
 #define CCM_CGR0		__REG(PHYS_CCM + 0x20)
 #define CCM_CGR1		__REG(PHYS_CCM + 0x24)
 #define CCM_CGR2		__REG(PHYS_CCM + 0x28)
@@ -215,23 +216,31 @@
 
 #define CKIH			(26*1000*1000) /* Main high frequency clock */
 
-#define CCM_PDR0_533_V		(0xff871d58)
+#define CCM_PDR0_533_V		(0xff871e58)
 #define CCM_MPCTL_533_V		(0x0033280c)
+#define CCM_UPCTL_533_V		(0x040c2403)
 #define CCM_PDR0_399_V		(0xff871d50)
 #define CCM_MPCTL_399_V		(0x00271c1b)
 //#define CCM_UPCTL_V		(0x84082008)	/* 57.2MHz USB clock */
-#define CCM_UPCTL_V		(0x04082008)	/* 60MHz USB clock */
+//#define CCM_UPCTL_V		(0x04082008)	/* 60MHz USB clock */
 #define CCM_PDR0_208_V		(0xff871d48)
 #define CCM_MPCTL_208_V		(0x04002000)
+#define CCM_COSR_V		(0x00000208)
 
-#if defined (CONFIG_FREQ_533)
+#if defined (CONFIG_FREQ_533) || 1
 # define CCM_PDR0_V		CCM_PDR0_533_V
 # define CCM_MPCTL_V		CCM_MPCTL_533_V
+# define CCM_UPCTL_V		CCM_UPCTL_533_V
+
+# define MPLLCLK		532000000
+# define HCLK			133000000
+# define IPGCLK			 66500000
 #endif
 
-#if defined (CONFIG_FREQ_399) || 1
+#if defined (CONFIG_FREQ_399)
 # define CCM_PDR0_V		CCM_PDR0_399_V
 # define CCM_MPCTL_V		CCM_MPCTL_399_V
+//# define CCM_UPCTL_V		CCM_UPCTL_399_V
 
 # define MPLLCLK		399100000
 # define HCLK			133033333

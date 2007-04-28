@@ -33,7 +33,7 @@ config ATAG_PHYS
 config ARCH_NUMBER
 	int
 	default 447 if MACH_MX31ADS
-	default 1161 if MACH_EXBIBLIO_ROSENCRANTZ
+	default 1348 if MACH_EXBIBLIO_ROSENCRANTZ
 
 config APEX_VMA
 	hex "APEX Runtime Address"
@@ -96,7 +96,16 @@ config MX31ADS_UARTA
 
 endchoice
 
+config EXTENDED_CPUINFO
+	bool "Extended CPU into"
+	depends on n
+	default n
+	help
+	  For most targets, CPU info is a simple report of the
+	  ARM CPU registers available on most cores.  This option
+	  enables a report on many other registers.
 
+	  *** Currently unimplemented.
 
 endmenu
 

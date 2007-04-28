@@ -39,63 +39,10 @@
 #endif
 extern int cmd_version (int, const char**);
 
-void init_services (void)
-{
-  extern char APEX_SERVICE_START;
-  extern char APEX_SERVICE_END;
-  struct service_d* service;
-  int i = 0;
-
-  PUTC_LL ('S');
-
-  for (service = (struct service_d*) &APEX_SERVICE_START;
-       service < (struct service_d*) &APEX_SERVICE_END;
-       ++service, ++i) {
-    PUTC_LL (i%8 + '0');
-    PUTC_LL (',');
-    PUTHEX_LL (&service->init);
-    PUTC_LL (',');
-    PUTHEX_LL (service->init);
-    PUTC_LL ('\r');
-    PUTC_LL ('\n');
-    if (service->init)
-      service->init ();
-    PUTC_LL ('\r');
-    PUTC_LL ('\n');
-  }
-  PUTC_LL ('s');
-//  printf ("init complete\n");
-}
-
-void release_services (void)
-{
-  extern char APEX_SERVICE_START;
-  extern char APEX_SERVICE_END;
-  struct service_d* service;
-  int i = 0;
-
-  PUTC_LL ('S');
-
-  for (service = (struct service_d*) &APEX_SERVICE_END;
-       service-- > (struct service_d*) &APEX_SERVICE_START; ++i) {
-    PUTC_LL (i%8 + '0');
-    PUTC_LL (',');
-    PUTHEX_LL (&service->release);
-    PUTC_LL (',');
-    PUTHEX_LL (service->release);
-    PUTC_LL ('\r');
-    PUTC_LL ('\n');
-    if (service->release)
-      service->release ();
-  }
-  PUTC_LL ('s');
-}
-
 void init (void)
 {
   PUTC_LL ('I');
   init_services ();
-
 
 #if defined (CONFIG_ALIASES)
   {

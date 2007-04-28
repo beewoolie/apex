@@ -39,6 +39,14 @@
      transfer of a byte.  It really should be named NRXAK.  We use the
      name that exists in the documentation.
 
+   o I2C writing and reading.  The protocol for reading and writing
+     registers on the sensor is kinda odd since we are accessing them
+     with an 8 bit bus.  To read a register, write the one-byte
+     register address and then read once to get the high byte.  Write
+     the special address 0xf0 and read again to get the low byte.
+     Writing is similar except that there are no read cycles and the
+     special register address is 0xf1.
+
 */
 
 #include <config.h>
@@ -53,22 +61,35 @@
 
 #undef ENTRY
 //#define ENTRY printf ("%s\n", __FUNCTION__)
-#define ENTRY
+#if !defined (ENTRY)
+# define ENTRY
+#endif
 
-#define FRAME_WIDTH	(752)
-#define FRAME_HEIGHT	(480)
+#define MODE_GENERIC
+//#define MODE_RGB
+
+#if defined (MODE_GENERIC)
+# define FRAME_WIDTH		(752)
+# define FRAME_HEIGHT		(480)
+# define FRAME_WIDTH_DIVISOR	(1)
+#endif
+
+#if defined (MODE_RGB)
+# define FRAME_WIDTH		(752)
+# define FRAME_HEIGHT		(480)
+# define FRAME_WIDTH_DIVISOR	(3)
+#endif
 
 	/* Definitions for GPIO pins to make the code readable. */
-#define PIN_SENSOR_PWR_EN     MX31_PIN_CSI_D4
-#define PIN_SENSOR_BUF_EN     MX31_PIN_KEY_ROW4
-#define PIN_CMOS_STBY	      MX31_PIN_KEY_ROW7
-#define PIN_NCMOS_RESET	      MX31_PIN_KEY_ROW6
-#define PIN_CMOS_EXPOSURE     MX31_PIN_KEY_ROW5
-#define PIN_ILLUMINATION_EN1  MX31_PIN_KEY_COL5
-#define PIN_ILLUMINATION_EN2  MX31_PIN_KEY_COL4
+#define PIN_SENSOR_PWR_EN	MX31_PIN_CSI_D4
+#define PIN_SENSOR_BUF_EN	MX31_PIN_KEY_ROW4
+#define PIN_CMOS_STBY		MX31_PIN_KEY_ROW7
+#define PIN_NCMOS_RESET		MX31_PIN_KEY_ROW6
+#define PIN_CMOS_EXPOSURE	MX31_PIN_KEY_ROW5
+#define PIN_ILLUMINATION_EN1	MX31_PIN_KEY_COL5
+#define PIN_ILLUMINATION_EN2	MX31_PIN_KEY_COL4
 
-#define I2C_IFDR_V	      (0x19)		/* Divisor of 1280 */
-
+#define I2C_IFDR_V		(0x19)			/* Divisor of 1280 */
 
 #define IPU_CONF		__REG(PHYS_IPU + 0x00)
 #define IPU_CHA_BUF0_RDY	__REG(PHYS_IPU + 0x04)
@@ -117,7 +138,46 @@
 
 #define IPU_CONF_CSI_EN		(1<<0)
 #define IPU_CONF_IC_EN		(1<<1)
+#define IPU_CONF_ROT_EN		(1<<2)
+#define IPU_CONF_PF_EN		(1<<3)
+#define IPU_CONF_SDC_EN		(1<<4)
+#define IPU_CONF_ADC_EN		(1<<5)
+#define IPU_CONF_DI_EN		(1<<6)
+#define IPU_CONF_DU_EN		(1<<7)
 #define IPU_CONF_PXL_ENDIAN	(1<<8)
+
+#define IPU_CHAN_IC0		(1<<0)
+#define IPU_CHAN_IC1		(1<<1)
+#define IPU_CHAN_IC2		(1<<2)
+#define IPU_CHAN_IC3		(1<<3)
+#define IPU_CHAN_IC4		(1<<4)
+#define IPU_CHAN_IC5		(1<<5)
+#define IPU_CHAN_IC6		(1<<6)
+#define IPU_CHAN_IC7		(1<<7)
+#define IPU_CHAN_IC8		(1<<8)
+#define IPU_CHAN_IC9		(1<<9)
+#define IPU_CHAN_IC10		(1<<10)
+#define IPU_CHAN_IC11		(1<<11)
+#define IPU_CHAN_IC12		(1<<12)
+#define IPU_CHAN_IC13		(1<<13)
+#define IPU_CHAN_SDC0		(1<<14)
+#define IPU_CHAN_SDC1		(1<<15)
+#define IPU_CHAN_SDC2		(1<<16)
+#define IPU_CHAN_SDC3		(1<<17)
+#define IPU_CHAN_ADC2		(1<<18)
+#define IPU_CHAN_ADC3		(1<<19)
+#define IPU_CHAN_ADC4		(1<<20)
+#define IPU_CHAN_ADC5		(1<<21)
+#define IPU_CHAN_ADC6		(1<<22)
+#define IPU_CHAN_ADC7		(1<<23)
+#define IPU_CHAN_PF0		(1<<24)
+#define IPU_CHAN_PF1		(1<<25)
+#define IPU_CHAN_PF2		(1<<26)
+#define IPU_CHAN_PF3		(1<<27)
+#define IPU_CHAN_PF4		(1<<28)
+#define IPU_CHAN_PF5		(1<<29)
+#define IPU_CHAN_PF6		(1<<30)
+#define IPU_CHAN_PF7		(1<<31)
 
 #define IDMAC_CONF_PRYM_RR		(0<<0) /* Round robin */
 #define IDMAC_CONF_PRYM_RAND		(1<<0) /* Random */
@@ -131,7 +191,7 @@
 #define CSI_CONF_SENS_PIX_CLK_POL	(1<<3)
 #define CSI_CONF_SENS_PRTCL_SH		(4)
 #define CSI_CONF_SENS_PRTCL_GATED	(0<<4)
-#define CSI_CONF_SENS_PRTCL_NOGATED	(1<<4)
+#define CSI_CONF_SENS_PRTCL_NONGATED	(1<<4)
 #define CSI_CONF_SENS_PRTCL_CCIR_P	(2<<4)
 #define CSI_CONF_SENS_PRTCL_CCIR_NP	(3<<4)
 #define CSI_CONF_SENS_CLK_SRC		(1<<7)
@@ -174,6 +234,71 @@
 static char* rgbFrameA;
 static char* rgbFrameB;
 
+#define ADDR_NO_STOP		(1<<14)
+#define ADDR_RESTART		(1<<13)
+#define ADDR_CONTINUE		(1<<12)
+
+/* IPU control word offsets and lengths */
+#define IPU_CW_XV	  0, 10
+#define IPU_CW_YV	 10, 10
+#define IPU_CW_XB	 20, 12
+#define IPU_CW_YB	 32, 12
+#define IPU_CW_SCE	 44,  1
+#define IPU_CW_NSB	 46,  1
+#define IPU_CW_LNPB	 47,  6
+#define IPU_CW_SX	 53, 10
+#define IPU_CW_SY	 63, 10
+#define IPU_CW_NS	 73, 10
+#define IPU_CW_SM	 83, 10
+#define IPU_CW_SDX	 93,  5
+#define IPU_CW_SDY	 98,  5
+#define IPU_CW_SDRX	103,  1
+#define IPU_CW_SDRY	104,  1
+#define IPU_CW_SCRQ	105,  1
+#define IPU_CW_FW	108, 12
+#define IPU_CW_FH	120, 12
+
+#define IPU_CW_EBA0	  0, 32
+#define IPU_CW_EBA1	 32, 32
+#define IPU_CW_BPP	 64,  3
+#define IPU_CW_SL	 67, 14
+#define IPU_CW_PFS	 81,  3
+#define IPU_CW_BAM	 84,  3
+#define IPU_CW_NPB	 89,  6
+#define IPU_CW_SAT	 96,  2
+#define IPU_CW_SCC	 98,  1
+#define IPU_CW_OFS0	 99,  5
+#define IPU_CW_OFS1	104,  5
+#define IPU_CW_OFS2	109,  5
+#define IPU_CW_OFS3	114,  5
+#define IPU_CW_WID0	119,  5
+#define IPU_CW_WID1	122,  5
+#define IPU_CW_WID2	125,  5
+#define IPU_CW_WID3	128,  5
+#define IPU_CW_DEC_SEL	131,  1
+
+static const char* describe_channels (unsigned long v)
+{
+  static char sz[128];
+  *sz = 0;
+
+#define _(v,b)\
+	if ((v) & (IPU_CHAN_##b))\
+	  snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz), " %s", #b)
+
+  _(v,IC0);	_(v,IC1);	_(v,IC2);	_(v,IC3);
+  _(v,IC4);	_(v,IC5);	_(v,IC6);	_(v,IC7);
+  _(v,IC8);	_(v,IC9);	_(v,IC10);	_(v,IC11);
+  _(v,IC12);	_(v,IC13);
+  _(v,SDC0);	_(v,SDC1);	_(v,SDC2);	_(v,SDC3);
+  _(v,ADC2);	_(v,ADC3);	_(v,ADC4);	_(v,ADC5);
+  _(v,ADC6);	_(v,ADC7);
+  _(v,PF0);	_(v,PF1);	_(v,PF2);	_(v,PF3);
+  _(v,PF4);	_(v,PF5);	_(v,PF6);	_(v,PF7);
+
+#undef _
+  return sz;
+}
 
 /* compose_control_word
 
@@ -188,7 +313,7 @@ static void compose_control_word (char* rgb, unsigned long value,
   int index = 0;
 //  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
 
-	/* Cope with leader */
+	/* Eliminate leader */
   while (shift >= 8) {
     ++rgb;
     shift -= 8;
@@ -211,6 +336,48 @@ static void compose_control_word (char* rgb, unsigned long value,
     ++index;
   }
 }
+
+
+/* read_huge
+
+   reads the given bits from the very long (aka huge) control word
+   into a normalized value.
+
+*/
+
+static unsigned long read_huge (const char* rgb, int shift, int width)
+{
+  int index = 0;
+  int offset = 0;
+  unsigned long value = 0;
+
+  //  printf ("decompose %3d %2d\n", shift, width);
+
+	/* Eliminate leader */
+  while (shift >= 8) {
+    ++rgb;
+    shift -= 8;
+    ++index;
+  }
+
+  while (width > 0) {
+    int avail = width;
+    unsigned long mask;
+    if (avail > 8 - shift)
+      avail = 8 - shift;
+    mask = ((1 << avail) - 1);
+//    printf ("reading [%2d] mask 0x%02lx with shift %d (0x%02lx) at %d\n",
+//	    index, mask, shift, mask << shift, offset);
+    value |= ((*rgb++ & (mask << shift)) >> shift) << offset;
+    width -= avail;
+    offset += avail;
+    shift = 0;			/* Always zero after first byte */
+    ++index;
+  }
+
+  return value;
+}
+
 
 /* ipu_write_ima
 
@@ -274,6 +441,13 @@ static const char* i2c_status_decode (int sr)
 }
 #endif
 
+
+/* ipu_report_irq
+
+   displays the IPU irq registers.
+
+*/
+
 static void ipu_report_irq (void)
 {
   printf ("0x%08lx 0x%08lx 0x%08lx 0x%08lx 0x%08lx\n",
@@ -292,15 +466,227 @@ static void ipu_report_irq (void)
 	  (IPU_INT_STAT3 & (1<<5)) != 0);
 }
 
-static void i2c_stop (void)
+static void ipu_report (void)
 {
+  printf ("IPU_CONF             0x%08lx", IPU_CONF);
+  printf (" %s%s%s%s%s%s%s%s%s\n",
+	  (IPU_CONF & IPU_CONF_CSI_EN) ? " CSI_EN" : "",
+	  (IPU_CONF & IPU_CONF_IC_EN) ? " IC_EN" : "",
+	  (IPU_CONF & IPU_CONF_ROT_EN) ? " ROT_EN" : "",
+	  (IPU_CONF & IPU_CONF_PF_EN) ? " PF_EN" : "",
+	  (IPU_CONF & IPU_CONF_SDC_EN) ? " SDC_EN" : "",
+	  (IPU_CONF & IPU_CONF_ADC_EN) ? " ADC_EN" : "",
+	  (IPU_CONF & IPU_CONF_DI_EN) ? " DI_EN" : "",
+	  (IPU_CONF & IPU_CONF_DU_EN) ? " DU_EN" : "",
+	  (IPU_CONF & IPU_CONF_PXL_ENDIAN) ? " PXL_ENDIAN" : "");
+  printf ("IPU_CHA_BUF0_RDY     0x%08lx %s\n",
+	  IPU_CHA_BUF0_RDY, describe_channels (IPU_CHA_BUF0_RDY));
+  printf ("IPU_CHA_BUF1_RDY     0x%08lx %s\n",
+	  IPU_CHA_BUF1_RDY, describe_channels (IPU_CHA_BUF1_RDY));
+  printf ("IPU_CHA_DB_MODE_SEL  0x%08lx %s\n",
+	  IPU_CHA_DB_MODE_SEL, describe_channels (IPU_CHA_DB_MODE_SEL));
+  printf ("IPU_CHA_CUR_BUF      0x%08lx %s\n",
+	  IPU_CHA_CUR_BUF, describe_channels (IPU_CHA_CUR_BUF));
+  printf ("IPU_FS_PROC_FLOW     0x%08lx\n", IPU_FS_PROC_FLOW);
+  printf ("IPU_DISP_PROC_FLOW   0x%08lx\n", IPU_DISP_PROC_FLOW);
+  printf ("IPU_TASK_STAT        0x%08lx\n", IPU_TASK_STAT);
+  printf ("IPU_INT_CTRL1        0x%08lx %s\n",
+	  IPU_INT_CTRL1, describe_channels (IPU_INT_CTRL1));
+  printf ("IPU_INT_CTRL2        0x%08lx %s\n",
+	  IPU_INT_CTRL2, describe_channels (IPU_INT_CTRL2));
+  printf ("IPU_INT_CTRL3        0x%08lx\n", IPU_INT_CTRL3);
+  printf ("IPU_INT_CTRL4        0x%08lx %s\n",
+	  IPU_INT_CTRL4, describe_channels (IPU_INT_CTRL4));
+  printf ("IPU_INT_CTRL5        0x%08lx\n", IPU_INT_CTRL5);
+  printf ("IPU_INT_STAT1        0x%08lx %s\n",
+	  IPU_INT_STAT1, describe_channels (IPU_INT_STAT1));
+  printf ("IPU_INT_STAT2        0x%08lx %s\n",
+	  IPU_INT_STAT2, describe_channels (IPU_INT_STAT2));
+  printf ("IPU_INT_STAT3        0x%08lx\n", IPU_INT_STAT3);
+  printf ("IPU_INT_STAT4        0x%08lx %s\n",
+	  IPU_INT_STAT4, describe_channels (IPU_INT_STAT4));
+  printf ("IPU_INT_STAT5        0x%08lx\n", IPU_INT_STAT5);
+  printf ("IPU_BRK_CTRL1        0x%08lx\n", IPU_BRK_CTRL1);
+  printf ("IPU_BRK_CTRL2        0x%08lx\n", IPU_BRK_CTRL2);
+  printf ("IPU_BRK_STAT         0x%08lx\n", IPU_BRK_STAT);
+  printf ("IPU_DIAGB_CTRL       0x%08lx\n", IPU_DIAGB_CTRL);
+  printf ("CSI_SENS_CONF        0x%08lx\n", CSI_SENS_CONF);
+  printf ("CSI_SENS_FRM_SIZE    0x%08lx (%ld x %ld)\n", CSI_SENS_FRM_SIZE,
+	  (CSI_SENS_FRM_SIZE >> 0) & 0xfff,
+	  (CSI_SENS_FRM_SIZE >> 16) & 0xfff);
+  printf ("CSI_ACT_FRM_SIZE     0x%08lx (%ld x %ld)\n", CSI_ACT_FRM_SIZE,
+	  (CSI_ACT_FRM_SIZE >> 0) & 0xfff,
+	  (CSI_ACT_FRM_SIZE >> 16) & 0xfff);
+  printf ("CSI_OUT_FRM_CTRL     0x%08lx\n", CSI_OUT_FRM_CTRL);
+  printf ("CSI_TST_CTRL         0x%08lx\n", CSI_TST_CTRL);
+  printf ("CSI_CCIR_CODE1       0x%08lx\n", CSI_CCIR_CODE1);
+  printf ("CSI_CCIR_CODE2       0x%08lx\n", CSI_CCIR_CODE2);
+  printf ("CSI_CCIR_CODE3       0x%08lx\n", CSI_CCIR_CODE3);
+  printf ("CSI_FLASH_STROBE1    0x%08lx\n", CSI_FLASH_STROBE1);
+  printf ("CSI_FLASH_STROBE2    0x%08lx\n", CSI_FLASH_STROBE2);
+  printf ("IC_CONF              0x%08lx\n", IC_CONF);
+  printf ("IC_PRP_ENC_RSC       0x%08lx\n", IC_PRP_ENC_RSC);
+  printf ("IC_PRP_VF_RSC        0x%08lx\n", IC_PRP_VF_RSC);
+  printf ("IC_PP_RSC            0x%08lx\n", IC_PP_RSC);
+  printf ("PF_CONF              0x%08lx\n", PF_CONF);
+  printf ("IDMAC_CONF           0x%08lx\n", IDMAC_CONF);
+  printf ("IDMAC_CHA_EN         0x%08lx %s\n",
+	  IDMAC_CHA_EN, describe_channels (IDMAC_CHA_EN));
+  printf ("IDMAC_CHA_PRI        0x%08lx %s\n",
+	  IDMAC_CHA_PRI, describe_channels (IDMAC_CHA_PRI));
+  printf ("IDMAC_CHA_BUSY       0x%08lx %s\n",
+	  IDMAC_CHA_BUSY, describe_channels (IDMAC_CHA_BUSY));
+  {
+    int i;
+    char rgb0[(132 + 7)/8];
+    char rgb1[(132 + 7)/8];
+    unsigned v = IDMAC_CHA_EN | IDMAC_CHA_PRI | IDMAC_CHA_BUSY
+      | IPU_CHA_BUF0_RDY | IPU_CHA_BUF1_RDY
+      | IPU_CHA_DB_MODE_SEL | IPU_CHA_CUR_BUF
+      | (1<<7);
+    for (i = 0; i < 32; ++i) {
+      if (v & (1<<i)) {
+	char* sz;
+	/* Determine the name of the channel.  We would use an array
+	   of pointers to these strings, but the compiler wants to put
+	   them in the .data segment which we don't have. */
+	switch (i) {
+	default: sz = ""; break;
+#define _(i,s) case i: sz = s; break;
+	_( 0, "IC  -> MEM pre  data IC encoder to MEM")
+	_( 1, "IC  -> MEM pre  data IC viewfinder to MEM or ADC")
+	_( 2, "IC  -> MEM post data IC to MEM")
+	_( 3, "MEM -> IC  graphics data for combining")
+	_( 4, "MEM -> IC  graphics data for combining, post processing")
+	_( 5, "MEM -> IC  post data from MEM")
+	_( 6, "MEM -> IC  post data from sensor in MEM (e.g. bayer)")
+	_( 7, "IC  -> MEM direct from IC to MEM")
+	_( 8, "IC  -> MEM pre  data after rotation, encoder task")
+	_( 9, "IC  -> MEM pre  data after rotation, viewfinder task")
+	_(10, "MEM -> IC  pre  data for rotation, encoder task")
+	_(11, "MEM -> IC  pre  data for rotation, viewfinder task")
+	_(12, "IC  -> MEM post data after rotation")
+	_(13, "MEM -> IC  post data for rotation")
+	_(14, "MEM -> SDC background data (full refresh)")
+	_(15, "MEM -> SDC foreground data")
+	_(16, "MEM -> SDC mask data")
+	_(17, "MEM -> SDC background data (partial refresh)")
+	_(18, "MEM -> ADC system channel 1 write data")
+	_(19, "MEM -> ADC system channel 2 write data")
+	_(20, "MEM -> ADC command stream channel 1")
+	_(21, "MEM -> ADC command stream channel 2")
+	_(22, "ADC -> MEM system channel 1 read data")
+	_(23, "ADC -> MEM system channel 2 read data")
+	_(24, "MEM -> PF  PF parameters MPEG4/H.264")
+	_(25, "MEM -> PF  PF parameters H.264")
+	_(26, "MEM -> PF  Y input data")
+	_(27, "MEM -> PF  U input data")
+	_(28, "MEM -> PF  V input data")
+	_(29, "PF  -> MEM Y output data")
+	_(30, "PF  -> MEM U output data")
+	_(31, "PF  -> MEM V output data")
+#undef _
+	}
+
+	printf (" -- Channel %2d config -- %s\n", i, sz);
+	memset (rgb0, 0, sizeof (rgb0));
+	memset (rgb1, 0, sizeof (rgb1));
+	ipu_read_ima (1, 2*i + 0, rgb0, 132);
+	ipu_read_ima (1, 2*i + 1, rgb1, 132);
+	dumpw (rgb0, sizeof (rgb0), 0, 0);
+	dumpw (rgb1, sizeof (rgb1), 0, 0);
+	if (read_huge (rgb1, IPU_CW_PFS) == 0)
+	  continue;
+	printf ("  XV %4ld  YV %4ld  XB %4ld  YB %4ld  SCE %ld  "
+		"NSB %ld  LNFB %2ld\n",
+		read_huge (rgb0, IPU_CW_XV),
+		read_huge (rgb0, IPU_CW_YV),
+		read_huge (rgb0, IPU_CW_XB),
+		read_huge (rgb0, IPU_CW_YB),
+		read_huge (rgb0, IPU_CW_SCE),
+		read_huge (rgb0, IPU_CW_NSB),
+		read_huge (rgb0, IPU_CW_LNPB));
+	printf ("  SX %4ld  SY %4ld  NS %4ld  SM %4ld  SDX %2ld  SDY %2ld"
+		"  SDRX %ld  SDRY %ld\n",
+		read_huge (rgb0, IPU_CW_SX),
+		read_huge (rgb0, IPU_CW_SY),
+		read_huge (rgb0, IPU_CW_NS),
+		read_huge (rgb0, IPU_CW_SM),
+		read_huge (rgb0, IPU_CW_SDX),
+		read_huge (rgb0, IPU_CW_SDY),
+		read_huge (rgb0, IPU_CW_SDRX),
+		read_huge (rgb0, IPU_CW_SDRY));
+	printf ("  SCRQ %ld  FW %4ld  FH %4ld\n",
+		read_huge (rgb0, IPU_CW_SCRQ),
+		read_huge (rgb0, IPU_CW_FW),
+		read_huge (rgb0, IPU_CW_FH));
+	printf ("  EBA0 %08lx  EBA1 %08lx  BPP %ld  SL %4ld  PFS %ld  "
+		"BAM %ld  NPB %2lx\n",
+		read_huge (rgb1, IPU_CW_EBA0),
+		read_huge (rgb1, IPU_CW_EBA1),
+		read_huge (rgb1, IPU_CW_BPP),
+		read_huge (rgb1, IPU_CW_SL),
+		read_huge (rgb1, IPU_CW_PFS),
+		read_huge (rgb1, IPU_CW_BAM),
+		read_huge (rgb1, IPU_CW_NPB));
+	printf ("  SAT %ld  SCC %ld  OFS0 %2ld  OFS1 %2ld  OFS2 %2ld"
+		"  OFS3 %2ld\n",
+		read_huge (rgb1, IPU_CW_SAT),
+		read_huge (rgb1, IPU_CW_SCC),
+		read_huge (rgb1, IPU_CW_OFS0),
+		read_huge (rgb1, IPU_CW_OFS1),
+		read_huge (rgb1, IPU_CW_OFS2),
+		read_huge (rgb1, IPU_CW_OFS3));
+	printf ("  WID0 %2ld  WID1 %2ld  WID2 %2ld  WID3 %2ld  DEC_SEL %ld\n",
+		read_huge (rgb1, IPU_CW_WID0),
+		read_huge (rgb1, IPU_CW_WID1),
+		read_huge (rgb1, IPU_CW_WID2),
+		read_huge (rgb1, IPU_CW_WID3),
+		read_huge (rgb1, IPU_CW_DEC_SEL));
+      }
+    }
+  }
+}
+
+static void ipu_zero (void)
+{
+  int i;
+  char rgb[(132 + 7)/8];
+  memset (rgb, 0, sizeof (rgb));
+
+  printf ("clearing IPU control registers\n");
+
+  IDMAC_CHA_EN = 0;
+  for (i = 0; i < 32; ++i) {
+    ipu_write_ima (1, i*2 + 0, rgb, 132);
+    ipu_write_ima (1, i*2 + 1, rgb, 132);
+  }
+}
+
+
+/* i2c_stop
+
+   halts transmission on the I2C bus.  The kernel version will wait
+   for 16 attempts of 3us for the BB to clear.  The return value is 0
+   for success.
+
+*/
+
+static int i2c_stop (void)
+{
+  unsigned long time;
   ENTRY;
 
-  I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX);
+  printf ("--\n");
+  I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX | I2C_I2CR_TXAK);
   I2C_I2SR = 0;
 
-  while (I2C_I2SR & I2C_I2SR_IBB)	/* Wait for STOP condition */
-    ;
+  time = timer_read ();
+  while ((I2C_I2SR & I2C_I2SR_IBB)	/* Wait for STOP condition */
+	 && timer_delta (time, timer_read ()) < 10)
+    usleep (3);
+
+  return (I2C_I2SR & I2C_I2SR_IBB) != 0;
 }
 
 static void i2c_setup (void)
@@ -315,6 +701,202 @@ static void i2c_setup (void)
   I2C_I2SR = 0;
   i2c_stop ();
   I2C_I2CR = I2C_I2CR_IEN;	/* Enable I2C */
+}
+
+/* i2c_wait_for_interrupt
+
+   waits for an interrupt and returns the status.
+
+*/
+
+static int i2c_wait_for_interrupt (void)
+{
+  unsigned long time;
+  ENTRY;
+  time = timer_read ();
+  while (!(I2C_I2SR & I2C_I2SR_IIF)	/* Wait for interrupt */
+	 && timer_delta (time, timer_read ()) < 1000*2)
+    ;
+  if (!(I2C_I2SR & I2C_I2SR_IIF))
+    printf ("timeout waiting for interrupt\n");
+
+  I2C_I2SR = 0;				/* Only IIF can be cleared */
+  return I2C_I2SR;
+}
+
+
+/* i2c_start
+
+   sends the slave the frame START and target address.  Return value
+   is 0 on success.
+
+*/
+
+static int i2c_start (char address, int reading)
+{
+  int retries = 16;
+  int restart = (address & ADDR_RESTART) != 0;
+  int sr;
+
+  ENTRY;
+
+  address &= 0x7f;
+
+  I2C_I2CR |= I2C_I2CR_MSTA	/* Acquire bus */
+    | (restart ? I2C_I2CR_RSATA : 0); /* Assert restart */
+
+  do {
+    int sr = I2C_I2SR;
+    if (sr & I2C_I2SR_IBB)	/* Arbitration won */
+      break;
+    usleep (3);
+  } while (retries-- > 0);
+  if (!(I2C_I2SR & I2C_I2SR_IBB))
+    return 1;			/* Failed to acquire */
+  I2C_I2SR = 0;
+  I2C_I2CR |= I2C_I2CR_MTX;	/* Prepare for transmit */
+  printf (" *> 0x%02x\n", (address << 1) | (reading ? 1 : 0));
+  I2C_I2DR = (address << 1) | (reading ? 1 : 0);
+
+  sr = i2c_wait_for_interrupt ();
+  I2C_I2CR &= ~I2C_I2CR_RSATA;	/* Clear repeat start */
+
+				/* Address must be ACK'd */
+  return (sr & I2C_I2SR_RXAK) ? 1 : 0;
+}
+
+
+/* i2c_write
+
+   writes the buffer to the given address.  It returns 0 on success.
+
+*/
+
+static int i2c_write (int address, char* rgb, int cb)
+{
+  int i;
+  int continuing = (address & ADDR_CONTINUE) != 0;
+  int restart    = (address & ADDR_RESTART) != 0;
+
+  ENTRY;
+
+  printf ("%s\n", __FUNCTION__);
+  dumpw (rgb, cb, 0, 0);
+
+  if (!continuing && !restart && (I2C_I2SR & I2C_I2SR_IBB)) {
+    printf ("%s error: i2c bus busy 0x%x\n", __FUNCTION__, address);
+    i2c_stop ();
+    return 1;
+  }
+
+  if (i2c_start (address, 0)) {
+    if (i2c_stop ())
+      printf ("%s error on stop on failed start sr %x cr %x\n",
+	      __FUNCTION__, I2C_I2SR, I2C_I2CR);
+    return 1;
+  }
+
+  I2C_I2CR |= I2C_I2CR_MTX;
+  for (i = 0; i < cb; ++i) {
+    printf (" => 0x%02x\n", *rgb);
+    I2C_I2DR = *rgb++;
+    if (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) {
+      i2c_stop ();
+      return 1;
+    }
+  }
+
+  if (!(address & ADDR_NO_STOP) && i2c_stop ())
+    printf ("%s error on stop sr %x cr %x\n",
+	    __FUNCTION__, I2C_I2SR, I2C_I2CR);
+
+  return 0;
+}
+
+
+/* i2c_read
+
+   reads the buffer from the given address.  It returns 0 on success.
+
+*/
+
+static int i2c_read (int address, char* rgb, int cb)
+{
+  int i;
+  int cr;
+  ENTRY;
+
+  address &= 0x7f;
+
+  if (I2C_I2SR & I2C_I2SR_IBB) {
+    printf ("%s error: i2c bus busy %d\n", __FUNCTION__, address);
+    i2c_stop ();
+    return 1;
+  }
+
+  if (i2c_start (address, 1)) {
+    if (i2c_stop ())
+      printf ("%s error on stop after failed start sr %x cr %x\n",
+	      __FUNCTION__, I2C_I2SR, I2C_I2CR);
+    return 1;
+  }
+
+  cr  =  I2C_I2CR;
+  cr &= ~I2C_I2CR_MTX;
+  for (i = 0; i < cb; ++i) {
+    int sr;
+    if (i + 1 >= cb)
+      cr |= I2C_I2CR_TXAK;
+    I2C_I2CR = cr;
+    if (i == 0) {
+      char b = I2C_I2DR;
+      printf ("  ---> 0x%x\n", b);
+//      I2C_I2DR;			/* Dummy read after address cycle */
+    }
+    sr = i2c_wait_for_interrupt ();
+    if (i + 1 >= cb) {
+      if (i2c_stop ())
+	printf ("%s error on stop sr %x cr %x\n",
+		__FUNCTION__, I2C_I2SR, I2C_I2CR);
+    }
+    {
+      char b = I2C_I2DR;
+      printf ("<= 0x%x\n", b);
+      *rgb++ = b;
+//      *rgb++ = I2C_I2DR;
+    }
+  }
+
+
+  return 0;
+}
+
+static int i2c_sensor_read (int reg)
+{
+  char rgb[2];
+//  int v = 0;
+  char r = reg & 0xff;
+  i2c_write (0x5c, &r, 1);
+
+#if 0
+  i2c_read  (0x5c, &((char*) &v)[1], 1);
+  i2c_write (0x5c, "\xf0", 1);
+  i2c_read  (0x5c, &((char*) &v)[0], 1);
+  return v;
+#endif
+
+  rgb[0] = rgb[1] = 0;
+  i2c_read (0x5c, rgb, 2);
+
+  return (rgb[0] << 8) | rgb[1];
+}
+
+static int i2c_sensor_write (int reg, int value)
+{
+  char rgb[] = { reg & 0xff, (value >> 8) & 0xff,
+			     (value >> 0) & 0xff };
+  dumpw (rgb, sizeof (rgb), 0, 0);
+  i2c_write (0x5c, rgb, 3);
 }
 
 static void i2c_setup_sensor_i2c (void)
@@ -336,6 +918,24 @@ static void i2c_setup_sensor_i2c (void)
 
 	/* Post divider for CSI. */
   MASK_AND_SET (CCM_PDR0, (0x1ff << 23), (0x58 << 23));
+
+#if 0
+  {
+    char v1;
+    char v2;
+    i2c_write (0x5c, "\x00", 1);
+    i2c_read  (0x5c, &v1, 1);
+    i2c_write (0x5c, "\xf0", 1);
+    i2c_read  (0x5c, &v2, 1);
+    printf ("i2c %02x%02x\n", v1, v2);
+  }
+#endif
+}
+
+static void i2c_sensor_probe (void)
+{
+  int v = i2c_sensor_read (0);
+  printf ("camera version %04x\n", v);
 }
 
 static void ipu_setup_sensor (void)
@@ -383,7 +983,6 @@ static void ipu_setup_sensor (void)
   GPIO_PIN_CLEAR	 (PIN_CMOS_STBY); /* Release camera from standby */
 }
 
-
 static void ipu_setup (void)
 {
   /* Configure common parameters */
@@ -395,21 +994,27 @@ static void ipu_setup (void)
 
   CSI_CONF	= 0
     | CSI_CONF_SENS_PRTCL_GATED
+//    | CSI_CONF_SENS_PRTCL_NONGATED
+#if defined (MODE_GENERIC)
     | CSI_CONF_SENS_DATA_FORMAT_GENERIC
     | CSI_CONF_DATA_WIDTH_15BIT
-    | CSI_CONF_EXT_VSYNC
+#endif
+#if defined (MODE_RGB)
+    | CSI_CONF_SENS_DATA_FORMAT_RGB
+    | CSI_CONF_DATA_WIDTH_8BIT			/* Color component width */
+#endif
     ;
 
   CSI_SENS_FRM_SIZE = 0
-    | ((FRAME_WIDTH - 1)  << CSI_FRM_SIZE_WIDTH_SH)
+    | ((FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1)  << CSI_FRM_SIZE_WIDTH_SH)
     | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH);
 
 
   /* TASK Configure and initialize CSI IC IDMAC */
 
   CSI_ACT_FRM_SIZE = 0
-    | (FRAME_WIDTH  << CSI_FRM_SIZE_WIDTH_SH)
-    | (FRAME_HEIGHT << CSI_FRM_SIZE_HEIGHT_SH)
+    | ((FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1)  << CSI_FRM_SIZE_WIDTH_SH)
+    | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH)
     ;
 
 				/* IC Task options */
@@ -421,55 +1026,27 @@ static void ipu_setup (void)
   {
     char rgb[(132 + 7)/8];
 
-#if 0
-    /* Non-Interleaved */
-    memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, 0,   0, 10);	/* XV */
-    compose_control_word (rgb, 0,  10, 10);	/* YV */
-    compose_control_word (rgb, 0,  20, 12);	/* XB */
-    compose_control_word (rgb, 0,  32, 12);	/* YB */
-    compose_control_word (rgb, 1,  46,  1);	/* NSB */
-    compose_control_word (rgb, 0,  47,  6);	/* LNPB */
-    compose_control_word (rgb, 0,  53, 26);	/* UBO */
-    compose_control_word (rgb, 0,  79, 26);	/* VBO */
-    compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
-    compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
-//    dumpw (rgb, sizeof (rgb), 0, 0);
-    /* Write the word */
-
-    memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, rgbFrameA,   0, 32);	/* EBA0 */
-    compose_control_word (rgb, rgbFrameB,  32, 32);	/* EBA1 */
-    compose_control_word (rgb, 3,  64, 3);	/* BPP */
-    compose_control_word (rgb, FRAME_WIDTH/3 - 1,  67, 14);	/* SL */
-    compose_control_word (rgb, 3,  81, 3);	/* PFS */
-    compose_control_word (rgb, 0,  84, 3);	/* BAM */
-    compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
-    compose_control_word (rgb, 2,  96, 2);	/* SAT */
-//    dumpw (rgb, sizeof (rgb), 0, 0);
-    /* Write the word */
-#endif
-
     /* Interleaved */
     memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, 0,   0, 10);	/* XV */
-    compose_control_word (rgb, 0,  10, 10);	/* YV */
-    compose_control_word (rgb, 0,  20, 12);	/* XB */
-    compose_control_word (rgb, 0,  32, 12);	/* YB */
-    compose_control_word (rgb, 0,  44,  1);	/* SCE */
-    compose_control_word (rgb, 1,  46,  1);	/* NSB */
-    compose_control_word (rgb, 0,  47,  6);	/* LNPB */
-    compose_control_word (rgb, 0,  53, 10);	/* SX */
-    compose_control_word (rgb, 0,  63, 10);	/* SY */
-    compose_control_word (rgb, 0,  73, 10);	/* NS */
-    compose_control_word (rgb, 0,  83, 10);	/* SM */
-    compose_control_word (rgb, 0,  93,  5);	/* SDX */
-    compose_control_word (rgb, 0,  98,  5);	/* SDY */
-    compose_control_word (rgb, 0, 103,  1);	/* SDRX */
-    compose_control_word (rgb, 0, 104,  1);	/* SDRY */
-    compose_control_word (rgb, 0, 105,  1);	/* SCRQ */
-    compose_control_word (rgb, FRAME_WIDTH - 1,  108, 12);	/* FW */
-    compose_control_word (rgb, FRAME_HEIGHT - 1, 120, 12);	/* FH */
+    compose_control_word (rgb, 0, IPU_CW_XV);
+    compose_control_word (rgb, 0, IPU_CW_YV);
+    compose_control_word (rgb, 0, IPU_CW_XB);
+    compose_control_word (rgb, 0, IPU_CW_YB);
+    compose_control_word (rgb, 0, IPU_CW_SCE);
+    compose_control_word (rgb, 1, IPU_CW_NSB);
+    compose_control_word (rgb, 0, IPU_CW_LNPB);
+    compose_control_word (rgb, 0, IPU_CW_SX);
+    compose_control_word (rgb, 0, IPU_CW_SY);
+    compose_control_word (rgb, 0, IPU_CW_NS);
+    compose_control_word (rgb, 0, IPU_CW_SM);
+    compose_control_word (rgb, 0, IPU_CW_SDX);
+    compose_control_word (rgb, 0, IPU_CW_SDY);
+    compose_control_word (rgb, 0, IPU_CW_SDRX);
+    compose_control_word (rgb, 0, IPU_CW_SDRY);
+    compose_control_word (rgb, 0, IPU_CW_SCRQ);
+    compose_control_word (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
+			  IPU_CW_FW);
+    compose_control_word (rgb, FRAME_HEIGHT - 1, IPU_CW_FH);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*7 + 0, rgb, 132);
 
@@ -478,15 +1055,35 @@ static void ipu_setup (void)
 //    dumpw (rgb, sizeof (rgb), 0, 0);
 
     memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, (unsigned long)rgbFrameA,   0, 32); /* EBA0 */
-    compose_control_word (rgb, (unsigned long)rgbFrameB,  32, 32); /* EBA1 */
-    compose_control_word (rgb, 2,  64, 3);	/* BPP */
-    compose_control_word (rgb, FRAME_WIDTH - 1,  67, 14);	/* SL */
-    compose_control_word (rgb, 7,  81, 3);	/* PFS */
-    compose_control_word (rgb, 0,  84, 3);	/* BAM */
-    compose_control_word (rgb, 8 - 1,  89, 6);	/* NPB */
-    compose_control_word (rgb, 2,  96, 2);	/* SAT */
-    compose_control_word (rgb, 2,  98, 1);	/* SCC */
+    compose_control_word (rgb, (unsigned long)rgbFrameA, IPU_CW_EBA0);
+    compose_control_word (rgb, (unsigned long)rgbFrameB, IPU_CW_EBA1);
+#if defined (MODE_GENERIC)
+    compose_control_word (rgb, 2, IPU_CW_BPP);
+    compose_control_word (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*2 - 1,
+			  IPU_CW_SL);
+    compose_control_word (rgb, 7, IPU_CW_PFS);
+#endif
+#if defined (MODE_RGB)
+    /* I think that the value of 3 (8bpp) is wrong since our pixels
+       are really 24 bits and arrive in three bytes. */
+    compose_control_word (rgb, 3, IPU_CW_BPP);
+    compose_control_word (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
+			  IPU_CW_SL);
+    compose_control_word (rgb, 4, IPU_CW_PFS);
+#endif
+    compose_control_word (rgb, 0, IPU_CW_BAM);
+    compose_control_word (rgb, 8 - 1, IPU_CW_NPB);
+    compose_control_word (rgb, 2, IPU_CW_SAT);
+    compose_control_word (rgb, 2, IPU_CW_SCC);
+    compose_control_word (rgb, 0, IPU_CW_OFS0);
+    compose_control_word (rgb, 0, IPU_CW_OFS1);
+    compose_control_word (rgb, 0, IPU_CW_OFS2);
+    compose_control_word (rgb, 0, IPU_CW_OFS3);
+    compose_control_word (rgb, 0, IPU_CW_WID0);
+    compose_control_word (rgb, 0, IPU_CW_WID1);
+    compose_control_word (rgb, 0, IPU_CW_WID2);
+    compose_control_word (rgb, 0, IPU_CW_WID3);
+    compose_control_word (rgb, 0, IPU_CW_DEC_SEL);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*7 + 1, rgb, 132);
 
@@ -516,90 +1113,66 @@ static void ipu_setup (void)
   /* Disabling tasks */
 }
 
-/* i2c_wait_for_interrupt
-
-   waits for an interrupt and returns the status.
-
-*/
-
-static int i2c_wait_for_interrupt (void)
+static void ipu_setup_diagb (void)
 {
-  ENTRY;
-  while (!(I2C_I2SR & I2C_I2SR_IIF))	/* Wait for interrupt */
-    ;
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_I2C_CLK, 3);	/* IPU_DIAGB[0] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_I2C_DAT, 3);	/* IPU_DIAGB[1] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_STXD3, 3);		/* IPU_DIAGB[2] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SRXD3, 3);		/* IPU_DIAGB[3] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SCK3, 3);		/* IPU_DIAGB[4] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SFS3, 3);		/* IPU_DIAGB[5] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_STXD4, 3);		/* IPU_DIAGB[6] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SRXD4, 3);		/* IPU_DIAGB[7] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SCK4, 3);		/* IPU_DIAGB[8] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SFS4, 3);		/* IPU_DIAGB[9] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_STXD5, 3);		/* IPU_DIAGB[10] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SRXD5, 3);		/* IPU_DIAGB[11] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SCK5, 3);		/* IPU_DIAGB[12] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SFS5, 3);		/* IPU_DIAGB[13] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_STXD6, 3);		/* IPU_DIAGB[14] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SRXD6, 3);		/* IPU_DIAGB[15] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SCK6, 3);		/* IPU_DIAGB[16] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_SFS6, 3);		/* IPU_DIAGB[17] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_MOSI, 3);	/* IPU_DIAGB[18] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_MISO, 3);	/* IPU_DIAGB[19] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_SS0, 3);	/* IPU_DIAGB[20] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_SS2, 3);	/* IPU_DIAGB[21] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_SS2, 3);	/* IPU_DIAGB[22] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_SCLK, 3);	/* IPU_DIAGB[23] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CSPI1_SPI_RDY, 3);	/* IPU_DIAGB[24] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_RI_DTE1, 3);	/* IPU_DIAGB[25] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_DCD_DTE1, 3);	/* IPU_DIAGB[26] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_DTR_DCE2, 3);	/* IPU_DIAGB[27] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_RXD2, 3);		/* IPU_DIAGB[28] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_TXD2, 3);		/* IPU_DIAGB[29] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_RTS2, 3);		/* IPU_DIAGB[30] */
+  IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CTS2, 3);		/* IPU_DIAGB[31] */
 
-  I2C_I2SR = 0;				/* Only IIF can be cleared */
-  return I2C_I2SR;
+  IPU_DIAGB_CTRL = 0x1;		/* CSI module monitoring */
+
+  printf ("[5] SFS3  0x%x 0x%lx %p\n",
+	  MX31_PIN_SFS3, IOMUX_PIN_REG (MX31_PIN_SFS3),
+	  &IOMUX_PIN_REG (MX31_PIN_SFS3));
+  printf ("[6] STXD4 0x%x 0x%lx %p\n",
+	  MX31_PIN_STXD4, IOMUX_PIN_REG (MX31_PIN_STXD4),
+	  &IOMUX_PIN_REG (MX31_PIN_STXD4));
 }
 
 
-/* i2c_start
-
-   sends the slave the frame START and target address.  Return value
-   is 0 on success.
-
-   *** FIXME: the check for IAL isn't really necessary since this is
-   *** really a slave issue, I think.
-
-*/
-
-static int i2c_start (char address, int reading)
+static void csi_time_frames (void)
 {
-  ENTRY;
-  address &= 0x7f;
+  unsigned long time = timer_read ();
+  int c = 0;
 
-  I2C_I2CR |= I2C_I2CR_MSTA;	/* Acquire bus */
-  do {
-    int sr = I2C_I2SR;
-    if (sr & I2C_I2SR_IBB)	/* Arbitration won */
-      break;
-    if (sr & I2C_I2SR_IAL)	/* Arbitration lost */
-      return 1;
-    usleep (10);
-  } while (1);
-  I2C_I2SR = 0;
-  I2C_I2CR |= I2C_I2CR_MTX;	/* Prepare for transmit */
-  I2C_I2DR = (address << 1) | (reading ? 1 : 0);
+  while (timer_delta (time, timer_read ()) < 1000) {
+    IPU_INT_STAT3 = (1<<6);	/* CSI_EOF */
+    while (!(IPU_INT_STAT3 & (1<<6)))
+      ;
+    ++c;
+  }
 
-				/* Address must be ACK'd */
-  return (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) ? 1 : 0;
+  printf ("count is %d for 1 second\n", c);
 }
-
-
-/* i2c_write
-
-   writes the buffer to the given address.  It returns 0 on success.
-
-*/
-
-static int i2c_write (char address, char* rgb, int cb)
-{
-  int i;
-  ENTRY;
-  if (I2C_I2SR & I2C_I2SR_IBB) {
-    printf ("error: i2c bus busy %d\n", address);
-    i2c_stop ();
-    return 1;
-  }
-
-  if (i2c_start (address, 0)) {
-    i2c_stop ();
-    return 1;
-  }
-
-  I2C_I2CR |= I2C_I2CR_MTX;
-  for (i = 0; i < cb; ++i) {
-    I2C_I2DR = *rgb++;
-    if (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) {
-      i2c_stop ();
-      return 1;
-    }
-  }
-
-  i2c_stop ();
-  return 0;
-}
-
 
 static int cmd_ipu (int argc, const char** argv)
 {
@@ -621,7 +1194,13 @@ static int cmd_ipu (int argc, const char** argv)
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     ipu_setup_sensor ();
+//    ipu_setup_diagb ();
     ipu_setup ();
+  }
+
+  if (strcmp (argv[1], "diag") == 0) {
+    printf ("initializing diagb\n");
+    ipu_setup_diagb ();
   }
 
   /* Query */
@@ -629,14 +1208,32 @@ static int cmd_ipu (int argc, const char** argv)
     ipu_report_irq ();
   }
 
+  /* Report */
+  if (strcmp (argv[1], "r") == 0) {
+    ipu_report ();
+  }
+
+  /* Zero */
+  if (strcmp (argv[1], "0") == 0) {
+    ipu_zero ();
+  }
+
+  /* Time */
+  if (strcmp (argv[1], "t") == 0) {
+    csi_time_frames ();
+  }
+
+
   /* Clear */
   if (strcmp (argv[1], "c") == 0) {
     IPU_INT_STAT3 = (1<<6);   /* CSI_EOF */
     IPU_INT_STAT3 = (1<<5);   /* CSI_NF */
     IPU_INT_STAT5 = (1<<11);  /* BAYER_FRM_LOST_ERR */
+    IPU_INT_STAT1 = (1<<7);   /* IC7_EOF */
     IPU_INT_STAT2 = (1<<7);   /* IC7_NFACK */
   }
 
+#if 0
   /* Dump */
   if (strcmp (argv[1], "d") == 0) {
     char rgb[96*64/8];
@@ -644,6 +1241,29 @@ static int cmd_ipu (int argc, const char** argv)
 //    ipu_read_ima (7, 0, rgb, sizeof (rgb)*8);
     ipu_read_ima (8, 0, rgb, 64);
     dumpw (rgb, sizeof (rgb), 0, 0);
+  }
+#endif
+
+  /* IDMAC config read */
+  if (strcmp (argv[1], "ir") == 0) {
+    char rgb[(132 + 7)/8];
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*7 + 0, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*7 + 1, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
+  }
+
+
+  if (strcmp (argv[1], "p") == 0) {
+    i2c_sensor_probe ();
+    printf ("sensor width  %d\n", i2c_sensor_read (4));
+//    printf ("sensor height %d\n", i2c_sensor_read (3));
+//    printf ("reprogramming width\n");
+    i2c_sensor_write (4, 720);
+    printf ("sensor width  %d\n", i2c_sensor_read (4));
+//    printf ("sensor height %d\n", i2c_sensor_read (3));
   }
 
   if (strcmp (argv[1], "i2c") == 0) {

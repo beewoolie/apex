@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Apr  9 16:24:40 2007
+# Fri Apr 27 14:41:03 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -23,7 +23,7 @@ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set
 CONFIG_STARTUP_UART=y
-CONFIG_DEBUG_LL=y
+# CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 # CONFIG_ATAG is not set
 # CONFIG_MMU is not set

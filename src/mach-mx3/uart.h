@@ -92,8 +92,8 @@
      __REG (UART + UART_CR3) = UART_CR3_RXDMUXSEL;\
      __REG (UART + UART_CR4) = (32<<UART_CR4_CTSTL_SH)\
 			     | UART_CR4_LPBYP | UART_CR4_DREN;\
-     __REG (UART + UART_FCR) = (1<<UART_FCR_RXTL_SH)\
-			     | (0<<UART_FCR_RFDIV_SH)\
+     __REG (UART + UART_FCR) = (16<<UART_FCR_RXTL_SH)\
+			     | ( 0<<UART_FCR_RFDIV_SH)\
 			     | (16<<UART_FCR_TXTL_SH);\
      __REG (UART + UART_SR1) = ~0;\
      __REG (UART + UART_SR2) = ~0;\

@@ -127,7 +127,7 @@ static __env struct env_d e_startup = {
 # endif
     "boot"
 #endif
-  ,
+  "",
   .description = "Startup commands",
 };
 #endif

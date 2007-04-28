@@ -37,11 +37,16 @@
 
 /* ----- Prototypes */
 
+/* There are two versions of the NFF board, one has a shifted address
+   bus on the OneNAND and Ethernet controller and one does not.  The
+   correct data offset is +4.  The older, broken, and shifted version
+   uses +8. */
+
 #define DM_WIDTH	16
 
 #define DM_PHYS		(0xb4000000) /* Dev MAC/PHY */
 #define DM_PHYS_INDEX	(DM_PHYS + 0)
-#define DM_PHYS_DATA	(DM_PHYS + 8)
+#define DM_PHYS_DATA	(DM_PHYS + 4)
 #define DM_NAME		"dev"
 
 #endif  /* __MACH_DRV_DM9000_H__ */

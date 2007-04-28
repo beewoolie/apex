@@ -428,6 +428,21 @@ enum {
 		     (0x7f<<(_PIN_MUX_F (p)*8)),\
 		     ((1<<4)|(2<<0))<<(_PIN_MUX_F (p)*8))
 
+  /* Configure pin as alternate output (1,2,3,4,5,6). */
+#define IOMUX_PIN_CONFIG_ALT_OUT(p,n)\
+	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
+		     (0x7f<<(_PIN_MUX_F (p)*8)),\
+		     (((1+(n))<<4)|(0<<0))<<(_PIN_MUX_F (p)*8))
+
+  /* Configure pin as alternate input (1,2). */
+#define IOMUX_PIN_CONFIG_ALT_IN(p,n)\
+	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
+		     (0x7f<<(_PIN_MUX_F (p)*8)),\
+		     ((0<<4)|((n)<<2))<<(_PIN_MUX_F (p)*8))
+
+#define IOMUX_PIN_REG(p)\
+	_SW_PAD_CTL (_PIN_MUX_R (p))
+
 #define IOMUX_PAD_CONFIG(p,v)\
 	MASK_AND_SET(_SW_PAD_CTL(_PIN_PAD_R (p)),\
 		     (0x3ff<<(_PIN_PAD_F (p)*10)),\
