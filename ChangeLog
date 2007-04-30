@@ -1,3 +1,19 @@
+2007-04-30  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-mx3/initialize.c: Extra check in the initialization
+	routine so that we don't alter the timing registers if the CPU is
+	already in the target mode.  It looks like the CPU doesn't like
+	the PLLs being changed once it has booted.  It may be the SDRAM
+	that doesn't like the timing change.
+	
+	* src/arch-arm/entry/reset.c: Restored setting of the CPSR mode in
+	the loader.  The CPU boots in the undefined mode.  We move to
+	supervisor mode, though this doesn't appear to be necessary for
+	the kernel to boot.
+
+	* src/mach-mx3/ipu.c (ipu_report): Improved clarity of IPU report
+	to break out fields and to describe the formats in English.
+	
 2007-04-27  Marc Singer  <elf@buici.com>
 
 	* include/asm/cp15-armv6.h: Fixed the cache control macros for the

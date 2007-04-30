@@ -136,12 +136,17 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
 
-  CCM_CCMR  = 0x074b0b7d;			/* Default value */
-  CCM_PDR0  = CCM_PDR0_V;
-  CCM_PDR1  = 0x49fcfe7f;			/* Default value */
-  CCM_MPCTL = CCM_MPCTL_V;
-  CCM_UPCTL = CCM_UPCTL_V;
-  CCM_COSR  = CCM_COSR_V;
+  /* *** FIXME: Changing this timer while the system is running from
+     SDRAM may have adverse affects.  In fact, we may want to defer
+     all of this setup when we are not in flash. */
+  if (CCM_MPCTL != CCM_MPCTL_V) {
+    CCM_CCMR  = 0x074b0b7d;			/* Default value */
+    CCM_PDR0  = CCM_PDR0_V;
+    CCM_PDR1  = 0x49fcfe7f;			/* Default value */
+    CCM_MPCTL = CCM_MPCTL_V;
+    CCM_UPCTL = CCM_UPCTL_V;
+    CCM_COSR  = CCM_COSR_V;
+  }
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
 

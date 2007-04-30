@@ -67,28 +67,37 @@ extern void reset_finish (void);
 void __naked __section (.reset) reset (void)
 {
 #if defined (CONFIG_BIGENDIAN)
-
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "orr %0, %0, #(1<<7)\n\t" /* Switch to bigendian */
+		    "orr %0, %0, #(1<<7)\n\t"	      /* Switch to bigendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
     CP15_WAIT;
   }
 #endif
 
 #if defined (CONFIG_LITTLEENDIAN)
-
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "bic %0, %0, #(1<<7)\n\t" /* Switch to littleendian */
+		    "bic %0, %0, #(1<<7)\n\t"	   /* Switch to littleendian */
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (v));
     CP15_WAIT;
     /* *** FIXME: the redboot code performed a read from the ttb
        register as a delay.  Not sure why. */
   }
 #endif
+
+  /* We coerce the system into supervisor mode and disable interrupts
+     in the first few instructions.  The CPU comes out of reset with
+     interrupts enabled, but in an undefined operating mode.  Should
+     we be starting in a mode that cannot reload CPSR, this won't do
+     anything and we won't be able to execute anything. */
+  {
+    unsigned long l;
+    __asm volatile ("mov %0, #0xd3\n\t"
+		    "msr cpsr_c, %0" : "=&r" (l));
+  }
 
 #if defined (CONFIG_DISABLE_MMU_AT_BOOT)
 
@@ -115,7 +124,10 @@ void __naked __section (.reset) reset (void)
   {
     unsigned long l;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "bic %0, %0, #1\n\t"
+		    "bic %0, %0, #(1<<0)\n\t"		/* MMU enable */
+		    "bic %0, %0, #(1<<1)\n\t"		/* Alignment */
+		    "bic %0, %0, #(1<<2)\n\t"		/* DCache */
+		    "bic %0, %0, #(1<<12)\n\t"		/* ICache */
 		    "mcr p15, 0, %0, c1, c0, 0\n\t" : "=&r" (l)
 		    );
     CP15_WAIT;

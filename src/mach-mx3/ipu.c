@@ -246,6 +246,12 @@ static char* rgbFrameB;
 #define IPU_CW_SCE	 44,  1
 #define IPU_CW_NSB	 46,  1
 #define IPU_CW_LNPB	 47,  6
+
+		/* non-interleaved */
+#define IPU_CW_UB0	 53, 26
+#define IPU_CW_UB1	 79, 26
+
+		/* interleaved */
 #define IPU_CW_SX	 53, 10
 #define IPU_CW_SY	 63, 10
 #define IPU_CW_NS	 73, 10
@@ -255,6 +261,7 @@ static char* rgbFrameB;
 #define IPU_CW_SDRX	103,  1
 #define IPU_CW_SDRY	104,  1
 #define IPU_CW_SCRQ	105,  1
+
 #define IPU_CW_FW	108, 12
 #define IPU_CW_FH	120, 12
 
@@ -298,6 +305,26 @@ static const char* describe_channels (unsigned long v)
 
 #undef _
   return sz;
+}
+
+static int describe_bits_per_pixel (int v)
+{
+  return "\x20\x18\x10\x08\x04\x01\x00\x00"[v%8];
+}
+
+static const char* describe_pfs (int v)
+{
+  switch (v) {
+  case 0: return "code";
+  case 1: return "YUV444 (NI)";
+  case 2: return "YUV422 (NI)";
+  case 3: return "YUV420 (NI)";
+  case 4: return "RGB (pack/unpack)";
+  case 6: return "YUV422 (I)";
+  case 7: return "Generic";
+  default:
+    return "unknown";
+  }
 }
 
 /* compose_control_word
@@ -545,6 +572,7 @@ static void ipu_report (void)
       | IPU_CHA_DB_MODE_SEL | IPU_CHA_CUR_BUF
       | (1<<7);
     for (i = 0; i < 32; ++i) {
+      int interleaved;
       if (v & (1<<i)) {
 	char* sz;
 	/* Determine the name of the channel.  We would use an array
@@ -595,8 +623,22 @@ static void ipu_report (void)
 	ipu_read_ima (1, 2*i + 1, rgb1, 132);
 	dumpw (rgb0, sizeof (rgb0), 0, 0);
 	dumpw (rgb1, sizeof (rgb1), 0, 0);
-	if (read_huge (rgb1, IPU_CW_PFS) == 0)
-	  continue;
+	switch (read_huge (rgb1, IPU_CW_PFS)) {
+	case 0:
+	default:
+	  continue;		/* Code or NULL configuraton, we ignore it */
+	case 1:			/* YUV444 non-interleaved */
+	case 2:			/* YUV422 non-interleaved */
+	case 3:			/* YUV420 non-interleaved */
+	  interleaved = 0;
+	  break;
+	case 4:			/* RGB pack/unpack */
+	case 6:			/* YUV422 interleaved */
+	case 7:			/* Generic data */
+	  interleaved = 1;
+	  break;
+	}
+
 	printf ("  XV %4ld  YV %4ld  XB %4ld  YB %4ld  SCE %ld  "
 		"NSB %ld  LNFB %2ld\n",
 		read_huge (rgb0, IPU_CW_XV),
@@ -606,43 +648,55 @@ static void ipu_report (void)
 		read_huge (rgb0, IPU_CW_SCE),
 		read_huge (rgb0, IPU_CW_NSB),
 		read_huge (rgb0, IPU_CW_LNPB));
-	printf ("  SX %4ld  SY %4ld  NS %4ld  SM %4ld  SDX %2ld  SDY %2ld"
-		"  SDRX %ld  SDRY %ld\n",
-		read_huge (rgb0, IPU_CW_SX),
-		read_huge (rgb0, IPU_CW_SY),
-		read_huge (rgb0, IPU_CW_NS),
-		read_huge (rgb0, IPU_CW_SM),
-		read_huge (rgb0, IPU_CW_SDX),
-		read_huge (rgb0, IPU_CW_SDY),
-		read_huge (rgb0, IPU_CW_SDRX),
-		read_huge (rgb0, IPU_CW_SDRY));
-	printf ("  SCRQ %ld  FW %4ld  FH %4ld\n",
-		read_huge (rgb0, IPU_CW_SCRQ),
+	if (interleaved)
+	  printf ("  SX/Y %4ld %4ld  NS %4ld  SM %4ld  SDX/Y %2ld %2ld"
+		  "  SDRX/Y %ld %ld  SCRQ %ld\n",
+		  read_huge (rgb0, IPU_CW_SX),
+		  read_huge (rgb0, IPU_CW_SY),
+		  read_huge (rgb0, IPU_CW_NS),
+		  read_huge (rgb0, IPU_CW_SM),
+		  read_huge (rgb0, IPU_CW_SDX),
+		  read_huge (rgb0, IPU_CW_SDY),
+		  read_huge (rgb0, IPU_CW_SDRX),
+		  read_huge (rgb0, IPU_CW_SDRY),
+		  read_huge (rgb0, IPU_CW_SCRQ));
+	else
+	  printf ("  UB0 %8ld  UB1 %8ld\n",
+		  read_huge (rgb0, IPU_CW_UB0),
+		  read_huge (rgb0, IPU_CW_UB1));
+	printf ("  FW %4ld  FH %4ld  EBA0 %08lx  EBA1 %08lx  "
+		"BPP %ld (%d bpp)  \n",
 		read_huge (rgb0, IPU_CW_FW),
-		read_huge (rgb0, IPU_CW_FH));
-	printf ("  EBA0 %08lx  EBA1 %08lx  BPP %ld  SL %4ld  PFS %ld  "
-		"BAM %ld  NPB %2lx\n",
+		read_huge (rgb0, IPU_CW_FH),
 		read_huge (rgb1, IPU_CW_EBA0),
 		read_huge (rgb1, IPU_CW_EBA1),
 		read_huge (rgb1, IPU_CW_BPP),
+		describe_bits_per_pixel (read_huge (rgb1, IPU_CW_BPP)));
+	printf ("  SL %4ld  PFS %ld '%s'"
+		"  BAM %ld  NPB %2lx (%ld)  SAT %ld\n",
 		read_huge (rgb1, IPU_CW_SL),
 		read_huge (rgb1, IPU_CW_PFS),
+		describe_pfs (read_huge (rgb1, IPU_CW_PFS)),
 		read_huge (rgb1, IPU_CW_BAM),
-		read_huge (rgb1, IPU_CW_NPB));
-	printf ("  SAT %ld  SCC %ld  OFS0 %2ld  OFS1 %2ld  OFS2 %2ld"
-		"  OFS3 %2ld\n",
-		read_huge (rgb1, IPU_CW_SAT),
-		read_huge (rgb1, IPU_CW_SCC),
-		read_huge (rgb1, IPU_CW_OFS0),
-		read_huge (rgb1, IPU_CW_OFS1),
-		read_huge (rgb1, IPU_CW_OFS2),
-		read_huge (rgb1, IPU_CW_OFS3));
-	printf ("  WID0 %2ld  WID1 %2ld  WID2 %2ld  WID3 %2ld  DEC_SEL %ld\n",
-		read_huge (rgb1, IPU_CW_WID0),
-		read_huge (rgb1, IPU_CW_WID1),
-		read_huge (rgb1, IPU_CW_WID2),
-		read_huge (rgb1, IPU_CW_WID3),
-		read_huge (rgb1, IPU_CW_DEC_SEL));
+		read_huge (rgb1, IPU_CW_NPB),
+		read_huge (rgb1, IPU_CW_NPB) + 1,
+		read_huge (rgb1, IPU_CW_SAT));
+	if (!interleaved) {
+	  printf ("  SCC %ld  OFS0 %2ld  OFS1 %2ld  OFS2 %2ld"
+		  "  OFS3 %2ld\n",
+		  read_huge (rgb1, IPU_CW_SCC),
+		  read_huge (rgb1, IPU_CW_OFS0),
+		  read_huge (rgb1, IPU_CW_OFS1),
+		  read_huge (rgb1, IPU_CW_OFS2),
+		  read_huge (rgb1, IPU_CW_OFS3));
+	  printf ("  WID0 %2ld  WID1 %2ld  WID2 %2ld  "
+		  "WID3 %2ld  DEC_SEL %ld\n",
+		  read_huge (rgb1, IPU_CW_WID0),
+		  read_huge (rgb1, IPU_CW_WID1),
+		  read_huge (rgb1, IPU_CW_WID2),
+		  read_huge (rgb1, IPU_CW_WID3),
+		  read_huge (rgb1, IPU_CW_DEC_SEL));
+	}
       }
     }
   }
