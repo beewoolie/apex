@@ -18,7 +18,7 @@ CONFIG_ARCH_MX3=y
 #
 # General Setup
 #
-CONFIG_TARGET_DESCRIPTION="ExBiblio Rosencrantz/oPen"
+CONFIG_TARGET_DESCRIPTION="ExBiblio oPen (Rosencrantz)"
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set

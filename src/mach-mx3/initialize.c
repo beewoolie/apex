@@ -136,12 +136,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
 
-  __REG(PHYS_IPU + 0x00) |= 0x40; /* Enable DI?  From Redboot. */
+  //  __REG(PHYS_IPU + 0x00) |= 0x40; /* Enable DI?  From Redboot. */
 
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
-  if (CCM_MPCTL != CCM_MPCTL_V && 0) {
+//  if (1 || (CCM_MPCTL != CCM_MPCTL_V && 0)) {
     CCM_CCMR  &= 0x8;				/* Disable PLL */
     CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
     { int i = 0x1000; while (i--) ; }		/* Delay */
@@ -152,7 +152,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     CCM_PDR1   = 0x49fcfe7f;			/* Default value */
     CCM_UPCTL  = CCM_UPCTL_V;
     CCM_COSR   = CCM_COSR_V;
-  }
+//  }
 
   /* Initialize AIPS (AHB to IP bus) */
   AIPS1_MPR1 = 0x77777777;
@@ -187,7 +187,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   MAX_MGPCR3 = 0;
   MAX_MGPCR4 = 0;
 
-  //WM32  0x53FC0000 0x040                  ; setup ipu
+  /* Initialize M3IF (Multi-Master Memory Interface) */
+  M3IF_CTL = (1<<M3IF_M_IPU1);
 
   //;WM32  0xb8002050 0x0000dcf6            ; Configure PSRAM on CS5
   //;WM32  0xb8002054 0x444a4541

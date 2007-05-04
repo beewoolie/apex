@@ -89,7 +89,8 @@
 #define PIN_ILLUMINATION_EN1	MX31_PIN_KEY_COL5
 #define PIN_ILLUMINATION_EN2	MX31_PIN_KEY_COL4
 
-#define I2C_IFDR_V		(0x19)			/* Divisor of 1280 */
+//#define I2C_IFDR_V		(0x19)			/* Divisor of 1280 */
+#define I2C_IFDR_V		(0x3f)			/* Divisor of 2048 */
 
 #define IPU_CONF		__REG(PHYS_IPU + 0x00)
 #define IPU_CHA_BUF0_RDY	__REG(PHYS_IPU + 0x04)
@@ -243,7 +244,7 @@ static char* rgbFrameB;
 #define ADDR_RESTART		(1<<13)
 #define ADDR_CONTINUE		(1<<12)
 
-/* IPU control word offsets and lengths */
+/* IPU control word 0 offsets and lengths */
 #define IPU_CW_XV	  0, 10
 #define IPU_CW_YV	 10, 10
 #define IPU_CW_XB	 20, 12
@@ -251,12 +252,14 @@ static char* rgbFrameB;
 #define IPU_CW_SCE	 44,  1
 #define IPU_CW_NSB	 46,  1
 #define IPU_CW_LNPB	 47,  6
+#define IPU_CW_FW	108, 12
+#define IPU_CW_FH	120, 12
 
-		/* non-interleaved */
+		/* non-interleaved group */
 #define IPU_CW_UB0	 53, 26
 #define IPU_CW_UB1	 79, 26
 
-		/* interleaved */
+		/* interleaved group */
 #define IPU_CW_SX	 53, 10
 #define IPU_CW_SY	 63, 10
 #define IPU_CW_NS	 73, 10
@@ -267,9 +270,7 @@ static char* rgbFrameB;
 #define IPU_CW_SDRY	104,  1
 #define IPU_CW_SCRQ	105,  1
 
-#define IPU_CW_FW	108, 12
-#define IPU_CW_FH	120, 12
-
+/* IPU control word 1 offsets and lengths */
 #define IPU_CW_EBA0	  0, 32
 #define IPU_CW_EBA1	 32, 32
 #define IPU_CW_BPP	 64,  3
@@ -335,6 +336,7 @@ static const char* describe_pfs (int v)
 static const char* describe_ic_conf (unsigned long v)
 {
   static char sz[80];
+  *sz = 0;
 
   if (v & IC_CONF_CSI_MEM_WR_EN)
     snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
@@ -415,15 +417,56 @@ const char* describe_stat5 (unsigned long v)
   return sz;
 }
 
-/* compose_control_word
+const char* describe_i2sr (int v)
+{
+  static char sz[80];
+  snprintf (sz, sizeof (sz), "(0x%02x)", v);
+
+#define _(b,s)\
+  if (v & (b)) snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),\
+			 " %s", " " s);
+
+  _(I2C_I2SR_ICF,  "ICF");
+  _(I2C_I2SR_IAAS, "IAAS");
+  _(I2C_I2SR_IBB,  "IBB");
+  _(I2C_I2SR_IAL,  "IAL");
+  _(I2C_I2SR_SRW,  "SRW");
+  _(I2C_I2SR_IIF,  "IIF");
+  _(I2C_I2SR_RXAK, "RXAK");
+
+#undef _
+
+  return sz;
+}
+
+const char* describe_i2cr (int v)
+{
+  static char sz[80];
+  snprintf (sz, sizeof (sz), "(0x%02x)", v);
+
+#define _(b,s)\
+  if (v & (b)) snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),\
+			 " %s", " " s);
+
+  _(I2C_I2CR_IEN,   "IEN");
+  _(I2C_I2CR_MSTA,  "MSTA");
+  _(I2C_I2CR_MTX,   "MTX");
+  _(I2C_I2CR_TXAK,  "TXAK");
+  _(I2C_I2CR_RSATA, "RSATA");
+
+#undef _
+
+  return sz;
+}
+
+/* write_huge
 
    writes the given value to the very long control word buffer.  This
    code only works in little-endian mode.
 
 */
 
-static void compose_control_word (char* rgb, unsigned long value,
-				  int shift, int width)
+static void write_huge (char* rgb, unsigned long value, int shift, int width)
 {
   int index = 0;
 //  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
@@ -530,31 +573,6 @@ static void ipu_read_ima (int mem_nu, int row_nu, const char* rgb, int bits)
     bits -= 32;
   }
 }
-
-
-#if 0
-static const char* i2c_status_decode (int sr)
-{
-  static char sz[80];
-  *sz = 0;
-  if (sr & I2C_I2SR_ICF)
-    strcat (sz, " ICF");
-  if (sr & I2C_I2SR_IAAS)
-    strcat (sz, " IAAS");
-  if (sr & I2C_I2SR_IBB)
-    strcat (sz, " IBB");
-  if (sr & I2C_I2SR_IAL)
-    strcat (sz, " IAL");
-  if (sr & I2C_I2SR_SRW)
-    strcat (sz, " SRW");
-  if (sr & I2C_I2SR_IIF)
-    strcat (sz, " IIF");
-  if (sr & I2C_I2SR_RXAK)
-    strcat (sz, " RXAK");
-
-  return sz;
-}
-#endif
 
 
 /* ipu_report_irq
@@ -815,6 +833,17 @@ static void ipu_zero (void)
 }
 
 
+/* i2c_report
+
+*/
+
+static void i2c_report (void)
+{
+  printf ("  I2ADR 0x%02x  I2IF 0x%02x  I2CR %s  I2SR %s\n",
+	  I2C_IADR, I2C_IFDR,
+	  describe_i2cr (I2C_I2CR), describe_i2sr (I2C_I2SR));
+}
+
 /* i2c_stop
 
    halts transmission on the I2C bus.  The kernel version will wait
@@ -828,16 +857,21 @@ static int i2c_stop (void)
   unsigned long time;
   ENTRY;
 
-  printf ("--\n");
-  I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX | I2C_I2CR_TXAK);
+//  printf ("--\n");
+  I2C_I2CR &= ~(I2C_I2CR_MSTA | I2C_I2CR_MTX
+		| I2C_I2CR_TXAK
+		);
   I2C_I2SR = 0;
 
+  return 0;
+#if 0
   time = timer_read ();
   while ((I2C_I2SR & I2C_I2SR_IBB)	/* Wait for STOP condition */
 	 && timer_delta (time, timer_read ()) < 10)
     usleep (3);
 
   return (I2C_I2SR & I2C_I2SR_IBB) != 0;
+#endif
 }
 
 static void i2c_setup (void)
@@ -847,7 +881,11 @@ static void i2c_setup (void)
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_I2C_CLK);
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_I2C_DAT);
 
+  I2C2_I2CR = 0;		/* Disable other I2C controllers */
+  I2C3_I2CR = 0;
+
   I2C_IFDR = I2C_IFDR_V;
+  I2C_IADR = 0;			/* Our address is zero  */
 
   I2C_I2SR = 0;
   i2c_stop ();
@@ -875,6 +913,18 @@ static int i2c_wait_for_interrupt (void)
   return I2C_I2SR;
 }
 
+#if 0
+static int i2c_wait_for_idle (void)
+{
+  if (I2C_I2SR & I2C_I2SR_IBB) {
+    printf ("%s error: i2c bus busy %d\n", __FUNCTION__, address);
+    i2c_stop ();
+    return 1;
+  }
+  return 0
+}
+#endif
+
 
 /* i2c_start
 
@@ -891,6 +941,18 @@ static int i2c_start (char address, int reading)
 
   ENTRY;
 
+  {
+    unsigned long time = timer_read ();
+    while (timer_delta (time, timer_read ()) < 10)
+      if (!(I2C_I2SR & I2C_I2SR_IBB))
+	break;
+    if (I2C_I2SR & I2C_I2SR_IBB) {
+      printf ("start aborted, unable to acquire bus sr %s cr %s\n",
+	      describe_i2sr (I2C_I2SR), describe_i2cr (I2C_I2CR));
+      return 1;			/* Unable to acquire, bus still busy */
+    }
+  }
+
   address &= 0x7f;
 
   I2C_I2CR |= I2C_I2CR_MSTA	/* Acquire bus */
@@ -906,7 +968,7 @@ static int i2c_start (char address, int reading)
     return 1;			/* Failed to acquire */
   I2C_I2SR = 0;
   I2C_I2CR |= I2C_I2CR_MTX;	/* Prepare for transmit */
-  printf (" *> 0x%02x\n", (address << 1) | (reading ? 1 : 0));
+//  printf (" --> 0x%02x\n", (address << 1) | (reading ? 1 : 0));
   I2C_I2DR = (address << 1) | (reading ? 1 : 0);
 
   sr = i2c_wait_for_interrupt ();
@@ -931,25 +993,28 @@ static int i2c_write (int address, char* rgb, int cb)
 
   ENTRY;
 
-  printf ("%s\n", __FUNCTION__);
-  dumpw (rgb, cb, 0, 0);
+//  printf ("%s\n", __FUNCTION__);
+//  dumpw (rgb, cb, 0, 0);
 
+#if 0
   if (!continuing && !restart && (I2C_I2SR & I2C_I2SR_IBB)) {
     printf ("%s error: i2c bus busy 0x%x\n", __FUNCTION__, address);
     i2c_stop ();
     return 1;
   }
+#endif
 
   if (i2c_start (address, 0)) {
     if (i2c_stop ())
-      printf ("%s error on stop on failed start sr %x cr %x\n",
-	      __FUNCTION__, I2C_I2SR, I2C_I2CR);
+      printf ("%s error on stop on failed start sr %s cr %s\n",
+	      __FUNCTION__, describe_i2sr (I2C_I2SR),
+	      describe_i2cr (I2C_I2CR));
     return 1;
   }
 
   I2C_I2CR |= I2C_I2CR_MTX;
   for (i = 0; i < cb; ++i) {
-    printf (" => 0x%02x\n", *rgb);
+//    printf (" ==> 0x%02x\n", *rgb);
     I2C_I2DR = *rgb++;
     if (i2c_wait_for_interrupt () & I2C_I2SR_RXAK) {
       i2c_stop ();
@@ -958,8 +1023,8 @@ static int i2c_write (int address, char* rgb, int cb)
   }
 
   if (!(address & ADDR_NO_STOP) && i2c_stop ())
-    printf ("%s error on stop sr %x cr %x\n",
-	    __FUNCTION__, I2C_I2SR, I2C_I2CR);
+    printf ("%s error on stop sr %s cr %s\n",
+	    __FUNCTION__, describe_i2sr (I2C_I2SR), describe_i2cr (I2C_I2CR));
 
   return 0;
 }
@@ -974,45 +1039,60 @@ static int i2c_write (int address, char* rgb, int cb)
 static int i2c_read (int address, char* rgb, int cb)
 {
   int i;
-  int cr;
+//  int cr;
   ENTRY;
 
   address &= 0x7f;
 
+#if 0
   if (I2C_I2SR & I2C_I2SR_IBB) {
     printf ("%s error: i2c bus busy %d\n", __FUNCTION__, address);
     i2c_stop ();
     return 1;
   }
+#endif
 
   if (i2c_start (address, 1)) {
     if (i2c_stop ())
-      printf ("%s error on stop after failed start sr %x cr %x\n",
-	      __FUNCTION__, I2C_I2SR, I2C_I2CR);
+      printf ("%s error on stop after failed start sr %s cr %s\n",
+	      __FUNCTION__, describe_i2sr (I2C_I2SR),
+	      describe_i2cr (I2C_I2CR));
     return 1;
   }
 
-  cr  =  I2C_I2CR;
-  cr &= ~I2C_I2CR_MTX;
+  I2C_I2CR &= ~I2C_I2CR_MTX;
+
+  /* If we are reading only one byte, we need to set the TXAK bit
+     before we discard the dummy read and before we wait for the
+     interrupt.  */
+  if (cb == 1)
+    I2C_I2CR |= I2C_I2CR_TXAK;
   for (i = 0; i < cb; ++i) {
     int sr;
-    if (i + 1 >= cb)
-      cr |= I2C_I2CR_TXAK;
-    I2C_I2CR = cr;
+//    if (cb == 1 || i == cb - 2)
+//      cr |= I2C_I2CR_TXAK;
+//    else
+//      cr &= ~I2C_I2CR_TXAK;
+//    printf (" <<< i %d cb %d  cr %s\n", i, cb, describe_i2cr (I2C_I2CR));
+//    I2C_I2CR = cr;
     if (i == 0) {
       char b = I2C_I2DR;
-      printf ("  ---> 0x%x\n", b);
+//      printf (" <== 0x%x (discard)\n", b);
 //      I2C_I2DR;			/* Dummy read after address cycle */
     }
     sr = i2c_wait_for_interrupt ();
-    if (i + 1 >= cb) {
+
+    if (i + 2 == cb)
+      I2C_I2CR |= I2C_I2CR_TXAK;
+    else if (i + 1 >= cb) {
       if (i2c_stop ())
-	printf ("%s error on stop sr %x cr %x\n",
-		__FUNCTION__, I2C_I2SR, I2C_I2CR);
+	printf ("%s error on stop sr %s, cr %s\n",
+		__FUNCTION__, describe_i2sr (I2C_I2SR),
+		describe_i2cr (I2C_I2CR));
     }
     {
       char b = I2C_I2DR;
-      printf ("<= 0x%x\n", b);
+//      printf (" <== 0x%x\n", b);
       *rgb++ = b;
 //      *rgb++ = I2C_I2DR;
     }
@@ -1027,6 +1107,9 @@ static int i2c_sensor_read (int reg)
   char rgb[2];
 //  int v = 0;
   char r = reg & 0xff;
+
+  ENTRY;
+
   i2c_write (0x5c, &r, 1);
 
 #if 0
@@ -1046,7 +1129,8 @@ static void i2c_sensor_write (int reg, int value)
 {
   char rgb[] = { reg & 0xff, (value >> 8) & 0xff,
 			     (value >> 0) & 0xff };
-  dumpw (rgb, sizeof (rgb), 0, 0);
+  ENTRY;
+//  dumpw (rgb, sizeof (rgb), 0, 0);
   i2c_write (0x5c, rgb, 3);
 }
 
@@ -1191,25 +1275,25 @@ static void ipu_setup (void)
 
     /* Interleaved */
     memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, 0, IPU_CW_XV);
-    compose_control_word (rgb, 0, IPU_CW_YV);
-    compose_control_word (rgb, 0, IPU_CW_XB);
-    compose_control_word (rgb, 0, IPU_CW_YB);
-    compose_control_word (rgb, 0, IPU_CW_SCE);
-    compose_control_word (rgb, 1, IPU_CW_NSB);
-    compose_control_word (rgb, 0, IPU_CW_LNPB);
-    compose_control_word (rgb, 0, IPU_CW_SX);
-    compose_control_word (rgb, 0, IPU_CW_SY);
-    compose_control_word (rgb, 0, IPU_CW_NS);
-    compose_control_word (rgb, 0, IPU_CW_SM);
-    compose_control_word (rgb, 0, IPU_CW_SDX);
-    compose_control_word (rgb, 0, IPU_CW_SDY);
-    compose_control_word (rgb, 0, IPU_CW_SDRX);
-    compose_control_word (rgb, 0, IPU_CW_SDRY);
-    compose_control_word (rgb, 0, IPU_CW_SCRQ);
-    compose_control_word (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
+    write_huge (rgb, 0, IPU_CW_XV);
+    write_huge (rgb, 0, IPU_CW_YV);
+    write_huge (rgb, 0, IPU_CW_XB);
+    write_huge (rgb, 0, IPU_CW_YB);
+    write_huge (rgb, 0, IPU_CW_SCE);
+    write_huge (rgb, 1, IPU_CW_NSB);
+    write_huge (rgb, 0, IPU_CW_LNPB);
+    write_huge (rgb, 0, IPU_CW_SX);
+    write_huge (rgb, 0, IPU_CW_SY);
+    write_huge (rgb, 0, IPU_CW_NS);
+    write_huge (rgb, 0, IPU_CW_SM);
+    write_huge (rgb, 0, IPU_CW_SDX);
+    write_huge (rgb, 0, IPU_CW_SDY);
+    write_huge (rgb, 0, IPU_CW_SDRX);
+    write_huge (rgb, 0, IPU_CW_SDRY);
+    write_huge (rgb, 0, IPU_CW_SCRQ);
+    write_huge (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
 			  IPU_CW_FW);
-    compose_control_word (rgb, FRAME_HEIGHT - 1, IPU_CW_FH);
+    write_huge (rgb, FRAME_HEIGHT - 1, IPU_CW_FH);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*channel + 0, rgb, 132);
 
@@ -1218,35 +1302,35 @@ static void ipu_setup (void)
 //    dumpw (rgb, sizeof (rgb), 0, 0);
 
     memset (rgb, 0, sizeof (rgb));
-    compose_control_word (rgb, (unsigned long)rgbFrameA, IPU_CW_EBA0);
-    compose_control_word (rgb, (unsigned long)rgbFrameB, IPU_CW_EBA1);
+    write_huge (rgb, (unsigned long)rgbFrameA, IPU_CW_EBA0);
+    write_huge (rgb, (unsigned long)rgbFrameB, IPU_CW_EBA1);
 #if defined (MODE_GENERIC)
-    compose_control_word (rgb, 2, IPU_CW_BPP);
-    compose_control_word (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*2 - 1,
+    write_huge (rgb, 2, IPU_CW_BPP);
+    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*2 - 1,
 			  IPU_CW_SL);
-    compose_control_word (rgb, 7, IPU_CW_PFS);
+    write_huge (rgb, 7, IPU_CW_PFS);
 #endif
 #if defined (MODE_RGB)
     /* I think that the value of 3 (8bpp) is wrong since our pixels
        are really 24 bits and arrive in three bytes. */
-    compose_control_word (rgb, 3, IPU_CW_BPP);
-    compose_control_word (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
+    write_huge (rgb, 3, IPU_CW_BPP);
+    write_huge (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
 			  IPU_CW_SL);
-    compose_control_word (rgb, 4, IPU_CW_PFS);
+    write_huge (rgb, 4, IPU_CW_PFS);
 #endif
-    compose_control_word (rgb, 0, IPU_CW_BAM);
-    compose_control_word (rgb, 8 - 1, IPU_CW_NPB);
-    compose_control_word (rgb, 2, IPU_CW_SAT);
-    compose_control_word (rgb, 2, IPU_CW_SCC);
-    compose_control_word (rgb, 0, IPU_CW_OFS0);
-    compose_control_word (rgb, 0, IPU_CW_OFS1);
-    compose_control_word (rgb, 0, IPU_CW_OFS2);
-    compose_control_word (rgb, 0, IPU_CW_OFS3);
-    compose_control_word (rgb, 0, IPU_CW_WID0);
-    compose_control_word (rgb, 0, IPU_CW_WID1);
-    compose_control_word (rgb, 0, IPU_CW_WID2);
-    compose_control_word (rgb, 0, IPU_CW_WID3);
-    compose_control_word (rgb, 0, IPU_CW_DEC_SEL);
+    write_huge (rgb, 0, IPU_CW_BAM);
+    write_huge (rgb, 8 - 1, IPU_CW_NPB);
+    write_huge (rgb, 2, IPU_CW_SAT);
+    write_huge (rgb, 2, IPU_CW_SCC);
+    write_huge (rgb, 0, IPU_CW_OFS0);
+    write_huge (rgb, 0, IPU_CW_OFS1);
+    write_huge (rgb, 0, IPU_CW_OFS2);
+    write_huge (rgb, 0, IPU_CW_OFS3);
+    write_huge (rgb, 0, IPU_CW_WID0);
+    write_huge (rgb, 0, IPU_CW_WID1);
+    write_huge (rgb, 0, IPU_CW_WID2);
+    write_huge (rgb, 0, IPU_CW_WID3);
+    write_huge (rgb, 0, IPU_CW_DEC_SEL);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
     ipu_write_ima (1, 2*channel + 1, rgb, 132);
 
@@ -1375,6 +1459,7 @@ static int cmd_ipu (int argc, const char** argv)
   /* Query */
   if (strcmp (argv[1], "q") == 0) {
     ipu_report_irq ();
+    i2c_report ();
   }
 
   /* Report */
@@ -1428,11 +1513,33 @@ static int cmd_ipu (int argc, const char** argv)
   if (strcmp (argv[1], "p") == 0) {
     i2c_sensor_probe ();
     printf ("sensor width  %d\n", i2c_sensor_read (4));
-//    printf ("sensor height %d\n", i2c_sensor_read (3));
-//    printf ("reprogramming width\n");
-    i2c_sensor_write (4, 720);
+    printf ("sensor height %d\n", i2c_sensor_read (3));
+    printf ("sensor test register 0x%x\n", i2c_sensor_read (0x7f));
+    printf ("sensor noise corr 0x%x\n", i2c_sensor_read (0x70));
+  }
+
+  if (strcmp (argv[1], "w") == 0) {
+    printf ("reprogramming width\n");
+    i2c_sensor_write (4, 640);
     printf ("sensor width  %d\n", i2c_sensor_read (4));
-//    printf ("sensor height %d\n", i2c_sensor_read (3));
+  }
+
+  if (strcmp (argv[1], "cap") == 0) {
+    memset ((void*) rgbFrameA, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameB, 0xa5, CB_FRAME);
+    IPU_CHA_BUF0_RDY |= (1<<7);
+    IPU_CHA_BUF1_RDY |= (1<<7);
+  }
+
+  if (strcmp (argv[1], "test") == 0) {
+    i2c_setup_sensor_i2c ();
+    i2c_setup ();
+    i2c_sensor_write (0x70, 0x14);
+    usleep (1000);
+    i2c_sensor_write (0x7f, (1<<13)|(2<<11));
+    usleep (1000);
+    printf ("0x70 -> %x\n", i2c_sensor_read (0x70));
+    printf ("0x7f -> %x\n", i2c_sensor_read (0x7f));
   }
 
   if (strcmp (argv[1], "i2c") == 0) {

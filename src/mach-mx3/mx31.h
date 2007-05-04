@@ -262,6 +262,9 @@
 #define I2C_I2SR		__REG16(PHYS_I2C + 0x0c)
 #define I2C_I2DR		__REG16(PHYS_I2C + 0x10)
 
+#define I2C2_I2CR		__REG16(PHYS_I2C2 + 0x08)
+#define I2C3_I2CR		__REG16(PHYS_I2C3 + 0x08)
+
 #define I2C_I2CR_IEN		(1<<7)
 #define I2C_I2CR_MSTA		(1<<5)
 #define I2C_I2CR_MTX		(1<<4) /* Master transmit */
@@ -307,5 +310,15 @@
 #define MAX_MGPCR2		__REG(PHYS_MAX + 0xa00)
 #define MAX_MGPCR3		__REG(PHYS_MAX + 0xb00)
 #define MAX_MGPCR4		__REG(PHYS_MAX + 0xc00)
+
+#define M3IF_CTL		__REG(PHYS_M3IF + 0x00)
+#define M3IF_M_L2CC0	0
+#define M3IF_M_L2CC1	1
+#define M3IF_M_MBX	2
+#define M3IF_M_MAX1	3
+#define M3IF_M_SDMA	4
+#define M3IF_M_MPEG4	5
+#define M3IF_M_IPU1	6
+#define M3IF_M_IPU2	7
 
 #endif  /* __MX31_H__ */

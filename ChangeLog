@@ -1,5 +1,11 @@
 2007-05-04  Marc Singer  <elf@zealous.synapsedev.com>
 
+	* src/mach-mx3/ipu.c (cmd_ipu): Fixed the i2c code and added hooks
+	to enable camera test patterns.
+
+	* src/mach-mx3/initialize.c: Substantially enhanced the system
+	setup.  The IPU test code is now able to write to memory.
+
 	* src/apex/cmd-version.c (cmd_version): Added target board
 	description string.
 
