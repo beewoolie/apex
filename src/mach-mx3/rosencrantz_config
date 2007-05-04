@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu May  3 15:23:50 2007
+# Fri May  4 08:38:56 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -18,12 +18,13 @@ CONFIG_ARCH_MX3=y
 #
 # General Setup
 #
+CONFIG_TARGET_DESCRIPTION="ExBiblio Rosencrantz/oPen"
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set
 CONFIG_STARTUP_UART=y
-CONFIG_DEBUG_LL=y
+# CONFIG_DEBUG_LL is not set
 CONFIG_SPINNER=y
 CONFIG_ATAG=y
 # CONFIG_MMU is not set

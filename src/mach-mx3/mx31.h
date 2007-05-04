@@ -81,6 +81,9 @@
 #define PHYS_ROMPATCH		(0x60000000)
 #define PHYS_AVIC		(0x68000000)
 //#define PHYS_IPU		(0x70000000) /* LCD controller */
+#define PHYS_AIPS1		(0x43f00000)
+#define PHYS_AIPS2		(0x53f00000)
+#define PHYS_MAX		(0x43f04000)
 
 #define PHYS_M3IF		(0xb8003000)
 #define PHYS_ESDCTL		(0xb8001000)
@@ -272,5 +275,37 @@
 #define I2C_I2SR_SRW		(1<<2) /* Slave transmit */
 #define I2C_I2SR_IIF		(1<<1) /* Interrupt */
 #define I2C_I2SR_RXAK		(1<<0) /* No ACK received */
+
+#define AIPS1_MPR1		__REG(PHYS_AIPS1 + 0x00)
+#define AIPS1_MPR2		__REG(PHYS_AIPS1 + 0x00)
+#define AIPS1_OPACR1		__REG(PHYS_AIPS1 + 0x40)
+#define AIPS1_OPACR2		__REG(PHYS_AIPS1 + 0x44)
+#define AIPS1_OPACR3		__REG(PHYS_AIPS1 + 0x48)
+#define AIPS1_OPACR4		__REG(PHYS_AIPS1 + 0x4c)
+#define AIPS1_OPACR5		__REG(PHYS_AIPS1 + 0x50)
+
+#define AIPS2_MPR1		__REG(PHYS_AIPS2 + 0x00)
+#define AIPS2_MPR2		__REG(PHYS_AIPS2 + 0x00)
+#define AIPS2_OPACR1		__REG(PHYS_AIPS2 + 0x40)
+#define AIPS2_OPACR2		__REG(PHYS_AIPS2 + 0x44)
+#define AIPS2_OPACR3		__REG(PHYS_AIPS2 + 0x48)
+#define AIPS2_OPACR4		__REG(PHYS_AIPS2 + 0x4c)
+#define AIPS2_OPACR5		__REG(PHYS_AIPS2 + 0x50)
+
+#define MAX_MPR0		__REG(PHYS_MAX + 0x000)
+#define MAX_MPR1		__REG(PHYS_MAX + 0x100)
+#define MAX_MPR2		__REG(PHYS_MAX + 0x200)
+#define MAX_MPR3		__REG(PHYS_MAX + 0x300)
+#define MAX_MPR4		__REG(PHYS_MAX + 0x400)
+#define MAX_SGPCR0		__REG(PHYS_MAX + 0x010)
+#define MAX_SGPCR1		__REG(PHYS_MAX + 0x110)
+#define MAX_SGPCR2		__REG(PHYS_MAX + 0x210)
+#define MAX_SGPCR3		__REG(PHYS_MAX + 0x310)
+#define MAX_SGPCR4		__REG(PHYS_MAX + 0x410)
+#define MAX_MGPCR0		__REG(PHYS_MAX + 0x800)
+#define MAX_MGPCR1		__REG(PHYS_MAX + 0x900)
+#define MAX_MGPCR2		__REG(PHYS_MAX + 0xa00)
+#define MAX_MGPCR3		__REG(PHYS_MAX + 0xb00)
+#define MAX_MGPCR4		__REG(PHYS_MAX + 0xc00)
 
 #endif  /* __MX31_H__ */

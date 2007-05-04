@@ -136,17 +136,56 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
 
+  __REG(PHYS_IPU + 0x00) |= 0x40; /* Enable DI?  From Redboot. */
+
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
   if (CCM_MPCTL != CCM_MPCTL_V && 0) {
-    CCM_CCMR  = 0x074b0b7d;			/* Default value */
-    CCM_PDR0  = CCM_PDR0_V;
-    CCM_PDR1  = 0x49fcfe7f;			/* Default value */
-    CCM_MPCTL = CCM_MPCTL_V;
-    CCM_UPCTL = CCM_UPCTL_V;
-    CCM_COSR  = CCM_COSR_V;
+    CCM_CCMR  &= 0x8;				/* Disable PLL */
+    CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
+    { int i = 0x1000; while (i--) ; }		/* Delay */
+    CCM_CCMR  |= 0x8;				/* Enable PLL */
+    CCM_CCMR  &= ~0x80;				/* MCU from PLL */
+    CCM_PDR0   = CCM_PDR0_V;
+    CCM_MPCTL  = CCM_MPCTL_V;
+    CCM_PDR1   = 0x49fcfe7f;			/* Default value */
+    CCM_UPCTL  = CCM_UPCTL_V;
+    CCM_COSR   = CCM_COSR_V;
   }
+
+  /* Initialize AIPS (AHB to IP bus) */
+  AIPS1_MPR1 = 0x77777777;
+  AIPS1_MPR2 = 0x77777777;
+  AIPS2_MPR1 = 0x77777777;
+  AIPS2_MPR2 = 0x77777777;
+  AIPS1_OPACR1 = 0;
+  AIPS1_OPACR2 = 0;
+  AIPS1_OPACR3 = 0;
+  AIPS1_OPACR4 = 0;
+  AIPS1_OPACR5 &= ~0xff000000;
+  AIPS2_OPACR1 = 0;
+  AIPS2_OPACR2 = 0;
+  AIPS2_OPACR3 = 0;
+  AIPS2_OPACR4 = 0;
+  AIPS2_OPACR5 &= ~0xff000000;
+
+  /* Initialize MAX (Multi-layer AHB Crossbar Switch) */
+  MAX_MPR0 = 0x00302154;
+  MAX_MPR1 = 0x00302154;
+  MAX_MPR2 = 0x00302154;
+  MAX_MPR3 = 0x00302154;
+  MAX_MPR4 = 0x00302154;
+  MAX_SGPCR0 = 0x10;
+  MAX_SGPCR1 = 0x10;
+  MAX_SGPCR2 = 0x10;
+  MAX_SGPCR3 = 0x10;
+  MAX_SGPCR4 = 0x10;
+  MAX_MGPCR0 = 0;
+  MAX_MGPCR1 = 0;
+  MAX_MGPCR2 = 0;
+  MAX_MGPCR3 = 0;
+  MAX_MGPCR4 = 0;
 
   //WM32  0x53FC0000 0x040                  ; setup ipu
 

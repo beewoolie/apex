@@ -119,7 +119,19 @@ void __naked __section (.reset) reset (void)
      It's also not clear how much of this code needs to be
      architecture specific.
 
+     The ARMv6 implementation of this function has the MMU disable
+     after the flushes/invalidates.  I think that the ARMv4 (or
+     Xscale) versions may put the disable first.
+
   */
+
+  CLEANALL_DCACHE;
+  INVALIDATE_ICACHE;
+  INVALIDATE_DCACHE;
+  INVALIDATE_TLB;
+  DRAIN_WRITE_BUFFER;
+  CP15_WAIT;
+  __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
 
   {
     unsigned long l;
@@ -128,18 +140,14 @@ void __naked __section (.reset) reset (void)
 		    "bic %0, %0, #(1<<1)\n\t"		/* Alignment */
 		    "bic %0, %0, #(1<<2)\n\t"		/* DCache */
 		    "bic %0, %0, #(1<<12)\n\t"		/* ICache */
-		    "mcr p15, 0, %0, c1, c0, 0\n\t" : "=&r" (l)
+		    "mcr p15, 0, %0, c1, c0, 0\n\t"
+		    "nop\n\t"
+		    "nop\n\t"
+		    "nop\n\t"
+		    : "=&r" (l)
 		    );
     CP15_WAIT;
   }
-
-  CLEANALL_DCACHE;
-  DRAIN_WRITE_BUFFER;
-  INVALIDATE_ICACHE;
-  INVALIDATE_DCACHE;
-  INVALIDATE_TLB;
-  CP15_WAIT;
-  __asm volatile ("mcr p15, 0, %0, c2, c0" : : "r" (0)); /* Clear ttbl */
 
 #endif
 

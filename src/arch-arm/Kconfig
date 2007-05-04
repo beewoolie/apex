@@ -111,6 +111,14 @@ config THUMB
 
 menu "General Setup"
 
+config TARGET_DESCRIPTION
+	string "Short description of target"
+	default "Unspecified target"
+	help
+	  This option defines a string label for the system to be
+	  shown with the APEX version information.  It is a
+	  convenience feature to help identify the build of APEX.
+
 config CROSS_COMPILE
 	string "Cross compiler prefix"
 	default "/usr/arm-linux/gcc3/arm-linux-" if ARCH_LH7952X

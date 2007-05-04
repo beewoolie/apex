@@ -1140,7 +1140,7 @@ static void ipu_setup (void)
 
   /* Configure common parameters */
 
-  IPU_CONF	= 0;				/* Setting endian-ness only */
+  IPU_CONF	&= ~(1<<8);			/* Setting endian-ness only */
   IDMAC_CONF	= IDMAC_CONF_SINGLE_AHB_M_EN;
 
   /* SYSTEM Configure sensor interface */
@@ -1267,7 +1267,7 @@ static void ipu_setup (void)
   /* Enabling tasks */
 
   IDMAC_CHA_EN |= 1<<channel;	/* Enable channel 7 */
-  IPU_CONF	= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
+  IPU_CONF     |= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
 
   /* Resuming tasks */
 
