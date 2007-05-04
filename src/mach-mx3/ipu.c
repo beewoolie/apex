@@ -69,7 +69,7 @@
 //#define MODE_RGB
 
 #if defined (MODE_GENERIC)
-# define FRAME_WIDTH		(752)
+# define FRAME_WIDTH		(640)
 # define FRAME_HEIGHT		(480)
 # define FRAME_WIDTH_DIVISOR	(1)
 #endif
@@ -230,6 +230,11 @@
 #define IC_CONF_PRPENC_CSC1		(1<<1)
 #define IC_CONF_PRPENC_EN		(1<<0)
 
+#define IPU_INT_STAT3_CSI_EOF		(1<<6)
+#define IPU_INT_STAT3_CSI_NF		(1<<5)
+
+#define IPU_INT_STAT5_BAYER_FRM_LOST_ERR (1<<11)
+
 #define CB_FRAME			(1024*1024)
 static char* rgbFrameA;
 static char* rgbFrameB;
@@ -325,6 +330,89 @@ static const char* describe_pfs (int v)
   default:
     return "unknown";
   }
+}
+
+static const char* describe_ic_conf (unsigned long v)
+{
+  static char sz[80];
+
+  if (v & IC_CONF_CSI_MEM_WR_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "CSI_MEM_WR_EN");
+  if (v & IC_CONF_CSI_RWS_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "CSI_RWS_EN");
+  if (v & IC_CONF_IC_KEY_COLOR_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "IC_KEY_COLOR_EN");
+  if (v & IC_CONF_IC_GLB_LOC_A)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "IC_GLB_LOC_A");
+  if (v & IC_CONF_PP_PROT_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PP_PROT_EN");
+  if (v & IC_CONF_PP_CMB)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PP_CMB");
+  if (v & IC_CONF_PP_CSC2)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PP_CSC2");
+  if (v & IC_CONF_PP_CSC1)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PP_CSC1");
+  if (v & IC_CONF_PP_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PP_EN");
+  if (v & IC_CONF_PRPVF_ROT_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPVF_ROT_EN");
+  if (v & IC_CONF_PRPVF_CMB)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPVF_CMB");
+  if (v & IC_CONF_PRPVF_CSC2)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPVF_CSC2");
+  if (v & IC_CONF_PRPVF_CSC1)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPVF_CSC1");
+  if (v & IC_CONF_PRPVF_PRPVF_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPVF_PRPVF_EN");
+  if (v & IC_CONF_PRPENC_ROT_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPENC_ROT_EN");
+  if (v & IC_CONF_PRPENC_CSC1)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPENC_CSC1");
+  if (v & IC_CONF_PRPENC_EN)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "PRPENC_EN");
+  return sz;
+}
+
+const char* describe_stat3 (unsigned long v)
+{
+  static char sz[80];
+  *sz = 0;
+
+  if (v & IPU_INT_STAT3_CSI_EOF)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "CSI_EOF");
+  if (v & IPU_INT_STAT3_CSI_NF)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "CSI_NF");
+  return sz;
+}
+
+const char* describe_stat5 (unsigned long v)
+{
+  static char sz[80];
+  *sz = 0;
+
+  if (v & IPU_INT_STAT5_BAYER_FRM_LOST_ERR)
+    snprintf (sz + strlen (sz), sizeof (sz) - strlen (sz),
+	      " %s", "BAYER_FRM_LOST_ERR");
+  return sz;
 }
 
 /* compose_control_word
@@ -525,25 +613,32 @@ static void ipu_report (void)
   printf ("IPU_INT_CTRL4        0x%08lx %s\n",
 	  IPU_INT_CTRL4, describe_channels (IPU_INT_CTRL4));
   printf ("IPU_INT_CTRL5        0x%08lx\n", IPU_INT_CTRL5);
-  printf ("IPU_INT_STAT1        0x%08lx %s\n",
+  printf ("IPU_INT_STAT1 EOF    0x%08lx %s\n",
 	  IPU_INT_STAT1, describe_channels (IPU_INT_STAT1));
-  printf ("IPU_INT_STAT2        0x%08lx %s\n",
+  printf ("IPU_INT_STAT2 NFACK  0x%08lx %s\n",
 	  IPU_INT_STAT2, describe_channels (IPU_INT_STAT2));
-  printf ("IPU_INT_STAT3        0x%08lx\n", IPU_INT_STAT3);
-  printf ("IPU_INT_STAT4        0x%08lx %s\n",
+  printf ("IPU_INT_STAT3        0x%08lx %s\n", IPU_INT_STAT3,
+	  describe_stat3 (IPU_INT_STAT3));
+  printf ("IPU_INT_STAT4 EOFERR 0x%08lx %s\n",
 	  IPU_INT_STAT4, describe_channels (IPU_INT_STAT4));
-  printf ("IPU_INT_STAT5        0x%08lx\n", IPU_INT_STAT5);
+  printf ("IPU_INT_STAT5        0x%08lx %s\n", IPU_INT_STAT5,
+	  describe_stat5 (IPU_INT_STAT5));
   printf ("IPU_BRK_CTRL1        0x%08lx\n", IPU_BRK_CTRL1);
   printf ("IPU_BRK_CTRL2        0x%08lx\n", IPU_BRK_CTRL2);
   printf ("IPU_BRK_STAT         0x%08lx\n", IPU_BRK_STAT);
   printf ("IPU_DIAGB_CTRL       0x%08lx\n", IPU_DIAGB_CTRL);
-  printf ("CSI_SENS_CONF        0x%08lx\n", CSI_SENS_CONF);
+  printf ("CSI_SENS_CONF        0x%08lx%s%s %*.*s %d bpp\n",
+	  CSI_SENS_CONF,
+	  (CSI_SENS_CONF & (1<<15)) ? " ext_vsync" : " int_vsync",
+	  (CSI_SENS_CONF & (1<<7)) ? " hsp_clk" : " sensb_sens_clk",
+	  6, 6, "RGBYUVReservYUV422Generc" + ((CSI_SENS_CONF >> 8) & 3)*6,
+	  "\x04\x08\x0a\x0f"[(CSI_SENS_CONF >> 10) & 3]);
   printf ("CSI_SENS_FRM_SIZE    0x%08lx (%ld x %ld)\n", CSI_SENS_FRM_SIZE,
-	  (CSI_SENS_FRM_SIZE >> 0) & 0xfff,
-	  (CSI_SENS_FRM_SIZE >> 16) & 0xfff);
+	  ((CSI_SENS_FRM_SIZE >> 0) & 0xfff) + 1,
+	  ((CSI_SENS_FRM_SIZE >> 16) & 0xfff) + 1);
   printf ("CSI_ACT_FRM_SIZE     0x%08lx (%ld x %ld)\n", CSI_ACT_FRM_SIZE,
-	  (CSI_ACT_FRM_SIZE >> 0) & 0xfff,
-	  (CSI_ACT_FRM_SIZE >> 16) & 0xfff);
+	  ((CSI_ACT_FRM_SIZE >> 0) & 0xfff) + 1,
+	  ((CSI_ACT_FRM_SIZE >> 16) & 0xfff) + 1);
   printf ("CSI_OUT_FRM_CTRL     0x%08lx\n", CSI_OUT_FRM_CTRL);
   printf ("CSI_TST_CTRL         0x%08lx\n", CSI_TST_CTRL);
   printf ("CSI_CCIR_CODE1       0x%08lx\n", CSI_CCIR_CODE1);
@@ -551,7 +646,8 @@ static void ipu_report (void)
   printf ("CSI_CCIR_CODE3       0x%08lx\n", CSI_CCIR_CODE3);
   printf ("CSI_FLASH_STROBE1    0x%08lx\n", CSI_FLASH_STROBE1);
   printf ("CSI_FLASH_STROBE2    0x%08lx\n", CSI_FLASH_STROBE2);
-  printf ("IC_CONF              0x%08lx\n", IC_CONF);
+  printf ("IC_CONF              0x%08lx%s\n", IC_CONF,
+	  describe_ic_conf (IC_CONF));
   printf ("IC_PRP_ENC_RSC       0x%08lx\n", IC_PRP_ENC_RSC);
   printf ("IC_PRP_VF_RSC        0x%08lx\n", IC_PRP_VF_RSC);
   printf ("IC_PP_RSC            0x%08lx\n", IC_PP_RSC);
@@ -570,7 +666,8 @@ static void ipu_report (void)
     unsigned v = IDMAC_CHA_EN | IDMAC_CHA_PRI | IDMAC_CHA_BUSY
       | IPU_CHA_BUF0_RDY | IPU_CHA_BUF1_RDY
       | IPU_CHA_DB_MODE_SEL | IPU_CHA_CUR_BUF
-      | (1<<7);
+//      | (1<<7)
+      ;
     for (i = 0; i < 32; ++i) {
       int interleaved;
       if (v & (1<<i)) {
@@ -945,7 +1042,7 @@ static int i2c_sensor_read (int reg)
   return (rgb[0] << 8) | rgb[1];
 }
 
-static int i2c_sensor_write (int reg, int value)
+static void i2c_sensor_write (int reg, int value)
 {
   char rgb[] = { reg & 0xff, (value >> 8) & 0xff,
 			     (value >> 0) & 0xff };
@@ -1039,6 +1136,8 @@ static void ipu_setup_sensor (void)
 
 static void ipu_setup (void)
 {
+  int channel = 7;
+
   /* Configure common parameters */
 
   IPU_CONF	= 0;				/* Setting endian-ness only */
@@ -1071,9 +1170,19 @@ static void ipu_setup (void)
     | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH)
     ;
 
+#if defined (MODE_GENERIC)
+  IC_PRP_ENC_RSC = 0x20002000;	/* 100% scaling */
+#endif
+
 				/* IC Task options */
   IC_CONF = 0
+#if defined (MODE_GENERIC)
     | IC_CONF_CSI_MEM_WR_EN	/* Allow direct write from CSI to memory */
+//    | IC_CONF_CSI_RWS_EN	/* Raw sensor mode */
+//    | IC_CONF_PRPENC_EN		/* Enable the encoder */
+#else
+    | IC_CONF_CSI_MEM_WR_EN	/* Allow direct write from CSI to memory */
+#endif
     ;
 
 	/* Initialize IDMAC register file */
@@ -1102,10 +1211,10 @@ static void ipu_setup (void)
 			  IPU_CW_FW);
     compose_control_word (rgb, FRAME_HEIGHT - 1, IPU_CW_FH);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
-    ipu_write_ima (1, 2*7 + 0, rgb, 132);
+    ipu_write_ima (1, 2*channel + 0, rgb, 132);
 
 //    memset (rgb, 0, sizeof (rgb));
-//    ipu_read_ima (1, 2*7 + 0, rgb, 132);
+//    ipu_read_ima (1, 2*channel + 0, rgb, 132);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
 
     memset (rgb, 0, sizeof (rgb));
@@ -1139,17 +1248,17 @@ static void ipu_setup (void)
     compose_control_word (rgb, 0, IPU_CW_WID3);
     compose_control_word (rgb, 0, IPU_CW_DEC_SEL);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
-    ipu_write_ima (1, 2*7 + 1, rgb, 132);
+    ipu_write_ima (1, 2*channel + 1, rgb, 132);
 
 //    memset (rgb, 0, sizeof (rgb));
-//    ipu_read_ima (1, 2*7 + 1, rgb, 132);
+//    ipu_read_ima (1, 2*channel + 1, rgb, 132);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
   }
 
-  IDMAC_CHA_PRI |= 1<<7;	/* Channel 7 is high priority */
-  IPU_CHA_DB_MODE_SEL |= 1<<7;
-  IPU_CHA_BUF0_RDY |= 1<<7;
-  IPU_CHA_BUF1_RDY |= 1<<7;
+  IDMAC_CHA_PRI |= 1<<channel;	/* This channel is high priority */
+  IPU_CHA_DB_MODE_SEL |= 1<<channel;
+  IPU_CHA_BUF0_RDY |= 1<<channel;
+  IPU_CHA_BUF1_RDY |= 1<<channel;
 
   /* Initialize sensors */
 
@@ -1157,7 +1266,7 @@ static void ipu_setup (void)
 
   /* Enabling tasks */
 
-  IDMAC_CHA_EN |= 1<<7;	/* Enable channel 7 */
+  IDMAC_CHA_EN |= 1<<channel;	/* Enable channel 7 */
   IPU_CONF	= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
 
   /* Resuming tasks */
@@ -1202,6 +1311,7 @@ static void ipu_setup_diagb (void)
   IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_RTS2, 3);		/* IPU_DIAGB[30] */
   IOMUX_PIN_CONFIG_ALT_OUT (MX31_PIN_CTS2, 3);		/* IPU_DIAGB[31] */
 
+  IPU_CONF |= (1<<7);		/* DU_EN */
   IPU_DIAGB_CTRL = 0x1;		/* CSI module monitoring */
 
   printf ("[5] SFS3  0x%x 0x%lx %p\n",
@@ -1221,7 +1331,12 @@ static void csi_time_frames (void)
   while (timer_delta (time, timer_read ()) < 1000) {
     IPU_INT_STAT3 = (1<<6);	/* CSI_EOF */
     while (!(IPU_INT_STAT3 & (1<<6)))
-      ;
+      if (timer_delta (time, timer_read ()) > 2000) {
+	printf ("  timeout (%d frames read)\n", c);
+	return;
+      }
+    if (c == 0)
+      time = timer_read ();	/* Reset timer so we get a full second */
     ++c;
   }
 
@@ -1342,5 +1457,14 @@ static __command struct command_d c_ipu = {
   COMMAND_HELP(
 "ipu\n"
 "  IPU tests.\n"
+"  i		initialize\n"
+"  diag		enable DIAGB\n"
+"  q		query interrupts\n"
+"  r		report all registers\n"
+"  0		zero IDMAC control register\n"
+"  t		time frames per second\n"
+"  ir		IDMAC register read/dump\n"
+"  p		probe\n"
+"  i2c		i2c setup/query\n"
   )
 };

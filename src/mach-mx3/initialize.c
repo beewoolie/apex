@@ -139,7 +139,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
-  if (CCM_MPCTL != CCM_MPCTL_V) {
+  if (CCM_MPCTL != CCM_MPCTL_V && 0) {
     CCM_CCMR  = 0x074b0b7d;			/* Default value */
     CCM_PDR0  = CCM_PDR0_V;
     CCM_PDR1  = 0x49fcfe7f;			/* Default value */
