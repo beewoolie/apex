@@ -69,8 +69,8 @@
 //#define MODE_RGB
 
 #if defined (MODE_GENERIC)
-# define FRAME_WIDTH		(640)
-# define FRAME_HEIGHT		(480)
+# define FRAME_WIDTH		(720)
+# define FRAME_HEIGHT		(176)
 # define FRAME_WIDTH_DIVISOR	(1)
 #endif
 
@@ -459,6 +459,7 @@ const char* describe_i2cr (int v)
   return sz;
 }
 
+
 /* write_huge
 
    writes the given value to the very long control word buffer.  This
@@ -468,14 +469,14 @@ const char* describe_i2cr (int v)
 
 static void write_huge (char* rgb, unsigned long value, int shift, int width)
 {
-  int index = 0;
+  //  int index = 0;
 //  printf ("compose 0x%08lx %3d %2d\n", value, shift, width);
 
 	/* Eliminate leader */
-  while (shift >= 8) {
-    ++rgb;
-    shift -= 8;
-    ++index;
+  if (shift/8) {
+    rgb += shift/8;
+    shift %= 8;
+//    index += c;
   }
 
   while (width > 0) {
@@ -487,11 +488,12 @@ static void write_huge (char* rgb, unsigned long value, int shift, int width)
 //    printf ("writing 0x%08lx [%2d] 0x%02lx, mask 0x%02lx"
 //	    " with shift %d (0x%02lx)\n",
 //	    value, index, value & mask, mask, shift, mask << shift);
-    *rgb++ |= (value & mask) << shift;
+    *rgb = (*rgb & ~(mask << shift)) | (value & mask) << shift;
+    ++rgb;
     width -= avail;
     value >>= avail;
     shift = 0;			/* Always zero after first byte */
-    ++index;
+//    ++index;
   }
 }
 
@@ -854,7 +856,7 @@ static void i2c_report (void)
 
 static int i2c_stop (void)
 {
-  unsigned long time;
+//  unsigned long time;
   ENTRY;
 
 //  printf ("--\n");
@@ -988,8 +990,8 @@ static int i2c_start (char address, int reading)
 static int i2c_write (int address, char* rgb, int cb)
 {
   int i;
-  int continuing = (address & ADDR_CONTINUE) != 0;
-  int restart    = (address & ADDR_RESTART) != 0;
+//  int continuing = (address & ADDR_CONTINUE) != 0;
+//  int restart    = (address & ADDR_RESTART) != 0;
 
   ENTRY;
 
@@ -1076,9 +1078,9 @@ static int i2c_read (int address, char* rgb, int cb)
 //    printf (" <<< i %d cb %d  cr %s\n", i, cb, describe_i2cr (I2C_I2CR));
 //    I2C_I2CR = cr;
     if (i == 0) {
-      char b = I2C_I2DR;
+//      char b = I2C_I2DR;
 //      printf (" <== 0x%x (discard)\n", b);
-//      I2C_I2DR;			/* Dummy read after address cycle */
+      I2C_I2DR;			/* Dummy read after address cycle */
     }
     sr = i2c_wait_for_interrupt ();
 
@@ -1519,9 +1521,13 @@ static int cmd_ipu (int argc, const char** argv)
   }
 
   if (strcmp (argv[1], "w") == 0) {
-    printf ("reprogramming width\n");
-    i2c_sensor_write (4, 640);
+    printf ("reprogramming to %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
+    i2c_sensor_write (4, FRAME_WIDTH);
+    usleep (1000);
+    i2c_sensor_write (3, FRAME_HEIGHT);
+    usleep (1000);
     printf ("sensor width  %d\n", i2c_sensor_read (4));
+    printf ("sensor height  %d\n", i2c_sensor_read (3));
   }
 
   if (strcmp (argv[1], "cap") == 0) {
