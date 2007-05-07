@@ -54,6 +54,8 @@
 #define NAND_DATARAM0		(NAND_BASE + 0x0200*MULTIPLIER)
 #define NAND_DATARAM1		(NAND_BASE + 0x0800*MULTIPLIER)
 
+#define PAGES_PER_BLOCK		(64)
+
 #define REG(x)			__REG16 (NAND_BASE + (x)*MULTIPLIER)
 
 #define NAND_OP			REG(0x0000)
@@ -90,6 +92,8 @@
 #define NAND_CMD_RESET_ALL	0xf3
 #define NAND_CMD_UNLOCK		0x23
 #define NAND_CMD_UNLOCKALL	0x27
+#define NAND_CMD_BLOCKERASE	0x94
+
 
 #define NAND_STATUS_TO		(1<<0)
 #define NAND_STATUS_PLANE2CURR	(1<<1)
@@ -113,7 +117,7 @@
 #define DBS(x)			(((x)&1)<<15)
 #define FPA_FSA(x)		(x)
 #define BSA_BSC(d,s,c)		(((d)?(1<<11):0)|(((s)&0x7)<<8)|((c)&0x3))
-#define SBA(x)			(((x)/64)&0x3ff)
+#define SBA(x)			(((x)/PAGES_PER_BLOCK)&0x3ff)
 
 #define IS_ERROR		(NAND_STATUS & NAND_STATUS_ERROR)
 #define IS_BUSY			(!(NAND_INTR & NAND_INTR_READY))
@@ -142,6 +146,7 @@ struct onenand_chip {
   unsigned short id[3];		/* Manufacturer, device, version */
   int technology;
   int page_size;
+  int erase_size;
   int boot_size;
   int cBuffers;
   int unlocked;			/* Blocks have been unlocked */
@@ -175,6 +180,21 @@ static char* describe_status (int status)
 #undef _
 
   return sz;
+}
+
+static void onenand_unlock (void)
+{
+  if (chip.unlocked)
+    return;
+
+  NAND_SA_1 = DFS_FBA (0);
+  NAND_SA_2 = DBS (0);
+  NAND_SBA  = SBA (0);
+  NAND_INTR = 0;
+  NAND_CMD = NAND_CMD_UNLOCKALL;
+  while (IS_BUSY)
+    ;
+  chip.unlocked = 1;
 }
 
 static int cmd_onenand (int argc, const char** argv)
@@ -214,9 +234,9 @@ static int cmd_onenand (int argc, const char** argv)
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "load requires page number");
     page = simple_strtoul (argv[2], NULL, 0);
-    NAND_SA_1 = DFS_FBA (page/64);
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
     NAND_SA_2 = DBS (0);
-    NAND_SA_8 = FPA_FSA ((page%64)*4);
+    NAND_SA_8 = FPA_FSA ((page%PAGES_PER_BLOCK)*4);
     NAND_SB = BSA_BSC (1,0,4);
     NAND_INTR = 0;
     NAND_CMD = NAND_CMD_LOAD;
@@ -232,9 +252,9 @@ static int cmd_onenand (int argc, const char** argv)
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "load requires page number");
     page = simple_strtoul (argv[2], NULL, 0);
-    NAND_SA_1 = DFS_FBA (page/64);
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
     NAND_SA_2 = DBS (0);
-    NAND_SA_8 = FPA_FSA ((page%64)*4);
+    NAND_SA_8 = FPA_FSA ((page%PAGES_PER_BLOCK)*4);
     NAND_SB = BSA_BSC (1,0,4);
     NAND_INTR = 0;
     NAND_CMD = NAND_CMD_PROGRAM;
@@ -249,7 +269,7 @@ static int cmd_onenand (int argc, const char** argv)
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "unlock requires page number");
     page = simple_strtoul (argv[2], NULL, 0);
-    NAND_SA_1 = DFS_FBA (page/64);
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
     NAND_SA_2 = DBS (0);
     NAND_SBA  = SBA (page);
     NAND_INTR = 0;
@@ -304,6 +324,7 @@ static void onenand_init (void)
   chip.id[2] = NAND_VER_ID;
   chip.technology = NAND_TECH_INFO;
   chip.page_size = NAND_DATA_SIZE;
+  chip.erase_size = chip.page_size*PAGES_PER_BLOCK;
   chip.boot_size = NAND_BOOT_SIZE;
   chip.cBuffers = NAND_BUFF_CNT;
 }
@@ -340,9 +361,9 @@ static ssize_t onenand_read (struct descriptor_d* d, void* pv, size_t cb)
     cb -= available;
     cbRead += available;
 
-    NAND_SA_1 = DFS_FBA (page/64);
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
     NAND_SA_2 = DBS (0);
-    NAND_SA_8 = FPA_FSA ((page % 64)*4);
+    NAND_SA_8 = FPA_FSA ((page % PAGES_PER_BLOCK)*4);
     NAND_SB   = BSA_BSC (1, 0, 4);
     NAND_INTR = 0;
     NAND_CMD = NAND_CMD_LOAD;
@@ -373,16 +394,7 @@ static ssize_t onenand_write (struct descriptor_d* d,
 
   SPINNER_STEP;
 
-  if (!chip.unlocked) {
-    NAND_SA_1 = DFS_FBA (0);
-    NAND_SA_2 = DBS (0);
-    NAND_SBA  = SBA (0);
-    NAND_INTR = 0;
-    NAND_CMD = NAND_CMD_UNLOCKALL;
-    while (IS_BUSY)
-      ;
-    chip.unlocked = 1;
-  }
+  onenand_unlock ();
 
   while (cb) {
     unsigned long page  = (d->start + d->index)/chip.page_size;
@@ -394,9 +406,9 @@ static ssize_t onenand_write (struct descriptor_d* d,
 
 		/* Prepare OneNAND data buffer for partial write */
     if (available != chip.page_size) {
-      NAND_SA_1 = DFS_FBA (page/64);
+      NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
       NAND_SA_2 = DBS (0);
-      NAND_SA_8 = FPA_FSA ((page%64)*4);
+      NAND_SA_8 = FPA_FSA ((page%PAGES_PER_BLOCK)*4);
       NAND_SB = BSA_BSC (1,0,4);
       NAND_INTR = 0;
       NAND_CMD = NAND_CMD_LOAD;
@@ -406,9 +418,9 @@ static ssize_t onenand_write (struct descriptor_d* d,
 
     memcpy ((char*) NAND_DATARAM0 + index, pv, available);
 
-    NAND_SA_1 = DFS_FBA (page/64);
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
     NAND_SA_2 = DBS (0);
-    NAND_SA_8 = FPA_FSA ((page%64)*4);
+    NAND_SA_8 = FPA_FSA ((page%PAGES_PER_BLOCK)*4);
     NAND_SB = BSA_BSC (1,0,4);
     NAND_INTR = 0;
     NAND_CMD = NAND_CMD_PROGRAM;
@@ -437,12 +449,10 @@ static ssize_t onenand_write (struct descriptor_d* d,
 
 static void onenand_erase (struct descriptor_d* d, size_t cb)
 {
-#if 0
-  if (!chip)
+  if (!chip.id[0])
     return;
 
-  NAND_CS_ENABLE;
-  NAND_WP_DISABLE;
+  onenand_unlock ();
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
@@ -450,25 +460,24 @@ static void onenand_erase (struct descriptor_d* d, size_t cb)
   SPINNER_STEP;
 
   do {
-    unsigned long page = (d->start + d->index)/chip->page_size;
+    unsigned long page = (d->start + d->index)/chip.page_size;
     unsigned long available
-      = chip->erase_size - ((d->start + d->index) & (chip->erase_size - 1));
+      = chip.erase_size - ((d->start + d->index) & (chip.erase_size - 1));
 
-    NAND_CLE = NAND_Erase;
-    NAND_ALE = ( page & 0xff);
-    NAND_ALE = ((page >> 8) & 0xff);
-#if NAND_ADDRESSES > 2
-    NAND_ALE = ((page >> 16) & 0xff);
-#endif
-    NAND_CLE = NAND_EraseConfirm;
-
-    wait_on_busy ();
+    NAND_SA_1 = DFS_FBA (page/PAGES_PER_BLOCK);
+    NAND_SA_2 = DBS (0);
+//    NAND_SA_8 = FPA_FSA ((page%PAGES_PER_BLOCK)*4);
+//    NAND_SB = BSA_BSC (1,0,4);
+    NAND_INTR = 0;
+    NAND_CMD = NAND_CMD_BLOCKERASE;
+    while (IS_BUSY)
+      ;
 
     SPINNER_STEP;
 
-    NAND_CLE = NAND_Status;
-    if (NAND_DATA & NAND_Fail) {
-      printf ("Erase failed at page %ld\n", page);
+    if (NAND_STATUS & NAND_STATUS_ERROR) {
+      printf ("Erase failed at page %ld %s\n", page,
+	      describe_status (NAND_STATUS));
       goto exit;
     }
 
@@ -483,9 +492,7 @@ static void onenand_erase (struct descriptor_d* d, size_t cb)
   } while (cb > 0);
 
  exit:
-  NAND_WP_ENABLE;
-  NAND_CS_DISABLE;
-#endif
+  ;
 }
 
 #if !defined (CONFIG_SMALL)
@@ -497,10 +504,10 @@ static void onenand_report (void)
   if (!chip.id[0])
     return;
 
-  printf (" onenand: %d MiB total (%s), %d B page\n",
+  printf (" onenand: %d MiB total (%s), %d KiB erase, %d B page\n",
 	  (1<<(((chip.id[1] >> 4) & 0xf)))*128/8,
 	  (chip.id[1] & (1<<3)) ? "DDP" : "Single",
-	  chip.page_size);
+	  chip.erase_size/1024, chip.page_size);
 
 #if 0
 	  chip->total_size/(1024*1024), chip->erase_size/1024,
