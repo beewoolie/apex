@@ -198,9 +198,11 @@ static void nand_init (void)
   printf ("NAND flash ");
 
   if (chip)
-    printf (" %ld MiB total, %d KiB erase, %d B page\n",
+    printf (" %ld MiB total, %d KiB erase, %d B page"
+	    " (0x%02x/0x%02x/0x%02x/0x%02x)\n",
 	    chip->total_size/(1024*1024), chip->erase_size/1024,
-	    chip->page_size);
+	    chip->page_size,
+	    id[0], id[1], id[2], id[3]);
   else
     printf (" unknown 0x%02x/0x%02x/0x%02x/0x%02x\n",
 	    id[0], id[1], id[2], id[3]);

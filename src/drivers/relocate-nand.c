@@ -84,7 +84,7 @@ void __naked __section (.bootstrap) relocate_apex_nand (void)
 		    "bl reloc_nand\n\t"
 	     "reloc_nand: subs %1, %1, lr\n\t"
 	     ".globl reloc_nand\n\t"
-		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
+//		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
 		    "add %0, %0, %1\n\t"   /* Adjust lr for function return */
 		    : "=r" (lr),
 		      "+r" (offset)

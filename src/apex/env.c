@@ -134,26 +134,33 @@ static __env struct env_d e_startup = {
 
 #if defined (CONFIG_ENV_REGION)
 extern struct descriptor_d env_d;
+#endif
 
-# if defined (CONFIG_ENV_LINK)
+#if defined (CONFIG_ENV_LINK)
 
 extern char APEX_ENV_START;
 extern char APEX_ENV_END;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 
-static __section (.envlink) struct env_link env_link = {
+__section (.envlink) struct env_link env_link = {
   .magic	= ENV_LINK_MAGIC,
   .apexrelease	= APEXRELEASE,
   .apex_start	= &APEX_VMA_COPY_START, /* Immutable portion of APEX */
   .apex_end	= &APEX_VMA_COPY_END,
-  .env_start	= &APEX_ENV_START,
+  .env_start	= &APEX_ENV_START,	/* Environment variable def's */
   .env_end	= &APEX_ENV_END,
   .env_link	= &env_link,
   .env_d_size	= sizeof (struct env_d),
+#if defined (CONFIG_ENV_REGION)
   .region	= CONFIG_ENV_REGION,
+#endif
  };
 
+#endif
+
+#if defined (CONFIG_ENV_REGION)
+# if defined (CONFIG_ENV_LINK)
 #  define ENV_REGION_STRING env_link.region
 # else
 #  define ENV_REGION_STRING CONFIG_ENV_REGION

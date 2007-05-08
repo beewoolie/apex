@@ -133,8 +133,8 @@ config DRIVER_NAND
 	depends on USES_NAND=y
 	default y
 	help
-	  This driver implements a NAND driver based on a
-	  mach-specific header.
+	  This driver supports the standard NAND flash interface based
+	  on a mach-specific header.
 
 choice
 	prompt "NAND Flash Type"
@@ -152,6 +152,31 @@ config DRIVER_NAND_TYPE_ST
 	  Implements ST compatible command set.
 
 endchoice	
+
+config DRIVER_ONENAND
+	bool "OneNAND Flash"
+	default n
+	help
+	  This driver supports OneNAND using configuration options
+	  only.
+
+config DRIVER_ONENAND_BASE
+	hex "OneNAND Flash Base Address"
+	depends on DRIVER_ONENAND
+	default 0x0
+	help
+	  This is the base address for the OneNAND device.  Typically,
+	  OneNAND is mapped to the system address space like a static
+	  memory device.
+
+config DRIVER_ONENAND_MULTIPLIER
+	int "OneNAND Flash Multiplier"
+	depends on DRIVER_ONENAND
+	default 2
+	help
+	  This is the multiplier for the addresses used by the flash
+	  device.  Typical implementations use a multipler of 2
+	  because the data bus is 16 bits wide.
 
 config DRIVER_NAND_ADDRESS_BYTES
 	int "Address bytes of underlying NAND device"

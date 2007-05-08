@@ -27,6 +27,13 @@
    Hardware initializations.  Some initialization may be left to
    drivers, such as the serial interface initialization.
 
+   o Size.  The setup for the MX31 is substantially more verbose than
+     other platforms we've handled.  With OneNAND boot, there is only
+     1K of code available before we can relocate to SDRAM (unless we
+     do some other heroics that I'd prefer to avoid.  So there is some
+     pressure on the initialize_bootstrap() and relocate() functions
+     to be brief.
+
 */
 
 #include <config.h>
@@ -134,61 +141,38 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 
-  __REG (PHYS_L2CC + 0x08) &= ~1; /* Disable L2CC, should be redundant */
+  __REG (PHYS_L2CC + 0x08) = 0; /* Disable L2CC, should be redundant */
 
   //  __REG(PHYS_IPU + 0x00) |= 0x40; /* Enable DI?  From Redboot. */
 
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
+#if 1
+  /* Reset clock controls.  This seems to make APEX behave better when
+     we're being executed after the clocks and memory have been
+     initialized. *** FIXME: we need to determine exactly what needs
+     to be done here so that we can remove cruft. */
+//  CCM_COSR  = 0x00000280;
+//  CCM_PDR1  = 0x49fcfe7f;
+
+//  CCM_MPCTL = 0x04001800;
+//  CCM_PDR0  = 0xff870b48;
+
 //  if (1 || (CCM_MPCTL != CCM_MPCTL_V && 0)) {
-    CCM_CCMR  &= 0x8;				/* Disable PLL */
-    CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
-    { int i = 0x1000; while (i--) ; }		/* Delay */
-    CCM_CCMR  |= 0x8;				/* Enable PLL */
-    CCM_CCMR  &= ~0x80;				/* MCU from PLL */
-    CCM_PDR0   = CCM_PDR0_V;
-    CCM_MPCTL  = CCM_MPCTL_V;
-    CCM_PDR1   = 0x49fcfe7f;			/* Default value */
-    CCM_UPCTL  = CCM_UPCTL_V;
-    CCM_COSR   = CCM_COSR_V;
+  CCM_CCMR  |=  (1<<7);		/* Bypass PLL clock */
+  CCM_CCMR  &= ~(1<<3);				/* Disable PLL */
+  CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
+  { int i = 0x1000; while (i--) ; }		/* Delay */
+  CCM_CCMR  |=  (1<<3);				/* Enable PLL */
+  CCM_CCMR  &= ~(1<<7);				/* MCU from PLL */
+  CCM_PDR0   = CCM_PDR0_V;
+  CCM_MPCTL  = CCM_MPCTL_V;
+  CCM_PDR1   = 0x49fcfe7f;			/* Default value */
+  CCM_UPCTL  = CCM_UPCTL_V;
+  CCM_COSR   = CCM_COSR_V;
 //  }
-
-  /* Initialize AIPS (AHB to IP bus) */
-  AIPS1_MPR1 = 0x77777777;
-  AIPS1_MPR2 = 0x77777777;
-  AIPS2_MPR1 = 0x77777777;
-  AIPS2_MPR2 = 0x77777777;
-  AIPS1_OPACR1 = 0;
-  AIPS1_OPACR2 = 0;
-  AIPS1_OPACR3 = 0;
-  AIPS1_OPACR4 = 0;
-  AIPS1_OPACR5 &= ~0xff000000;
-  AIPS2_OPACR1 = 0;
-  AIPS2_OPACR2 = 0;
-  AIPS2_OPACR3 = 0;
-  AIPS2_OPACR4 = 0;
-  AIPS2_OPACR5 &= ~0xff000000;
-
-  /* Initialize MAX (Multi-layer AHB Crossbar Switch) */
-  MAX_MPR0 = 0x00302154;
-  MAX_MPR1 = 0x00302154;
-  MAX_MPR2 = 0x00302154;
-  MAX_MPR3 = 0x00302154;
-  MAX_MPR4 = 0x00302154;
-  MAX_SGPCR0 = 0x10;
-  MAX_SGPCR1 = 0x10;
-  MAX_SGPCR2 = 0x10;
-  MAX_SGPCR3 = 0x10;
-  MAX_SGPCR4 = 0x10;
-  MAX_MGPCR0 = 0;
-  MAX_MGPCR1 = 0;
-  MAX_MGPCR2 = 0;
-  MAX_MGPCR3 = 0;
-  MAX_MGPCR4 = 0;
-
-  /* Initialize M3IF (Multi-Master Memory Interface) */
-  M3IF_CTL = (1<<M3IF_M_IPU1);
+#endif
 
   //;WM32  0xb8002050 0x0000dcf6            ; Configure PSRAM on CS5
   //;WM32  0xb8002054 0x444a4541
@@ -205,13 +189,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 #if defined (CONFIG_MACH_MX31ADS)
   WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
-  WEIM_LCR(4) = 0x444A4541; //
-  WEIM_ACR(4) = 0x44443302; //
-#endif
-
-#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
-  /* *** Unoptimized access times */
-  WEIM_UCR(4) = 0x0000DCF6; // ; Configure DM9000 on CS4
   WEIM_LCR(4) = 0x444A4541; //
   WEIM_ACR(4) = 0x44443302; //
 #endif
@@ -250,33 +227,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC ('S');
 
 		/* Initialize IOMUX for SDRAM */
-  __REG (0x43FAC26C) = 0; // SDCLK
-  __REG (0x43FAC270) = 0; // CAS
-  __REG (0x43FAC274) = 0; // RAS
+  {
+    /* Initialize IOMUX from 0x43fac26c to 0x43fac2dc */
+    int i;
+    for (i = 0; i < 29; ++i)
+      __REG (0x43fac26c + i) = 0;
+  }
   __REG (0x43FAC27C) = 0x1000; // ; CS2 (CSD0)
-  __REG (0x43FAC284) = 0; // DQM3
-  __REG (0x43FAC288) = 0; // DQM2,1,0, SD31-SD0, A25-A0, MA10 (0x288..0x2DC)
-  __REG (0x43FAC28C) = 0; //
-  __REG (0x43FAC290) = 0; //
-  __REG (0x43FAC294) = 0; //
-  __REG (0x43FAC298) = 0; //
-  __REG (0x43FAC29C) = 0; //
-  __REG (0x43FAC2A0) = 0; //
-  __REG (0x43FAC2A4) = 0; //
-  __REG (0x43FAC2A8) = 0; //
-  __REG (0x43FAC2AC) = 0; //
-  __REG (0x43FAC2B0) = 0; //
-  __REG (0x43FAC2B4) = 0; //
-  __REG (0x43FAC2B8) = 0; //
-  __REG (0x43FAC2BC) = 0; //
-  __REG (0x43FAC2C0) = 0; //
-  __REG (0x43FAC2C4) = 0; //
-  __REG (0x43FAC2C8) = 0; //
-  __REG (0x43FAC2CC) = 0; //
-  __REG (0x43FAC2D0) = 0; //
-  __REG (0x43FAC2D4) = 0; //
-  __REG (0x43FAC2D8) = 0; //
-  __REG (0x43FAC2DC) = 0; //
 
 	// ; Initialization script for 32 bit DDR on Tortola EVB
 //  ESDCTL_CFG0 = 0x0075e73a;
@@ -326,6 +283,48 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 static void target_init (void)
 {
+  /* Initialize AIPS (AHB to IP bus) */
+  AIPS1_MPR1 = 0x77777777;
+  AIPS1_MPR2 = 0x77777777;
+  AIPS2_MPR1 = 0x77777777;
+  AIPS2_MPR2 = 0x77777777;
+  AIPS1_OPACR1 = 0;
+  AIPS1_OPACR2 = 0;
+  AIPS1_OPACR3 = 0;
+  AIPS1_OPACR4 = 0;
+  AIPS1_OPACR5 &= ~0xff000000;
+  AIPS2_OPACR1 = 0;
+  AIPS2_OPACR2 = 0;
+  AIPS2_OPACR3 = 0;
+  AIPS2_OPACR4 = 0;
+  AIPS2_OPACR5 &= ~0xff000000;
+
+  /* Initialize MAX (Multi-layer AHB Crossbar Switch) */
+  MAX_MPR0 = 0x00302154;
+  MAX_MPR1 = 0x00302154;
+  MAX_MPR2 = 0x00302154;
+  MAX_MPR3 = 0x00302154;
+  MAX_MPR4 = 0x00302154;
+  MAX_SGPCR0 = 0x10;
+  MAX_SGPCR1 = 0x10;
+  MAX_SGPCR2 = 0x10;
+  MAX_SGPCR3 = 0x10;
+  MAX_SGPCR4 = 0x10;
+  MAX_MGPCR0 = 0;
+  MAX_MGPCR1 = 0;
+  MAX_MGPCR2 = 0;
+  MAX_MGPCR3 = 0;
+  MAX_MGPCR4 = 0;
+
+  /* Initialize M3IF (Multi-Master Memory Interface) */
+  M3IF_CTL = (1<<M3IF_M_IPU1);
+
+#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
+  /* *** Unoptimized access times */
+  WEIM_UCR(4) = 0x0000DCF6; // ; Configure DM9000 on CS4
+  WEIM_LCR(4) = 0x444A4541; //
+  WEIM_ACR(4) = 0x44443302; //
+#endif
 }
 
 

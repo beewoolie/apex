@@ -167,14 +167,26 @@ void __naked __section (.reset) reset (void)
 #endif
 
 #if defined (CONFIG_PREINITIALIZATION)
+  /* There is a little bit of trickery here so that the
+     preinitialization code is guaranteed to be as close to the top of
+     the program as possible.  The preinitialization funtion must be
+     in the .reset segment as is the reset() function.  The reset of
+     the reset function, aptly named reset_finish, is placed in the
+     .bootstrap segment.  The linker will put the preinitialization()
+     code between these two pieces of reset().  In the event that we
+     are not using preiniitalization, we can simply elide the
+     reset_finish() declaration and reunite reset() with
+     reset_finish().  */
+
   preinitialization ();		/* Special hook for init's before SDRAM */
-#endif
 
   __asm volatile ("b reset_finish");
 }
 
 void __naked __section (.bootstrap) reset_finish (void)
 {
+#endif
+
   /* The initialize_bootstrap () function *must* return TRUE when it
      initialized SDRAM; otherwise, we may clobber ourself in the
      memory test. */

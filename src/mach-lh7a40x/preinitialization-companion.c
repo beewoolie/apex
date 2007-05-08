@@ -9,6 +9,16 @@
    DESCRIPTION
    -----------
 
+   The bad news is that the NAND flash IO code with SDRAM init code is
+   too large to fit in 512 bytes , surprise, surprise.  A feature
+   (bug) in the LH7A404 boot ROM means that we can only read 512 bytes
+   from NAND flash into SRAM after reset.  Preinitialization executes
+   before SDRAM initialization, so we have to copy APEX from NAND
+   flash into SRAM which limits us to about 64KiB (IIRC).  Once APEX
+   is copied to SRAM, we continue execution, initialize SDRAM and then
+   call the bonafide relocation routine that copies the loader from
+   NAND flash to SDRAM where we can get crazy.
+
 */
 
 #include <config.h>

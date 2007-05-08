@@ -1,3 +1,16 @@
+2007-05-07  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/relocate-onenand.c: Implementation of OneNAND
+	APEX relocation for bootstrap.
+
+	* src/apex/env.c: Improved the environment link so that it can
+	exist even if there is no user-modifiable environment.  This is to
+	allow user-land to browse environment variables even if they
+	cannot set them.
+
+	* src/mach-lh7a40x/preinitialization-companion.c: Comment on
+	preinitialization.
+
 2007-05-04  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-mx3/ipu.c (cmd_ipu): Fixed the i2c code and added hooks

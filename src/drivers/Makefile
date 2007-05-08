@@ -32,3 +32,5 @@ obj-$(CONFIG_CMD_ETH_DM9000)		+= drv-dm9000.o
 obj-$(CONFIG_DRIVER_FIS)		+= drv-fis.o
 obj-$(CONFIG_DRIVER_NAND)		+= drv-nand.o
 obj-$(CONFIG_RELOCATE_NAND)		+= relocate-nand.o
+obj-$(CONFIG_DRIVER_ONENAND)		+= drv-onenand.o
+obj-$(CONFIG_RELOCATE_ONENAND)		+= relocate-onenand.o

@@ -418,6 +418,7 @@ choice
 	prompt "Bootstrap Method"
 	depends on USES_NOR_BOOTFLASH\
          || USES_NAND_BOOTFLASH\
+         || DRIVER_ONENAND\
 	 || USES_COMPANION_EVT1_BOOT\
 	 || USES_COMPANION_EVT2_BOOT
 	default NOR_BOOT
@@ -438,19 +439,33 @@ config NO_BOOTSTRAP
 	  This option disables any possible specialized bootstrap
 	  option and only supports a relocation of the loader from the
 	  location where it is running to SDRAM.  This is, in fact,
-	  the same as NOR_NOOTFLASH.
+	  the same as NOR_BOOTFLASH.
 
 config NOR_BOOT
 	depends on USES_NOR_BOOTFLASH
 	bool "NOR Flash Boot"
+	help
+	  This option chooses a standard NOR flash boot method where
+	  all of APEX is available and mapped into the system address
+	  space on reset.
 
 config NAND_BOOT
 	depends on USES_NAND_BOOTFLASH
 	bool "NAND Flash Boot"
 	select RELOCATE_NAND
 	help
-	  Selecting NAND as the bootflash select an APEX relocation
-	  routine to one that copies from the NAND.
+	  This option chooses a standard NAND flash boot method that
+	  requires a special APEX relocation routine to bootstrap
+	  from NAND.
+
+config ONENAND_BOOT
+	depends on DRIVER_ONENAND
+	bool "OneNAND Flash Boot"
+	select RELOCATE_ONENAND
+	help
+	  This option chooses a OneNAND boot method that requires a
+	  special APEX relocation routine to bootstrap from the
+	  OneNAND.
 
 config COMPANION_EVT1_BOOT
 	depends on USES_COMPANION_EVT1_BOOT && DRIVER_LH_MMC
@@ -657,6 +672,9 @@ config RELOCATE_COMPANION_EVT2
 	bool
 
 config RELOCATE_NAND
+	bool
+
+config RELOCATE_ONENAND
 	bool
 
 config PREINITIALIZATION
