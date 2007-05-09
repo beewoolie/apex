@@ -462,6 +462,7 @@ config ONENAND_BOOT
 	depends on DRIVER_ONENAND
 	bool "OneNAND Flash Boot"
 	select RELOCATE_ONENAND
+	select PREINITIALIZATION
 	help
 	  This option chooses a OneNAND boot method that requires a
 	  special APEX relocation routine to bootstrap from the

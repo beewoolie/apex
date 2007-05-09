@@ -143,6 +143,23 @@ static int cmd_onenand (int argc, const char** argv)
       ;
   }
 
+  if (strcmp (argv[1], "boot") == 0) {
+    ONENAND_SA_1 = DFS_FBA (0);
+    ONENAND_SA_2 = DBS (0);
+    ONENAND_SA_8 = FPA_FSA (2);
+    ONENAND_SB = BSA_BSC (1,0,2);
+    ONENAND_INTR = 0;
+    ONENAND_CMD = ONENAND_CMD_LOAD;
+    printf ("sa1 0x%x sa2 0x%x sa8 0x%x sb 0x%x\n",
+	    ONENAND_SA_1, ONENAND_SA_2, ONENAND_SA_8, ONENAND_SB);
+    printf ("NAND_INTR 0x%x  NAND_STATUS 0x%x\n",
+	    ONENAND_INTR, ONENAND_STATUS);
+    while (ONENAND_IS_BUSY)
+      ;
+    if (ONENAND_IS_ERROR)
+      printf ("error\n");
+  }
+
   return 0;
 }
 

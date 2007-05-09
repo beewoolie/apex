@@ -24,11 +24,13 @@
    DESCRIPTION
    -----------
 
-   Optimization
-   ------------
+   o Optimization. This code is somewhat wasteful.  We should be able
+     to recover some space in the loader through use herein.
 
-   This code is somewhat wasteful.  We should be able to recover some
-   space in the loader through use herein.
+   o Multiple dm9000's.  If multiple DM9000 support is enabled in the
+     boot loader and only one is stuffed on the target and it is the
+     second of the two, you may need to use the -1 switch when setting
+     the MAC address even though APEX doesn't really care.
 
 */
 
@@ -77,7 +79,8 @@ struct dm9000 {
   const char* name;
 };
 
-struct dm9000 dm9000[C_DM];
+static struct dm9000 dm9000[C_DM];
+static int g_dm9000_default;	/* Default dm9000 for commands  */
 
 static void write_reg (int dm, int index, u16 value)
 {

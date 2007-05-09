@@ -148,7 +148,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
-#if 1
+#if 0
   /* Reset clock controls.  This seems to make APEX behave better when
      we're being executed after the clocks and memory have been
      initialized. *** FIXME: we need to determine exactly what needs
@@ -230,10 +230,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   {
     /* Initialize IOMUX from 0x43fac26c to 0x43fac2dc */
     int i;
-    for (i = 0; i < 29; ++i)
+    for (i = 0; i < 29; ++i) {
+      if (i == (0x43fac27c - 0x43fac26c)/4) /* Skip CS2 */
+	continue;
       __REG (0x43fac26c + i) = 0;
+    }
   }
-  __REG (0x43FAC27C) = 0x1000; // ; CS2 (CSD0)
+  __REG (0x43fac27c) = 0x1000; // ; CS2 (CSD0)
 
 	// ; Initialization script for 32 bit DDR on Tortola EVB
 //  ESDCTL_CFG0 = 0x0075e73a;
