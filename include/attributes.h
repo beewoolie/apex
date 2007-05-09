@@ -54,4 +54,17 @@
 
 #define __aligned		__attribute__((aligned (32)))
 
+#define __bootstrap_0		__section(.bootstrap.0)	/* Bootstrap entry */
+#define __bootstrap_1		__section(.bootstrap.1)
+#define __bootstrap_2		__section(.bootstrap.2)	/* Target preinit */
+#define __bootstrap_3		__section(.bootstrap.3)
+#define __bootstrap_4		__section(.bootstrap.4)
+							/* Preinit here */
+#define __bootstrap_5		__section(.bootstrap.5)
+#define __bootstrap_6		__section(.bootstrap.6)
+#define __bootstrap_7		__section(.bootstrap.7)
+#define __bootstrap_8		__section(.bootstrap.8)
+							/* Target init here */
+#define __bootstrap_9		__section(.bootstrap.9)	/* Bootstrap exit */
+
 #endif  /* __ATTRIBUTES_H__ */

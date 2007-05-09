@@ -143,7 +143,7 @@ extern char APEX_ENV_END;
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
 
-__section (.envlink) struct env_link env_link = {
+static __used __section (.envlink) struct env_link env_link = {
   .magic	= ENV_LINK_MAGIC,
   .apexrelease	= APEXRELEASE,
   .apex_start	= &APEX_VMA_COPY_START, /* Immutable portion of APEX */

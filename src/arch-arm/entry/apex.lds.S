@@ -21,12 +21,19 @@ SECTIONS
 		*(.envlink)
 	}
 	. = ALIGN (4);			/* should be redundant */
-	.preinit : {		/* Preinitialization code, before bootstrap */
-		*(.preinit)
-	}
-	. = ALIGN (4);			/* should be redundant */
 	.bootstrap : {		/* Bootstrap initialization */
-		*(.bootstrap)		
+		*(.bootstrap.0)		/* Bootstrap entry point */  
+		*(.bootstrap.1)
+		*(.bootstrap.2)		/* Target preinitialization */
+		*(.bootstrap.3)
+		*(.bootstrap.4)
+		*(.preinit)		/* Non-target preinitialization */ 
+		*(.bootstrap.5)
+		*(.bootstrap.6)
+		*(.bootstrap.7)
+		*(.bootstrap.8)
+		*(.bootstrap)		/* Target initialization */
+		*(.bootstrap.9)		/* Bootstrap exit */
 	}		
 		/* Everything up to this point must fit in the first
 		   4K (determined by the CPU boot rom) of NAND flash

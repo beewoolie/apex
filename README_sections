@@ -1,0 +1,15 @@
+================
+APEX Boot Loader
+README_sections
+================
+
+Much of the organization of the APEX binary image is controlled by the
+linker script and sections therein.  This has become sufficiently
+complex such that documentation specific to the linker sections is
+necessary to make sense of it.
+
+o Bootstrap organization needs to account for functions such as
+  udelay().  Probably these can go at the end of the bootstrap block and
+  the exit routine will jump over them.
+
+o Preinitialization for relocation should be clearly placed.

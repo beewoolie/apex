@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue May  8 08:17:18 2007
+# Tue May  8 16:55:22 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -128,4 +128,5 @@ CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="console=ttymxc0,115200 root=/dev/nfs ip=rarp jtag=on"
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_RELOCATE_ONENAND=y
+CONFIG_PREINITIALIZATION=y
 CONFIG_ALIASES=y

@@ -45,39 +45,23 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
-#define SDRAM_CMD_NORMAL	(0x80000000)
-#define SDRAM_CMD_PRECHARGEALL	(0x80000001)
-#define SDRAM_CMD_MODE		(0x80000002)
-#define SDRAM_CMD_NOP		(0x80000003)
+#define ESDCTL_CTL0_V 0\
+	|(1<<31)		/* SDE - enable */\
+	|(2<<24)		/* ROW - 13 rows */\
+/*	|(1<<20)		/* COL - 9 columns */\
+	|(2<<20)		/* COL - 10 columns */\
+/*	|(1<<16)		/* DSIZ - 16 bit */\
+	|(2<<16)		/* DSIZ - 32 bit */\
+	|(3<<13)		/* SREFR - 7.81us refresh */\
+	|(1<<7)			/* BL - burst length of 8 */
 
-// The charging time should be at least 100ns.  Longer is OK as will be
-// the case for other HCLK frequencies.
 
-#define NS_TO_HCLK(ns)	((((ns)*((HCLK)/1000) + (1000000 - 1))/1000000))
-#define WST(ns)		(NS_TO_HCLK((ns))-1)
-
-#define SDRAM_REFRESH_CHARGING	(NS_TO_HCLK(100))
-#define SDRAM_REFRESH		(HCLK/64000 - 1) // HCLK/64KHz - 1
-
-#define SDCSC_CASLAT(v)		((v - 1)<<16) /* CAS latency */
-#define SDCSC_RASTOCAS(v)	(v<<20) /* RAS to CAS latency */
-#define SDCSC_BANKCOUNT_2	(0<<3) /* BankCount, 2 bank devices */
-#define SDCSC_BANKCOUNT_4	(1<<3) /* BankCount, 4 bank devices */
-#define SDCSC_EBW_16		(1<<2) /* ExternalBuswidth, 16 bit w/burst 8 */
-#define SDCSC_EBW_32		(0<<2) /* ExternalBusWidth, 32 bit w/burst 4 */
-#define SDCRC_AUTOPRECHARGE	(1<24)
-
-#define SDRAM_CAS		2 /* By Micron specification */
-#define SDRAM_RAS		3
-
-#define SDRAM_CHIP_MODE		(((SDRAM_CAS << 4) | 2)<<10) /* BURST4 */
-
-#define SDRAM_MODE_SETUP	( ((SDRAM_CAS - 1)<<16)\
-				 | (SDRAM_RAS << 20)\
-				 | SDCSC_EBW_32\
-				 | SDCSC_BANKCOUNT_4\
-				 | SDRAM_MODE_SROMLL)
-#define SDRAM_MODE		(SDRAM_MODE_SETUP | SDCRC_AUTOPRECHARGE)
+#if 0
+static void __naked __used __bootstrap_2 target_preinit (void)
+{
+  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
+}
+#endif
 
 
 /* usleep
@@ -148,7 +132,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
      all of this setup when we are not in flash. */
-#if 0
+#if 1
   /* Reset clock controls.  This seems to make APEX behave better when
      we're being executed after the clocks and memory have been
      initialized. *** FIXME: we need to determine exactly what needs
@@ -160,7 +144,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 //  CCM_PDR0  = 0xff870b48;
 
 //  if (1 || (CCM_MPCTL != CCM_MPCTL_V && 0)) {
-  CCM_CCMR  |=  (1<<7);		/* Bypass PLL clock */
+//  CCM_CCMR  |=  (1<<7);		/* Bypass PLL clock */
   CCM_CCMR  &= ~(1<<3);				/* Disable PLL */
   CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
   { int i = 0x1000; while (i--) ; }		/* Delay */
@@ -233,12 +217,32 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     for (i = 0; i < 29; ++i) {
       if (i == (0x43fac27c - 0x43fac26c)/4) /* Skip CS2 */
 	continue;
-      __REG (0x43fac26c + i) = 0;
+      __REG (0x43fac26c + i*4) = 0;
     }
   }
   __REG (0x43fac27c) = 0x1000; // ; CS2 (CSD0)
 
-	// ; Initialization script for 32 bit DDR on Tortola EVB
+	/* SDRAM initialization */
+  ESDCTL_CTL0 = 0;
+  ESDCTL_CFG0 = 0x0075e73a;
+  ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
+  ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
+  usleep (1);			/* > 200ns */
+  ESDCTL_CTL0 = 0x92100000;
+  __REG (0x80000f00) = 0;	/* DDR */
+  ESDCTL_CTL0 = 0xa2100000;
+  __REG (0x80000000) = 0;
+  ESDCTL_CTL0 = 0xb2100000;
+  __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
+  __REG8 (0x81000000) = 0xff;
+  ESDCTL_CTL0 = ESDCTL_CTL0_V;
+  __REG (0x80000000) = 0;
+  /* *** FIXME: we should check for DDR here.  we can test CTL0_V */
+  ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
+  __REG (0x80000000) = 0x55555555;
+  __REG (0x80000004) = 0xaaaaaaaa;
+
+#if 0				/* BDI */
 //  ESDCTL_CFG0 = 0x0075e73a;
 // ESDCTL_CFG0 = 0x0076eb3a; // Reset value
   ESDCTL_CFG0 = 0x006ac73a; // BDI value
@@ -264,6 +268,76 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   ESDCTL_MISC = 0xc;		/* DDR and delay line reset */
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
+
+#endif
+
+#if 0
++    .macro setup_sdram, name, bus_width, mode, full_page
++        /* It sets the "Z" flag in the CPSR at the end of the macro */
++        ldr r0, ESDCTL_BASE_W
++        mov r2, #SDRAM_BASE_ADDR
++        ldr r1, SDRAM_0x0075E73A
++        str r1, [r0, #0x4]
++        ldr r1, =0x2            // reset
++        str r1, [r0, #0x10]
++        ldr r1, SDRAM_PARAM1_\mode
++        str r1, [r0, #0x10]
++        // Hold for more than 200ns
++        ldr r1, =0x10000
++1:
++        subs r1, r1, #0x1
++        bne 1b
++
++        ldr r1, SDRAM_0x92100000
++        str r1, [r0]
++        ldr r1, =0x0
++        ldr r12, SDRAM_PARAM2_\mode
++        str r1, [r12]
++        ldr r1, SDRAM_0xA2100000
++        str r1, [r0]
++        ldr r1, =0x0
++        str r1, [r2]
++        ldr r1, SDRAM_0xB2100000
++        str r1, [r0]
++
++        ldr r1, =0x0
++        .if \full_page
++        strb r1, [r2, #SDRAM_FULL_PAGE_MODE]
++        .else
++        strb r1, [r2, #SDRAM_BURST_MODE]
++        .endif
++
++        ldr r1, =0xFF
++        ldr r12, =0x81000000
++        strb r1, [r12]
++        ldr r3, SDRAM_0x82116080
++        ldr r4, SDRAM_PARAM3_\mode
++        add r3, r3, r4
++        ldr r4, SDRAM_PARAM4_\bus_width
++        add r3, r3, r4
++        .if \full_page
++        add r3, r3, #0x100   /* Force to full page mode */
++        .endif
++
++        str r3, [r0]
++        ldr r1, =0x0
++        str r1, [r2]
++        /* Below only for DDR */
++        ldr r1, [r0, #0x10]
++        ands r1, r1, #0x4
++        ldrne r1, =0x0000000C
++        strne r1, [r0, #0x10]
++        /* Testing if it is truly DDR */
++        ldr r1, SDRAM_0x55555555
++        ldr r0, =SDRAM_BASE_ADDR
++        str r1, [r0]
++        ldr r2, SDRAM_0xAAAAAAAA
++        str r2, [r0, #0x4]
++        ldr r2, [r0]
++        cmp r1, r2
++    .endm
++
+#endif
 
   PUTC ('s');
 
