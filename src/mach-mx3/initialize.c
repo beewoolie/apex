@@ -123,11 +123,13 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
+  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15);	/* 1GiB @ 1GiB */
 
-  __REG (PHYS_L2CC + 0x08) = 0; /* Disable L2CC, should be redundant */
+  __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
-  //  __REG(PHYS_IPU + 0x00) |= 0x40; /* Enable DI?  From Redboot. */
+  /* This is an apparent work-around for some sort of bug in the IPU
+     related to clock setup. */
+  __REG(PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
 
   /* *** FIXME: Changing this timer while the system is running from
      SDRAM may have adverse affects.  In fact, we may want to defer
@@ -145,16 +147,20 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 //  if (1 || (CCM_MPCTL != CCM_MPCTL_V && 0)) {
 //  CCM_CCMR  |=  (1<<7);		/* Bypass PLL clock */
+  barrier ();
   CCM_CCMR  &= ~(1<<3);				/* Disable PLL */
   CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
-  { int i = 0x1000; while (i--) ; }		/* Delay */
-  CCM_CCMR  |=  (1<<3);				/* Enable PLL */
-  CCM_CCMR  &= ~(1<<7);				/* MCU from PLL */
+  { int i = 0x1000; while (--i) ; }		/* Delay */
+  CCM_CCMR   = 0x074b0bfd;
+  CCM_CCMR   = 0x074b0b7d;
+//  CCM_CCMR  |=  (1<<3);				/* Enable PLL */
+//  CCM_CCMR  &= ~(1<<7);				/* MCU from PLL */
   CCM_PDR0   = CCM_PDR0_V;
   CCM_MPCTL  = CCM_MPCTL_V;
   CCM_PDR1   = 0x49fcfe7f;			/* Default value */
   CCM_UPCTL  = CCM_UPCTL_V;
   CCM_COSR   = CCM_COSR_V;
+  barrier ();
 //  }
 #endif
 

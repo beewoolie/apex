@@ -48,8 +48,11 @@
 #include <asm/bootstrap.h>
 #include "mach/hardware.h"
 #include "drv-onenand-base.h"
+#include <linux/bitops.h>
 
 #include <debug_ll.h>
+
+#define PAGE_SIZE ONENAND_DATA_SIZE
 
 /* preinitialization
 
@@ -104,13 +107,15 @@ void __naked __section (.preinit) preinitialization (void)
    determined at runtime.  The relocator will put the loader at the
    VMA and then return to the relocated address.
 
+   The passed parameter is the true return address for the
+   relocate_apex() function so that we continue execution in SDRAM
+   once relocatoin is complete.
+
 */
 
-void __naked __section (.bootstrap) relocate_apex_onenand (void)
+void __naked __section (.bootstrap) relocate_apex_onenand (unsigned long lr)
 {
-  unsigned long lr;
-  int page_size;
-
+#if 0
   {
     extern char reloc_onenand;
     unsigned long offset = (unsigned long) &reloc_onenand;
@@ -125,17 +130,28 @@ void __naked __section (.bootstrap) relocate_apex_onenand (void)
 		    :: "lr", "cc");
 
   }
-
-  page_size = ONENAND_DATA_SIZE;
+#endif
 
   {
+    int page_size = PAGE_SIZE;
     int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
-		  + page_size - 1)/page_size;
+//		  + page_size - 1)>>4;//ffs(PAGE_SIZE);
+		  + page_size - 1);
     int page = 0;
     void* pv = &APEX_VMA_ENTRY;
-    PUTC_LL('A' + page);
+
+    barrier ();
+    {
+      int v;
+
+		/* Divide by the page size */
+      for (v = page_size >> 1; v; v = v>>1)
+	cPages >>= 1;
+    }
 
     while (page < cPages) {
+      PUTC_LL('A' + (page&0xf));
+
       ONENAND_PAGESETUP (page);
       ONENAND_BUFFSETUP (1, 0, 4);
       ONENAND_INTR = 0;
@@ -145,8 +161,8 @@ void __naked __section (.bootstrap) relocate_apex_onenand (void)
 	;
 
       __asm volatile (
-		   "0: ldmia %1!, {r3-r10}\n\t"
-		      "stmia %0!, {r3-r10}\n\t"
+		   "0: ldmia %1!, {r3-r6}\n\t"
+		      "stmia %0!, {r3-r6}\n\t"
 		      "cmp %0, %2\n\t"
 		      "bls 0b\n\t"
 		   : "+r" (pv)
@@ -162,6 +178,8 @@ void __naked __section (.bootstrap) relocate_apex_onenand (void)
       ++page;
     }
   }
+
+  PUTC_LL('!');
 
   __asm volatile ("mov pc, %0" : : "r" (lr));
 }
@@ -217,8 +235,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
 	/* Jump to OneNAND loader only if we could be starting from NAND. */
   if ((pc >> 12) == (CONFIG_DRIVER_ONENAND_BASE>>12)) {
     PUTC ('N');
+    __asm volatile ("mov r0, %0" :: "r" (lr)); /* 'Push' lr as first arg */
     __asm volatile ("b relocate_apex_onenand\n");
-    //    __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_onenand));
   }
 
   /* *** FIXME: it might be good to allow this code to exist in a

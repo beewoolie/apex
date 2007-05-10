@@ -219,7 +219,8 @@
 
 #define CKIH			(26*1000*1000) /* Main high frequency clock */
 
-#define CCM_PDR0_533_V		(0xff871e58)
+//#define CCM_PDR0_533_V		(0xff871e58)
+#define CCM_PDR0_533_V		(0xff871d58)
 #define CCM_MPCTL_533_V		(0x0033280c)
 #define CCM_UPCTL_533_V		(0x040c2403)
 #define CCM_PDR0_399_V		(0xff871d50)

@@ -226,8 +226,17 @@ void __naked __section (.bootstrap) reset_finish (void)
      stomp the needed register.  Also note that the symptom of this
      error was difficult to trace as it became a write to a random
      memory location.  In one case, this was the address of the
-     console driver. */
-  __asm__ __volatile__ ("" : : : "r3", "r4", "r5");
+     console driver.
+
+     *** FIXME: the best solution to this problem is to change to the
+     *** linker script method for organizing the bootstrap code.  With
+     *** it, we can use procedure blocks to isolate register
+     *** allocation aliases.
+
+ */
+  __asm__ __volatile__ ("" :::
+			"r3", "r4", "r5", "r6",
+			"r7", "r8", "r9", "r10");
   PUTC_LL ('s');
   setup_c ();			/* Setups before executing C code */
 
