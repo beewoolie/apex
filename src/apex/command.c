@@ -187,6 +187,7 @@ int call_command (int argc, const char** argv)
   int cb;
   struct command_d* command_match = NULL;
   struct command_d* command;
+  int result;
 
   if (!argc)
     return 0;
@@ -206,42 +207,44 @@ int call_command (int argc, const char** argv)
 	break;
     }
   }
-  if (command_match) {
-    int result;
-    error_description = NULL;
-    result = command_match->func (argc, argv);
-    if (result < ERROR_IMPORTANT) {
-      printf ("Error %d", result);
+  error_description = NULL;
+  result = command_match
+    ? command_match->func (argc, argv)
+    : ERROR_NOCOMMAND;
+  if (result < ERROR_IMPORTANT) {
+    printf ("Error %d", result);
 #if !defined (CONFIG_SMALL)
-      if (error_description == NULL) {
-	switch (result) {
-	case ERROR_PARAM:
-	  error_description = "parameter error"; break;
-	case ERROR_OPEN:
-	  error_description = "error on open"; break;
-	case ERROR_AMBIGUOUS:
-	  error_description = "ambiguous"; break;
-	case ERROR_NODRIVER:
-	  error_description = "no driver"; break;
-	case ERROR_UNSUPPORTED:
-	  error_description = "unsupported"; break;
-	case ERROR_BADPARTITION:
-	  error_description = "bad partition"; break;
-	case ERROR_FILENOTFOUND:
-	  error_description = "file not found"; break;
-	case ERROR_IOFAILURE:
-	  error_description = "i/o failure"; break;
-	case ERROR_BREAK:
-	  error_description = "break"; break;
-	}
+    if (error_description == NULL) {
+      switch (result) {
+      case ERROR_PARAM:
+	error_description = "parameter error"; break;
+      case ERROR_OPEN:
+	error_description = "error on open"; break;
+      case ERROR_AMBIGUOUS:
+	error_description = "ambiguous"; break;
+      case ERROR_NODRIVER:
+	error_description = "no driver"; break;
+      case ERROR_UNSUPPORTED:
+	error_description = "unsupported"; break;
+      case ERROR_BADPARTITION:
+	error_description = "bad partition"; break;
+      case ERROR_FILENOTFOUND:
+	error_description = "file not found"; break;
+      case ERROR_IOFAILURE:
+	error_description = "i/o failure"; break;
+      case ERROR_BREAK:
+	error_description = "break"; break;
+      case ERROR_NOCOMMAND:
+	error_description = "no such command"; break;
       }
-#endif
-      printf (" (%s)", error_description);
-      printf ("\n");
     }
-    return result;
+    if (error_description)
+      printf (" (%s)", error_description);
+#endif
+    printf ("\n");
   }
-  return ERROR_NOCOMMAND;
+
+  return result;
 }
 
 void exec_monitor (void)
