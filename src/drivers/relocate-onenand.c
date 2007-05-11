@@ -115,68 +115,44 @@ void __naked __section (.preinit) preinitialization (void)
 
 void __naked __section (.bootstrap) relocate_apex_onenand (unsigned long lr)
 {
-#if 0
-  {
-    extern char reloc_onenand;
-    unsigned long offset = (unsigned long) &reloc_onenand;
-    __asm volatile ("mov %0, lr\n\t"
-		    "bl reloc_onenand\n\t"
-     "reloc_onenand: subs %1, %1, lr\n\t"
-	     ".globl reloc_nand\n\t"
-//		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		    "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		    : "=r" (lr),
-		      "+r" (offset)
-		    :: "lr", "cc");
+  int page_size = PAGE_SIZE;
+  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
+		+ page_size - 1);
+  int page = 0;
+  void* pv = &APEX_VMA_ENTRY;
 
+  {
+    int v;
+	/* Divide by the page size without resorting to a function call */
+    for (v = page_size >> 1; v; v = v>>1)
+      cPages >>= 1;
   }
-#endif
 
-  {
-    int page_size = PAGE_SIZE;
-    int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
-//		  + page_size - 1)>>4;//ffs(PAGE_SIZE);
-		  + page_size - 1);
-    int page = 0;
-    void* pv = &APEX_VMA_ENTRY;
+  for (; page < cPages; ++page) {
+      /* Use this to see how many blocks we're copying from flash */
+//    PUTC_LL('A' + (page&0xf));
 
-    barrier ();
-    {
-      int v;
+    ONENAND_PAGESETUP (page);
+    ONENAND_BUFFSETUP (1, 0, 4);
+    ONENAND_INTR = 0;
+    ONENAND_CMD = ONENAND_CMD_LOAD;
 
-		/* Divide by the page size */
-      for (v = page_size >> 1; v; v = v>>1)
-	cPages >>= 1;
-    }
-
-    while (page < cPages) {
-      PUTC_LL('A' + (page&0xf));
-
-      ONENAND_PAGESETUP (page);
-      ONENAND_BUFFSETUP (1, 0, 4);
-      ONENAND_INTR = 0;
-      ONENAND_CMD = ONENAND_CMD_LOAD;
-
-      while (ONENAND_IS_BUSY)
+    while (ONENAND_IS_BUSY)
 	;
 
-      __asm volatile (
-		   "0: ldmia %1!, {r3-r6}\n\t"
-		      "stmia %0!, {r3-r6}\n\t"
-		      "cmp %0, %2\n\t"
-		      "bls 0b\n\t"
-		   : "+r" (pv)
-		   :  "r" (ONENAND_DATARAM1),
-		      "r" (&APEX_VMA_COPY_END)
-//		   : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
-		   : "r3", "r4", "r5", "r6", "cc"
-		  );
+    __asm volatile (
+		 "0: ldmia %1!, {r3-r6}\n\t"
+		    "stmia %0!, {r3-r6}\n\t"
+		    "cmp %0, %2\n\t"
+		    "blo 0b\n\t"
+		 : "+r" (pv)
+		 :  "r" (ONENAND_DATARAM1),
+		 "r" (pv + page_size)
+		 : "r3", "r4", "r5", "r6", "cc"
+		 );
 
-
-//      memcpy (pv, (const char*) ONENAND_DATARAM0, page_size);
-      pv += page_size;
-      ++page;
-    }
+    /* Note that we don't need to increment pv as it is incremented by
+       the stmia instruction.  */
   }
 
   PUTC_LL('!');
@@ -205,7 +181,6 @@ void __naked __section (.bootstrap) relocate_apex (void)
   unsigned long offset = (unsigned long) &reloc;
 
   PUTC ('>');
-  PUTC ('>');
 
 	/* Setup bootstrap stack, trivially.  We do this so that we
 	   can perform some complex operations here in the bootstrap,
@@ -226,8 +201,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		    "=r" (pc)
 		  :: "lr", "cc");
 
-  PUTHEX (pc);
-  PUTC ('>');
+  PUTHEX_LL (pc);
+  PUTC_LL ('>');
 
   PUTC ('c');
   //  PUTC_LL ('c');

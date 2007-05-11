@@ -129,12 +129,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   /* This is an apparent work-around for some sort of bug in the IPU
      related to clock setup. */
-  __REG(PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
+  __REG (PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
 
-  /* *** FIXME: Changing this timer while the system is running from
-     SDRAM may have adverse affects.  In fact, we may want to defer
-     all of this setup when we are not in flash. */
-#if 1
   /* Reset clock controls.  This seems to make APEX behave better when
      we're being executed after the clocks and memory have been
      initialized. *** FIXME: we need to determine exactly what needs
@@ -145,8 +141,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 //  CCM_MPCTL = 0x04001800;
 //  CCM_PDR0  = 0xff870b48;
 
-//  if (1 || (CCM_MPCTL != CCM_MPCTL_V && 0)) {
-//  CCM_CCMR  |=  (1<<7);		/* Bypass PLL clock */
   barrier ();
   CCM_CCMR  &= ~(1<<3);				/* Disable PLL */
   CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
@@ -161,8 +155,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   CCM_UPCTL  = CCM_UPCTL_V;
   CCM_COSR   = CCM_COSR_V;
   barrier ();
-//  }
-#endif
 
   //;WM32  0xb8002050 0x0000dcf6            ; Configure PSRAM on CS5
   //;WM32  0xb8002054 0x444a4541
@@ -247,103 +239,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
-
-#if 0				/* BDI */
-//  ESDCTL_CFG0 = 0x0075e73a;
-// ESDCTL_CFG0 = 0x0076eb3a; // Reset value
-  ESDCTL_CFG0 = 0x006ac73a; // BDI value
-
-  ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
-  ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
-  usleep (200);
-
-  ESDCTL_CTL0 = 0x92100000;
-  __REG (0x80000f00) = 0;		/* DDR */
-  ESDCTL_CTL0 = 0xa2100000;
-  __REG (0x80000000) = 0;
-  __REG (0x80000000) = 0;
-  ESDCTL_CTL0 = 0xb2100000;
-  __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
-  __REG8 (0x81000000) = 0xff;
-
-  ESDCTL_CTL0 = 0x82116080
-    + 0x00100000			/* DDR */
-    + 0x00010000			/* x32 */
-    ;
-  __REG (0x80000000) = 0;
-  ESDCTL_MISC = 0xc;		/* DDR and delay line reset */
-  __REG (0x80000000) = 0x55555555;
-  __REG (0x80000004) = 0xaaaaaaaa;
-
-#endif
-
-#if 0
-+    .macro setup_sdram, name, bus_width, mode, full_page
-+        /* It sets the "Z" flag in the CPSR at the end of the macro */
-+        ldr r0, ESDCTL_BASE_W
-+        mov r2, #SDRAM_BASE_ADDR
-+        ldr r1, SDRAM_0x0075E73A
-+        str r1, [r0, #0x4]
-+        ldr r1, =0x2            // reset
-+        str r1, [r0, #0x10]
-+        ldr r1, SDRAM_PARAM1_\mode
-+        str r1, [r0, #0x10]
-+        // Hold for more than 200ns
-+        ldr r1, =0x10000
-+1:
-+        subs r1, r1, #0x1
-+        bne 1b
-+
-+        ldr r1, SDRAM_0x92100000
-+        str r1, [r0]
-+        ldr r1, =0x0
-+        ldr r12, SDRAM_PARAM2_\mode
-+        str r1, [r12]
-+        ldr r1, SDRAM_0xA2100000
-+        str r1, [r0]
-+        ldr r1, =0x0
-+        str r1, [r2]
-+        ldr r1, SDRAM_0xB2100000
-+        str r1, [r0]
-+
-+        ldr r1, =0x0
-+        .if \full_page
-+        strb r1, [r2, #SDRAM_FULL_PAGE_MODE]
-+        .else
-+        strb r1, [r2, #SDRAM_BURST_MODE]
-+        .endif
-+
-+        ldr r1, =0xFF
-+        ldr r12, =0x81000000
-+        strb r1, [r12]
-+        ldr r3, SDRAM_0x82116080
-+        ldr r4, SDRAM_PARAM3_\mode
-+        add r3, r3, r4
-+        ldr r4, SDRAM_PARAM4_\bus_width
-+        add r3, r3, r4
-+        .if \full_page
-+        add r3, r3, #0x100   /* Force to full page mode */
-+        .endif
-+
-+        str r3, [r0]
-+        ldr r1, =0x0
-+        str r1, [r2]
-+        /* Below only for DDR */
-+        ldr r1, [r0, #0x10]
-+        ands r1, r1, #0x4
-+        ldrne r1, =0x0000000C
-+        strne r1, [r0, #0x10]
-+        /* Testing if it is truly DDR */
-+        ldr r1, SDRAM_0x55555555
-+        ldr r0, =SDRAM_BASE_ADDR
-+        str r1, [r0]
-+        ldr r2, SDRAM_0xAAAAAAAA
-+        str r2, [r0, #0x4]
-+        ldr r2, [r0]
-+        cmp r1, r2
-+    .endm
-+
-#endif
 
   PUTC ('s');
 

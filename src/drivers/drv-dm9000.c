@@ -80,7 +80,11 @@ struct dm9000 {
 };
 
 static struct dm9000 dm9000[C_DM];
+#if C_DM > 1
 static int g_dm9000_default;	/* Default dm9000 for commands  */
+#else
+# define g_dm9000_default 0
+#endif
 
 static void write_reg (int dm, int index, u16 value)
 {
@@ -145,7 +149,7 @@ static char host_mac_address[6];
 static int cmd_eth (int argc, const char** argv)
 {
   int result = 0;
-  int dm = 0;
+  int dm = g_dm9000_default;
 
   if (argc > 1 && argv[1][0] == '-') {
     switch (argv[1][1]) {
@@ -247,6 +251,10 @@ static void dm9000_init (void)
 {
   int dm;
 
+#if C_DM > 1
+  g_dm9000_default = -1;
+#endif
+
   for (dm = 0; dm < C_DM; ++dm) {
 
     DBG (2, "%s: %d\n", __FUNCTION__, dm);
@@ -271,6 +279,11 @@ static void dm9000_init (void)
     default:
       continue;
     }
+
+#if C_DM > 1
+    if (g_dm9000_default == -1)	/* Default interface for commands */
+      g_dm9000_default = dm;
+#endif
 
     DBG (2, "%s: [%d] index %p  data %p\n", __FUNCTION__, dm,
 	 dm9000[dm].index, dm9000[dm].data);

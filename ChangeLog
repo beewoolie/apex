@@ -1,3 +1,18 @@
+2007-05-10  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/relocate-onenand.c: Groomed the relocation for
+	OneNAND to remove unneeded return address calculation.
+
+	* src/drivers/drv-dm9000.c: Added code to help select the proper
+	default interface when there could be two and only one is present.
+
+	* src/mach-mx3/initialize.c: Groomed the startup code to remove
+	much cruft.
+
+	* src/apex/env.c: Fixed typo in the default environment startup
+	command that was including the ramdisk startup even though there
+	was none needed.
+
 2007-05-10  Marc Singer  <elf@cerise.buici.com>
 
 	* src/apex/command.c (call_command): Reorganized command

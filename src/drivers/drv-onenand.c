@@ -68,6 +68,8 @@
 
 #include <asm/reg.h>
 
+//#define TALK
+
 #define I_DATABUFFER	1
 #define DATABUFFER	ONENAND_DATARAM1
 
@@ -121,8 +123,8 @@ static void execute (int page, int command)
   ONENAND_PAGESETUP (page);
   ONENAND_BUFFSETUP (I_DATABUFFER, 0, 4);
 
-#if 0
-  printf ("sa1 0x%x sa2 0x%x sa8 0x%x sb 0x%x sba 0x%x\n",
+#if defined (TALK)
+  printf ("sa1 0x%x sa2 0x%x sa8 0x%x sb 0x%x sba 0x%x ",
 	  ONENAND_SA_1, ONENAND_SA_2, ONENAND_SA_8, ONENAND_SB, ONENAND_SBA);
   printf ("NAND_INTR 0x%x  NAND_STATUS 0x%x\n",
 	  ONENAND_INTR, ONENAND_STATUS);
@@ -211,7 +213,7 @@ static ssize_t onenand_read (struct descriptor_d* d, void* pv, size_t cb)
     }
 
     if (ONENAND_STATUS & ONENAND_STATUS_ERROR)
-      printf ("unlock_all failed %s\n", describe_status (ONENAND_STATUS));
+      printf ("read failed %s\n", describe_status (ONENAND_STATUS));
 
     memcpy (pv, (const char*) DATABUFFER + index, available);
     pv += available;

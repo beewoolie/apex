@@ -111,7 +111,7 @@ static __env struct env_d e_startup = {
 # endif
      "$kernelsrc $bootaddr; "
 #endif
-#if defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
+#if defined (CONFIG_ENV_STARTUP_RAMDISK_COPY)
     "copy "
 # if defined (CONFIG_ENV_REGION_RAMDISK_SWAP)
     "-s "
