@@ -1,3 +1,7 @@
+2007-05-10  Marc Singer  <elf@buici.com>
+
+	* Releasing 1.5.0 with iMX31 and OneNAND.
+
 2007-05-10  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/relocate-onenand.c: Groomed the relocation for
