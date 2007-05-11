@@ -195,7 +195,7 @@ static void nand_init (void)
       chip = NULL;
 
 #if defined (TALK)
-  printf ("NAND flash ");
+  printf ("\n* NAND flash");
 
   if (chip)
     printf (" %ld MiB total, %d KiB erase, %d B page"
