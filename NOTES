@@ -5,6 +5,15 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.may.11
+    o Need to move *all* configurable parameters to the Kconfig.
+    o Need to move bootstrap into segments so that we can properly
+      initialize when we don't have access to a stack. 
+    o Should allow the initialization code, after SDRAM init, to setup
+      an early stack.  It could even be the _correct_ stack address
+      since we don't really care.  This may make some portions of the
+      code *much* easier to handle.
+
   o RedBoot and APEX
 
     In debugging an update to APEX, I found that the startup copy

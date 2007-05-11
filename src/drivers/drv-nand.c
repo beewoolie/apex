@@ -158,10 +158,6 @@ static void wait_on_busy (void)
 static void nand_init (void)
 {
   unsigned short id[4];
-//  unsigned short manufacturer;
-//  unsigned short device;
-//  unsigned short third;
-//  unsigned short fourth;
 
   NAND_ENABLE;			/* Optional setup for NAND flash */
 
