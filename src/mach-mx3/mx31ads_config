@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri Apr 27 14:41:03 2007
+# Thu May 10 19:39:14 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -18,6 +18,7 @@ CONFIG_ARCH_MX3=y
 #
 # General Setup
 #
+CONFIG_TARGET_DESCRIPTION="Freescale iMX31 ADS"
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
@@ -88,6 +89,7 @@ CONFIG_CMD_GO=y
 # CONFIG_DRIVER_JFFS2 is not set
 # CONFIG_DRIVER_FIS is not set
 # CONFIG_DRIVER_NOR_CFI is not set
+# CONFIG_DRIVER_ONENAND is not set
 # CONFIG_DRIVER_COMPACTFLASH is not set
 CONFIG_USES_NOR_CFI=y
 CONFIG_USES_COMPACTFLASH=y

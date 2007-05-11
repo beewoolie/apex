@@ -407,7 +407,7 @@ scripts_basic:
 
 no-dot-config-targets := clean mrproper distclean tidy complete-release\
 			 cscope TAGS tags help %docs check% \
-			 every every-update every-release
+			 every update-every release-every
 
 
 config-targets := 0
@@ -1096,7 +1096,7 @@ rpm: FORCE
 tgz: FORCE
 	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
 
-complete-release: tgz every-release FORCE
+complete-release: tgz release-every FORCE
 	cp apex-$(APEXRELEASE).tar.gz ~ftp/pub/apex
 	svn cp -m "$(APEXRELEASE)" \
 	  file:///svn/tools/trunk/apex \
@@ -1338,16 +1338,17 @@ every: distclean
 	@rm .config
 
 # every target builds all of the available configurations
-.PHONY: every-update
-every-update:
+.PHONY: update-every
+update-every:
 	@for i in `find src/mach-*/ -name '*_config'` ; do \
+	echo -- $$i;\
 	cp $$i .config; \
 	$(MAKE) oldconfig; \
 	cp .config $$i; \
 	done
 
-.PHONY: every-release
-every-release: every
+.PHONY: release-every
+release-every: every
 	mkdir -p ~ftp/pub/apex/apex-$(APEXRELEASE)
 	cp every/*.zip ~ftp/pub/apex/apex-$(APEXRELEASE)
 
