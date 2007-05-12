@@ -177,6 +177,9 @@ SECTIONS
 	}
 	APEX_VMA_END = .;
 						/* Bootstrap data */
+	/* *** FIXME: this is truly bogus.  An early stack must be
+	   added to the configuration and setup by the initialization
+	   code. */
 	.bss_bootstrap (0xb0000000 + 80*1024 - 4096) (NOLOAD) : {
 		APEX_VMA_BOOTSTRAP_STACK_START = .;
 		*(.bss_bootstrap)

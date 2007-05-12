@@ -77,6 +77,7 @@ void __naked __section (.entry) entry (void)
 #endif
 }
 
+
 /* reset
 
    implements the reset exception vector.  All before init() MUST NOT
