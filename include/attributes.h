@@ -54,6 +54,8 @@
 
 #define __aligned		__attribute__((aligned (32)))
 
+#define __bootstrap_func	__section(.bootstrap.func) /* Early funcs */
+
 #define __bootstrap_0		__section(.bootstrap.0)	/* Bootstrap entry */
 #define __bootstrap_1		__section(.bootstrap.1)
 #define __bootstrap_2		__section(.bootstrap.2)	/* Target preinit */

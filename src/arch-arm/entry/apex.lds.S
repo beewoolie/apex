@@ -13,21 +13,29 @@ SECTIONS
 	.entry : {		/* Opportunity to inject code before reset */
 		*(.entry)
 	}
-	.reset : {		/* Reset handling code, usually first */
-		*(.reset)
-	}
-	. = ALIGN (4);			/* should be redundant */
 	.envlink : {		/* Link to $env for user-land */
 		*(.envlink)
 	}
 	. = ALIGN (4);			/* should be redundant */
+	.reset : {		/* Reset handler, first real code */
+		*(.reset)
+	}
+	.platform.early : {	/* Early platform setups */
+		*(.platform.early)
+	}
+	.apexrelocate.early : {	/* Early relocation for constrained boot */
+		*(.apexrelocate.early)
+	}
+	.postinitialization : {
+		*(.postinitialization)
+	}
 	.bootstrap : {		/* Bootstrap initialization */
 		*(.bootstrap.0)		/* Bootstrap entry point */  
 		*(.bootstrap.1)
 		*(.bootstrap.2)		/* Target preinitialization */
 		*(.bootstrap.3)
 		*(.bootstrap.4)
-		*(.preinit)		/* Non-target preinitialization */ 
+		*(.preinit)
 		*(.bootstrap.5)
 		*(.bootstrap.6)
 		*(.bootstrap.7)

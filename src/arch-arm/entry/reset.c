@@ -57,6 +57,22 @@ extern void init (void);
 extern void reset_finish (void);
 
 
+/* entry
+
+   the first code executed in APEX.  We may or may not have an
+   environment link or functions in the top of the loader.  This jump
+   to the reset handler allows us to put anything we need, here at the
+   top of APEX and skip it straight away.  while this implementation
+   is specific to ARM, other architectures will likely have, at a
+   minimum, the environment link structures.
+
+*/
+
+void __naked __section (.entry) entry (void)
+{
+  __asm volatile ("b reset\n\t");
+}
+
 /* reset
 
    implements the reset exception vector.  All before init() MUST NOT
@@ -167,25 +183,22 @@ void __naked __section (.reset) reset (void)
 #endif
 
 #if defined (CONFIG_PREINITIALIZATION)
-  /* There is a little bit of trickery here so that the
-     preinitialization code is guaranteed to be as close to the top of
-     the program as possible.  The preinitialization funtion must be
-     in the .reset segment as is the reset() function.  The reset of
-     the reset function, aptly named reset_finish, is placed in the
-     .bootstrap segment.  The linker will put the preinitialization()
-     code between these two pieces of reset().  In the event that we
-     are not using preiniitalization, we can simply elide the
-     reset_finish() declaration and reunite reset() with
-     reset_finish().  */
-
-  preinitialization ();		/* Special hook for init's before SDRAM */
-
-  __asm volatile ("b reset_finish");
+  /* *** FIXME: legacy implementation.  We don't 'call' the function
+     *** because the compiler will branch instead of bl die to a tail
+     *** call optimization. */
+  __asm volatile ("bl preinitialization");
+#endif
 }
 
-void __naked __section (.bootstrap) reset_finish (void)
+void __naked __section (.postinitialization) reset_finish (void)
 {
-#endif
+  /* *** FIXME: we'd rather not make a call here.  Instead, we'd like
+     *** to be able to use a flow of code to get to this point.
+     *** Functions and the like in the platform initialization are not
+     *** our concern.  The only thing that should be true is that the
+     *** return value from the initialization is placed in r0 and we
+     *** test it here to determine whether or not we can/should
+     *** perform the memory test. */
 
   /* The initialize_bootstrap () function *must* return TRUE when it
      initialized SDRAM; otherwise, we may clobber ourself in the

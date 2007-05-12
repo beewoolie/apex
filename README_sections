@@ -12,4 +12,24 @@ o Bootstrap organization needs to account for functions such as
   udelay().  Probably these can go at the end of the bootstrap block and
   the exit routine will jump over them.
 
+  o Entry point
+  o Jump over environment link.  This is optional and the entry point
+    can be eliminated if there is no link.
+  o Target of jump and ARCH (ARM) inits, e.g. big endian, mode,
+    disable MMU
+  o Platform early inits.  UART for debug and to support pre-init
+  o Pre-init.  Special considerations for startup, e.g. transfer more
+    of loader from NV store so we can initialize SDRAM.
+  o Jump to platform inits.  This is here in order to allow for
+    functions to support platform inits.  This is an ARCH specific
+    feature that, perhaps, only ARM can use.
+  o Platform inits.  Clocks, GPIO, memory controllers, SDRAM 
+  o Early C Stack.  We can now setup the stack as we have SDRAM,
+    though we may not want to if there is a chance that we are using
+    the memory where the stack will reside.
+  o Relocation.  This could be somewhat complex as is the case for an
+    MMC bootstrap that requires a driver.
+  o C setup.  Stack & BSS.
+  o init.  Start of APEX proper.
+
 o Preinitialization for relocation should be clearly placed.

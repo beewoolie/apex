@@ -54,7 +54,7 @@
 
 #define PAGE_SIZE ONENAND_DATA_SIZE
 
-/* preinitialization
+/* relocate_early
 
    performs a crucial preload of the second and third KiB of APEX into
    DataRAM0.  This allows us to run with 3KiB of boot loader code
@@ -68,14 +68,8 @@
 
 */
 
-void __naked __section (.preinit) preinitialization (void)
+void __naked __section (.apexrelocate.early) relocate_early (void)
 {
-  unsigned long lr;
-
-  __asm volatile ("mov %0, lr\n\t" : "=r" (lr));
-
-  //  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
-
   //#if defined (CONFIG_STARTUP_UART)
   //  INITIALIZE_CONSOLE_UART;
   //  PUTC('P');
@@ -97,7 +91,11 @@ void __naked __section (.preinit) preinitialization (void)
   while (ONENAND_IS_BUSY)
     ;
 
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("b relocate_early_exit\n\t");
+}
+
+void __naked __section (.apexrelocate.early) relocate_early_exit (void)
+{
 }
 
 

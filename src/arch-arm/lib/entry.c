@@ -31,6 +31,7 @@
 #include <config.h>
 #include <asm/bootstrap.h>
 
+#if 0
 void __naked __section (.entry) entry (void)
 {
   /* Fallthrough to reset section.  Exception vectors are handled
@@ -41,3 +42,4 @@ void __naked __section (.entry) entry (void)
      case there is something it has to do.  The replacement function
      should be naked and fall-through to the .reset section. */
 }
+#endif

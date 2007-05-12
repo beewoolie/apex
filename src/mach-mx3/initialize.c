@@ -56,13 +56,10 @@
 	|(1<<7)			/* BL - burst length of 8 */
 
 
-#if 0
-static void __naked __used __bootstrap_2 target_preinit (void)
+static void __naked __used __section(.platform.early) platform_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
-#endif
-
 
 /* usleep
 
@@ -123,7 +120,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
 
-  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15);	/* 1GiB @ 1GiB */
+//  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15);	/* 1GiB @ 1GiB */
 
   __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
