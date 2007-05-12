@@ -5,6 +5,30 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.may.12
+    o We want to make it a requirement that there be a stack when we
+      call apex_relocate().  These functions are notoriously finicky
+      and we'd be well served to allow for a stack to accomodate
+      register spills and more complex code.  It would also normalize
+      the MMC boot process where we needed to allocate a boot stack
+      for exactly that purpose.  It could even be the case that this
+      is a configuration time parameter and that it is setup
+      automatically just before the relocation routine begins.  In
+      this case, it may be desirable to explain to the user how this
+      stack is used and how it must be in a region of memory that
+      cannot be clobbered.
+    o APEX has gotten kinda large.  Even when the small option is
+      selected, the loader seems to be swollen.  It could be that this
+      is partially due to the explicitly large initialization code for
+      the mx31 target (which gave an APEX of 27k at the smallest).  It
+      seems reasonable that an APEX, free of any drivers, be less than
+      16K.  It may be the case that thumb support will be the only way
+      to get a truly small loader.
+    o It would be good to have a way to generate a BDI init code-let
+      so that we can initialize SDRAM (and such) for the user using
+      the BDI capability for running code directly on startup.  In
+      fact, it may be possible to do this with a special build.  Whoa.
+
   o 2007.may.11
     o Need to move *all* configurable parameters to the Kconfig.
     o Need to move bootstrap into segments so that we can properly
@@ -30,8 +54,8 @@ TODO:
     performing a checksum.  Oddly, a second copy of the data was
     always successful.  I suspected the cache.
 
-    Revising to cache flush code to more closely match that which the
-    kernel implemented didn't seem to fix the problem.  What didn't
+    Revising the cache flush code to more closely match that which the
+    kernel implemented didn't seem to fix the problem.  What did
     seem to fix the problem was disconnecting the Ethernet cable from
     the Slug while booting.  Thus, I suspect that the problem is
     caused by the NPE still thinking it can write to memory.
@@ -52,6 +76,11 @@ TODO:
       must be done from the standpoint of execution.
     o x86 is the real bear, but I don't think we really care about
       that.
+    o *** Note that these considerations should be accomodated once we
+      change a) to a single code stream for the initialization (which
+      is nearly there in May 2007) and b) to add an early stack to the
+      configuration.  Even x86 ought to work under these
+      circumstances.
 
   o Enviroinment/alias variations.  The default state is to use the
     simply named version of each variable, aliases before environment

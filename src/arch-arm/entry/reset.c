@@ -62,15 +62,19 @@ extern void reset_finish (void);
    the first code executed in APEX.  We may or may not have an
    environment link or functions in the top of the loader.  This jump
    to the reset handler allows us to put anything we need, here at the
-   top of APEX and skip it straight away.  while this implementation
+   top of APEX and skip it straight away.  While this implementation
    is specific to ARM, other architectures will likely have, at a
-   minimum, the environment link structures.
+   minimum, the environment link structure.
 
 */
 
 void __naked __section (.entry) entry (void)
 {
+#if defined (CONFIG_ENV_LINK)
+  /* Presently, we only need to skip something if there is an
+     environment link. */
   __asm volatile ("b reset\n\t");
+#endif
 }
 
 /* reset
