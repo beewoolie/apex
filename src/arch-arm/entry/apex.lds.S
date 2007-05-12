@@ -43,6 +43,26 @@ SECTIONS
 		*(.bootstrap)		/* Target initialization */
 		*(.bootstrap.9)		/* Bootstrap exit */
 	}		
+		/* Everything up to this point is used to get the
+		   target off it's back and onto it's feet.  In the
+		   case of a NOR boot, it doesn't really matter how
+		   much code this is.  In the case of NAND, I2C, and
+		   MMC booting, there may be significant constrants on
+		   the amount of the boot loader that is available for
+		   execution.  The early sections are meant to be very
+		   small and critical for getting enough of the loader
+		   into some sort of memory so that the SDRAM can be
+		   initialized.  We may get as little as 512 bytes to
+		   begin with, so the apexrelocate.early section is
+		   the first opportunity to load more of the loader
+		   into memory should we be highly constrained.  After
+		   that, we must have enough in memory to include
+		   everything in .bootstrap (or whatever preceeds
+		   .text).  The relocate_apex() function that makes
+		   sure *all* of APEX is in memory must be able to
+		   execute to bring all of the loader into 
+
+
 		/* Everything up to this point must fit in the first
 		   4K (determined by the CPU boot rom) of NAND flash
 		   so that we can bootstrap copy the loader from NAND

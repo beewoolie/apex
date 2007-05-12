@@ -1,5 +1,13 @@
 2007-05-12  Marc Singer  <elf@cerise.buici.com>
 
+	* src/arch-arm/entry/reset.c: Restructured to allow for cleaner
+	startup code.  Legacy implementations are still OK, but the new
+	plumbing permits seamless transitions between various
+	initialization elements to handle constrained boot situations.
+	Also removed an onerous constraint on register usage in the
+	relocate_apex() function.  The caller is now forced to assume that
+	no registers are saved.
+  
 	* src/arch-arm/linux/atag.c (atag_header): Eliminated the core tag.
 
 2007-05-10  Marc Singer  <elf@buici.com>

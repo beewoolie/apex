@@ -24,12 +24,13 @@ o Bootstrap organization needs to account for functions such as
     functions to support platform inits.  This is an ARCH specific
     feature that, perhaps, only ARM can use.
   o Platform inits.  Clocks, GPIO, memory controllers, SDRAM 
+  o SDRAM test.
   o Early C Stack.  We can now setup the stack as we have SDRAM,
     though we may not want to if there is a chance that we are using
     the memory where the stack will reside.
-  o Relocation.  This could be somewhat complex as is the case for an
+  o relocate_apex ().  This could be somewhat complex as is the case for an
     MMC bootstrap that requires a driver.
-  o C setup.  Stack & BSS.
-  o init.  Start of APEX proper.
+  o setup_c().  C setup.  Stack & BSS.
+  o init().  Start of APEX proper.
 
 o Preinitialization for relocation should be clearly placed.

@@ -78,6 +78,10 @@ void __naked __section (.entry) entry (void)
    implements the reset exception vector.  All before init() MUST NOT
    DEPEND on a stack or any RAM whatsoever.
 
+   Also note that nothing in this function can allocate data in the
+   code section since there is no jump at the end of the function to
+   skip it.
+
 */
 
 void __naked __section (.reset) reset (void)
@@ -183,14 +187,12 @@ void __naked __section (.reset) reset (void)
 #endif
 
 #if defined (CONFIG_PREINITIALIZATION)
-  /* *** FIXME: legacy implementation.  We don't 'call' the function
-     *** because the compiler will branch instead of bl die to a tail
-     *** call optimization. */
-  __asm volatile ("bl preinitialization");
+  /* *** FIXME: legacy implementation. */
+  __asm volatile ("bl preinitialization"); /* Avoid tail call optimization */
 #endif
 }
 
-void __naked __section (.postinitialization) reset_finish (void)
+void __naked __section (.postinitialization) reset_finish_0 (void)
 {
   /* *** FIXME: we'd rather not make a call here.  Instead, we'd like
      *** to be able to use a flow of code to get to this point.
@@ -227,36 +229,18 @@ void __naked __section (.postinitialization) reset_finish (void)
   PUTC_LL ('E');
   PUTC_LL ('r');
   relocate_apex ();
+  __asm volatile ("b reset_finish_1");
+}
 
-  /* This early executed code can be very temperamental. The
-     relocate_apex() function will tend to clobber some of the
-     registers.  Even with careful coding, it will clobber r4 and
-     could affect r5.  The PUTC_LL macro instructions may be split
-     across the relocate_apex () call such that a load before
-     relocate_apex() is lost by the time the value is needed.  So, the
-     work-around is to force the compiler to place those constants in
-     higher numbered registers.  That way, relocate_apex () won't
-     stomp the needed register.  Also note that the symptom of this
-     error was difficult to trace as it became a write to a random
-     memory location.  In one case, this was the address of the
-     console driver.
-
-     *** FIXME: the best solution to this problem is to change to the
-     *** linker script method for organizing the bootstrap code.  With
-     *** it, we can use procedure blocks to isolate register
-     *** allocation aliases.
-
- */
-  __asm__ __volatile__ ("" :::
-			"r3", "r4", "r5", "r6",
-			"r7", "r8", "r9", "r10");
-  PUTC_LL ('s');
+void __naked __section (.postinitialization) reset_finish_1 (void)
+{
+  PUTC_LL ('C');
   setup_c ();			/* Setups before executing C code */
 
-  PUTC_LL ('e');
+  PUTC_LL ('c');
 
 	/* Start loader proper which doesn't return */
-  __asm volatile ("mov pc, %0" :: "r" (&init));
+  __asm volatile ("b init");
 }
 
 

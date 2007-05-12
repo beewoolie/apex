@@ -101,13 +101,18 @@ void __naked __section (.apexrelocate.early) relocate_early_exit (void)
 
 /* relocate_apex_onenand
 
-   performs the relocation from OneNAND into SDRAM.The LMA is
+   performs the relocation from OneNAND into SDRAM.  The LMA is
    determined at runtime.  The relocator will put the loader at the
    VMA and then return to the relocated address.
 
    The passed parameter is the true return address for the
    relocate_apex() function so that we continue execution in SDRAM
    once relocatoin is complete.
+
+   We're register constrained when the DEBUG_LL configuration option
+   is enabled.  We'd like to use eight registers for the copy
+   function, but four will have to suffice.  The number must be a
+   power of 2 so that we copy exactly the size of the OneNAND page.
 
 */
 
@@ -145,8 +150,10 @@ void __naked __section (.bootstrap) relocate_apex_onenand (unsigned long lr)
 		    "blo 0b\n\t"
 		 : "+r" (pv)
 		 :  "r" (ONENAND_DATARAM1),
-		 "r" (pv + page_size)
-		 : "r3", "r4", "r5", "r6", "cc"
+		    "r" (pv + page_size)
+		 : "r3", "r4", "r5", "r6",
+//		   "r7", "r8", "r9", "r10",
+		   "cc"
 		 );
 
     /* Note that we don't need to increment pv as it is incremented by
