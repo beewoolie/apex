@@ -45,11 +45,20 @@ void build_atags (void)
 		p = d->append_atag (p);
 }
 
+/* atag_header
+
+   builds the tag list header which is a CORE tag.  We don't presently
+   have any need to set the fields in the CORE tag, so we pass a null
+   structure with the tag.
+
+*/
+
 struct tag* atag_header (struct tag* p)
 {
 	p->hdr.tag = ATAG_CORE;
-	p->hdr.size = tag_size (tag_core);
-	memzero (&p->u.core, sizeof (p->u.core));
+	p->hdr.size = 2;	/* As documented. */
+//	p->hdr.size = tag_size (tag_core);
+//	memzero (&p->u.core, sizeof (p->u.core));
 
 # if !defined (CONFIG_SMALL)
 	printf ("ATAG_HEADER\n");

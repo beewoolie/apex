@@ -1,3 +1,7 @@
+2007-05-12  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/linux/atag.c (atag_header): Eliminated the core tag.
+
 2007-05-10  Marc Singer  <elf@buici.com>
 
 	* Releasing 1.5.0 with iMX31 and OneNAND.
