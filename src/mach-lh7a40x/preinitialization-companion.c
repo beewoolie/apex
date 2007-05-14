@@ -30,19 +30,13 @@
 #include <debug_ll.h>
 
 
-static __naked __section (.preinit) void wait_on_busy (void)
+static void wait_on_busy (void);
+
+void __naked __section (.apexrelocate.early) relocate_early (void)
 {
-  while (NAND_ISBUSY)
-    ;
-  __asm volatile ("mov pc, lr");
-}
+  unsigned long pc;
 
-void __naked __section (.preinit) preinitialization (void)
-{
-  unsigned long lr;
-
-  __asm volatile ("mov %0, lr\n\t" : "=r" (lr));
-
+  /* *** FIXME: there is a better place for this now */
 #if defined (CONFIG_STARTUP_UART)
   UART_BRCON = 0x3;
   UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
@@ -50,10 +44,12 @@ void __naked __section (.preinit) preinitialization (void)
   UART_CON = UART_CON_ENABLE;
 #endif
 
+  __asm volatile ("mov %0, pc" : "=r" (pc));
+
 	/* Also, only perform this special relocation when we're
 	   running from the base of SRAM.  */
-  if ((lr >> 12) != (0xb0000000>>12))
-    __asm volatile ("mov pc, %0" : : "r" (lr));
+  if ((pc >> 12) != (0xb0000000>>12))
+    __asm volatile ("b relocate_early_exit");
 
   PUTC ('N');
 
@@ -96,5 +92,16 @@ void __naked __section (.preinit) preinitialization (void)
 
   PUTC ('n');
 
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("b relocate_early_exit");
+}
+
+static __naked __section (.apexrelocate.early) void wait_on_busy (void)
+{
+  while (NAND_ISBUSY)
+    ;
+  __asm volatile ("mov pc, lr");
+}
+
+static __naked __section (.apexrelocate.early) void relocate_early_exit (void)
+{
 }

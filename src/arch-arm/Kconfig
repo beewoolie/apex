@@ -490,13 +490,12 @@ config COMPANION_EVT2_BOOT
 	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
 	bool "Companion EVT2 NAND Boot"
 	select RELOCATE_COMPANION_EVT2
-	select PREINITIALIZATION
 	help
-	  This enables preinitialization() that copies all of the boot
-	  loader from NAND flash to SRAM so that the system can get on
-	  it's feet.  The EVT2 NAND flash part only supports reading
-	  of 512 bytes from NAND flash in the absence of a stream-read
-	  feature in the NAND flash part.
+	  This enables early relocation of APEX from NAND flash to
+	  SRAM so that the system can get on it's feet.  The EVT2 NAND
+	  flash part only supports reading of 512 bytes from NAND
+	  flash in the absence of a stream-read feature in the NAND
+	  flash part.
 
 endchoice
 
@@ -677,7 +676,7 @@ config RELOCATE_NAND
 config RELOCATE_ONENAND
 	bool
 
-config PREINITIALIZATION
+config INLINE_PLATFORM_INITIALIZATION
 	bool
 
 config BIGENDIAN

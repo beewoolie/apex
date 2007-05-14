@@ -54,6 +54,9 @@
 
 #define PAGE_SIZE ONENAND_DATA_SIZE
 
+void relocate_apex_exit (void);
+
+
 /* relocate_early
 
    performs a crucial preload of the second and third KiB of APEX into
@@ -99,73 +102,6 @@ void __naked __section (.apexrelocate.early) relocate_early_exit (void)
 }
 
 
-/* relocate_apex_onenand
-
-   performs the relocation from OneNAND into SDRAM.  The LMA is
-   determined at runtime.  The relocator will put the loader at the
-   VMA and then return to the relocated address.
-
-   The passed parameter is the true return address for the
-   relocate_apex() function so that we continue execution in SDRAM
-   once relocatoin is complete.
-
-   We're register constrained when the DEBUG_LL configuration option
-   is enabled.  We'd like to use eight registers for the copy
-   function, but four will have to suffice.  The number must be a
-   power of 2 so that we copy exactly the size of the OneNAND page.
-
-*/
-
-void __naked __section (.bootstrap) relocate_apex_onenand (unsigned long lr)
-{
-  int page_size = PAGE_SIZE;
-  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
-		+ page_size - 1);
-  int page = 0;
-  void* pv = &APEX_VMA_ENTRY;
-
-  {
-    int v;
-	/* Divide by the page size without resorting to a function call */
-    for (v = page_size >> 1; v; v = v>>1)
-      cPages >>= 1;
-  }
-
-  for (; page < cPages; ++page) {
-      /* Use this to see how many blocks we're copying from flash */
-//    PUTC_LL('A' + (page&0xf));
-
-    ONENAND_PAGESETUP (page);
-    ONENAND_BUFFSETUP (1, 0, 4);
-    ONENAND_INTR = 0;
-    ONENAND_CMD = ONENAND_CMD_LOAD;
-
-    while (ONENAND_IS_BUSY)
-	;
-
-    __asm volatile (
-		 "0: ldmia %1!, {r3-r6}\n\t"
-		    "stmia %0!, {r3-r6}\n\t"
-		    "cmp %0, %2\n\t"
-		    "blo 0b\n\t"
-		 : "+r" (pv)
-		 :  "r" (ONENAND_DATARAM1),
-		    "r" (pv + page_size)
-		 : "r3", "r4", "r5", "r6",
-//		   "r7", "r8", "r9", "r10",
-		   "cc"
-		 );
-
-    /* Note that we don't need to increment pv as it is incremented by
-       the stmia instruction.  */
-  }
-
-  PUTC_LL('!');
-
-  __asm volatile ("mov pc, %0" : : "r" (lr));
-}
-
-
 /* relocate_apex
 
    relocates the loader from either OneNAND flash or from SDRAM to the
@@ -178,44 +114,22 @@ void __naked __section (.bootstrap) relocate_apex_onenand (unsigned long lr)
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
-  unsigned long lr;
-  unsigned long pc;		/* So we can detect the second stage */
-  extern unsigned long reloc;
-  unsigned long offset = (unsigned long) &reloc;
+  unsigned long pc;		/* So we can detect the stage */
 
   PUTC ('>');
 
-	/* Setup bootstrap stack, trivially.  We do this so that we
-	   can perform some complex operations here in the bootstrap,
-	   The C setup will move the stack into SDRAM just after this
-	   routine returns. */
-
-//  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
-
-  __asm volatile ("mov %0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: mov %2, lr\n\t"
-		  "subs %1, %1, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		  "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		  : "=r" (lr),
-		    "+r" (offset),
-		    "=r" (pc)
-		  :: "lr", "cc");
+  __asm volatile ("mov %0, pc" : "=r" (pc));
 
   PUTHEX_LL (pc);
   PUTC_LL ('>');
 
   PUTC ('c');
-  //  PUTC_LL ('c');
 
 	/* Jump to OneNAND loader only if we could be starting from NAND. */
   if ((pc >> 12) == (CONFIG_DRIVER_ONENAND_BASE>>12)) {
     PUTC ('N');
-    __asm volatile ("mov r0, %0" :: "r" (lr)); /* 'Push' lr as first arg */
     __asm volatile ("b relocate_apex_onenand\n");
   }
 
@@ -271,6 +185,72 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+}
 
+
+/* relocate_apex_onenand
+
+   performs the relocation from OneNAND into SDRAM.  The LMA is
+   determined at runtime.  The relocator will put the loader at the
+   VMA and then return to the relocated address.
+
+   We're register constrained when the DEBUG_LL configuration option
+   is enabled.  We'd like to use eight registers for the copy
+   function, but four will have to suffice.  The number must be a
+   power of 2 so that we copy exactly the size of the OneNAND page.
+
+*/
+
+void __naked __section (.apexrelocate) relocate_apex_onenand (void)
+{
+  int page_size = PAGE_SIZE;
+  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
+		+ page_size - 1);
+  int page = 0;
+  void* pv = &APEX_VMA_ENTRY;
+
+  {
+    int v;
+	/* Divide by the page size without resorting to a function call */
+    for (v = page_size >> 1; v; v = v>>1)
+      cPages >>= 1;
+  }
+
+  for (; page < cPages; ++page) {
+      /* Use this to see how many blocks we're copying from flash */
+//    PUTC_LL('A' + (page&0xf));
+
+    ONENAND_PAGESETUP (page);
+    ONENAND_BUFFSETUP (1, 0, 4);
+    ONENAND_INTR = 0;
+    ONENAND_CMD = ONENAND_CMD_LOAD;
+
+    while (ONENAND_IS_BUSY)
+	;
+
+    __asm volatile (
+		 "0: ldmia %1!, {r3-r6}\n\t"
+		    "stmia %0!, {r3-r6}\n\t"
+		    "cmp %0, %2\n\t"
+		    "blo 0b\n\t"
+		 : "+r" (pv)
+		 :  "r" (ONENAND_DATARAM1),
+		    "r" (pv + page_size)
+		 : "r3", "r4", "r5", "r6",
+//		   "r7", "r8", "r9", "r10",
+		   "cc"
+		 );
+
+    /* Note that we don't need to increment pv as it is incremented by
+       the stmia instruction.  */
+  }
+
+  PUTC_LL('!');
+
+  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+}
+
+void __naked __section (.apexrelocate) relocate_apex_exit (void)
+{
 }

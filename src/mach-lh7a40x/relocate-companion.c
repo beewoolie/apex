@@ -27,7 +27,9 @@
    Implementation of APEX relocator that copies the loader from I2C
    EEPROM or SD/MMC depending on our needs.  This function will
    override the default version that is part of the architecture
-   library.
+   library.  This implementation was used on the EVT1 hardware.  The
+   EVT2 hardware included a NAND flash part in order to avoid this
+   mess.
 
    Bootstrap Loader Selection
    --------------------------
@@ -113,55 +115,9 @@
 #define MMC_BOOTLOADER_LOAD_ADDR	(0xb0000000 + 4*1024)
 //#define MMC_BOOTLOADER_LOAD_ADDR	(0xc0000000)
 
-int __section (.bootstrap) relocate_apex_mmc (void)
-{
-  struct descriptor_d d;
-  size_t cb;
-  unsigned char rgb[16];	/* Partition table entry */
-
-  PUTC ('M');			/* Feedback */
-
-  mmc_init ();
-  PUTC_LL ('i');
-
-  if (!mmc_card_acquired ()) {
-    PUTC ('0');
-    return 0;
-  }
-
-  PUTC_LL ('a');
-
-  d.start = 512 - 2 - 4*16;
-  d.length = 16;
-  d.index = 0;
-  cb = mmc_read (&d, (void*) rgb, d.length);
-  if (cb != d.length) {
-    PUTC ('1');
-    return 0;
-  }
-
-  if (rgb[4] != 0) {		/* Must be type 0 */
-    PUTC ('2');
-    return 0;
-  }
-
-  d.start = *((unsigned long*) &rgb[8])*512;	/* Start of first partition */
-  d.length = MMC_BOOTLOADER_SIZE;
-  d.index = 0;
-
-  PUTHEX_LL (d.start);
-  PUTC_LL ('p');
-  PUTC ('r');
-  cb = mmc_read (&d, (void*) MMC_BOOTLOADER_LOAD_ADDR, d.length);
-
-  PUTHEX_LL (cb);
-  PUTC_LL ('\r');
-  PUTC_LL ('\n');
-
-  PUTC ((cb == d.length) ? '+' : '-');
-
-  return (cb == d.length) ? 1 : 0;
-}
+void relocate_apex (unsigned long);
+int relocate_apex_mmc (void);
+void relocate_apex_exit (void);
 
 
 /* relocate_apex
@@ -177,14 +133,13 @@ int __section (.bootstrap) relocate_apex_mmc (void)
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
-  unsigned long lr;
   unsigned long pc;		/* So we can detect the second stage */
-  extern unsigned long reloc;
-  unsigned long offset = (unsigned long) &reloc;
 
   PUTC ('>');
+
+  __asm volatile ("mov %0, pc" : "=r" (pc));
 
 	/* Setup bootstrap stack, trivially.  We do this so that we
 	   can perform some complex operations here in the bootstrap,
@@ -192,18 +147,6 @@ void __naked __section (.bootstrap) relocate_apex (void)
 	   into SDRAM just after this routine returns. */
 
   __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
-
-  __asm volatile ("mov %0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: mov %2, lr\n\t"
-		  "subs %1, %1, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		  "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		  : "=r" (lr),
-		    "+r" (offset),
-		    "=r" (pc)
-		  :: "lr", "cc");
 
   PUTC_LL ('c');
 
@@ -215,7 +158,8 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
 	/* Read loader from SD/MMC only if we could be starting from I2C. */
   else if ((pc >> 12) == (0xb0000000>>12) && relocate_apex_mmc ()) {
-    lr = MMC_BOOTLOADER_LOAD_ADDR;
+    PUTC ('@');			/* Let 'em know we're jumping */
+    __asm volatile ("mov pc, %0" :: "r" (MMC_BOOTLOADER_LOAD_ADDR));
   }
 
 #endif
@@ -270,9 +214,66 @@ void __naked __section (.bootstrap) relocate_apex (void)
 		  );
 #endif
   }
+  /* *** FIXME: tidy up the exit code; check for code density */
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" : : "r" (lr));
-
+  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
+
+int __section (.apexrelocate) relocate_apex_mmc (void)
+{
+  struct descriptor_d d;
+  size_t cb;
+  unsigned char rgb[16];	/* Partition table entry */
+
+  PUTC ('M');			/* Feedback */
+
+  mmc_init ();
+  PUTC_LL ('i');
+
+  if (!mmc_card_acquired ()) {
+    PUTC ('0');
+    return 0;
+  }
+
+  PUTC_LL ('a');
+
+  d.start = 512 - 2 - 4*16;
+  d.length = 16;
+  d.index = 0;
+  cb = mmc_read (&d, (void*) rgb, d.length);
+  if (cb != d.length) {
+    PUTC ('1');
+    return 0;
+  }
+
+  if (rgb[4] != 0) {		/* Must be type 0 */
+    PUTC ('2');
+    return 0;
+  }
+
+  d.start = *((unsigned long*) &rgb[8])*512;	/* Start of first partition */
+  d.length = MMC_BOOTLOADER_SIZE;
+  d.index = 0;
+
+  PUTHEX_LL (d.start);
+  PUTC_LL ('p');
+  PUTC ('r');
+  cb = mmc_read (&d, (void*) MMC_BOOTLOADER_LOAD_ADDR, d.length);
+
+  PUTHEX_LL (cb);
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
+
+  PUTC ((cb == d.length) ? '+' : '-');
+
+  return (cb == d.length) ? 1 : 0;
+}
+
+
+void __naked  __section (.apexrelocate) relocate_apex_exit (void)
+{
+  __asm volatile ("nop");
+}
+

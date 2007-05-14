@@ -56,7 +56,7 @@
 	|(1<<7)			/* BL - burst length of 8 */
 
 
-static void __naked __used __section(.platform.early) platform_early (void)
+static void __naked __used __section(.bootstrap.early) bootstrap_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
@@ -102,26 +102,16 @@ void __section (.bootstrap) usleep (unsigned long us)
 }
 
 
-/* initialize_bootstrap
+/* bootstrap_prefix
 
-   performs vital SDRAM initialization as well as some other memory
-   controller initializations.  It will perform no work if we are
-   already running from SDRAM.
-
-   The return value is true if SDRAM has been initialized and false if
-   this initialization has already been performed.  Note that the
-   non-SDRAM initializations are performed regardless of whether or
-   not we're running in SDRAM.
+   performs mandatory, pre-SDRAM initializations that were not
+   performed in the bootstrap_early function.  In this case, we wait
+   until now to setup the PLLs.
 
 */
 
-void __naked __section (.bootstrap) initialize_bootstrap (void)
+void __naked __section (.bootstrap.prefix) bootstrap_prefix (void)
 {
-  unsigned long lr;
-  __asm volatile ("mov %0, lr" : "=r" (lr));
-
-//  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15);	/* 1GiB @ 1GiB */
-
   __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
   /* This is an apparent work-around for some sort of bug in the IPU
@@ -184,27 +174,24 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   LED_ON (0);
 #endif
 
-  __asm volatile ("cmp %0, %1\n\t"
-		  "bls 1f\n\t"
-		  "cmp %0, %2\n\t"
-		  "bhi 1f\n\t"
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-		  "mov r0, #1\n\t"
-		  "str r0, [%3]\n\t"
-#endif
-		  "mov r0, #0\n\t"
-		  "mov pc, %0\n\t"
-		  "1:"
-		  :: "r" (lr),
-		     "I" (SDRAM_BANK0_PHYS),
-		     "I" (SDRAM_END_PHYS)
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-		  ,  "r" (&fSDRAMBoot)
-#endif
-		  : "cc");
+  __asm volatile ("b bootstrap_prefix_exit");
+}
 
-  PUTC ('S');
+void __naked __section (.bootstrap.prefix) bootstrap_prefix_exit (void)
+{
+}
 
+
+/* bootstrap_sdram
+
+   performs the SDRAM initialization.  This piece of code is skipped
+   by the reset() code if it determines that APEX is already running
+   in SDRAM.
+
+*/
+
+void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
+{
 		/* Initialize IOMUX for SDRAM */
   {
     /* Initialize IOMUX from 0x43fac26c to 0x43fac2dc */
@@ -237,15 +224,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
 
-  PUTC ('s');
+  __asm volatile ("b bootstrap_sdram_exit");
+}
 
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-  barrier ();
-  fSDRAMBoot = 0;
-#endif
-
-  __asm volatile ("mov r0, #-1\t\n"
-		  "mov pc, %0" : : "r" (lr));
+void __naked __section (.bootstrap.sdram) bootstrap_sdram_exit (void)
+{
+  __asm volatile ("mov r0, #0");		/* SDRAM initialized */
 }
 
 

@@ -10,11 +10,13 @@ config MACH_MX31ADS
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_CS8900
+	select INLINE_PLATFORM_INITIALIZATION
 
 config MACH_EXBIBLIO_ROSENCRANTZ
 	bool "Exbiblio Rosencrantz Board"
 	select ARCH_MX31
 	select USES_DM9000
+	select INLINE_PLATFORM_INITIALIZATION
 
 endchoice
 

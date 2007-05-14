@@ -20,14 +20,29 @@ SECTIONS
 	.reset : {		/* Reset handler, first real code */
 		*(.reset)
 	}
-	.platform.early : {	/* Early platform setups */
-		*(.platform.early)
+	.bootstrap.early : {	/* Early bootstrap setups */
+		*(.bootstrap.early)
 	}
 	.apexrelocate.early : {	/* Early relocation for constrained boot */
 		*(.apexrelocate.early)
 	}
-	.postinitialization : {
-		*(.postinitialization)
+	.bootstrap.prefix : {	/* Mandatory bootstrap initializations  */
+		*(.bootstrap.prefix)
+	}
+	.reset.pre : {		/* Pre-SDRAM init code, check PC in SDRAM */
+		*(.reset.pre)
+	}
+	.bootstrap.sdram : {	/* Platform SDRAM initialization */
+		*(.bootstrap.sdram)
+	}
+	.reset.post : {		/* Post-SDRAM init code.*/
+		*(.reset.post)
+	}
+	.apexrelocate : {	/* Final/only relocation of APEX to SDRAM */
+		*(.apexrelocate)
+	}
+	.reset.finish : {
+		*(.reset.finish)
 	}
 	.bootstrap : {		/* Bootstrap initialization */
 		*(.bootstrap.0)		/* Bootstrap entry point */  

@@ -24,15 +24,14 @@
    DESCRIPTION
    -----------
 
+   Really, this is a relocator from NOR flash or some other directly
+   mapped source.
+
 */
 
 #include <config.h>
 #include <asm/bootstrap.h>
 #include <asm/cp15.h>
-
-#if defined (CONFIG_MACH_IXP42X)
-# include <mach/hardware.h>
-#endif
 
 #include <debug_ll.h>
 
@@ -45,6 +44,8 @@
 #endif
 
 //# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+
+void relocate_apex_exit (void);
 
 /* relocate_apex
 
@@ -65,21 +66,14 @@
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
   unsigned long lr;
-  extern unsigned long reloc;
-  unsigned long offset = (unsigned long) &reloc;
 
   PUTC_LL ('R');
-  __asm volatile ("mov %0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: subs %1, %1, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, %0\n\t"	/* Return when already reloc'd  */
-		  "add %0, %0, %1"	/* Adjust lr for function return */
-		  :  "=&r" (lr),
-		     "+r" (offset)
+  __asm volatile ("bl 0f\n\t"
+               "0: str lr, [%0]\n\t"
+		  :  "=&r" (lr)
 		  :: "lr", "cc");
 
   PUTC_LL ('c');
@@ -154,11 +148,10 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
   PUTC_LL ('j');
 
-  DRAIN_WRITE_BUFFER;
-  INVALIDATE_ICACHE;
-  CP15_WAIT;
-
 				/* Return to SDRAM */
-  //  __asm volatile ("add pc, %0, %1" : : "r" (offset), "r" (lr));
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+}
+
+void __naked __section (.apexrelocate) relocate_apex_exit (void)
+{
 }

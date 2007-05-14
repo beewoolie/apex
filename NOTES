@@ -5,6 +5,22 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.may.13
+
+    o Need to regularize the configuration options.  For example, the
+      VMA is an APEX parameters, not a platform parameter.  We want
+      the configuration options to relfect the most logical placement
+      so that we don't have redundant entries.
+    o Thus, APEX_VMA, KERNEL_LMA, USE_RAMDISK...
+    o We want to support SRAM or other early RAM access.  The most
+      logical way to do this is to have a region where this can
+      happen.  Trouble is, it either needs to be required, or not.
+      Moreover, it could be SDRAM once SDRAM is initialized.  Need to
+      think more about this.  Perhaps the best way is to locate the
+      stack at the 'correct' location after SDRAM is available.
+    o We should move APEX up some in memory so that we can support
+      larger kernels, 4 MiB, at least.
+
   o 2007.may.12
     o We want to make it a requirement that there be a stack when we
       call apex_relocate().  These functions are notoriously finicky

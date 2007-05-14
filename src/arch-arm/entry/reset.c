@@ -29,17 +29,16 @@
    used herein may be overridden by target specific implementations.
    Refer to the documentation for details.
 
-   preinitialization and reset_finish
-   ----------------------------------
+   Early relocation
+   ----------------
 
-   In order to support the NAND boot on the lh7 processors where the
-   processor may only load 512 bytes from flash, we support a
-   preinitialization() call to move more data from flash to memory
-   before initialization the SDRAM.  In order to maximize the size of
-   the preinitialization function, we put it in it's own segment,
-   immediately following .reset, and followed by the reset of the
-   bootstrap segment.  The reset_finish() function handles the rest of
-   the reset-made calls.
+   In order to support the NAND boot on the LH7 processors as well as
+   the OneNAND part where the initial boot process may only load 512
+   or 1K from flash, we support the .apexrelocate.early section that
+   can move data from flash to memory before initialization of the
+   SDRAM.  The number of bytes available to this function is optimized
+   by placing the code as early as possible, immediately following the
+   .reset section.
 
 */
 
@@ -49,6 +48,8 @@
 #include <arch-arm.h>
 #include <memtest.h>
 #include <asm/cp15.h>
+#include <mach/memory.h>
+#include <sdramboot.h>
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
@@ -161,7 +162,7 @@ void __naked __section (.reset) reset (void)
   {
     unsigned long l;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
-		    "bic %0, %0, #(1<<0)\n\t"		/* MMU enable */
+		    "bic %0, %0, #(1<<0)\n\t"		/* MMU disable */
 		    "bic %0, %0, #(1<<1)\n\t"		/* Alignment */
 		    "bic %0, %0, #(1<<2)\n\t"		/* DCache */
 		    "bic %0, %0, #(1<<12)\n\t"		/* ICache */
@@ -190,15 +191,45 @@ void __naked __section (.reset) reset (void)
   }
   CP15_WAIT;
 #endif
+}
 
-#if defined (CONFIG_PREINITIALIZATION)
-  /* *** FIXME: legacy implementation. */
-  __asm volatile ("bl preinitialization"); /* Avoid tail call optimization */
+#if defined (CONFIG_INLINE_PLATFORM_INITIALIZATION)
+void __naked __section (.reset.pre) reset_pre (void)
+{
+  __asm volatile ("bl 0f\n\t"
+	       "0: cmp lr, %0\n\t"
+	          "blo 1f\n\t"
+		  "cmp lr, %1\n\t"
+		  "bhi 1f\n\t"
+		  "mov r0, #1\n\t"
+		  "b reset_post\n\t"
+		  "1:\n\t" :: "I" (SDRAM_START_PHYS),
+			      "I" (SDRAM_END_PHYS)
+		  : "cc");
+  PUTC ('S');
+  __asm volatile ("b reset_pre_exit");
+}
+void __naked __section (.reset.pre) reset_pre_exit (void)
+{
+}
+
+void __naked __section (.reset.post) reset_post (void)
+{
+  PUTC ('s');
+#if defined (CONFIG_SDRAMBOOT_REPORT)
+  __asm volatile ("str r0, [%0]\n\t" :: "r" (&fSDRAMBoot));
+  __asm volatile ("b reset_post_1\n\t");
 #endif
 }
 
-void __naked __section (.postinitialization) reset_finish_0 (void)
+#endif
+
+void __naked __section (.reset.post) reset_post_1 (void)
 {
+  int result;
+  extern unsigned long reloc;
+  unsigned long offset = (unsigned long) &reloc;
+
   /* *** FIXME: we'd rather not make a call here.  Instead, we'd like
      *** to be able to use a flow of code to get to this point.
      *** Functions and the like in the platform initialization are not
@@ -211,11 +242,15 @@ void __naked __section (.postinitialization) reset_finish_0 (void)
      initialized SDRAM; otherwise, we may clobber ourself in the
      memory test. */
 
-  if (initialize_bootstrap ())	/* Initialization critical to relocate */
-#if !defined (CONFIG_BOOTSTRAP_MEMTEST)
-  ;
+#if defined (CONFIG_INLINE_PLATFORM_INITIALIZATION)
+  __asm volatile ("mov %0, r0" : "=r" (result));
 #else
-  {
+				/* pre-relocate platform initialization  */
+  result = !initialize_bootstrap ();
+#endif
+
+#if defined (CONFIG_BOOTSTRAP_MEMTEST)
+  if (!result) {
     unsigned long result = 0;
 
     PUTC ('M');
@@ -231,35 +266,53 @@ void __naked __section (.postinitialization) reset_finish_0 (void)
   }
 #endif
 
-  PUTC_LL ('E');
-  PUTC_LL ('r');
-  relocate_apex ();
-  __asm volatile ("b reset_finish_1");
+  PUTC_LL ('L');
+
+	/* Check for execution at final location. */
+  __asm volatile ("bl reloc\n\t"
+	   "reloc:subs %0, %0, lr\n\t"
+	   ".globl reloc\n\t"
+ 		  "beq reset_finish\n\t"	/* Quick exit if reloc'd */
+		  : "+r" (offset)
+		  :: "lr", "cc");
+
+	/* Initialize stack pointer for relocate_apex () */
+//  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
+
+  __asm volatile ("mov r0, %0" :: "r" (offset));
+  __asm volatile ("b reset_post_2");
 }
 
-void __naked __section (.postinitialization) reset_finish_1 (void)
+void __naked __section (.reset.post) reset_post_2 (void)
 {
-  PUTC_LL ('C');
-  setup_c ();			/* Setups before executing C code */
+}
 
-  PUTC_LL ('c');
-
-	/* Start loader proper which doesn't return */
-  __asm volatile ("b init");
+void __naked __section (.reset.finish) reset_finish (void)
+{
+  PUTC_LL ('l');
+#if defined (CONFIG_MACH_IXP42X)
+  /* *** FIXME: either this code is unnecessary, or we need to find a
+     *** better way to specify it. */
+  DRAIN_WRITE_BUFFER;
+  INVALIDATE_ICACHE;
+  CP15_WAIT;
+#endif
+  __asm volatile ("b setup_c");
 }
 
 
 /* setup_c
 
    performs setup necessary to make standard C (APCS) happy, a stack,
-   a clear BSS, and data variables in RAM.  The later is usually
-   handled by the relocate.
+   a clear BSS, and data in RAM.  The latter is handled by relocation.
 
 */
 
-void __naked setup_c (void)
+void __naked __section (.reset.finish) setup_c (void)
 {
-	/* Setup stack, quite trivial */
+  PUTC_LL ('C');
+
+	/* Setup stack (again), quite trivial */
   __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
 
 #if defined (CONFIG_CLEAR_STACKS)
@@ -286,8 +339,20 @@ void __naked setup_c (void)
 		   :  "r" (&APEX_VMA_BSS_END), "r" (0));
  }
 
-  __asm volatile ("mov pc, lr");
+  PUTC_LL ('c');
+
+  __asm volatile ("b reset_finish_exit");
 }
+
+void __naked __section (.reset.finish) reset_finish_exit (void)
+{
+	/* Start loader proper which doesn't return */
+  /* We could put the b init in the setup_c function.  Perhaps we
+     will, but may want to do something else and this is the place for
+     it. */
+  __asm volatile ("b init");
+}
+
 
 void __div0 (void)
 {
