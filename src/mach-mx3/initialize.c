@@ -56,7 +56,7 @@
 	|(1<<7)			/* BL - burst length of 8 */
 
 
-static void __naked __used __section(.bootstrap.early) bootstrap_early (void)
+void __naked __used __section(.bootstrap.early) bootstrap_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }

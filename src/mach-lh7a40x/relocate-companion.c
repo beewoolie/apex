@@ -276,4 +276,3 @@ void __naked  __section (.apexrelocate) relocate_apex_exit (void)
 {
   __asm volatile ("nop");
 }
-

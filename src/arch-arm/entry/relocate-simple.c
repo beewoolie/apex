@@ -1,4 +1,4 @@
-/* relocate.c
+/* relocate-simple.c
 
    written by Marc Singer
    9 Nov 2004
@@ -24,8 +24,17 @@
    DESCRIPTION
    -----------
 
-   Really, this is a relocator from NOR flash or some other directly
-   mapped source.
+   This is a simple, copying relocator that moves the APEX image from
+   its current location to the defined runtime address.  This
+   relocator is suitable for NOR flash booting and for starting APEX
+   from SRAM/SDRAM.
+
+   There are three copy routines defined.  The LDR_COPY is an indexed
+   copy from source to destination.  It exists only as a test case as
+   the SLOW_COPY and SMALL_COPY versions should be adequate for
+   register constrained situations.  The default copy uses eight
+   registers and may cause trouble via a register spill onto the
+   stack.
 
 */
 
@@ -37,7 +46,7 @@
 
 #if defined (CONFIG_DEBUG_LL)
 //# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
-# define USE_SLOW_COPY		/* Simpler copy loop, more free registers */
+# define USE_SMALL_COPY		/* Reduced register copy */
 # define USE_COPY_VERIFY
 #else
 # define USE_COPY_VERIFY	/* Verify all of the time */
@@ -66,9 +75,9 @@ void relocate_apex_exit (void);
 
 */
 
-void __used __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
+void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
-  unsigned long lr;
+  unsigned long lr;		/* Saved for the sake of PUTC_LL */
 
   PUTC_LL ('R');
   __asm volatile ("bl 0f\n\t"
@@ -106,6 +115,17 @@ void __used __naked __section (.apexrelocate) relocate_apex (unsigned long offse
 		    "+r" (d)
 		  :  "r" (&APEX_VMA_COPY_END)
 		  : "r3", "cc"
+		  );
+#elif defined (USE_SMALL_COPY)
+  __asm volatile (
+	       "0: ldmia %0!, {r3,r4,r5,r6}\n\t"
+		  "stmia %1!, {r3,r4,r5,r6}\n\t"
+		  "cmp %1, %2\n\t"
+		  "bls 0b\n\t"
+		  : "+r" (s),
+		    "+r" (d)
+		  :  "r" (&APEX_VMA_COPY_END)
+		  : "r3", "r4", "r5", "r6", "cc"
 		  );
 #else
   __asm volatile (
@@ -148,7 +168,7 @@ void __used __naked __section (.apexrelocate) relocate_apex (unsigned long offse
 
   PUTC_LL ('j');
 
-				/* Return to SDRAM */
+				/* Return via SDRAM */
   __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 

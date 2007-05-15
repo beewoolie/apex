@@ -220,6 +220,25 @@
 #define SDRAM_MODE		(SDRAM_MODE_SETUP | SDCRC_AUTOPRECHARGE)
 
 
+void __naked __section (.bootstrap.early) bootstrap_early (void)
+{
+#if defined (CONFIG_STARTUP_UART)
+  UART_BRCON = 0x3;
+  UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
+  UART_INTEN = 0x00; /* Mask interrupts */
+  UART_CON = UART_CON_ENABLE;
+  PUTC ('A');
+  /* Should we need it, this jump will put us over the constant
+     pool */
+  //  __asm volatile ("b bootstrap_early_exit");
+#endif
+}
+
+void __naked __section (.bootstrap.early) bootstrap_early_exit (void)
+{
+}
+
+
 /* usleep
 
    this function accepts a count of microseconds and will wait at
@@ -273,15 +292,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
-
-#if defined (CONFIG_STARTUP_UART)
-  UART_BRCON = 0x3;
-  UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
-  UART_INTEN = 0x00; /* Mask interrupts */
-  UART_CON = UART_CON_ENABLE;
-
-  PUTC('A');
-#endif
 
 	/* Set the running clock speed.  This will increase the HCLK
 	   (bus) speed but not let the FCLK (CPU) speed be independent

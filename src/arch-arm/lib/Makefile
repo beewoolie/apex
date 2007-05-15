@@ -22,7 +22,7 @@
 lib-y := div64.o memchr.o memzero.o
 #lib-y += memcpy2.o
 lib-y += memcpy.o
-lib-y += relocate.o
+#lib-y += relocate.o
 lib-y += entry.o
 lib-y += lib1funcs.o
 lib-y += cp15.o

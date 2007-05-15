@@ -44,15 +44,12 @@
 
 /* wait_on_busy
 
-   wait for the flash device to become ready.
-
-   *** I think that the reason for a function has to do with register
-   *** usage.  I'm not really sure, though, and we could probably move
-   *** the while() into the reading function.
+   wait for the flash device to become ready.  Using this function
+   makes the code smaller.
 
 */
 
-static __naked __section (.bootstrap) void wait_on_busy (void)
+static void __naked __section (.apexrelocate.func) wait_on_busy (void)
 {
   while (NAND_ISBUSY)
     ;
@@ -60,7 +57,7 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 }
 
 
-/* relocate_apex
+/* relocate_apex_nand
 
    performs a memory move of the whole loader, presumed to be from
    NAND flash into SDRAM.  The LMA is determined at runtime.  The
@@ -73,52 +70,33 @@ static __naked __section (.bootstrap) void wait_on_busy (void)
 
 */
 
-void __naked __section (.bootstrap) relocate_apex_nand (void)
+void __naked __section (.apexrelocate.func) relocate_apex_nand (void)
 {
-  unsigned long lr;
+  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
+  void* pv = &APEX_VMA_ENTRY;
+  int cAddr = NAM_DECODE (BOOT_PBC);
+  PUTC_LL('0' + cAddr);
 
-  {
-    extern char reloc_nand;
-    unsigned long offset = (unsigned long) &reloc_nand;
-    __asm volatile ("mov %0, lr\n\t"
-		    "bl reloc_nand\n\t"
-	     "reloc_nand: subs %1, %1, lr\n\t"
-	     ".globl reloc_nand\n\t"
-//		    "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		    "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		    : "=r" (lr),
-		      "+r" (offset)
-		    :: "lr", "cc");
+  NAND_CLE = NAND_Reset;
+  wait_on_busy ();
 
-  }
+  NAND_CLE = NAND_Read1;
+  while (cAddr--)
+    NAND_ALE = 0;
+  wait_on_busy ();
 
-  {
-    int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
-    void* pv = &APEX_VMA_ENTRY;
-    int cAddr = NAM_DECODE (BOOT_PBC);
-    PUTC_LL('0' + cAddr);
-
-    NAND_CLE = NAND_Reset;
-    wait_on_busy ();
+  while (cPages--) {
+    int cb;
 
     NAND_CLE = NAND_Read1;
-    while (cAddr--)
-      NAND_ALE = 0;
+    for (cb = 512; cb--; )
+      *((char*) pv++) = NAND_DATA;
+    for (cb = 16; cb--; )
+      NAND_DATA;
     wait_on_busy ();
-
-    while (cPages--) {
-      int cb;
-
-      NAND_CLE = NAND_Read1;
-      for (cb = 512; cb--; )
-	*((char*) pv++) = NAND_DATA;
-      for (cb = 16; cb--; )
-	NAND_DATA;
-      wait_on_busy ();
-    }
   }
 
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 
 
@@ -134,7 +112,7 @@ void __naked __section (.bootstrap) relocate_apex_nand (void)
 
 */
 
-void __naked __section (.bootstrap) relocate_apex (void)
+void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
   unsigned long lr;
   unsigned long pc;		/* So we can detect the second stage */
@@ -235,6 +213,9 @@ void __naked __section (.bootstrap) relocate_apex (void)
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" : : "r" (lr));
+  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+}
 
+void __naked __section (.apexrelocate.exit) relocate_apex_exit (void)
+{
 }

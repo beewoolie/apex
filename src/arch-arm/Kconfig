@@ -435,6 +435,7 @@ choice
 
 config NO_BOOTSTRAP
 	bool "No Bootstrap"
+	select RELOCATE_SIMPLE
 	help
 	  This option disables any possible specialized bootstrap
 	  option and only supports a relocation of the loader from the
@@ -444,6 +445,7 @@ config NO_BOOTSTRAP
 config NOR_BOOT
 	depends on USES_NOR_BOOTFLASH
 	bool "NOR Flash Boot"
+	select RELOCATE_SIMPLE
 	help
 	  This option chooses a standard NOR flash boot method where
 	  all of APEX is available and mapped into the system address
@@ -668,6 +670,9 @@ config USES_COMPANION_EVT2_BOOT
 	bool
 
 config RELOCATE_COMPANION_EVT2
+	bool
+
+config RELOCATE_SIMPLE
 	bool
 
 config RELOCATE_NAND

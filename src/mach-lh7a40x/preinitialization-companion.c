@@ -30,19 +30,23 @@
 #include <debug_ll.h>
 
 
-static void wait_on_busy (void);
+/* wait_on_busy
+
+   wait for the flash device to become ready.  Using this function
+   makes the code smaller.
+
+*/
+
+static void __naked __section (.apexrelocate.early.func) wait_on_busy (void)
+{
+  while (NAND_ISBUSY)
+    ;
+  __asm volatile ("mov pc, lr");
+}
 
 void __naked __section (.apexrelocate.early) relocate_early (void)
 {
   unsigned long pc;
-
-  /* *** FIXME: there is a better place for this now */
-#if defined (CONFIG_STARTUP_UART)
-  UART_BRCON = 0x3;
-  UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
-  UART_INTEN = 0x00; /* Mask interrupts */
-  UART_CON = UART_CON_ENABLE;
-#endif
 
   __asm volatile ("mov %0, pc" : "=r" (pc));
 
@@ -65,6 +69,7 @@ void __naked __section (.apexrelocate.early) relocate_early (void)
     for (iPage = 1; iPage < cPages; ++iPage) {
       NAND_CLE = NAND_Reset;
       wait_on_busy ();
+
       NAND_CLE = NAND_Read1;
       NAND_ALE = 0;
       {
@@ -95,13 +100,6 @@ void __naked __section (.apexrelocate.early) relocate_early (void)
   __asm volatile ("b relocate_early_exit");
 }
 
-static __naked __section (.apexrelocate.early) void wait_on_busy (void)
-{
-  while (NAND_ISBUSY)
-    ;
-  __asm volatile ("mov pc, lr");
-}
-
-static __naked __section (.apexrelocate.early) void relocate_early_exit (void)
+void __naked __section (.apexrelocate.early.exit) relocate_early_exit (void)
 {
 }

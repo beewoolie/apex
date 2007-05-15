@@ -22,9 +22,13 @@ SECTIONS
 	}
 	.bootstrap.early : {	/* Early bootstrap setups */
 		*(.bootstrap.early)
+		*(.bootstrap.early.func)
+		*(.bootstrap.early.exit)
 	}
 	.apexrelocate.early : {	/* Early relocation for constrained boot */
 		*(.apexrelocate.early)
+		*(.apexrelocate.early.func)
+		*(.apexrelocate.early.exit)
 	}
 	.bootstrap.prefix : {	/* Mandatory bootstrap initializations  */
 		*(.bootstrap.prefix)
@@ -34,12 +38,16 @@ SECTIONS
 	}
 	.bootstrap.sdram : {	/* Platform SDRAM initialization */
 		*(.bootstrap.sdram)
+		*(.bootstrap.sdram.func)
+		*(.bootstrap.sdram.exit)
 	}
 	.reset.post : {		/* Post-SDRAM init code.*/
 		*(.reset.post)
 	}
 	.apexrelocate : {	/* Final/only relocation of APEX to SDRAM */
 		*(.apexrelocate)
+		*(.apexrelocate.func)
+		*(.apexrelocate.exit)
 	}
 	.reset.finish : {
 		*(.reset.finish)
