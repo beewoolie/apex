@@ -39,22 +39,25 @@
 
 #if defined (CONFIG_DRIVER_NAND_TYPE_ST)
 
-#define NAND_Reset	(0xff)
-#define NAND_ReadID	(0x90)
-#define NAND_Status	(0x70)
-#define NAND_ReadSetup	(0x00)
-#define NAND_Read	(0x30)
-#define NAND_Erase	(0x60)
-#define NAND_EraseConfirm (0xd0)
+#define NAND_Reset			(0xff)
+#define NAND_ReadID			(0x90)
+#define NAND_Status			(0x70)
+#define NAND_ReadSetup			(0x00)
+#define NAND_Read			(0x30)
+#define NAND_Erase			(0x60)
+#define NAND_EraseConfirm		(0xd0)
+#define NAND_PageProgram		(0x80)
+#define NAND_PageProgramConfirm		(0x10)
+
 //#define NAND_AutoProgram (0x10)
 //#define NAND_SerialInput (0x80)
 //#define NAND_CopyBack	 (0x8a)
 
-#define NAND_Fail	(1<<0)
-#define NAND_CacheErr	(1<<1)
-#define NAND_CacheReady (1<<5)
-#define NAND_Ready	(1<<6)
-#define NAND_Writable	(1<<7)
+#define NAND_Fail			(1<<0)
+#define NAND_CacheErr			(1<<1)
+#define NAND_CacheReady			(1<<5)
+#define NAND_Ready			(1<<6)
+#define NAND_Writable			(1<<7)
 
 #endif
 

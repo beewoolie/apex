@@ -55,8 +55,18 @@
 	|(3<<13)		/* SREFR - 7.81us refresh */\
 	|(1<<7)			/* BL - burst length of 8 */
 
+#define ESDCTL_CTL0_V2 0\
+	|(1<<31)		/* SDE - enable */\
+	|(2<<24)		/* ROW - 13 rows */\
+	|(1<<20)		/* COL - 9 columns */\
+/*	|(2<<20)		/* COL - 10 columns */\
+/*	|(1<<16)		/* DSIZ - 16 bit */\
+	|(2<<16)		/* DSIZ - 32 bit */\
+	|(3<<13)		/* SREFR - 7.81us refresh */\
+	|(1<<7)			/* BL - burst length of 8 */
 
-void __naked __used __section(.bootstrap.early) bootstrap_early (void)
+
+void __naked __used __section(.boot.early) boot_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
@@ -78,7 +88,7 @@ void __naked __used __section(.bootstrap.early) bootstrap_early (void)
 
  */
 
-void __section (.bootstrap) usleep (unsigned long us)
+void __section (.boot.sdramfn) usleep (unsigned long us)
 {
   unsigned long mode =
     EPT_CR_CLKSRC_IPG
@@ -102,7 +112,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 }
 
 
-/* bootstrap_prefix
+/* boot_pre
 
    performs mandatory, pre-SDRAM initializations that were not
    performed in the bootstrap_early function.  In this case, we wait
@@ -110,7 +120,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 
 */
 
-void __naked __section (.bootstrap.prefix) bootstrap_prefix (void)
+void __naked __section (.boot.pre) boot_pre (void)
 {
   __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
@@ -174,10 +184,10 @@ void __naked __section (.bootstrap.prefix) bootstrap_prefix (void)
   LED_ON (0);
 #endif
 
-  __asm volatile ("b bootstrap_prefix_exit");
+  __asm volatile ("b boot_pre_exit");
 }
 
-void __naked __section (.bootstrap.prefix) bootstrap_prefix_exit (void)
+void __naked __section (.boot.preex) boot_pre_exit (void)
 {
 }
 
@@ -190,7 +200,7 @@ void __naked __section (.bootstrap.prefix) bootstrap_prefix_exit (void)
 
 */
 
-void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
+void __naked __section (.boot.sdram) boot_sdram (void)
 {
 		/* Initialize IOMUX for SDRAM */
   {
@@ -224,12 +234,22 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
 
-  __asm volatile ("b bootstrap_sdram_exit");
+#if 1
+  if (__REG (0x80000000) != 0x55555555 || __REG (0x80000000) != 0xaaaaaaaa) {
+    ESDCTL_CTL0 = ESDCTL_CTL0_V2;
+    __REG (0x80000000) = 0;
+    ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
+    __REG (0x80000000) = 0x55555555;
+    __REG (0x80000004) = 0xaaaaaaaa;
+  }
+#endif
+
+  __asm volatile ("mov r0, #0");		/* SDRAM initialized */
+  __asm volatile ("b boot_sdram_exit");
 }
 
-void __naked __section (.bootstrap.sdram) bootstrap_sdram_exit (void)
+void __naked __section (.boot.sdramex) boot_sdram_exit (void)
 {
-  __asm volatile ("mov r0, #0");		/* SDRAM initialized */
 }
 
 

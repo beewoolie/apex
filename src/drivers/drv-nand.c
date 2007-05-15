@@ -56,42 +56,6 @@
 
 static void wait_on_busy (void);
 
-#if defined (CONFIG_DRIVER_NAND_TYPE_ST)
-
-inline void nand_read_setup (unsigned long page, int index)
-{
-  NAND_CLE = NAND_ReadSetup;
-  NAND_ALE = index & 0xff;
-  NAND_ALE = (index >> 8) & 0xff;
-  NAND_ALE = page & 0xff;
-  NAND_ALE = (page >>  8) & 0xff;
-//  NAND_ALE = (page >> 16) & 0xff;
-  NAND_CLE = NAND_Read;
-  wait_on_busy ();
-  NAND_CLE = NAND_Read;
-}
-
-#endif
-
-#if defined (CONFIG_DRIVER_NAND_TYPE_TOSHIBA)
-
-inline void nand_read_setup (unsigned long page, int index)
-{
-  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
-  NAND_ALE = (index & 0xff);
-  NAND_ALE = ( page        & 0xff);
-  NAND_ALE = ((page >>  8) & 0xff);
-#if NAND_ADDRESSES > 2
-  NAND_ALE = ((page >> 16) & 0xff);
-#endif
-  wait_on_busy ();
-
-		/* Switch back to read mode */
-  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
-}
-
-#endif
-
 #if !defined (NAND_ENABLE)
 # define NAND_ENABLE
 #endif
@@ -103,9 +67,114 @@ inline void nand_read_setup (unsigned long page, int index)
 #endif
 
 #if defined (CONFIG_NAND_ADDRESS_BYTES)
-# define NAND_ADDRESSES		CONFIG_DRIVER_NAND_ADDRES_BYTES
+# define NAND_ADDRESSES		CONFIG_DRIVER_NAND_ADDRESS_BYTES
 #else
 # define NAND_ADDRESSES		(2)
+#endif
+
+#if defined (CONFIG_DRIVER_NAND_TYPE_ST)
+
+/* nand_address
+
+   performs the address cycles given the page and index within the
+   page.  This implementation uses an 8 bit bus and assumes a 1Gb
+   device meaning that there are only four address cycles.  Also note
+   that the page number includes the block address bits.
+
+*/
+
+inline void nand_address (unsigned long page, int index)
+{
+  NAND_ALE = index & 0xff;
+  NAND_ALE = (index >> 8) & 0xff;
+  NAND_ALE = page & 0xff;
+  NAND_ALE = (page >>  8) & 0xff;
+#if NAND_ADDRESSES > 2
+  NAND_ALE = (page >> 16) & 0xff;
+#endif
+}
+
+inline void nand_read_setup (unsigned long page, int index)
+{
+  NAND_CLE = NAND_ReadSetup;
+  nand_address (page, index);
+  NAND_CLE = NAND_Read;
+  wait_on_busy ();
+  NAND_CLE = NAND_Read;	       /* Return to read after status check */
+}
+
+inline void nand_sequential_input (unsigned long page, unsigned long index,
+				   int available, int tail, const void* pv)
+{
+  NAND_CLE = NAND_PageProgram;
+  nand_address (page, index);
+
+  while (index--)	   /* Skip to the portion we want to change */
+    NAND_DATA = 0xff;
+
+  while (available--)
+    NAND_DATA = *((char*) pv++);
+
+  while (tail--)	   /* Fill to end of block */
+    NAND_DATA = 0xff;
+
+  NAND_CLE = NAND_PageProgramConfirm;
+
+  wait_on_busy ();
+}
+
+#endif
+
+#if defined (CONFIG_DRIVER_NAND_TYPE_TOSHIBA)
+
+inline void nand_address (unsigned long page, int index)
+{
+  NAND_ALE = (index & 0xff);
+  NAND_ALE = ( page        & 0xff);
+  NAND_ALE = ((page >>  8) & 0xff);
+#if NAND_ADDRESSES > 2
+  NAND_ALE = ((page >> 16) & 0xff);
+#endif
+}
+
+inline void nand_read_setup (unsigned long page, int index)
+{
+  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
+  nand_address (page, index);
+  wait_on_busy ();
+
+		/* Switch back to read mode */
+  NAND_CLE = (index < 256) ? NAND_Read1 : NAND_Read2;
+}
+
+inline void nand_sequential_input (unsigned long page, unsigned long index,
+				   int available, int tail, const void* pv)
+{
+  /* Reset and read to perform I/O on the data region  */
+  NAND_CLE = NAND_Reset;
+  wait_on_busy ();
+  NAND_CLE = NAND_Read1;
+  nand_address (page, 0);
+  wait_on_busy ();
+
+  /* Perform write */
+  NAND_CLE = NAND_SerialInput;
+  nand_address (page, 0);
+
+  while (index--)	   /* Skip to the portion we want to change */
+    NAND_DATA = 0xff;
+
+  while (available--)
+    NAND_DATA = *((char*) pv++);
+
+  while (tail--)	   /* Fill to end of block */
+    NAND_DATA = 0xff;
+
+  NAND_CLE = NAND_AutoProgram;
+
+  wait_on_busy ();
+}
+
 #endif
 
 struct nand_chip {
@@ -287,45 +356,13 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
 	/* Reset and read to perform I/O on the data region  */
     NAND_CLE = NAND_Reset;
     wait_on_busy ();
-#if defined (NAND_Read1) && defined (NAND_SerialInput)
-    NAND_CLE = NAND_Read1;
-    NAND_ALE = 0;
-    NAND_ALE = ( page        & 0xff);
-    NAND_ALE = ((page >>  8) & 0xff);
-#if NAND_ADDRESSES > 2
-    NAND_ALE = ((page >> 16) & 0xff);
-#endif
-    wait_on_busy ();
 
-	/* Perform write */
-    NAND_CLE = NAND_SerialInput;
-    NAND_ALE = 0;	/* Always start at page beginning */
-    NAND_ALE = ( page        & 0xff);
-    NAND_ALE = ((page >>  8) & 0xff);
-#if NAND_ADDRESSES > 2
-    NAND_ALE = ((page >> 16) & 0xff);
-#endif
+    nand_sequential_input (page, index, available, tail, pv);
 
-    while (index--)	   /* Skip to the portion we want to change */
-      NAND_DATA = 0xff;
-
-#endif
-
+    pv += available;
     d->index += available;
     cb -= available;
     cbWrote += available;
-
-#if defined (NAND_AutoProgram)
-    while (available--)
-      NAND_DATA = *((char*) pv++);
-
-    while (tail--)	   /* Fill to end of block */
-      NAND_DATA = 0xff;
-
-    NAND_CLE = NAND_AutoProgram;
-
-    wait_on_busy ();
-#endif
 
     SPINNER_STEP;
 
@@ -488,6 +525,7 @@ int cmd_nand (int argc, const char** argv)
     }
   }
 
+#if defined (NAND_Read3)
   if (strcmp (argv[1], "scan") == 0) {
     int index;
     int cBad = 0;
@@ -525,6 +563,7 @@ int cmd_nand (int argc, const char** argv)
     printf ("%d of %ld blocks are bad\n",
 	    cBad, chip->total_size/chip->erase_size);
   }
+#endif
 
   return 0;
 }

@@ -56,8 +56,14 @@
 
 void relocate_apex_exit (void);
 
+static void __naked __section (.arel.earlyfn) wait_on_busy (void)
+{
+  while (ONENAND_IS_BUSY)
+    ;
+}
 
-/* relocate_early
+
+/* rel_early
 
    performs a crucial preload of the second and third KiB of APEX into
    DataRAM0.  This allows us to run with 3KiB of boot loader code
@@ -71,7 +77,7 @@ void relocate_apex_exit (void);
 
 */
 
-void __naked __section (.apexrelocate.early) relocate_early (void)
+void __naked __section (.arel.early) rel_early (void)
 {
   //#if defined (CONFIG_STARTUP_UART)
   //  INITIALIZE_CONSOLE_UART;
@@ -83,21 +89,21 @@ void __naked __section (.apexrelocate.early) relocate_early (void)
   ONENAND_INTR = 0;
   ONENAND_CMD = ONENAND_CMD_LOAD;
 
-  while (ONENAND_IS_BUSY)
-    ;
+  wait_on_busy ();
 
   ONENAND_ADDRSETUP (1, 0);
   ONENAND_BUFFSETUP (0, 2, 2);
   ONENAND_INTR = 0;
   ONENAND_CMD = ONENAND_CMD_LOAD;
 
-  while (ONENAND_IS_BUSY)
-    ;
+  wait_on_busy ();
 
-  __asm volatile ("b relocate_early_exit\n\t");
+  PUTC ('n');
+
+  __asm volatile ("b rel_early_exit\n\t");
 }
 
-void __naked __section (.apexrelocate.early) relocate_early_exit (void)
+void __naked __section (.arel.earlyex) rel_early_exit (void)
 {
 }
 
@@ -114,7 +120,7 @@ void __naked __section (.apexrelocate.early) relocate_early_exit (void)
 
 */
 
-void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
+void __naked __section (.arel) relocate_apex (unsigned long offset)
 {
   unsigned long pc;		/* So we can detect the stage */
 
@@ -202,13 +208,15 @@ void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 
 */
 
-void __naked __section (.apexrelocate) relocate_apex_onenand (void)
+void __naked __section (.arelfn) relocate_apex_onenand (void)
 {
   int page_size = PAGE_SIZE;
   int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
 		+ page_size - 1);
   int page = 0;
   void* pv = &APEX_VMA_ENTRY;
+
+  PUTC ('>');
 
   {
     int v;
@@ -219,15 +227,18 @@ void __naked __section (.apexrelocate) relocate_apex_onenand (void)
 
   for (; page < cPages; ++page) {
       /* Use this to see how many blocks we're copying from flash */
-//    PUTC_LL('A' + (page&0xf));
+    PUTC_LL ('A' + (page&0xf));
 
     ONENAND_PAGESETUP (page);
     ONENAND_BUFFSETUP (1, 0, 4);
     ONENAND_INTR = 0;
     ONENAND_CMD = ONENAND_CMD_LOAD;
 
+    /* We don't use the function wait_on_busy() because we cannot
+       honor register usage.  So, we let that be the problem of the
+       compiler. */
     while (ONENAND_IS_BUSY)
-	;
+      ;
 
     __asm volatile (
 		 "0: ldmia %1!, {r3-r6}\n\t"
@@ -251,6 +262,6 @@ void __naked __section (.apexrelocate) relocate_apex_onenand (void)
   __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
 }
 
-void __naked __section (.apexrelocate) relocate_apex_exit (void)
+void __naked __section (.arelex) relocate_apex_exit (void)
 {
 }

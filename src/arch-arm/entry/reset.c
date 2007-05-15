@@ -209,7 +209,8 @@ void __naked __section (.reset.pre) reset_pre (void)
   PUTC ('S');
   __asm volatile ("b reset_pre_exit");
 }
-void __naked __section (.reset.pre) reset_pre_exit (void)
+
+void __naked __section (.reset.preex) reset_pre_exit (void)
 {
 }
 

@@ -20,34 +20,40 @@ SECTIONS
 	.reset : {		/* Reset handler, first real code */
 		*(.reset)
 	}
-	.bootstrap.early : {	/* Early bootstrap setups */
-		*(.bootstrap.early)
-		*(.bootstrap.early.func)
-		*(.bootstrap.early.exit)
+	.boot.early : {		/* Early bootstrap setups */
+		*(.boot.early)
+		*(.boot.earlyfn)
+		*(.boot.earlyex)
 	}
-	.apexrelocate.early : {	/* Early relocation for constrained boot */
-		*(.apexrelocate.early)
-		*(.apexrelocate.early.func)
-		*(.apexrelocate.early.exit)
+	.arel.early : {		/* Early relocation for constrained boot */
+		*(.arel.early)
+		*(.arel.earlyfn)
+		*(.arel.earlyex)
 	}
-	.bootstrap.prefix : {	/* Mandatory bootstrap initializations  */
-		*(.bootstrap.prefix)
+	.boot.pre : {		/* Mandatory bootstrap initializations  */
+		*(.boot.pre)
+		*(.boot.prefn)
+		*(.boot.preex)
 	}
 	.reset.pre : {		/* Pre-SDRAM init code, check PC in SDRAM */
 		*(.reset.pre)
+		*(.reset.prefn)
+		*(.reset.preex)
 	}
-	.bootstrap.sdram : {	/* Platform SDRAM initialization */
-		*(.bootstrap.sdram)
-		*(.bootstrap.sdram.func)
-		*(.bootstrap.sdram.exit)
+	.boot.sdram : {		/* Platform SDRAM initialization */
+		*(.boot.sdram)
+		*(.boot.sdramfn)
+		*(.boot.sdramex)
 	}
 	.reset.post : {		/* Post-SDRAM init code.*/
 		*(.reset.post)
+		*(.reset.postfn)
+		*(.reset.postex)
 	}
-	.apexrelocate : {	/* Final/only relocation of APEX to SDRAM */
-		*(.apexrelocate)
-		*(.apexrelocate.func)
-		*(.apexrelocate.exit)
+	.arel : {		/* Final/only relocation of APEX to SDRAM */
+		*(.arel)
+		*(.arelfn)
+		*(.arelex)
 	}
 	.reset.finish : {
 		*(.reset.finish)
@@ -64,6 +70,7 @@ SECTIONS
 		*(.bootstrap.7)
 		*(.bootstrap.8)
 		*(.bootstrap)		/* Target initialization */
+		*(.boot)		/* Target initialization */
 		*(.bootstrap.9)		/* Bootstrap exit */
 	}		
 		/* Everything up to this point is used to get the
