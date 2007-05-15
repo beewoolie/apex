@@ -66,13 +66,13 @@ void relocate_apex_exit (void);
 
 */
 
-void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
+void __used __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
 {
   unsigned long lr;
 
   PUTC_LL ('R');
   __asm volatile ("bl 0f\n\t"
-               "0: str lr, [%0]\n\t"
+	       "0: str lr, [%0]\n\t"
 		  :  "=&r" (lr)
 		  :: "lr", "cc");
 
