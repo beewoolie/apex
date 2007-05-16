@@ -1,5 +1,8 @@
 2007-05-16  Marc Singer  <elf@zealous.synapsedev.com>
 
+	* Makefile (SUBLEVEL): Rolled to 1.5.2 so that we can keep track
+	of this interim release.
+
 	* src/apex/command.c (exec_monitor): Eliminated representation of
 	empty commands in startup command list.
 
