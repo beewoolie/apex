@@ -33,6 +33,15 @@
      solution has been complex.  It has involved restructuring of the
      sections and breaking the relocation into two phases.
 
+   o UART initialization.  Again, because of the large size of MX31
+     initialization code, we cannot fit the UART initialization into
+     the .bootstrap_pre section anf have enough room for the early
+     relocation to fit in 512 bytes.  So, we leave it out for now.  We
+     could do some sort of low-speed setup of the CPU clock speed and
+     *maybe* get the UART clock to work correctly, but this is all to
+     serve a very small window of UART output in the early relocation.
+     Blah.
+
 */
 
 #include <config.h>
@@ -72,12 +81,6 @@
 void __naked __section (.bootstrap.early) bootstrap_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
-
-#if defined (CONFIG_STARTUP_UART)
-  INITIALIZE_CONSOLE_UART;
-  PUTC('A');
-  __asm volatile ("b bootstrap_early_exit");
-#endif
 }
 
 void __naked __section (.bootstrap.early.exit) bootstrap_early_exit (void)
@@ -134,7 +137,7 @@ void __section (.bootstrap.sdram.func) usleep (unsigned long us)
 
 */
 
-void __naked __section (.bootstrap.pre) boot_pre (void)
+void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 {
   __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
@@ -180,6 +183,11 @@ void __naked __section (.bootstrap.pre) boot_pre (void)
   //  WEIM_LCR(0) = 0xa0330D01; //
   //  WEIM_ACR(0) = 0x00220800; //
 
+#if defined (CONFIG_STARTUP_UART)
+  INITIALIZE_CONSOLE_UART;
+  PUTC('A');
+#endif
+
 #if defined (CONFIG_MACH_MX31ADS)
 				/* Configure CPLD on CS4 */
   WEIM_UCR(4) = 0x0000DCF6;
@@ -191,10 +199,10 @@ void __naked __section (.bootstrap.pre) boot_pre (void)
   LED_ON (0);
 #endif
 
-  __asm volatile ("b boot_pre_exit");
+  __asm volatile ("b bootstrap_pre_exit");
 }
 
-void __naked __section (.bootstrap.pre.exit) boot_pre_exit (void)
+void __naked __section (.bootstrap.pre.exit) bootstrap_pre_exit (void)
 {
 }
 
