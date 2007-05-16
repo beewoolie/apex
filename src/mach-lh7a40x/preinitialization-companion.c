@@ -37,14 +37,14 @@
 
 */
 
-static void __naked __section (.apexrelocate.early.func) wait_on_busy (void)
+static void __naked __section (.arel.earlyfn) wait_on_busy (void)
 {
   while (NAND_ISBUSY)
     ;
   __asm volatile ("mov pc, lr");
 }
 
-void __naked __section (.apexrelocate.early) relocate_early (void)
+void __naked __section (.arel.early) relocate_early (void)
 {
   unsigned long pc;
 
@@ -100,6 +100,6 @@ void __naked __section (.apexrelocate.early) relocate_early (void)
   __asm volatile ("b relocate_early_exit");
 }
 
-void __naked __section (.apexrelocate.early.exit) relocate_early_exit (void)
+void __naked __section (.arel.earlyex) relocate_early_exit (void)
 {
 }

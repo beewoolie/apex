@@ -75,7 +75,7 @@ void relocate_apex_exit (void);
 
 */
 
-void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
+void __naked __section (.arel) relocate_apex (unsigned long offset)
 {
   unsigned long lr;		/* Saved for the sake of PUTC_LL */
 
@@ -172,6 +172,6 @@ void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
   __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 
-void __naked __section (.apexrelocate) relocate_apex_exit (void)
+void __naked __section (.arelex) relocate_apex_exit (void)
 {
 }

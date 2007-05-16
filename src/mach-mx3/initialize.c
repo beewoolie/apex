@@ -45,7 +45,7 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
-#define ESDCTL_CTL0_V 0\
+#define ESDCTL_CTL0_V1 0\
 	|(1<<31)		/* SDE - enable */\
 	|(2<<24)		/* ROW - 13 rows */\
 /*	|(1<<20)		/* COL - 9 columns */\
@@ -66,7 +66,7 @@
 	|(1<<7)			/* BL - burst length of 8 */
 
 
-void __naked __used __section(.boot.early) boot_early (void)
+void __naked __used __section (.boot.early) boot_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
@@ -167,9 +167,10 @@ void __naked __section (.boot.pre) boot_pre (void)
   //  WEIM_ACR(0) = 0x00220800; //
 
 #if defined (CONFIG_MACH_MX31ADS)
-  WEIM_UCR(4) = 0x0000DCF6; // ; Configure CPLD on CS4
-  WEIM_LCR(4) = 0x444A4541; //
-  WEIM_ACR(4) = 0x44443302; //
+				/* Configure CPLD on CS4 */
+  WEIM_UCR(4) = 0x0000DCF6;
+  WEIM_LCR(4) = 0x444A4541;
+  WEIM_ACR(4) = 0x44443302;
 #endif
 
 #if defined (CONFIG_STARTUP_UART)
@@ -227,14 +228,14 @@ void __naked __section (.boot.sdram) boot_sdram (void)
   ESDCTL_CTL0 = 0xb2100000;
   __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
   __REG8 (0x81000000) = 0xff;
-  ESDCTL_CTL0 = ESDCTL_CTL0_V;
+  ESDCTL_CTL0 = ESDCTL_CTL0_V1;
   __REG (0x80000000) = 0;
   /* *** FIXME: we should check for DDR here.  we can test CTL0_V */
   ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
 
-#if 1
+  /* Try another organization if the default fails  */
   if (__REG (0x80000000) != 0x55555555 || __REG (0x80000000) != 0xaaaaaaaa) {
     ESDCTL_CTL0 = ESDCTL_CTL0_V2;
     __REG (0x80000000) = 0;
@@ -242,7 +243,6 @@ void __naked __section (.boot.sdram) boot_sdram (void)
     __REG (0x80000000) = 0x55555555;
     __REG (0x80000004) = 0xaaaaaaaa;
   }
-#endif
 
   __asm volatile ("mov r0, #0");		/* SDRAM initialized */
   __asm volatile ("b boot_sdram_exit");
@@ -299,10 +299,10 @@ static void target_init (void)
   M3IF_CTL = (1<<M3IF_M_IPU1);
 
 #if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
-  /* *** Unoptimized access times */
-  WEIM_UCR(4) = 0x0000DCF6; // ; Configure DM9000 on CS4
-  WEIM_LCR(4) = 0x444A4541; //
-  WEIM_ACR(4) = 0x44443302; //
+				/* DM9000 and CS4 */
+  WEIM_UCR(4) = 0x0000DCF6;
+  WEIM_LCR(4) = 0x444A4541;
+  WEIM_ACR(4) = 0x44443302;
 #endif
 }
 

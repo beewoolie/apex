@@ -42,9 +42,9 @@ int cmd_version (int argc, const char** argv)
 "\n\nAPEX Boot Loader " APEXRELEASE
 " -- Copyright (c) 2004,2005,2006,2007 Marc Singer\n"
 #if defined (CONFIG_TARGET_DESCRIPTION) && !defined (CONFIG_SMALL)
-" compiled for " CONFIG_TARGET_DESCRIPTION "\n"
+"  compiled for " CONFIG_TARGET_DESCRIPTION "\n"
 #endif
-"\nAPEX comes with ABSOLUTELY NO WARRANTY."
+"\n    APEX comes with ABSOLUTELY NO WARRANTY."
 #if defined (CONFIG_SMALL)
 "\n\n"
 #endif
@@ -52,9 +52,9 @@ int cmd_version (int argc, const char** argv)
 
 #if !defined (CONFIG_SMALL)
   printf (
-"  It is free software and you\n"
-"are welcome to redistribute it under certain circumstances.\n"
-"For details, refer to the file COPYING in the program source."
+"  It is free software and\n"
+"    you are welcome to redistribute it under certain circumstances.\n"
+"    For details, refer to the file COPYING in the program source."
 "\n\n");
   {
     char sz[40];
@@ -99,7 +99,7 @@ int cmd_version (int argc, const char** argv)
   }
 
 #if defined (CONFIG_ALLHELP)
-  printf ("\nUse the command 'help help' to get started.\n\n");
+  printf ("\n    Use the command 'help help' to get started.\n\n");
 #endif
 
   return 0;

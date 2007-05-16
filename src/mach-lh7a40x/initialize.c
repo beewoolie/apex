@@ -220,7 +220,7 @@
 #define SDRAM_MODE		(SDRAM_MODE_SETUP | SDCRC_AUTOPRECHARGE)
 
 
-void __naked __section (.bootstrap.early) bootstrap_early (void)
+void __naked __section (.boot.early) bootstrap_early (void)
 {
 #if defined (CONFIG_STARTUP_UART)
   UART_BRCON = 0x3;
@@ -234,7 +234,7 @@ void __naked __section (.bootstrap.early) bootstrap_early (void)
 #endif
 }
 
-void __naked __section (.bootstrap.early) bootstrap_early_exit (void)
+void __naked __section (.boot.earlyex) bootstrap_early_exit (void)
 {
 }
 
@@ -257,7 +257,7 @@ void __naked __section (.bootstrap.early) bootstrap_early_exit (void)
 
  */
 
-void __section (.bootstrap) usleep (unsigned long us)
+void __section (.boot) usleep (unsigned long us)
 {
   unsigned long c = (us - us/2);
   __asm volatile ("str %2, [%1, #8]\n\t"
@@ -288,7 +288,7 @@ void __section (.bootstrap) usleep (unsigned long us)
 
 */
 
-void __naked __section (.bootstrap) initialize_bootstrap (void)
+void __naked __section (.boot) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));

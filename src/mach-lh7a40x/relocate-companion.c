@@ -133,7 +133,7 @@ void relocate_apex_exit (void);
 
 */
 
-void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
+void __naked __section (.arel) relocate_apex (unsigned long offset)
 {
   unsigned long pc;		/* So we can detect the second stage */
 
@@ -221,7 +221,7 @@ void __naked __section (.apexrelocate) relocate_apex (unsigned long offset)
   __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 
-int __section (.apexrelocate) relocate_apex_mmc (void)
+int __section (.arelfn) relocate_apex_mmc (void)
 {
   struct descriptor_d d;
   size_t cb;
@@ -272,7 +272,7 @@ int __section (.apexrelocate) relocate_apex_mmc (void)
 }
 
 
-void __naked  __section (.apexrelocate) relocate_apex_exit (void)
+void __naked  __section (.arelex) relocate_apex_exit (void)
 {
-  __asm volatile ("nop");
+//  __asm volatile ("nop");
 }
