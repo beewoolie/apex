@@ -1,3 +1,8 @@
+2007-05-15  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Reorganized the sections and the
+	section names to be more readable and consistent.
+
 2007-05-12  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/entry/reset.c: Restructured to allow for cleaner

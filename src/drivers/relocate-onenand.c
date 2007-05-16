@@ -56,14 +56,14 @@
 
 void relocate_apex_exit (void);
 
-static void __naked __section (.arel.earlyfn) wait_on_busy (void)
+static void __naked __section (.rlocate.early.func) wait_on_busy (void)
 {
   while (ONENAND_IS_BUSY)
     ;
 }
 
 
-/* rel_early
+/* relocate_early
 
    performs a crucial preload of the second and third KiB of APEX into
    DataRAM0.  This allows us to run with 3KiB of boot loader code
@@ -77,7 +77,7 @@ static void __naked __section (.arel.earlyfn) wait_on_busy (void)
 
 */
 
-void __naked __section (.arel.early) rel_early (void)
+void __naked __section (.rlocate.early) relocate_early (void)
 {
   //#if defined (CONFIG_STARTUP_UART)
   //  INITIALIZE_CONSOLE_UART;
@@ -100,10 +100,10 @@ void __naked __section (.arel.early) rel_early (void)
 
   PUTC ('n');
 
-  __asm volatile ("b rel_early_exit\n\t");
+  __asm volatile ("b relocate_early_exit\n\t");
 }
 
-void __naked __section (.arel.earlyex) rel_early_exit (void)
+void __naked __section (.rlocate.early.exit) relocate_early_exit (void)
 {
 }
 
@@ -120,7 +120,7 @@ void __naked __section (.arel.earlyex) rel_early_exit (void)
 
 */
 
-void __naked __section (.arel) relocate_apex (unsigned long offset)
+void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 {
   unsigned long pc;		/* So we can detect the stage */
 
@@ -208,7 +208,7 @@ void __naked __section (.arel) relocate_apex (unsigned long offset)
 
 */
 
-void __naked __section (.arelfn) relocate_apex_onenand (void)
+void __naked __section (.rlocate.func) relocate_apex_onenand (void)
 {
   int page_size = PAGE_SIZE;
   int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START
@@ -262,6 +262,6 @@ void __naked __section (.arelfn) relocate_apex_onenand (void)
   __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
 }
 
-void __naked __section (.arelex) relocate_apex_exit (void)
+void __naked __section (.rlocate.exit) relocate_apex_exit (void)
 {
 }

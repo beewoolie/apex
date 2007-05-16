@@ -8,6 +8,8 @@ linker script and sections therein.  This has become sufficiently
 complex such that documentation specific to the linker sections is
 necessary to make sense of it.
 
+o Section names exist in the same namespace as program symbols, so we
+  preceed them with a period to make sure there are no collisions. 
 o Bootstrap organization needs to account for functions such as
   udelay().  Probably these can go at the end of the bootstrap block and
   the exit routine will jump over them.

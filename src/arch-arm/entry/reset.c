@@ -198,7 +198,7 @@ void __naked __section (.reset.pre) reset_pre (void)
 {
   __asm volatile ("bl 0f\n\t"
 	       "0: cmp lr, %0\n\t"
-	          "blo 1f\n\t"
+		  "blo 1f\n\t"
 		  "cmp lr, %1\n\t"
 		  "bhi 1f\n\t"
 		  "mov r0, #1\n\t"
@@ -210,7 +210,7 @@ void __naked __section (.reset.pre) reset_pre (void)
   __asm volatile ("b reset_pre_exit");
 }
 
-void __naked __section (.reset.preex) reset_pre_exit (void)
+void __naked __section (.reset.pre.exit) reset_pre_exit (void)
 {
 }
 
@@ -273,7 +273,7 @@ void __naked __section (.reset.post) reset_post_1 (void)
   __asm volatile ("bl reloc\n\t"
 	   "reloc:subs %0, %0, lr\n\t"
 	   ".globl reloc\n\t"
- 		  "beq reset_finish\n\t"	/* Quick exit if reloc'd */
+		  "beq reset_finish\n\t"	/* Quick exit if reloc'd */
 		  : "+r" (offset)
 		  :: "lr", "cc");
 
@@ -345,7 +345,7 @@ void __naked __section (.reset.finish) setup_c (void)
   __asm volatile ("b reset_finish_exit");
 }
 
-void __naked __section (.reset.finish) reset_finish_exit (void)
+void __naked __section (.reset.finish.exit) reset_finish_exit (void)
 {
 	/* Start loader proper which doesn't return */
   /* We could put the b init in the setup_c function.  Perhaps we

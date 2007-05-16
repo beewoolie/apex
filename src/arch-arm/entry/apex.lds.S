@@ -20,58 +20,49 @@ SECTIONS
 	.reset : {		/* Reset handler, first real code */
 		*(.reset)
 	}
-	.boot.early : {		/* Early bootstrap setups */
-		*(.boot.early)
-		*(.boot.earlyfn)
-		*(.boot.earlyex)
+	.bootstrap.early : {	/* Early bootstrap setups */
+		*(.bootstrap.early)
+		*(.bootstrap.early.func)
+		*(.bootstrap.early.exit)
 	}
-	.arel.early : {		/* Early relocation for constrained boot */
-		*(.arel.early)
-		*(.arel.earlyfn)
-		*(.arel.earlyex)
+	.rlocate.early : {	/* Early relocation for constrained boot */
+		*(.rlocate.early)
+		*(.rlocate.early.func)
+		*(.rlocate.early.exit)
 	}
-	.boot.pre : {		/* Mandatory bootstrap initializations  */
-		*(.boot.pre)
-		*(.boot.prefn)
-		*(.boot.preex)
+	.bootstrap.pre : {	/* Mandatory bootstrap initializations  */
+		*(.bootstrap.pre)
+		*(.bootstrap.pre.func)
+		*(.bootstrap.pre.exit)
 	}
 	.reset.pre : {		/* Pre-SDRAM init code, check PC in SDRAM */
 		*(.reset.pre)
-		*(.reset.prefn)
-		*(.reset.preex)
+		*(.reset.pre.func)
+		*(.reset.pre.exit)
 	}
-	.boot.sdram : {		/* Platform SDRAM initialization */
-		*(.boot.sdram)
-		*(.boot.sdramfn)
-		*(.boot.sdramex)
+	.bootstrap.sdram : {	/* Platform SDRAM initialization */
+		*(.bootstrap.sdram)
+		*(.bootstrap.sdram.func)
+		*(.bootstrap.sdram.exit)
 	}
 	.reset.post : {		/* Post-SDRAM init code.*/
 		*(.reset.post)
 		*(.reset.postfn)
 		*(.reset.postex)
 	}
-	.arel : {		/* Final/only relocation of APEX to SDRAM */
-		*(.arel)
-		*(.arelfn)
-		*(.arelex)
+	.rlocate : {		/* Final/only relocation of APEX to SDRAM */
+		*(.rlocate)
+		*(.rlocate.func)
+		*(.rlocate.exit)
 	}
 	.reset.finish : {
 		*(.reset.finish)
+		*(.reset.finish.func)
+		*(.reset.finish.exit)
 	}
 	.bootstrap : {		/* Bootstrap initialization */
-		*(.bootstrap.0)		/* Bootstrap entry point */  
-		*(.bootstrap.1)
-		*(.bootstrap.2)		/* Target preinitialization */
-		*(.bootstrap.3)
-		*(.bootstrap.4)
 		*(.preinit)
-		*(.bootstrap.5)
-		*(.bootstrap.6)
-		*(.bootstrap.7)
-		*(.bootstrap.8)
-		*(.bootstrap)		/* Target initialization */
-		*(.boot)		/* Target initialization */
-		*(.bootstrap.9)		/* Bootstrap exit */
+		*(.bootstrap)	/* Target initialization, out-of-line */
 	}		
 		/* Everything up to this point is used to get the
 		   target off it's back and onto it's feet.  In the

@@ -49,7 +49,7 @@
 
 */
 
-static void __naked __section (.arelfn) wait_on_busy (void)
+static void __naked __section (.rlocate.func) wait_on_busy (void)
 {
   while (NAND_ISBUSY)
     ;
@@ -70,7 +70,7 @@ static void __naked __section (.arelfn) wait_on_busy (void)
 
 */
 
-void __naked __section (.arelfn) relocate_apex_nand (void)
+void __naked __section (.rlocate.func) relocate_apex_nand (void)
 {
   int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
   void* pv = &APEX_VMA_ENTRY;
@@ -112,7 +112,7 @@ void __naked __section (.arelfn) relocate_apex_nand (void)
 
 */
 
-void __naked __section (.arel) relocate_apex (unsigned long offset)
+void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 {
   unsigned long lr;
   unsigned long pc;		/* So we can detect the second stage */
@@ -216,6 +216,6 @@ void __naked __section (.arel) relocate_apex (unsigned long offset)
   __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 
-void __naked __section (.arelex) relocate_apex_exit (void)
+void __naked __section (.rlocate.exit) relocate_apex_exit (void)
 {
 }

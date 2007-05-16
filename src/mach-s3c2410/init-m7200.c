@@ -47,7 +47,7 @@
 
 */
 
-void __naked __section(.bootstrap) initialize_bootstrap(void)
+void __naked __section (.bootstrap) initialize_bootstrap(void)
 {
 	unsigned long lr, nop_count;
 	__asm volatile ("mov %0, lr":"=r" (lr));

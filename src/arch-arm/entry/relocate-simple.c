@@ -75,15 +75,12 @@ void relocate_apex_exit (void);
 
 */
 
-void __naked __section (.arel) relocate_apex (unsigned long offset)
+void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 {
-  unsigned long lr;		/* Saved for the sake of PUTC_LL */
+  unsigned long pc;		/* Saved for the sake of PUTC_LL */
 
   PUTC_LL ('R');
-  __asm volatile ("bl 0f\n\t"
-	       "0: str lr, [%0]\n\t"
-		  :  "=&r" (lr)
-		  :: "lr", "cc");
+  __asm volatile ("mov %0, pc" : "=r" (pc));
 
   PUTC_LL ('c');
 
@@ -145,18 +142,18 @@ void __naked __section (.arel) relocate_apex (unsigned long offset)
   PUTC_LL ('\n');
   PUTHEX_LL (offset);
   PUTC_LL ('+');
-  PUTHEX_LL (lr);
+  PUTHEX_LL (pc);
   PUTC_LL ('=');
   PUTC_LL ('>');
-  PUTHEX_LL (*(unsigned long*) (lr - offset));	/* Original */
+  PUTHEX_LL (*(unsigned long*) (pc - offset));	/* Original */
   PUTC_LL ('=');
   PUTC_LL ('=');
-  PUTHEX_LL (*(unsigned long*) (lr));		/* Copy */
+  PUTHEX_LL (*(unsigned long*) (pc));		/* Copy */
   PUTC_LL ('\r');
   PUTC_LL ('\n');
 
 #if defined (USE_COPY_VERIFY)
-  if (*(unsigned long*) lr != *(unsigned long*) (lr - offset)) {
+  if (*(unsigned long*) pc != *(unsigned long*) (pc - offset)) {
     PUTC ('@');
     PUTC ('F');
     PUTC ('A');
@@ -172,6 +169,6 @@ void __naked __section (.arel) relocate_apex (unsigned long offset)
   __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
 
-void __naked __section (.arelex) relocate_apex_exit (void)
+void __naked __section (.rlocate.exit) relocate_apex_exit (void)
 {
 }

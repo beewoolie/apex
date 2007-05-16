@@ -66,7 +66,7 @@
 	|(1<<7)			/* BL - burst length of 8 */
 
 
-void __naked __used __section (.boot.early) boot_early (void)
+void __naked __used __section (.bootstrap.early) boot_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
@@ -88,7 +88,7 @@ void __naked __used __section (.boot.early) boot_early (void)
 
  */
 
-void __section (.boot.sdramfn) usleep (unsigned long us)
+void __section (.bootstrap.sdram.func) usleep (unsigned long us)
 {
   unsigned long mode =
     EPT_CR_CLKSRC_IPG
@@ -120,7 +120,7 @@ void __section (.boot.sdramfn) usleep (unsigned long us)
 
 */
 
-void __naked __section (.boot.pre) boot_pre (void)
+void __naked __section (.bootstrap.pre) boot_pre (void)
 {
   __REG (PHYS_L2CC + 0x0100) = 0; /* Disable L2CC, should be redundant */
 
@@ -188,7 +188,7 @@ void __naked __section (.boot.pre) boot_pre (void)
   __asm volatile ("b boot_pre_exit");
 }
 
-void __naked __section (.boot.preex) boot_pre_exit (void)
+void __naked __section (.bootstrap.pre.exit) boot_pre_exit (void)
 {
 }
 
@@ -201,7 +201,7 @@ void __naked __section (.boot.preex) boot_pre_exit (void)
 
 */
 
-void __naked __section (.boot.sdram) boot_sdram (void)
+void __naked __section (.bootstrap.sdram) boot_sdram (void)
 {
 		/* Initialize IOMUX for SDRAM */
   {
@@ -248,7 +248,7 @@ void __naked __section (.boot.sdram) boot_sdram (void)
   __asm volatile ("b boot_sdram_exit");
 }
 
-void __naked __section (.boot.sdramex) boot_sdram_exit (void)
+void __naked __section (.bootstrap.sdram.exit) boot_sdram_exit (void)
 {
 }
 
