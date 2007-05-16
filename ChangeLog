@@ -1,3 +1,8 @@
+2007-05-16  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/apex/command.c (exec_monitor): Eliminated representation of
+	empty commands in startup command list.
+
 2007-05-15  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/entry/apex.lds.S: Reorganized the sections and the
@@ -12,7 +17,7 @@
 	Also removed an onerous constraint on register usage in the
 	relocate_apex() function.  The caller is now forced to assume that
 	no registers are saved.
-  
+
 	* src/arch-arm/linux/atag.c (atag_header): Eliminated the core tag.
 
 2007-05-10  Marc Singer  <elf@buici.com>
@@ -76,7 +81,7 @@
 	already in the target mode.  It looks like the CPU doesn't like
 	the PLLs being changed once it has booted.  It may be the SDRAM
 	that doesn't like the timing change.
-	
+
 	* src/arch-arm/entry/reset.c: Restored setting of the CPSR mode in
 	the loader.  The CPU boots in the undefined mode.  We move to
 	supervisor mode, though this doesn't appear to be necessary for
@@ -84,7 +89,7 @@
 
 	* src/mach-mx3/ipu.c (ipu_report): Improved clarity of IPU report
 	to break out fields and to describe the formats in English.
-	
+
 2007-04-27  Marc Singer  <elf@buici.com>
 
 	* include/asm/cp15-armv6.h: Fixed the cache control macros for the
@@ -93,7 +98,7 @@
 2007-04-27  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-mx3/ipu.c: More IPU debug code.  The report function
-	has a clean rendering of the registers. 
+	has a clean rendering of the registers.
 
 	* src/mach-mx3/mx31.h (CCM_PDR0_533_V): Switched to 533MHz CPU
 	clock.
@@ -136,7 +141,7 @@
 	function so that it does it's best to match the requested IO width
 	when we're writing from the fill command.  Other users should be
 	unaffected.
-	
+
 2007-02-25  Marc Singer  <elf@cerise.buici.com>
 
 	* 1.4.17
@@ -155,7 +160,7 @@
 	initialization code for the ixp42x so that we can initialize SDRAM
 	even though we're not the primary boot loader.  It *looks* OK, but
 	I haven't been able to test it with multi-chip slugs.
- 
+
 2007-02-15  Marc Singer  <elf@cerise.buici.com>
 
 	* src/drivers/drv-nand.c: Revised the NAND flash initialization
@@ -195,7 +200,7 @@
 
 	* Makefile (SUBLEVEL): 1.4.15, allows a wait of 0 for a check for
 	^C before continuing.  Mainly done to release to debian.
-	
+
 2007-02-05    <elf@baker.buici.com>
 
 	* debian/rules: Dumb typo when I revised the rules.  The name of
@@ -203,7 +208,7 @@
 
 2007-02-02  Marc Singer  <elf@zealous.synapsedev.com>
 
-	* src/apex/cmd-wait.c: Allowing a zero TIMEOUT. 
+	* src/apex/cmd-wait.c: Allowing a zero TIMEOUT.
 
 	* src/apex/command.c (TIMECMD_INIT): Added command execution timer.
 
@@ -280,7 +285,7 @@
 	* src/drivers/drv-fis.c (end_of_table): Added back the
 	end-of-table check.  We're now checking the same way that the
 	kernel checks.
-	
+
 2007-01-09  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile (SUBLEVEL): 1.4.11, to fix partition table swapped-ness
@@ -294,7 +299,7 @@
 2007-01-08  Marc Singer  <elf@cerise.buici.com>
 
 	* 1.4.10.
-		
+
 	* src/drivers/drv-fis.c (deleted_entry): Replaced the
 	end_of_table() checks with deleted_entry checks.  Really, we
 	cannot be sure that we've seen the end of the table since a 0xff
@@ -310,7 +315,7 @@
 	peculiar to the nslu2 (and other ixp4xx systems) where flash is
 	assumed to be written in one endian-ness while the system is
 	executing in the opposite endian-ness.
-  
+
 	* src/mach-ixp42x/variation-nslu2.c (variation_init): Variation
 	now uses the fact that the power button is depressed (instead of
 	the reset button).
@@ -350,7 +355,7 @@
 
 	* src/apex/command.c (parse_command): Added '-' command prefix
 	that tells APEX to ignore the return value of a command.  This is
-	helpful in the startup command. 
+	helpful in the startup command.
 
 2006-11-07  Marc Singer  <elf@zealous.synapse.com>
 
@@ -361,11 +366,11 @@
 	generally on any target, but requires that the
 	initialize_bootstrap () function return TRUE when it initializes
 	SDRAM.
-  
+
 2006-10-25  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/drivers/drv-nand.c (cmd_nand): NAND commands moved to a
-	configurable option. 
+	configurable option.
 	(nand_report): Fixed the display of the NAND status.
 
 2006-10-23  Marc Singer  <elf@cerise.buici.com>
@@ -405,7 +410,7 @@
 
 	* src/drivers/drv-dm9000.c: Support for more than one DM9000
 	chip.  It can write to both mac address roms as well.
-	
+
 2006-08-18    <elf@scarlet.buici.com>
 
 	* src/drivers/drv-fis.c (compare_skips): Fixed the comparison
@@ -419,7 +424,7 @@
 	* src/drivers/drv-fis.c (fis_report): Added skips to the report.
 
 	* debian/rules: Removed headerization so that slugimage can be
-	responsible for it. 
+	responsible for it.
 
 	* src/drivers/drv-fis.c: Added skip descriptor handling.  This
 	means that partitions may include 'skips' where some data
@@ -427,7 +432,7 @@
 	on the partition.  This feature was added for the slug with a dumb
 	version of Redboot that ignores the partition table when looking
 	for the data it must copy to SDRAM.
- 
+
 	* src/apex/cmd-fill.c (cmd_fill): Removed unwanted printf.
 
 	* src/lib/sort.c (sort): Check for degenerate cases of sorting 0
@@ -466,13 +471,13 @@
 
 	* usr/printenv.cc: Rewritten printenv program to support the new
 	environment memory format.
- 
+
 	* README_environment: New README about the environment.
 
 	* Makefile: Removed envmagic.h and it's computation.  The new
 	environment is free-standing and removal of envmagic makes the
 	build much quicker.
- 
+
 2006-07-25  Marc Singer  <elf@cerise.buici.com>
 
 	* src/lib/env.c (_env_locate): New environment implementation is
@@ -494,7 +499,7 @@
 
 	* src/drivers/drv-nor-cfi.c (nor_query): New query function allows
 	a driver to return information about the device.  NOR flash is the
-	only implementer because it's the one that needs this most.  
+	only implementer because it's the one that needs this most.
 	(copy_from): Implementation of a byte swapping copy routine for
 	the sake of BE/LE conversion.
 
@@ -512,7 +517,7 @@
 	* src/drivers/drv-mem.c (memory_read): Checks the width field and
 	performs IO accordingly.
 
-	* src/apex/cmd-help.c: Revised command line help. 
+	* src/apex/cmd-help.c: Revised command line help.
 
 	* include/driver.h: New descriptor field specifies the IO width.
 	This allows, in particular, the memory driver to tailor the I/O to
@@ -523,7 +528,7 @@
 	alignment attributes so that byte arrays on the stack are word
 	aligned.  I had thought that this was a given but the 4.x
 	compilers no longer make this true.
-   
+
 	* src/drivers/drv-nor-cfi.c (nor_report): Code to detect endian
 	mismatch.  A debugging aid for nslu2.
 
@@ -547,7 +552,7 @@
 	* src/drivers/drv-jffs2.c (block_driver): Replacing static block
 	driver string with a function that looks at aliases and the
 	environment.
-	
+
 	* src/drivers/drv-fat.c (block_driver): Replacing static block
 	driver string with a function that looks at aliases and the
 	environment.
@@ -581,7 +586,7 @@
 
 	* src/arch-arm/entry/apex.lds.S: Optimized the RAM memory
 	footprint, especially in the xbss section.  Added stack_size
-	configuration parameter. 
+	configuration parameter.
 
 	* src/apex/cmd-boot.c (cmd_boot): Boot address may not come from
 	the environment.
@@ -659,7 +664,7 @@
 	* src/arch-arm/entry/apex.lds.S: Special section for bootstrap
 	stack and bootstrap data.
 
-	* include/apex.h: Aide functions for mdelay and msleep. 
+	* include/apex.h: Aide functions for mdelay and msleep.
 
 2006-05-04  Marc Singer  <elf@buici.com>
 
@@ -672,8 +677,8 @@
 
 	* Makefile: 1.3.23
 	* Additions to the kconfig directory so that make menuconfig
-	works again. 
-	
+	works again.
+
 2006-04-01  Marc Singer  <elf@buici.com>
 
 	* Makefile: 1.3.22

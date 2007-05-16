@@ -29,10 +29,9 @@
 
    o Size.  The setup for the MX31 is substantially more verbose than
      other platforms we've handled.  With OneNAND boot, there is only
-     1K of code available before we can relocate to SDRAM (unless we
-     do some other heroics that I'd prefer to avoid.  So there is some
-     pressure on the initialize_bootstrap() and relocate() functions
-     to be brief.
+     1K of code available before we can relocate to SDRAM.  The
+     solution has been complex.  It has involved restructuring of the
+     sections and breaking the relocation into two phases.
 
 */
 
@@ -45,31 +44,46 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
+#define ESDCTL_CTL0_SDE		(1<<31)	/* Enable */
+#define ESDCTL_CTL0_ROW13	(2<<24)	/* 13 rows */
+#define ESDCTL_CTL0_COL9	(1<<20)	/* 9 columns */
+#define ESDCTL_CTL0_COL10	(2<<20)	/* 10 columns */
+#define ESDCTL_CTL0_DSIZ32	(2<<16)	/* 32 bit interface */
+#define ESDCTL_CTL0_SREFR7_81	(3<<13)	/* 7.81 us refresh */
+#define ESDCTL_CTL0_BL8		(1<<7)	/* burst length of  */
+
 #define ESDCTL_CTL0_V1 0\
-	|(1<<31)		/* SDE - enable */\
-	|(2<<24)		/* ROW - 13 rows */\
-/*	|(1<<20)		/* COL - 9 columns */\
-	|(2<<20)		/* COL - 10 columns */\
-/*	|(1<<16)		/* DSIZ - 16 bit */\
-	|(2<<16)		/* DSIZ - 32 bit */\
-	|(3<<13)		/* SREFR - 7.81us refresh */\
-	|(1<<7)			/* BL - burst length of 8 */
+	| ESDCTL_CTL0_SDE\
+	| ESDCTL_CTL0_ROW13\
+	| ESDCTL_CTL0_COL10\
+	| ESDCTL_CTL0_DSIZ32\
+	| ESDCTL_CTL0_SREFR7_81\
+	| ESDCTL_CTL0_BL8
 
 #define ESDCTL_CTL0_V2 0\
-	|(1<<31)		/* SDE - enable */\
-	|(2<<24)		/* ROW - 13 rows */\
-	|(1<<20)		/* COL - 9 columns */\
-/*	|(2<<20)		/* COL - 10 columns */\
-/*	|(1<<16)		/* DSIZ - 16 bit */\
-	|(2<<16)		/* DSIZ - 32 bit */\
-	|(3<<13)		/* SREFR - 7.81us refresh */\
-	|(1<<7)			/* BL - burst length of 8 */
+	| ESDCTL_CTL0_SDE\
+	| ESDCTL_CTL0_ROW13\
+	| ESDCTL_CTL0_COL9\
+	| ESDCTL_CTL0_DSIZ32\
+	| ESDCTL_CTL0_SREFR7_81\
+	| ESDCTL_CTL0_BL8
 
 
-void __naked __used __section (.bootstrap.early) boot_early (void)
+void __naked __section (.bootstrap.early) bootstrap_early (void)
 {
   STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
+
+#if defined (CONFIG_STARTUP_UART)
+  INITIALIZE_CONSOLE_UART;
+  PUTC('A');
+  __asm volatile ("b bootstrap_early_exit");
+#endif
 }
+
+void __naked __section (.bootstrap.early.exit) bootstrap_early_exit (void)
+{
+}
+
 
 /* usleep
 
@@ -171,14 +185,6 @@ void __naked __section (.bootstrap.pre) boot_pre (void)
   WEIM_UCR(4) = 0x0000DCF6;
   WEIM_LCR(4) = 0x444A4541;
   WEIM_ACR(4) = 0x44443302;
-#endif
-
-#if defined (CONFIG_STARTUP_UART)
-
-  INITIALIZE_CONSOLE_UART;
-
-  PUTC('A');
-
 #endif
 
 #if defined LED_ON

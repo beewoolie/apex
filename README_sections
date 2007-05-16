@@ -8,31 +8,132 @@ linker script and sections therein.  This has become sufficiently
 complex such that documentation specific to the linker sections is
 necessary to make sense of it.
 
-o Section names exist in the same namespace as program symbols, so we
-  preceed them with a period to make sure there are no collisions. 
-o Bootstrap organization needs to account for functions such as
-  udelay().  Probably these can go at the end of the bootstrap block and
-  the exit routine will jump over them.
+Section names always begin with a period in order to isolate the
+section symbols from other globals in the link.  No section may begin
+with the string '.rel' because the linker will complain that it is a
+relocation section.
 
-  o Entry point
-  o Jump over environment link.  This is optional and the entry point
-    can be eliminated if there is no link.
-  o Target of jump and ARCH (ARM) inits, e.g. big endian, mode,
-    disable MMU
-  o Platform early inits.  UART for debug and to support pre-init
-  o Pre-init.  Special considerations for startup, e.g. transfer more
-    of loader from NV store so we can initialize SDRAM.
-  o Jump to platform inits.  This is here in order to allow for
-    functions to support platform inits.  This is an ARCH specific
-    feature that, perhaps, only ARM can use.
-  o Platform inits.  Clocks, GPIO, memory controllers, SDRAM 
-  o SDRAM test.
-  o Early C Stack.  We can now setup the stack as we have SDRAM,
-    though we may not want to if there is a chance that we are using
-    the memory where the stack will reside.
-  o relocate_apex ().  This could be somewhat complex as is the case for an
-    MMC bootstrap that requires a driver.
-  o setup_c().  C setup.  Stack & BSS.
-  o init().  Start of APEX proper.
+The primary hurdles that the loader encounters, before it can execute
+as a bonafide C program are:
 
-o Preinitialization for relocation should be clearly placed.
+  o No RAM (SDRAM, DDR)
+  o No stack
+  o No function calls
+  o In some instances, very little of the loader is available for execution
+
+When the processor leaves RESET and begins executing code, the loader
+must initialize SDRAM, put the kernel into SDRAM, and then jump to the
+kernel with appropriate supporting data structures.  Sometimes, it is
+that easy, but there are many times when it is not.
+
+  o Without RAM for a stack, some architectures can make no procedure
+    calls.  Some CPUs have SRAM and some architectures can be coerced
+    into using cache as RAM.  It is safest to eliminate procedure
+    calls until system RAM 
+  o Booting from NAND flash or I2C, for example, may only give us 512
+    bytes or a 1k of code to execute before we have to copy the reset
+    of the loader to RAM.  Constrained boot modes provide a direct
+    challenge to writing a single, loader program.
+
+There are several popular solutions to these problems, C macros to
+eliminate procedure calls, using cache as RAM for a stack, and writing
+a separate program to handle the bootstrap from NAND and other
+constrained boot modes.  APEX takes a different approach.
+
+The linker script defines a sequence of sections.  Each section is
+owned by a particular type of code, platform, architecture,
+relocation.  The linker script collates these sections, allowing the
+startup code to be interleaved without requiring function calls.  This
+interleaving also guarantees that important code is placed at the top
+of the APEX binary image.
+
+The result is that a single APEX image can be used to perform a
+complete startup for a platform.  If the hardware *can* be booted,
+APEX can do it.
+
+Some sections include subsections with suffixes .func and .exit.
+These force an order on the code within the section should it be
+necessary.
+
+The sections are as follows.  If this list doesn't match the linker
+script, please contact the author.
+
+  .entry
+
+is the first code to execute.  On ARM, it is either empty, or it is a
+jump over the section that follows it (.envlink) which is used to
+identify APEX in flash.
+
+  .envlink
+
+is a data structure used to identify APEX from user-mode programs by
+scanning flash for the signature.
+
+  .reset
+
+performs the first, architecture specific startups.  As little as is
+possible should be in .reset.
+
+  .bootstrap.early
+
+is the first opportunity for the target to perform some
+initialzations.  This code should be as small as possible, just enough
+to support early relocation, perhaps a UART, and the RAM
+initialization.
+
+  .rlocate.early
+
+is an opportunity to perform an early relocation, before RAM has been
+initialized, in order to get access to enough of the loader to perform
+the RAM setup.  Early relocation is often necessary when booting from
+NAND flash or I2C EEPROM.
+
+  .reset.pre
+
+checks whether or not APEX is already running in RAM.  It depends on
+data from the platform to determine the range of RAM addresses.  This
+code is factored out of the RAM initialization code in order to
+simplify platform adaptations and to make sure that all targets
+function the same way.
+
+  .bootstrap.sdram
+
+is the code to initialize RAM, SDRAM or otherwise.  It should 'return'
+a zero in the register that the architecture expects to find return
+values.  This zero tells the .reset.post code that the RAM was
+initialized.
+
+On ARM platforms, the SDRAM initialization usually implements a
+udelay() function that is used elsewhere in the application.  This
+function should be placed in section .bootstrap.sdram.func and the RAM
+initialization must jump over this code to a symbol in section
+.bootstrap.sdram.exit.
+
+  .reset.post
+
+checks the 'return' value from the RAM initialization to determine
+whether or not initialization occurred.  If it was initialized, it may
+run a memory test.
+
+  .rlocate
+
+performs the final relocation of APEX to RAM and to the final linked
+executation address.  The specifics of where APEX is sourced depends
+on the boot mode.  For NOR flash and running from RAM, the relocator
+is a simple copy.  For NAND flash, all of APEX is pulled from the NAND
+flash array.
+
+  .reset.finish
+
+This section is for architecture pickups, in case something special
+needs to be done after the loader is moved or relocated.  It also
+performs the C setups before jumping to init() and beginning the
+standard C portion of APEX.
+
+  .bootstrap
+
+is a pickup segment to hold bootstrap code that wasn't included in the
+previous segments.  Legacy platforms will have their initialization
+code here as a function call from .reset.post.  New platforms should
+put nothing in the .bootstrap section.
+

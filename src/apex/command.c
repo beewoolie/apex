@@ -268,10 +268,12 @@ void exec_monitor (void)
 	*pchEnd = 0;
       while (*pch == ' ')
 	++pch;
-      printf ("\r# %s\n", pch);
-      result = parse_command (pch, &argc, &argv);
-      if (result >= 0 && (call_command (argc, argv) && result != 1))
-	break;
+      if (*pch) {
+	printf ("\r# %s\n", pch);
+	result = parse_command (pch, &argc, &argv);
+	if (result >= 0 && (call_command (argc, argv) && result != 1))
+	  break;
+      }
       pch = (pchEnd ? pchEnd + 1 : 0);
     }
   }

@@ -10,7 +10,7 @@ SECTIONS
 	APEX_VMA_ENTRY = .;
 	APEX_VMA_START = .;
 	APEX_VMA_COPY_START = .;
-	.entry : {		/* Opportunity to inject code before reset */
+	.entry : {		/* First code to execute */
 		*(.entry)
 	}
 	.envlink : {		/* Link to $env for user-land */
@@ -61,7 +61,6 @@ SECTIONS
 		*(.reset.finish.exit)
 	}
 	.bootstrap : {		/* Bootstrap initialization */
-		*(.preinit)
 		*(.bootstrap)	/* Target initialization, out-of-line */
 	}		
 		/* Everything up to this point is used to get the
