@@ -55,6 +55,7 @@
 #include <service.h>
 #include <error.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
 #include <asm/mmu.h>
 
 #include "hardware.h"
@@ -69,9 +70,15 @@
 //#define MODE_RGB
 
 #if defined (MODE_GENERIC)
-# define FRAME_WIDTH		(720)
-# define FRAME_HEIGHT		(176)
+# define FRAME_WIDTH		(752)
+# define FRAME_HEIGHT		(480)
+//# define FRAME_WIDTH		(616)
+//# define FRAME_HEIGHT		(170)
+//# define FRAME_WIDTH		(160)
+//# define FRAME_HEIGHT		(80)
 # define FRAME_WIDTH_DIVISOR	(1)
+//# define FRAME_HORZ_BLANKING	(43)
+//# define FRAME_VERT_BLANKING	(4)
 #endif
 
 #if defined (MODE_RGB)
@@ -1511,6 +1518,17 @@ static int cmd_ipu (int argc, const char** argv)
     dumpw (rgb, sizeof (rgb), 0, 0);
   }
 
+  if (strcmp (argv[1], "size") == 0) {
+    int dx = simple_strtoul (argv[2], NULL, 10);
+    int dy = simple_strtoul (argv[3], NULL, 10);
+    printf ("reprogramming to %dx%d\n", dx, dy);
+    i2c_sensor_write (4, dx);
+    usleep (1000);
+    i2c_sensor_write (3, dy);
+    usleep (1000);
+    printf ("sensor width  %d\n", i2c_sensor_read (4));
+    printf ("sensor height  %d\n", i2c_sensor_read (3));
+  }
 
   if (strcmp (argv[1], "p") == 0) {
     i2c_sensor_probe ();
@@ -1526,8 +1544,16 @@ static int cmd_ipu (int argc, const char** argv)
     usleep (1000);
     i2c_sensor_write (3, FRAME_HEIGHT);
     usleep (1000);
-    printf ("sensor width  %d\n", i2c_sensor_read (4));
-    printf ("sensor height  %d\n", i2c_sensor_read (3));
+#if defined (FRAME_HORZ_BLANKING)
+    i2c_sensor_write (5, FRAME_HORZ_BLANKING);
+    usleep (1000);
+    i2c_sensor_write (6, FRAME_VERT_BLANKING);
+    usleep (1000);
+#endif
+    printf ("sensor width    %d\n", i2c_sensor_read (4));
+    printf ("sensor height   %d\n", i2c_sensor_read (3));
+    printf ("sensor h blank  %d\n", i2c_sensor_read (5));
+    printf ("sensor v blank  %d\n", i2c_sensor_read (6));
   }
 
   if (strcmp (argv[1], "cap") == 0) {
@@ -1542,7 +1568,9 @@ static int cmd_ipu (int argc, const char** argv)
     i2c_setup ();
     i2c_sensor_write (0x70, 0x14);
     usleep (1000);
-    i2c_sensor_write (0x7f, (1<<13)|(2<<11));
+//    i2c_sensor_write (0x7f, (1<<13)|(1<<11)); /* Vertical */
+//    i2c_sensor_write (0x7f, (1<<13)|(2<<11)); /* Horizontal */
+    i2c_sensor_write (0x7f, (1<<13)|(3<<11)); /* Diagonal */
     usleep (1000);
     printf ("0x70 -> %x\n", i2c_sensor_read (0x70));
     printf ("0x7f -> %x\n", i2c_sensor_read (0x7f));
