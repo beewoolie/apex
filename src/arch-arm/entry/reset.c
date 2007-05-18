@@ -44,12 +44,13 @@
 
 #include <config.h>
 #include <asm/bootstrap.h>
-#include <debug_ll.h>
 #include <arch-arm.h>
 #include <memtest.h>
 #include <asm/cp15.h>
 #include <mach/memory.h>
 #include <sdramboot.h>
+
+#include <debug_ll.h>
 
 extern void reset (void);
 extern int  initialize_bootstrap (void);
@@ -207,7 +208,7 @@ void __naked __section (.reset.pre) reset_pre (void)
 			      "I" (SDRAM_END_PHYS)
 		  : "cc");
   PUTC ('S');
-  __asm volatile ("b reset_pre_exit");
+  __asm volatile ("b reset_pre_exit"); /* due to PUTC */
 }
 
 void __naked __section (.reset.pre.exit) reset_pre_exit (void)

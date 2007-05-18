@@ -70,8 +70,12 @@
 //#define MODE_RGB
 
 #if defined (MODE_GENERIC)
+
 # define FRAME_WIDTH		(752)
 # define FRAME_HEIGHT		(480)
+
+//# define FRAME_WIDTH		(640)
+//# define FRAME_HEIGHT		(480)
 //# define FRAME_WIDTH		(616)
 //# define FRAME_HEIGHT		(170)
 //# define FRAME_WIDTH		(160)
@@ -79,6 +83,8 @@
 # define FRAME_WIDTH_DIVISOR	(1)
 //# define FRAME_HORZ_BLANKING	(43)
 //# define FRAME_VERT_BLANKING	(4)
+
+# define BYTES_PER_PEL		(2)
 #endif
 
 #if defined (MODE_RGB)
@@ -243,7 +249,7 @@
 
 #define IPU_INT_STAT5_BAYER_FRM_LOST_ERR (1<<11)
 
-#define CB_FRAME			(1024*1024)
+#define CB_FRAME			(4*1024*1024)
 static char* rgbFrameA;
 static char* rgbFrameB;
 
@@ -1315,8 +1321,9 @@ static void ipu_setup (void)
     write_huge (rgb, (unsigned long)rgbFrameB, IPU_CW_EBA1);
 #if defined (MODE_GENERIC)
     write_huge (rgb, 2, IPU_CW_BPP);
-    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*2 - 1,
-			  IPU_CW_SL);
+    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*2 - 1, IPU_CW_SL);
+//    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*4 - 1, IPU_CW_SL);
+//    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*8 - 1, IPU_CW_SL);
     write_huge (rgb, 7, IPU_CW_PFS);
 #endif
 #if defined (MODE_RGB)
@@ -1564,13 +1571,28 @@ static int cmd_ipu (int argc, const char** argv)
   }
 
   if (strcmp (argv[1], "test") == 0) {
+    char mode = 0;
+    if (argc > 2)
+      mode = *argv[2];
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     i2c_sensor_write (0x70, 0x14);
     usleep (1000);
-//    i2c_sensor_write (0x7f, (1<<13)|(1<<11)); /* Vertical */
-//    i2c_sensor_write (0x7f, (1<<13)|(2<<11)); /* Horizontal */
-    i2c_sensor_write (0x7f, (1<<13)|(3<<11)); /* Diagonal */
+    switch (mode) {
+    case 'D':
+    case 'd':
+      i2c_sensor_write (0x7f, (1<<13)|(3<<11)); /* Diagonal */
+      break;
+    case 'H':
+    case 'h':
+    default:
+      i2c_sensor_write (0x7f, (1<<13)|(2<<11)); /* Horizontal */
+      break;
+    case 'V':
+    case 'v':
+      i2c_sensor_write (0x7f, (1<<13)|(1<<11)); /* Vertical */
+      break;
+    }
     usleep (1000);
     printf ("0x70 -> %x\n", i2c_sensor_read (0x70));
     printf ("0x7f -> %x\n", i2c_sensor_read (0x7f));

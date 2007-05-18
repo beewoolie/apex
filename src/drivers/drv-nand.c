@@ -38,6 +38,23 @@
    (1<<6) Ready
    (1<<7) !R/O
 
+   ST NAND
+   -------
+
+   o Random writes.  The program command takes a five cycle address of
+     index and page.  It looks like it doesn't really honor the index
+     when it first addresses the page and that we must always use the
+     RandomDataInput command to move to a different index within the
+     page.
+
+   o Consecutive page writes.  The datasheet specifies that a page can
+     only be partially written four times before requiring an erase.
+     Due to the fact that our buffer size is 512 bytes, we do exactly
+     this when we write to the array.  It may be desirable to up the
+     copy buffer size to 2k in order to minimize this stress on NAND
+     arrays.  Alternatively, a flush command could be added to the
+     driver to allow write-back behavior.
+
 */
 
 #include <config.h>
@@ -103,20 +120,28 @@ inline void nand_read_setup (unsigned long page, int index)
   NAND_CLE = NAND_Read;	       /* Return to read after status check */
 }
 
+/* nand_sequential_input
+
+   writes data to the NAND array.  In this case, we don't use the tail
+   argument because we don't need to write 0xff's through to the end
+   of the block to guarantee that those bytes won't be modified.
+
+*/
+
 inline void nand_sequential_input (unsigned long page, unsigned long index,
 				   int available, int tail, const void* pv)
 {
   NAND_CLE = NAND_PageProgram;
   nand_address (page, index);
 
-  while (index--)	   /* Skip to the portion we want to change */
-    NAND_DATA = 0xff;
+  if (index) {
+    NAND_CLE = NAND_RandomDataInput;
+    NAND_ALE = index & 0xff;
+    NAND_ALE = (index >> 8) & 0xff;
+  }
 
   while (available--)
     NAND_DATA = *((char*) pv++);
-
-  while (tail--)	   /* Fill to end of block */
-    NAND_DATA = 0xff;
 
   NAND_CLE = NAND_PageProgramConfirm;
 
@@ -161,7 +186,7 @@ inline void nand_sequential_input (unsigned long page, unsigned long index,
   NAND_CLE = NAND_SerialInput;
   nand_address (page, 0);
 
-  while (index--)	   /* Skip to the portion we want to change */
+  while (index--)	   /* Skip to the portion we don't want to change */
     NAND_DATA = 0xff;
 
   while (available--)
@@ -187,11 +212,11 @@ struct nand_chip {
 };
 
 const static struct nand_chip chips[] = {
-  { (1<<1),
+  {        (1<<1),
     { 0x98, 0x75 },		/* Toshiba - 256 MiB*/
     32*1024*1024, 16*1024, 512 }, /* Addr 3? */
-  { (1<<0) | (1<<1) | (1<<2) | (1<<3),
-    { 0x20, 0xf1, 0x80, 0x15},	/* ST - 1 GiB */
+  {  (1<<0) | (1<<1) | (1<<2) | (1<<3),
+    { 0x20,    0xf1,    0x80,    0x15},	/* ST - 1 GiB (NAND01GW3B2AN6) */
     128*1024*1024, 128*1024, 2048 }, /* Addr 4 */
 };
 
@@ -357,6 +382,7 @@ static ssize_t nand_write (struct descriptor_d* d, const void* pv, size_t cb)
     NAND_CLE = NAND_Reset;
     wait_on_busy ();
 
+//    printf ("seq %ld %ld %d %d\n", page, index, available, tail);
     nand_sequential_input (page, index, available, tail, pv);
 
     pv += available;

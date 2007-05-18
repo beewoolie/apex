@@ -5,7 +5,50 @@ APEX Boot Loader
 
 TODO:
 
-  o 2007.may.18
+  o 2007.may.19
+
+    o Need to revise the CRC algorithm to comply with POSIX.2
+      standard.  Here's the text from a web page describing the
+      algorithm.  Note that the polynomial is the same as the CRC32
+      polynomial used by Ethernet. ... on second thought, I cannot use
+      this algorithm because it depends on the length of the message
+      and there is no way for me to compute this in a stream.
+      Perhaps, I'm better off using the exact algorithm in the Ethernet
+      standard.
+
+        The default CRC used is based on the polynomial used for CRC error
+	check-checking ing in the networking standard ISO/IEC
+	8802-3:1989.  The CRC checksum encoding is defined by the
+	generating polynomial:
+
+           G(x) = x^32 + x^26 + x^23 + x^22 + x^16 + x^12 +
+                x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1
+
+        Mathematically, the CRC value corresponding to a given file is
+	defined by  the following procedure:
+
+           The n bits to be evaluated are considered to be the
+	   coefficients of a mod 2 polynomial M(x) of degree n-1.
+	   These n bits are the bits from the file, with the most
+	   significant bit being the most signif-significant icant bit
+	   of the first octet of the file and the last bit being the
+           least significant bit of the last octet, padded with zero
+	   bits (if necessary) to achieve an integral number of
+	   octets, followed by one or more octets representing the
+	   length of the file as a binary value, least significant
+	   octet first.  The smallest number of octets capable of
+	   representing this integer are used.
+
+           M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and
+	   divided by G(x) using mod 2 division, producing a remainder
+	   R(x) of degree <= 31.
+
+	   The coefficients of R(x) are considered to be a 32-bit
+	   sequence.
+
+           The bit sequence is complemented and the result is the CRC.
+
+  o 2007.may.17
 
     o NAND flash driver rectification
       o Need to resolve how we determine page size and addressing when

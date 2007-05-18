@@ -399,6 +399,7 @@
 
 #define SDRAM_BANK0_PHYS	0x20000000
 #define SDRAM_BANK1_PHYS	0x30000000
+#define SDRAM_BANK_SIZE		0x10000000
 
 #define EMC_READCONFIG_CLKOUTDELAY (0<<0)	/* Undocumented */
 #define EMC_READCONFIG_CMDDELAY	   (1<<0)	/* Undocumented */

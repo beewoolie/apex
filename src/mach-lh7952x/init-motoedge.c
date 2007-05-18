@@ -72,75 +72,8 @@
 	(((SDRAM_BURST<<0)|(SDRAM_CAS<<4))<<SDRAM_MODE_SHIFT)
 
 
-/* usleep
-
-   this function accepts a count of microseconds and will wait at
-   least that long before returning.  The timer clock must be
-   activated by the initialization code before using usleep.
-
-   When in C, this function was one instruction longer than the
-   hand-coded assembler.  For some reason, the compiler would reload
-   the TIMER1_PHYS at the top of the while loop.
-
-   Note that this function is neither __naked nor static.  It is
-   available to the rest of the application as is.
-
-   Keep in mind that it has a limit of about 32ms.  Anything longer
-   (and less than 16 bits) will return immediately.
-
-   To be precise, the interval is HCLK/64 or 1.2597us.  In other
-   words, it is about 25% longer than desired.  The code compensates
-   by removing 25% of the requested delay.  The clever ARM instruction
-   set makes this a single operation.
-
- */
-
-void __section (.bootstrap) usleep (unsigned long us)
+void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 {
-  unsigned long c = (unsigned long) 0x8000 - (us - us/4); /* Timer counts up */
-  __asm volatile ("str %2, [%1, #0]\n\t"
-		  "str %0, [%1, #0xc]\n\t"
-		  "str %3, [%1, #0]\n\t"
-	       "0: ldr %0, [%1, #0xc]\n\t"
-		  "tst %0, %4\n\t"
-		  "beq 0b\n\t"
-		  : "+r" (c)
-		  :  "r" (TIMER1_PHYS),
-		     "r" (0),
-		     "r" (TIMER_CTRL_CS | TIMER_CTRL_SCALE_64),
-		     "I" (0x8000)
-		  : "cc"
-		  );
-}
-
-
-/* initialize_bootstrap
-
-   performs vital SDRAM initialization as well as some other memory
-   controller initializations.  It will perform no work if we are
-   already running from SDRAM.
-
-   The assembly output of this implementation of the initialization is
-   more dense than the assembler version using a table of
-   initializations.  This is primarily due to the compiler's ability
-   to keep track of the register set offsets and value being output.
-
-   The return value is true if SDRAM has been initialized and false if
-   this initialization has already been performed.  Note that the
-   non-SDRAM initializations are performed regardless of whether or
-   not we're running in SDRAM.
-
-   *** FIXME: The memory region 0x1000000-0x20000000 will be
-   *** incorrectly detected as SDRAM with code below.  It is OK as
-   *** long as the loader never runs from high nCS0 memory.
-
-*/
-
-void __naked __section (.bootstrap) initialize_bootstrap (void)
-{
-  unsigned long lr;
-  __asm volatile ("mov %0, lr" : "=r" (lr));
-
 #if defined (CONFIG_DEBUG_LL)
   RCPC_CTRL      |= RCPC_CTRL_UNLOCK;
   RCPC_PCLKCTRL0 &= ~RCPC_PCLKCTRL0_U0;
@@ -159,7 +92,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   UART_ICR  = 0xff; /* Clear interrupts */
   UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
 
-  PUTC_LL('A');
+  PUTC ('A');
 #endif
 
 	/* Setup HCLK, FCLK and peripheral clocks */
@@ -208,24 +141,80 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_STURN1      = 1;
 
   PUTC_LL('x');
+  __asm volatile ("b bootstrap_pre_exit");
+}
 
-  __asm volatile ("tst %0, #0xf0000000\n\t"
-		  "beq 1f\n\t"
-		  "cmp %0, %1\n\t"
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-		  "movls r0, #1\n\t"
-		  "strls r0, [%2]\n\t"
-#endif
-		  "movls r0, #0\n\t"
-		  "movls pc, %0\n\t"
-		"1:" :: "r" (lr), "I" (SDRAM_BANK1_PHYS)
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-		  , "r" (&fSDRAMBoot)
-#endif
-		  : "cc" );
+void __naked __section (.bootstrap.pre.exit) bootstrap_pre_exit (void)
+{
+}
 
-  PUTC_LL('r');
 
+/* usleep
+
+   this function accepts a count of microseconds and will wait at
+   least that long before returning.  The timer clock must be
+   activated by the initialization code before using usleep.
+
+   When in C, this function was one instruction longer than the
+   hand-coded assembler.  For some reason, the compiler would reload
+   the TIMER1_PHYS at the top of the while loop.
+
+   Note that this function is neither __naked nor static.  It is
+   available to the rest of the application as is.
+
+   Keep in mind that it has a limit of about 32ms.  Anything longer
+   (and less than 16 bits) will return immediately.
+
+   To be precise, the interval is HCLK/64 or 1.2597us.  In other
+   words, it is about 25% longer than desired.  The code compensates
+   by removing 25% of the requested delay.  The clever ARM instruction
+   set makes this a single operation.
+
+ */
+
+void __section (.bootstrap.sdram.func) usleep (unsigned long us)
+{
+  unsigned long c = (unsigned long) 0x8000 - (us - us/4); /* Timer counts up */
+  __asm volatile ("str %2, [%1, #0]\n\t"
+		  "str %0, [%1, #0xc]\n\t"
+		  "str %3, [%1, #0]\n\t"
+	       "0: ldr %0, [%1, #0xc]\n\t"
+		  "tst %0, %4\n\t"
+		  "beq 0b\n\t"
+		  : "+r" (c)
+		  :  "r" (TIMER1_PHYS),
+		     "r" (0),
+		     "r" (TIMER_CTRL_CS | TIMER_CTRL_SCALE_64),
+		     "I" (0x8000)
+		  : "cc"
+		  );
+}
+
+
+/* bootstrap_sdram
+
+   performs SDRAM initialization.
+
+   *** FIXME, comment out of date.
+
+   The assembly output of this implementation of the initialization is
+   more dense than the assembler version using a table of
+   initializations.  This is primarily due to the compiler's ability
+   to keep track of the register set offsets and value being output.
+
+   The return value is true if SDRAM has been initialized and false if
+   this initialization has already been performed.  Note that the
+   non-SDRAM initializations are performed regardless of whether or
+   not we're running in SDRAM.
+
+   *** FIXME: The memory region 0x1000000-0x20000000 will be
+   *** incorrectly detected as SDRAM with code below.  It is OK as
+   *** long as the loader never runs from high nCS0 memory.
+
+*/
+
+void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
+{
 	/* SDRAM */
   EMC_READCONFIG  = EMC_READCONFIG_CMDDELAY;
   EMC_DYNCFG0     = SDRAM_CFG_SETUP;
@@ -262,15 +251,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   EMC_DYNCFG0     = SDRAM_CFG;
   EMC_DYNCFG1     = SDRAM_CFG;
 
-  PUTC_LL('j');
+  __asm volatile ("mov r0, #0");		/* SDRAM initialized */
+  __asm volatile ("b boot_sdram_exit");
+}
 
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-  barrier ();
-  fSDRAMBoot = 0;
-#endif
-
-  __asm volatile ("mov r0, #-1\t\n"
-		  "mov pc, %0" : : "r" (lr));
+void __naked __section (.bootstrap.sdram.exit) boot_sdram_exit (void)
+{
 }
 
 

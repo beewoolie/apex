@@ -65,6 +65,7 @@ config MACH_MOTO_EDGE
 	select HAS_LH_ADC
 	select HAS_LH_CLCDC
 	select USES_NAND
+	select INLINE_PLATFORM_INITIALIZATION
 
 endchoice
 

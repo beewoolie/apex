@@ -48,6 +48,7 @@
 #define NAND_EraseConfirm		(0xd0)
 #define NAND_PageProgram		(0x80)
 #define NAND_PageProgramConfirm		(0x10)
+#define NAND_RandomDataInput		(0x85)
 
 //#define NAND_AutoProgram (0x10)
 //#define NAND_SerialInput (0x80)

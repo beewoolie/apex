@@ -492,14 +492,28 @@ config COMPANION_EVT2_BOOT
 	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
 	bool "Companion EVT2 NAND Boot"
 	select RELOCATE_COMPANION_EVT2
+	select RELOCATE_SIMPLE
 	help
 	  This enables early relocation of APEX from NAND flash to
 	  SRAM so that the system can get on it's feet.  The EVT2 NAND
 	  flash part only supports reading of 512 bytes from NAND
 	  flash in the absence of a stream-read feature in the NAND
-	  flash part.
+	  flash part.  The primary relocator is the standard simple
+	  relocator for NOR flash since the whole loader is copied to
+	  SRAM by the early relocator.
 
 endchoice
+
+config NAND_BOOT_BASE
+	depends on NAND_BOOT
+	hex "NAND Flash Boot Execution Address"
+	default 0x00000000
+	help
+	  This option selects the base address where initial NAND boot
+	  code is copied by the CPU/Boot ROM/NAND controller.  It is
+	  used to determine whether or not we're executing from this
+	  address and, therefore, whether or not we need to perform
+	  the relocation.
 
 comment "   Default Startup"
 depends on !ENV_DEFAULT_STARTUP_OVERRIDE

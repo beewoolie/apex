@@ -71,19 +71,15 @@
 # define UART		(UART1_PHYS)
 #endif
 
-#if defined (CONFIG_MACH_LPD79520)
+#if !defined (UART) && defined (CONFIG_ARCH_LH79520)
 # define UART		(UART1_PHYS)
 #endif
 
-#if defined (CONFIG_MACH_LPD79524)
+#if !defined (UART) && defined (CONFIG_ARCH_LH79524)
 # define UART		(UART0_PHYS)
 #endif
 
-#if defined (CONFIG_MACH_KEV79524)
-# define UART		(UART0_PHYS)
-#endif
-
-#if defined (CONFIG_MACH_KEV79525)
+#if !defined (UART) && defined (CONFIG_ARCH_LH79525)
 # define UART		(UART0_PHYS)
 #endif
 

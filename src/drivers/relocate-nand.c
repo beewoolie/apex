@@ -154,7 +154,7 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 #if defined (USE_NAND)
 
 	/* Jump to NAND loader only if we could be starting from NAND. */
-  else if ((pc >> 12) == (0xb0000000>>12)) {
+  else if ((pc >> 12) == (CONFIG_NAND_BOOT_BASE>>12)) {
     PUTC ('N');
     __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_nand));
   }

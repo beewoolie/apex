@@ -1,3 +1,21 @@
+2007-05-18  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/arch-arm/Kconfig: Fixed companion boot by explicitly
+	enabling the simple/NOR flash relocator as the primary relocator.
+
+	* src/drivers/drv-nand.c (nand_sequential_input): Fixed the NAND
+	driver to R/W on ST NAND parts.
+
+2007-05-17  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-lh7952x/debug_ll.h: Fixed UART declarations.
+
+	* src/mach-lh7952x/init-motoedge.c: Converted to inline
+	platform initialization.
+
+	* src/arch-arm/entry/relocate-simple.c: fixed relocate-simple()
+	because we changed the way we handle offsets.
+
 2007-05-16  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (SUBLEVEL): Rolled to 1.5.2 so that we can keep track

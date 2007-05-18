@@ -140,20 +140,20 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 
   PUTC_LL ('\r');
   PUTC_LL ('\n');
-  PUTHEX_LL (offset);
-  PUTC_LL ('+');
   PUTHEX_LL (pc);
+  PUTC_LL ('+');
+  PUTHEX_LL (offset);
   PUTC_LL ('=');
   PUTC_LL ('>');
-  PUTHEX_LL (*(unsigned long*) (pc - offset));	/* Original */
+  PUTHEX_LL (*(unsigned long*) (pc));			/* Original */
   PUTC_LL ('=');
   PUTC_LL ('=');
-  PUTHEX_LL (*(unsigned long*) (pc));		/* Copy */
+  PUTHEX_LL (*(unsigned long*) (pc + offset));		/* Copy */
   PUTC_LL ('\r');
   PUTC_LL ('\n');
 
 #if defined (USE_COPY_VERIFY)
-  if (*(unsigned long*) pc != *(unsigned long*) (pc - offset)) {
+  if (*(unsigned long*) pc != *(unsigned long*) (pc + offset)) {
     PUTC ('@');
     PUTC ('F');
     PUTC ('A');
