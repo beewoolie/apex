@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu May 10 19:36:06 2007
+# Fri May 18 15:42:15 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -145,6 +145,7 @@ CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock4 rootfstype=jffs2 console=ttyS0,115200"
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_USES_NOR_BOOTFLASH=y
+CONFIG_RELOCATE_SIMPLE=y
 CONFIG_LITTLEENDIAN=y
 CONFIG_CLEAR_STACKS=y
 CONFIG_ALIASES=y

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu May 10 19:38:32 2007
+# Fri May 18 15:42:22 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -171,4 +171,5 @@ CONFIG_ENV_REGION_KERNEL="nor:256k+1536k"
 # CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE is not set
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_USES_NOR_BOOTFLASH=y
+CONFIG_RELOCATE_SIMPLE=y
 CONFIG_ALIASES=y
