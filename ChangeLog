@@ -1,5 +1,7 @@
 2007-05-18  Marc Singer  <elf@zealous.synapsedev.com>
 
+	* Makefile (ARCH): Releasing 1.5.2.
+
 	* src/arch-arm/Kconfig: Fixed companion boot by explicitly
 	enabling the simple/NOR flash relocator as the primary relocator.
 
