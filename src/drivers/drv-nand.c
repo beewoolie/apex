@@ -183,16 +183,16 @@ struct nand_chip {
   unsigned long total_size;
   int erase_size;
   int page_size;
-  //  int address_size;	/* *** FIXME: Better than Boot code */
+//  int address_size;		/* Number of bytes used in addressing */
 };
 
 const static struct nand_chip chips[] = {
   { (1<<1),
     { 0x98, 0x75 },		/* Toshiba - 256 MiB*/
-    32*1024*1024, 16*1024, 512 },
+    32*1024*1024, 16*1024, 512 }, /* Addr 3? */
   { (1<<0) | (1<<1) | (1<<2) | (1<<3),
     { 0x20, 0xf1, 0x80, 0x15},	/* ST - 1 GiB */
-    128*1024*1024, 128*1024, 2048 },
+    128*1024*1024, 128*1024, 2048 }, /* Addr 4 */
 };
 
 const static struct nand_chip* chip;

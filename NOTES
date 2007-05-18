@@ -5,6 +5,30 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.may.18
+
+    o NAND flash driver rectification
+      o Need to resolve how we determine page size and addressing when
+	we are relocating
+      o Need to determine how best to handle early relocation wrt page
+	size and addressing.
+      o The lookup table is nice, I suppose, but I'd rather work out
+	either a config method or a way to decode the size that is
+	uniform.
+    o CRC on copies
+      o It should be possible to compute the CRC of a block of data
+	s.t. we store the image followed by the CRC and we are safe to
+	copy until the crc goes to zero.
+      o This was confirmed by Abdul as he's done it.
+      o This would allow us to do something like
+          copy nand:0+* $bootaddr
+	where the * means copy until we find that the CRC has been
+	met.
+      o May need to revise the syntax so that we know the upper limit.
+          copy nand:0+2m* $bootaddr
+	This way we know to copy no more than 2m, but report an error
+	if we get to the end of the block and the CRC fails.
+
   o 2007.may.13
 
     o Need to regularize the configuration options.  For example, the
