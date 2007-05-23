@@ -47,6 +47,6 @@
 #define DM_PHYS		(0xb4000000) /* Dev MAC/PHY */
 #define DM_PHYS_INDEX	(DM_PHYS + 0)
 #define DM_PHYS_DATA	(DM_PHYS + 4)
-#define DM_NAME		"dev"
+//#define DM_NAME		"dev"
 
 #endif  /* __MACH_DRV_DM9000_H__ */

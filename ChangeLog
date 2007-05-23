@@ -1,3 +1,13 @@
+2007-05-22  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/drivers/drv-dm9000.c: Fixed failed probe code path.  If the
+	dm9000 isn't found, there will be no report.
+
+	* src/mach-mx3/ipu.c: Adding view finder DMA task.
+
+	* src/lib/env.c (env_check_magic): Fixed empty/broken environment
+	region case.
+
 2007-05-18  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (ARCH): Releasing 1.5.2.

@@ -8,6 +8,7 @@ config MACH_MX31ADS
 	bool "Freescale MX31 Development Board"
 	select ARCH_MX31
 	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
 	select USES_COMPACTFLASH
 	select USES_CS8900
 	select INLINE_PLATFORM_INITIALIZATION

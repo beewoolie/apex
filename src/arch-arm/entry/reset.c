@@ -217,11 +217,11 @@ void __naked __section (.reset.pre.exit) reset_pre_exit (void)
 
 void __naked __section (.reset.post) reset_post (void)
 {
-  PUTC ('s');
 #if defined (CONFIG_SDRAMBOOT_REPORT)
   __asm volatile ("str r0, [%0]\n\t" :: "r" (&fSDRAMBoot));
-  __asm volatile ("b reset_post_1\n\t");
 #endif
+  PUTC ('s');
+  __asm volatile ("b reset_post_1\n\t");
 }
 
 #endif

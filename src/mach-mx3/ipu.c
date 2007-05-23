@@ -66,6 +66,8 @@
 # define ENTRY
 #endif
 
+#define MODE_VF
+
 #define MODE_GENERIC
 //#define MODE_RGB
 
@@ -249,9 +251,13 @@
 
 #define IPU_INT_STAT5_BAYER_FRM_LOST_ERR (1<<11)
 
-#define CB_FRAME			(4*1024*1024)
+#define CB_FRAME			(1024*1024)
 static char* rgbFrameA;
 static char* rgbFrameB;
+static char* rgbFrameC;
+static char* rgbFrameD;
+static char* rgbFrameE;
+static char* rgbFrameF;
 
 #define ADDR_NO_STOP		(1<<14)
 #define ADDR_RESTART		(1<<13)
@@ -297,10 +303,10 @@ static char* rgbFrameB;
 #define IPU_CW_OFS1	104,  5
 #define IPU_CW_OFS2	109,  5
 #define IPU_CW_OFS3	114,  5
-#define IPU_CW_WID0	119,  5
-#define IPU_CW_WID1	122,  5
-#define IPU_CW_WID2	125,  5
-#define IPU_CW_WID3	128,  5
+#define IPU_CW_WID0	119,  3
+#define IPU_CW_WID1	122,  3
+#define IPU_CW_WID2	125,  3
+#define IPU_CW_WID3	128,  3
 #define IPU_CW_DEC_SEL	131,  1
 
 static const char* describe_channels (unsigned long v)
@@ -746,7 +752,7 @@ static void ipu_report (void)
 #undef _
 	}
 
-	printf (" -- Channel %2d config -- %s\n", i, sz);
+	printf (" -- Channel %2d -- %s\n", i, sz);
 	memset (rgb0, 0, sizeof (rgb0));
 	memset (rgb1, 0, sizeof (rgb1));
 	ipu_read_ima (1, 2*i + 0, rgb0, 132);
@@ -811,7 +817,7 @@ static void ipu_report (void)
 		read_huge (rgb1, IPU_CW_NPB),
 		read_huge (rgb1, IPU_CW_NPB) + 1,
 		read_huge (rgb1, IPU_CW_SAT));
-	if (!interleaved) {
+	if (interleaved) {
 	  printf ("  SCC %ld  OFS0 %2ld  OFS1 %2ld  OFS2 %2ld"
 		  "  OFS3 %2ld\n",
 		  read_huge (rgb1, IPU_CW_SCC),
@@ -1233,6 +1239,41 @@ static void ipu_setup_sensor (void)
   GPIO_PIN_CLEAR	 (PIN_CMOS_STBY); /* Release camera from standby */
 }
 
+void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
+{
+  char rgb[(132 + 7)/8];
+
+  memset (rgb, 0, sizeof (rgb));
+  write_huge (rgb, 1, IPU_CW_NSB);
+  write_huge (rgb, dx - 1, IPU_CW_FW);
+  write_huge (rgb, dy - 1, IPU_CW_FH);
+  ipu_write_ima (1, 2*channel, rgb, 132);
+
+  memset (rgb, 0, sizeof (rgb));
+  write_huge (rgb, (unsigned long) pa, IPU_CW_EBA0);
+  write_huge (rgb, (unsigned long) pb, IPU_CW_EBA1);
+  write_huge (rgb, 2, IPU_CW_BPP);
+  write_huge (rgb, 7, IPU_CW_NPB);
+  write_huge (rgb, 2, IPU_CW_SAT);
+  write_huge (rgb, 4, IPU_CW_PFS);
+  write_huge (rgb, dx*2 - 1, IPU_CW_SL);
+  write_huge (rgb, 4, IPU_CW_WID0);
+  write_huge (rgb, 5, IPU_CW_WID1);
+  write_huge (rgb, 4, IPU_CW_WID2);
+  write_huge (rgb, 0, IPU_CW_WID3);
+  write_huge (rgb, 0, IPU_CW_OFS0);
+  write_huge (rgb, 5, IPU_CW_OFS1);
+  write_huge (rgb, 11, IPU_CW_OFS2);
+  write_huge (rgb, 16, IPU_CW_OFS3);
+  ipu_write_ima (1, 2*channel + 1, rgb, 132);
+
+  if (pb)
+    IPU_CHA_DB_MODE_SEL |= 1<<channel;
+  IPU_CHA_BUF0_RDY |= 1<<channel;
+  if (pb)
+    IPU_CHA_BUF1_RDY |= 1<<channel;
+}
+
 static void ipu_setup (void)
 {
   int channel = 7;
@@ -1282,6 +1323,8 @@ static void ipu_setup (void)
 #else
     | IC_CONF_CSI_MEM_WR_EN	/* Allow direct write from CSI to memory */
 #endif
+    | IC_CONF_PRPVF_PRPVF_EN
+    | IC_CONF_PRPVF_CSC1
     ;
 
 	/* Initialize IDMAC register file */
@@ -1353,7 +1396,13 @@ static void ipu_setup (void)
 //    memset (rgb, 0, sizeof (rgb));
 //    ipu_read_ima (1, 2*channel + 1, rgb, 132);
 //    dumpw (rgb, sizeof (rgb), 0, 0);
+
   }
+
+#if defined (MODE_VF)
+  channel_rgb_setup (1, FRAME_WIDTH, FRAME_HEIGHT,
+		     rgbFrameC, rgbFrameD); /* viewfinder setup */
+#endif
 
   IDMAC_CHA_PRI |= 1<<channel;	/* This channel is high priority */
   IPU_CHA_DB_MODE_SEL |= 1<<channel;
@@ -1367,6 +1416,9 @@ static void ipu_setup (void)
   /* Enabling tasks */
 
   IDMAC_CHA_EN |= 1<<channel;	/* Enable channel 7 */
+#if defined (MODE_VF)
+  IDMAC_CHA_EN |= 1<<(1);	/* Enable channel 1 */
+#endif
   IPU_CONF     |= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
 
   /* Resuming tasks */
@@ -1452,10 +1504,20 @@ static int cmd_ipu (int argc, const char** argv)
   if (rgbFrameA == 0) {
     rgbFrameA = alloc_uncached (CB_FRAME, 4096);
     rgbFrameB = alloc_uncached (CB_FRAME, 4096);
+    rgbFrameC = alloc_uncached (CB_FRAME, 4096);
+    rgbFrameD = alloc_uncached (CB_FRAME, 4096);
+    rgbFrameE = alloc_uncached (CB_FRAME, 4096);
+    rgbFrameF = alloc_uncached (CB_FRAME, 4096);
     memset ((void*) rgbFrameA, 0xa5, CB_FRAME);
     memset ((void*) rgbFrameB, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameC, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameD, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameE, 0xa5, CB_FRAME);
+    memset ((void*) rgbFrameF, 0xa5, CB_FRAME);
 
-    printf ("FrameA %p  FrameB %p\n", rgbFrameA, rgbFrameB);
+    printf ("Frames [%p %p %p %p %p %p]\n",
+	    rgbFrameA, rgbFrameB, rgbFrameC,
+	    rgbFrameD, rgbFrameE, rgbFrameF);
   }
 
   /* Initialize */

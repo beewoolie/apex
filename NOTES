@@ -7,6 +7,14 @@ TODO:
 
   o 2007.may.19
 
+    o Would be neato to support uImages.  I don't *like* the idea, but
+      it could be kinda handy.
+
+    o Need to implement multiple checksum algorithms so that we can
+      compare easily.  For example, the chksum algorithm, while
+      inappropriate for our stream checksum needs, is good for
+      comparing with an offline copy.
+
     o Need to revise the CRC algorithm to comply with POSIX.2
       standard.  Here's the text from a web page describing the
       algorithm.  Note that the polynomial is the same as the CRC32

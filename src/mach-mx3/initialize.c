@@ -183,16 +183,16 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
   //  WEIM_LCR(0) = 0xa0330D01; //
   //  WEIM_ACR(0) = 0x00220800; //
 
-#if defined (CONFIG_STARTUP_UART)
-  INITIALIZE_CONSOLE_UART;
-  PUTC('A');
-#endif
-
 #if defined (CONFIG_MACH_MX31ADS)
-				/* Configure CPLD on CS4 */
+	/* Configure CPLD on CS4 -- necessary for ADS UART */
   WEIM_UCR(4) = 0x0000DCF6;
   WEIM_LCR(4) = 0x444A4541;
   WEIM_ACR(4) = 0x44443302;
+#endif
+
+#if defined (CONFIG_STARTUP_UART)
+  INITIALIZE_CONSOLE_UART;
+  PUTC ('A');
 #endif
 
 #if defined LED_ON

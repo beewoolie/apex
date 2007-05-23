@@ -262,6 +262,9 @@ int env_check_magic (int full_check)
 {
   unsigned char __aligned rgb[2];
 
+  if (env_d.driver == NULL)
+    return -1;
+
   _env_rewind ();
   _env_read (rgb, 2);
   if (rgb[0] == ENV_MAGIC_0 && rgb[1] == ENV_MAGIC_1)

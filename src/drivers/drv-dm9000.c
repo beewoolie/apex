@@ -32,6 +32,10 @@
      second of the two, you may need to use the -1 switch when setting
      the MAC address even though APEX doesn't really care.
 
+   o Failed probe.  In some cases, it may be desirable to report that
+     a probe failed and show the data read from the dm9000 when the
+     chip isn't recognized.  Presently, this requires a recompile.
+
 */
 
 #include <apex.h>
@@ -85,6 +89,7 @@ static int g_dm9000_default;	/* Default dm9000 for commands  */
 #else
 # define g_dm9000_default 0
 #endif
+static int g_dm9000_present;
 
 static void write_reg (int dm, int index, u16 value)
 {
@@ -301,6 +306,7 @@ static void dm9000_init (void)
       continue;
 
     dm9000[dm].present = 1;
+    g_dm9000_present = 1;
 
     dm9000[dm].rgs_eeprom[0] = read_eeprom (dm, 0);
     dm9000[dm].rgs_eeprom[1] = read_eeprom (dm, 1);
@@ -323,6 +329,9 @@ static void dm9000_init (void)
 static void dm9000_report (void)
 {
   int dm;
+
+  if (!g_dm9000_present)
+    return;
 
   printf ("  dm9000: host_mac_addr %02x:%02x:%02x:%02x:%02x:%02x\n",
 	  host_mac_address[0], host_mac_address[1],

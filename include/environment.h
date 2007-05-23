@@ -33,6 +33,10 @@
 
 /* ----- Types */
 
+#if defined (CONFIG_ENV_REGION)
+extern struct descriptor_d env_d;
+#endif
+
 struct env_d {
   char* key;
   char* default_value;

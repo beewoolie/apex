@@ -132,10 +132,6 @@ static __env struct env_d e_startup = {
 };
 #endif
 
-#if defined (CONFIG_ENV_REGION)
-extern struct descriptor_d env_d;
-#endif
-
 #if defined (CONFIG_ENV_LINK)
 
 extern char APEX_ENV_START;
