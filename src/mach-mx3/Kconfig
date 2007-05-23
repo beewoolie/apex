@@ -99,6 +99,15 @@ config MX31ADS_UARTA
 
 endchoice
 
+config IPU_TEST
+	bool "Enable IPU test commands"
+	default n
+	help
+	  The IPU handles communication between video sensors, the
+	  MPEG4 video encoder, and display technology.  It is a very
+	  complex portion of the CPU.  The code here is helpful for
+	  testing and debugging IPU problems.
+
 config EXTENDED_CPUINFO
 	bool "Extended CPU into"
 	depends on n

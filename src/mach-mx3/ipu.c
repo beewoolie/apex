@@ -47,6 +47,11 @@
      Writing is similar except that there are no read cycles and the
      special register address is 0xf1.
 
+   o BUF?_RDY.  We would expect that clearing these bits would prevent
+     the IDMAC from writing to that buffer, but that doesn't seem to
+     be the case.  The IDMAC writes to the buffers regardless of the
+     setting of these bits.
+
 */
 
 #include <config.h>
@@ -66,7 +71,7 @@
 # define ENTRY
 #endif
 
-#define MODE_VF
+//#define MODE_VF
 
 #define MODE_GENERIC
 //#define MODE_RGB
@@ -1239,6 +1244,8 @@ static void ipu_setup_sensor (void)
   GPIO_PIN_CLEAR	 (PIN_CMOS_STBY); /* Release camera from standby */
 }
 
+#if defined (MODE_VF)
+
 void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
 {
   char rgb[(132 + 7)/8];
@@ -1252,8 +1259,11 @@ void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
   memset (rgb, 0, sizeof (rgb));
   write_huge (rgb, (unsigned long) pa, IPU_CW_EBA0);
   write_huge (rgb, (unsigned long) pb, IPU_CW_EBA1);
-  write_huge (rgb, 2, IPU_CW_BPP);
-  write_huge (rgb, 7, IPU_CW_NPB);
+
+#if 1
+  /* 16 bpp */
+  write_huge (rgb, 2, IPU_CW_BPP); /* 16 bpp */
+  write_huge (rgb, 16-1, IPU_CW_NPB);
   write_huge (rgb, 2, IPU_CW_SAT);
   write_huge (rgb, 4, IPU_CW_PFS);
   write_huge (rgb, dx*2 - 1, IPU_CW_SL);
@@ -1265,6 +1275,23 @@ void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
   write_huge (rgb, 5, IPU_CW_OFS1);
   write_huge (rgb, 11, IPU_CW_OFS2);
   write_huge (rgb, 16, IPU_CW_OFS3);
+#else
+  /* 32 bpp */
+  write_huge (rgb, 0, IPU_CW_BPP); /* 32 bpp */
+  write_huge (rgb, 8-1, IPU_CW_NPB);
+  write_huge (rgb, 2, IPU_CW_SAT);
+  write_huge (rgb, 4, IPU_CW_PFS);
+  write_huge (rgb, dx*4 - 1, IPU_CW_SL);
+  write_huge (rgb, 10, IPU_CW_WID0);
+  write_huge (rgb, 10, IPU_CW_WID1);
+  write_huge (rgb, 10, IPU_CW_WID2);
+  write_huge (rgb,  0, IPU_CW_WID3);
+  write_huge (rgb,  0, IPU_CW_OFS0);
+  write_huge (rgb, 10, IPU_CW_OFS1);
+  write_huge (rgb, 20, IPU_CW_OFS2);
+  write_huge (rgb, 30, IPU_CW_OFS3);
+#endif
+
   ipu_write_ima (1, 2*channel + 1, rgb, 132);
 
   if (pb)
@@ -1274,13 +1301,37 @@ void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
     IPU_CHA_BUF1_RDY |= 1<<channel;
 }
 
+static void csc1_setup (void)
+{
+  char rgb[(42 + 7)/8];
+
+  memset (rgb, 0, sizeof (rgb));
+  write_huge (rgb, 0x12579c00, 0, 32);
+  write_huge (rgb, 0x000002f2, 32, 32);
+  ipu_write_ima (0, 0x5a5, rgb, 42);
+
+  memset (rgb, 0, sizeof (rgb));
+  write_huge (rgb, 0x50012A95, 0, 32);
+  write_huge (rgb, 0x00000008, 32, 32);
+  ipu_write_ima (0, 0x5a6, rgb, 42);
+
+  memset (rgb, 0, sizeof (rgb));
+  write_huge (rgb, 0xb33330ff, 0, 32);
+  write_huge (rgb, 0x000000ee, 32, 32);
+  ipu_write_ima (0, 0x5a7, rgb, 42);
+}
+
+#endif
+
 static void ipu_setup (void)
 {
   int channel = 7;
+  printf ("ipu_setup\n");
 
   /* Configure common parameters */
 
   IPU_CONF	&= ~(1<<8);			/* Setting endian-ness only */
+  IC_CONF	= 0;				/* Disable all tasks */
   IDMAC_CONF	= IDMAC_CONF_SINGLE_AHB_M_EN;
 
   /* SYSTEM Configure sensor interface */
@@ -1310,6 +1361,8 @@ static void ipu_setup (void)
     | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH)
     ;
 
+  CSI_OUT_FRM_CTRL = 0;		/* Should be redundant */
+
 #if defined (MODE_GENERIC)
   IC_PRP_ENC_RSC = 0x20002000;	/* 100% scaling */
 #endif
@@ -1323,8 +1376,10 @@ static void ipu_setup (void)
 #else
     | IC_CONF_CSI_MEM_WR_EN	/* Allow direct write from CSI to memory */
 #endif
+#if defined (MODE_VF)
     | IC_CONF_PRPVF_PRPVF_EN
     | IC_CONF_PRPVF_CSC1
+#endif
     ;
 
 	/* Initialize IDMAC register file */
@@ -1378,7 +1433,7 @@ static void ipu_setup (void)
     write_huge (rgb, 4, IPU_CW_PFS);
 #endif
     write_huge (rgb, 0, IPU_CW_BAM);
-    write_huge (rgb, 8 - 1, IPU_CW_NPB);
+    write_huge (rgb, 16 - 1, IPU_CW_NPB);
     write_huge (rgb, 2, IPU_CW_SAT);
     write_huge (rgb, 2, IPU_CW_SCC);
     write_huge (rgb, 0, IPU_CW_OFS0);
@@ -1400,8 +1455,10 @@ static void ipu_setup (void)
   }
 
 #if defined (MODE_VF)
+  csc1_setup ();
   channel_rgb_setup (1, FRAME_WIDTH, FRAME_HEIGHT,
 		     rgbFrameC, rgbFrameD); /* viewfinder setup */
+  IPU_FS_PROC_FLOW = 3;		/* VF source data is valid */
 #endif
 
   IDMAC_CHA_PRI |= 1<<channel;	/* This channel is high priority */
@@ -1605,6 +1662,40 @@ static int cmd_ipu (int argc, const char** argv)
     printf ("sensor height %d\n", i2c_sensor_read (3));
     printf ("sensor test register 0x%x\n", i2c_sensor_read (0x7f));
     printf ("sensor noise corr 0x%x\n", i2c_sensor_read (0x70));
+  }
+
+  if (strcmp (argv[1], "s") == 0) { /* Single frame capture */
+    int channel = 7;
+    printf ("single frame capture\n");
+//    IDMAC_CHA_EN &= 1<<channel;
+    IPU_CONF     &= ~(IPU_CONF_CSI_EN | IPU_CONF_IC_EN);
+    IDMAC_CHA_EN = 0;
+    memset (rgbFrameA, 0xa5, CB_FRAME);
+    memset (rgbFrameB, 0xa5, CB_FRAME);
+    IPU_CONF     |= IPU_CONF_CSI_EN;
+    IPU_INT_STAT3 = (1<<6);	/* CSI_EOF */
+    while (!(IPU_INT_STAT3 & (1<<6)))
+      ;
+    IPU_CHA_BUF0_RDY |= 1<<channel;
+    IPU_CHA_BUF1_RDY |= 1<<channel;
+    IDMAC_CHA_EN = 1<<channel;
+    IPU_CONF     |= IPU_CONF_IC_EN;
+    IPU_INT_STAT3 = (1<<6);	/* CSI_EOF */
+    while (!(IPU_INT_STAT3 & (1<<6)))
+      ;
+    IPU_CONF     &= ~(IPU_CONF_CSI_EN | IPU_CONF_IC_EN);
+    IDMAC_CHA_EN = 0;
+//    IPU_CHA_BUF0_RDY &= 1<<channel;
+//    IPU_CHA_BUF1_RDY &= 1<<channel;
+  }
+
+  if (strcmp (argv[1], "g") == 0) {
+    int channel = 7;
+    printf ("restart capturing\n");
+    IDMAC_CHA_EN |= 1<<channel;
+    IPU_CHA_BUF0_RDY |= 1<<channel;
+    IPU_CHA_BUF1_RDY |= 1<<channel;
+    IPU_CONF	     |= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
   }
 
   if (strcmp (argv[1], "w") == 0) {
