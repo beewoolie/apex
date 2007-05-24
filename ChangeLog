@@ -1,3 +1,15 @@
+2007-05-24  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* Makefile (SUBLEVEL): 1.5.3.  Rolling rev for the sake of working
+	IPU code, working sensor capture, and turing off of the
+	illumination LEDs.
+
+	* src/mach-mx3/ipu.c (cmd_ipu): Fixed the shutter width to
+	increase frame rate.
+	
+	* src/mach-mx3/ipu.c (ipu_setup): Fixed the burst width to memory
+	through the IPU DMAC.
+
 2007-05-22  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/drivers/drv-dm9000.c: Fixed failed probe code path.  If the

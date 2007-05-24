@@ -5,7 +5,7 @@ ENV_CROSS_COMPILE:=$(CROSS_COMPILE)
 
 VERSION = 1
 PATCHLEVEL = 5
-SUBLEVEL = 2
+SUBLEVEL = 3
 #EXTRAVERSION = -$(shell date "+%j.%R")
 #NAME=Zonked Quokka
 

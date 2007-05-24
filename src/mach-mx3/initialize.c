@@ -77,6 +77,9 @@
 	| ESDCTL_CTL0_SREFR7_81\
 	| ESDCTL_CTL0_BL8
 
+/* Exbiblio Rosencrantz/oPen */
+#define PIN_ILLUMINATION_EN1	MX31_PIN_KEY_COL5
+#define PIN_ILLUMINATION_EN2	MX31_PIN_KEY_COL4
 
 void __naked __section (.bootstrap.early) bootstrap_early (void)
 {
@@ -276,6 +279,16 @@ void __naked __section (.bootstrap.sdram.exit) boot_sdram_exit (void)
 
 static void target_init (void)
 {
+#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
+  IOMUX_PIN_CONFIG_GPIO  (PIN_ILLUMINATION_EN1);
+  GPIO_PIN_CONFIG_OUTPUT (PIN_ILLUMINATION_EN1);
+  GPIO_PIN_CLEAR	 (PIN_ILLUMINATION_EN1);
+
+  IOMUX_PIN_CONFIG_GPIO  (PIN_ILLUMINATION_EN2);
+  GPIO_PIN_CONFIG_OUTPUT (PIN_ILLUMINATION_EN2);
+  GPIO_PIN_CLEAR	 (PIN_ILLUMINATION_EN2);
+#endif
+
   /* Initialize AIPS (AHB to IP bus) */
   AIPS1_MPR1 = 0x77777777;
   AIPS1_MPR2 = 0x77777777;

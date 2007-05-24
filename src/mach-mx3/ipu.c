@@ -78,13 +78,21 @@
 
 #if defined (MODE_GENERIC)
 
-# define FRAME_WIDTH		(752)
-# define FRAME_HEIGHT		(480)
+//# define FRAME_WIDTH		(752)
+//# define FRAME_HEIGHT		(480)
 
 //# define FRAME_WIDTH		(640)
 //# define FRAME_HEIGHT		(480)
-//# define FRAME_WIDTH		(616)
-//# define FRAME_HEIGHT		(170)
+
+//# define FRAME_WIDTH		(170)
+//# define FRAME_HEIGHT		(616)
+
+//# define FRAME_WIDTH		(176)
+//# define FRAME_HEIGHT		(616)
+
+# define FRAME_WIDTH		(616)
+# define FRAME_HEIGHT		(170)
+
 //# define FRAME_WIDTH		(160)
 //# define FRAME_HEIGHT		(80)
 # define FRAME_WIDTH_DIVISOR	(1)
@@ -255,6 +263,12 @@
 #define IPU_INT_STAT3_CSI_NF		(1<<5)
 
 #define IPU_INT_STAT5_BAYER_FRM_LOST_ERR (1<<11)
+
+#define SENSOR_WINDOW_WIDTH		 (0x04)
+#define SENSOR_WINDOW_HEIGHT		 (0x03)
+#define SENSOR_MAXIMUM_SHUTTER_WIDTH	 (0xbd)
+#define SENSOR_HORIZONTAL_BLANKING	 (0x05)
+#define SENSOR_VERTICAL_BLANKING	 (0x06)
 
 #define CB_FRAME			(1024*1024)
 static char* rgbFrameA;
@@ -1700,20 +1714,24 @@ static int cmd_ipu (int argc, const char** argv)
 
   if (strcmp (argv[1], "w") == 0) {
     printf ("reprogramming to %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
-    i2c_sensor_write (4, FRAME_WIDTH);
+    i2c_sensor_write (SENSOR_WINDOW_WIDTH, FRAME_WIDTH);
     usleep (1000);
-    i2c_sensor_write (3, FRAME_HEIGHT);
+    i2c_sensor_write (SENSOR_WINDOW_HEIGHT, FRAME_HEIGHT);
+    usleep (1000);
+    i2c_sensor_write (SENSOR_MAXIMUM_SHUTTER_WIDTH, 340);
     usleep (1000);
 #if defined (FRAME_HORZ_BLANKING)
-    i2c_sensor_write (5, FRAME_HORZ_BLANKING);
+    i2c_sensor_write (SENSOR_HORIZONTAL_BLANKING, FRAME_HORZ_BLANKING);
     usleep (1000);
-    i2c_sensor_write (6, FRAME_VERT_BLANKING);
+    i2c_sensor_write (SENSOR_VERTICAL_BLANKING, FRAME_VERT_BLANKING);
     usleep (1000);
 #endif
-    printf ("sensor width    %d\n", i2c_sensor_read (4));
-    printf ("sensor height   %d\n", i2c_sensor_read (3));
-    printf ("sensor h blank  %d\n", i2c_sensor_read (5));
-    printf ("sensor v blank  %d\n", i2c_sensor_read (6));
+    printf ("sensor width    %d\n", i2c_sensor_read (SENSOR_WINDOW_WIDTH));
+    printf ("sensor height   %d\n", i2c_sensor_read (SENSOR_WINDOW_HEIGHT));
+    printf ("sensor h blank  %d\n",
+	    i2c_sensor_read (SENSOR_HORIZONTAL_BLANKING));
+    printf ("sensor v blank  %d\n",
+	    i2c_sensor_read (SENSOR_VERTICAL_BLANKING));
   }
 
   if (strcmp (argv[1], "cap") == 0) {
