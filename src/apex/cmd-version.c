@@ -32,6 +32,7 @@
 #include <command.h>
 #include <service.h>
 #include <environment.h>
+#include <alias.h>
 
 extern char APEX_VMA_COPY_START;
 extern char APEX_VMA_COPY_END;
@@ -80,6 +81,15 @@ int cmd_version (int argc, const char** argv)
   }
   printf (")\n");
 #endif
+
+#if defined (CONFIG_ALIASES) && defined (CONFIG_VARIATION_SUFFIX)
+  {
+    const char* sz = alias_lookup ("variation");
+    if (sz)
+      printf ("  variation => %s\n", sz);
+  }
+#endif
+
 #endif
 
   if (argc >= 0) {

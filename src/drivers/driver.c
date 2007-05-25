@@ -189,8 +189,12 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	pl = &d->length;
 //	d->non_zero_length = 1;	/* Flag user's option */
 	/* Fallthrough to get ++ib */
-      default:
 	++ib;
+	break;
+      default:
+		/* Unknown bytes interpreted as an error */
+	return ERROR_PARAM;
+//	++ib;
 	/* Skip over unknown bytes so that we always terminate */
 	break;
       }

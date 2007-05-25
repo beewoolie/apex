@@ -1,3 +1,11 @@
+2007-05-24  Marc Singer  <elf@buici.com>
+
+	* src/drivers/driver.c (parse_descriptor): Unparseable regions
+	will now generate an error.
+
+	* src/apex/cmd-version.c (cmd_version): Added a message about the
+	currently set variation.
+
 2007-05-24  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (SUBLEVEL): 1.5.3.  Rolling rev for the sake of working
