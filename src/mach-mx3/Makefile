@@ -19,7 +19,7 @@
 #   USA.
 #
 
-obj-y += initialize.o timer.o env.o cpuinfo.o
+obj-y += initialize.o timer.o env.o cpuinfo.o cmd-reset.o
 obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 obj-$(CONFIG_IPU_TEST)		+= ipu.o
 obj-$(CONFIG_MX31ADS_UARTA)	+= serial-sc16c652.o
