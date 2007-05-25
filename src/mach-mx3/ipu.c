@@ -74,7 +74,6 @@
 //#define MODE_VF
 
 #define MODE_GENERIC
-//#define MODE_RGB
 
 #if defined (MODE_GENERIC)
 
@@ -90,7 +89,7 @@
 //# define FRAME_WIDTH		(176)
 //# define FRAME_HEIGHT		(616)
 
-# define FRAME_WIDTH		(616)
+# define FRAME_WIDTH		(608)
 # define FRAME_HEIGHT		(170)
 
 //# define FRAME_WIDTH		(160)
@@ -100,12 +99,6 @@
 //# define FRAME_VERT_BLANKING	(4)
 
 # define BYTES_PER_PEL		(2)
-#endif
-
-#if defined (MODE_RGB)
-# define FRAME_WIDTH		(752)
-# define FRAME_HEIGHT		(480)
-# define FRAME_WIDTH_DIVISOR	(3)
 #endif
 
 	/* Definitions for GPIO pins to make the code readable. */
@@ -1357,10 +1350,6 @@ static void ipu_setup (void)
     | CSI_CONF_SENS_DATA_FORMAT_GENERIC
     | CSI_CONF_DATA_WIDTH_15BIT
 #endif
-#if defined (MODE_RGB)
-    | CSI_CONF_SENS_DATA_FORMAT_RGB
-    | CSI_CONF_DATA_WIDTH_8BIT			/* Color component width */
-#endif
     ;
 
   CSI_SENS_FRM_SIZE = 0
@@ -1438,16 +1427,9 @@ static void ipu_setup (void)
 //    write_huge (rgb, (FRAME_WIDTH/FRAME_WIDTH_DIVISOR)*8 - 1, IPU_CW_SL);
     write_huge (rgb, 7, IPU_CW_PFS);
 #endif
-#if defined (MODE_RGB)
-    /* I think that the value of 3 (8bpp) is wrong since our pixels
-       are really 24 bits and arrive in three bytes. */
-    write_huge (rgb, 3, IPU_CW_BPP);
-    write_huge (rgb, FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1,
-			  IPU_CW_SL);
-    write_huge (rgb, 4, IPU_CW_PFS);
-#endif
     write_huge (rgb, 0, IPU_CW_BAM);
-    write_huge (rgb, 16 - 1, IPU_CW_NPB);
+    write_huge (rgb, 8 - 1, IPU_CW_NPB);
+//    write_huge (rgb, 16 - 1, IPU_CW_NPB);
     write_huge (rgb, 2, IPU_CW_SAT);
     write_huge (rgb, 2, IPU_CW_SCC);
     write_huge (rgb, 0, IPU_CW_OFS0);
@@ -1476,7 +1458,8 @@ static void ipu_setup (void)
 #endif
 
   IDMAC_CHA_PRI |= 1<<channel;	/* This channel is high priority */
-  IPU_CHA_DB_MODE_SEL |= 1<<channel;
+//  IPU_CHA_DB_MODE_SEL |= 1<<channel;
+  IPU_CHA_DB_MODE_SEL &= ~(1<<channel);
   IPU_CHA_BUF0_RDY |= 1<<channel;
   IPU_CHA_BUF1_RDY |= 1<<channel;
 
@@ -1566,6 +1549,26 @@ static void csi_time_frames (void)
   printf ("count is %d for 1 second\n", c);
 }
 
+static void ic7_time_frames (void)
+{
+  unsigned long time = timer_read ();
+  int c = 0;
+
+  while (timer_delta (time, timer_read ()) < 1000) {
+    IPU_INT_STAT1 = (1<<7);	/* IC7_EOF */
+    while (!(IPU_INT_STAT1 & (1<<7)))
+      if (timer_delta (time, timer_read ()) > 2000) {
+	printf ("  timeout (%d frames read)\n", c);
+	return;
+      }
+    if (c == 0)
+      time = timer_read ();	/* Reset timer so we get a full second */
+    ++c;
+  }
+
+  printf ("count is %d for 1 second\n", c);
+}
+
 static int cmd_ipu (int argc, const char** argv)
 {
   ENTRY;
@@ -1624,6 +1627,11 @@ static int cmd_ipu (int argc, const char** argv)
   /* Time */
   if (strcmp (argv[1], "t") == 0) {
     csi_time_frames ();
+  }
+
+  /* Time */
+  if (strcmp (argv[1], "tt") == 0) {
+    ic7_time_frames ();
   }
 
 
