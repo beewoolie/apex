@@ -70,9 +70,8 @@ unsigned long compute_crc32_x (unsigned long crc, const void* pv, int cb)
   crc = crc ^ 0xffffffff;	// Invert because we're continuing
 
 #define DO_CRC\
-  if (crc & 1) { \
-    crc >>= 1; crc ^= poly; }\
-  else { crc >>= 1; }
+  if (crc & 1) { crc >>= 1; crc ^= poly; }\
+  else	       { crc >>= 1; }
 
   while (cb--) {
     crc ^= *pb++;
@@ -99,7 +98,7 @@ unsigned long compute_crc32_x (unsigned long crc, const void* pv, int cb)
    This implementation is optimized for the ARM architecture.  Other
    architectures, e.g. i386 will probably not be well served by this
    version as it depends on excellent optimization by the compiler as
-   well as a adequate number of registers.
+   well as an adequate number of registers.
 
 */
 
