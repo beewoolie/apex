@@ -5,6 +5,26 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.may.26
+    o CRC revisited
+      o I've discovered why the CRC code is having problems.
+      o The apparently popular implementation isn't exactly compliant
+	with the standards.  It does compute a CRC, but it doesn't do
+	it in the same manner as the cksum program.
+      o there is likely to be little reason to stick with their
+	implementation as it doesn't yield smaller or faster code.
+      o We need to decide if we want to
+        a) use a header for the CRC, or at a minimum, a header to
+	   define that there is a CRC.
+        b) this header couple include room for a jump, 1 ARM instruction
+        c) or we can use a trailer.  Trouble with a trailer is that
+	   the cksum program cannot be used directly to append this.
+        d) use a magic number anywhere to cope with finding the
+	   checksum.
+        e) trailer/header could be a 16 byte structure.  Perhaps more.
+	f) could fall back on uboot header, but disinclined due to
+	   excessive complexity.
+
   o 2007.may.19
 
     o Would be neato to support uImages.  I don't *like* the idea, but
@@ -38,7 +58,7 @@ TODO:
            The n bits to be evaluated are considered to be the
 	   coefficients of a mod 2 polynomial M(x) of degree n-1.
 	   These n bits are the bits from the file, with the most
-	   significant bit being the most signif-significant icant bit
+	   significant bit being the most significant bit
 	   of the first octet of the file and the last bit being the
            least significant bit of the last octet, padded with zero
 	   bits (if necessary) to achieve an integral number of
