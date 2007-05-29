@@ -1200,6 +1200,23 @@ static void i2c_setup_sensor_i2c (void)
 #endif
 }
 
+static void setup_sensor (void)
+{
+  printf ("sensor setup %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
+  i2c_sensor_write (SENSOR_WINDOW_WIDTH, FRAME_WIDTH);
+  usleep (1000);
+  i2c_sensor_write (SENSOR_WINDOW_HEIGHT, FRAME_HEIGHT);
+  usleep (1000);
+  i2c_sensor_write (SENSOR_MAXIMUM_SHUTTER_WIDTH, 340);
+  usleep (1000);
+#if defined (FRAME_HORZ_BLANKING)
+  i2c_sensor_write (SENSOR_HORIZONTAL_BLANKING, FRAME_HORZ_BLANKING);
+  usleep (1000);
+  i2c_sensor_write (SENSOR_VERTICAL_BLANKING, FRAME_VERT_BLANKING);
+  usleep (1000);
+#endif
+}
+
 static void i2c_sensor_probe (void)
 {
   int v = i2c_sensor_read (0);
@@ -1428,8 +1445,8 @@ static void ipu_setup (void)
     write_huge (rgb, 7, IPU_CW_PFS);
 #endif
     write_huge (rgb, 0, IPU_CW_BAM);
-    write_huge (rgb, 8 - 1, IPU_CW_NPB);
-//    write_huge (rgb, 16 - 1, IPU_CW_NPB);
+//    write_huge (rgb, 8 - 1, IPU_CW_NPB);
+    write_huge (rgb, 16 - 1, IPU_CW_NPB);
     write_huge (rgb, 2, IPU_CW_SAT);
     write_huge (rgb, 2, IPU_CW_SCC);
     write_huge (rgb, 0, IPU_CW_OFS0);
@@ -1599,6 +1616,7 @@ static int cmd_ipu (int argc, const char** argv)
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     ipu_setup_sensor ();
+    setup_sensor ();
 //    ipu_setup_diagb ();
     ipu_setup ();
   }
@@ -1720,6 +1738,7 @@ static int cmd_ipu (int argc, const char** argv)
     IPU_CONF	     |= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
   }
 
+#if 1
   if (strcmp (argv[1], "w") == 0) {
     printf ("reprogramming to %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
     i2c_sensor_write (SENSOR_WINDOW_WIDTH, FRAME_WIDTH);
@@ -1741,6 +1760,7 @@ static int cmd_ipu (int argc, const char** argv)
     printf ("sensor v blank  %d\n",
 	    i2c_sensor_read (SENSOR_VERTICAL_BLANKING));
   }
+#endif
 
   if (strcmp (argv[1], "cap") == 0) {
     memset ((void*) rgbFrameA, 0xa5, CB_FRAME);
