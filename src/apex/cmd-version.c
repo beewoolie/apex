@@ -82,7 +82,7 @@ int cmd_version (int argc, const char** argv)
   printf (")\n");
 #endif
 
-#if defined (CONFIG_ALIASES) && defined (CONFIG_VARIATION_SUFFIX)
+#if defined (CONFIG_ALIASES) && defined (CONFIG_VARIATIONS)
   {
     const char* sz = alias_lookup ("variation");
     if (sz)
