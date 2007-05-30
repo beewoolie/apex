@@ -138,6 +138,7 @@
 #define CCM_CGR0		__REG(PHYS_CCM + 0x20)
 #define CCM_CGR1		__REG(PHYS_CCM + 0x24)
 #define CCM_CGR2		__REG(PHYS_CCM + 0x28)
+#define CCM_WIMR0		__REG(PHYS_CCM + 0x2c)
 
 #define CCM_CGR_OFF		(0x00)
 #define CCM_CGR_RUN		(0x01)

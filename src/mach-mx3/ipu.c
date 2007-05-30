@@ -5,6 +5,21 @@
 
    Copyright (C) 2007 Marc Singer
 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA.
+
    -----------
    DESCRIPTION
    -----------
@@ -567,6 +582,35 @@ static unsigned long read_huge (const char* rgb, int shift, int width)
   }
 
   return value;
+}
+
+
+/* ipu_channel_ready
+
+   marks a channel as ready
+
+*/
+
+static inline void ipu_channel_ready (int channel, int buffer)
+{
+  if (buffer)
+    IPU_CHA_BUF1_RDY |= 1<<channel;
+  else
+    IPU_CHA_BUF0_RDY |= 1<<channel;
+}
+
+/* ipu_channel_busy
+
+   checks to see if a channel is busy.
+
+*/
+
+static inline int ipu_channel_busy (int channel, int buffer)
+{
+  if (buffer)
+    return (IPU_CHA_BUF1_RDY & (1<<channel)) != 0;
+  else
+    return (IPU_CHA_BUF0_RDY & (1<<channel)) != 0;
 }
 
 
@@ -1320,9 +1364,9 @@ void channel_rgb_setup (int channel, int dx, int dy, void* pa, void* pb)
 
   if (pb)
     IPU_CHA_DB_MODE_SEL |= 1<<channel;
-  IPU_CHA_BUF0_RDY |= 1<<channel;
+  ipu_channel_ready (channel, 0);
   if (pb)
-    IPU_CHA_BUF1_RDY |= 1<<channel;
+    ipu_channel_ready (channel, 1);
 }
 
 static void csc1_setup (void)
@@ -1352,13 +1396,13 @@ static void ipu_setup (void)
   int channel = 7;
   printf ("ipu_setup\n");
 
-  /* Configure common parameters */
+  /* ==== Configure common parameters */
 
   IPU_CONF	&= ~(1<<8);			/* Setting endian-ness only */
   IC_CONF	= 0;				/* Disable all tasks */
   IDMAC_CONF	= IDMAC_CONF_SINGLE_AHB_M_EN;
 
-  /* SYSTEM Configure sensor interface */
+  /* ==== SYSTEM Configure sensor interface */
 
   CSI_CONF	= 0
     | CSI_CONF_SENS_PRTCL_GATED
@@ -1374,7 +1418,7 @@ static void ipu_setup (void)
     | ((FRAME_HEIGHT - 1) << CSI_FRM_SIZE_HEIGHT_SH);
 
 
-  /* TASK Configure and initialize CSI IC IDMAC */
+  /* ==== TASK Configure and initialize CSI IC IDMAC */
 
   CSI_ACT_FRM_SIZE = 0
     | ((FRAME_WIDTH/FRAME_WIDTH_DIVISOR - 1)  << CSI_FRM_SIZE_WIDTH_SH)
@@ -1475,16 +1519,17 @@ static void ipu_setup (void)
 #endif
 
   IDMAC_CHA_PRI |= 1<<channel;	/* This channel is high priority */
-//  IPU_CHA_DB_MODE_SEL |= 1<<channel;
-  IPU_CHA_DB_MODE_SEL &= ~(1<<channel);
-  IPU_CHA_BUF0_RDY |= 1<<channel;
-  IPU_CHA_BUF1_RDY |= 1<<channel;
+  IPU_CHA_DB_MODE_SEL |= 1<<channel;
+//  IPU_CHA_DB_MODE_SEL &= ~(1<<channel);
+  ipu_channel_ready (channel, 0);
+  ipu_channel_ready (channel, 1);
 
-  /* Initialize sensors */
+  /* ==== Initialize sensors */
 
 	/* Initialize sensor via i2c if needed. */
+  setup_sensor ();
 
-  /* Enabling tasks */
+  /* ==== Enabling tasks */
 
   IDMAC_CHA_EN |= 1<<channel;	/* Enable channel 7 */
 #if defined (MODE_VF)
@@ -1492,11 +1537,11 @@ static void ipu_setup (void)
 #endif
   IPU_CONF     |= IPU_CONF_CSI_EN | IPU_CONF_IC_EN;
 
-  /* Resuming tasks */
+  /* ==== Resuming tasks */
 
-  /* Reconfiguring and resuming tasks */
+  /* ==== Reconfiguring and resuming tasks */
 
-  /* Disabling tasks */
+  /* ==== Disabling tasks */
 }
 
 static void ipu_setup_diagb (void)
@@ -1570,6 +1615,7 @@ static void ic7_time_frames (void)
 {
   unsigned long time = timer_read ();
   int c = 0;
+  int c_err = 0;
 
   while (timer_delta (time, timer_read ()) < 1000) {
     IPU_INT_STAT1 = (1<<7);	/* IC7_EOF */
@@ -1581,9 +1627,41 @@ static void ic7_time_frames (void)
     if (c == 0)
       time = timer_read ();	/* Reset timer so we get a full second */
     ++c;
+    if (IPU_INT_STAT5 & IPU_INT_STAT5_BAYER_FRM_LOST_ERR)
+      ++c_err;
   }
 
-  printf ("count is %d for 1 second\n", c);
+  printf ("count is %d for 1 second, %d errors\n", c, c_err);
+}
+
+static void rdy_time_frames (void)
+{
+  unsigned long time = timer_read ();
+  int c = 0;
+  int c_err = 0;
+  static const int channel = 7;
+
+  ipu_channel_ready (channel, 0);
+  ipu_channel_ready (channel, 1);
+  IPU_INT_STAT5 = IPU_INT_STAT5_BAYER_FRM_LOST_ERR;
+
+  while (timer_delta (time, timer_read ()) < 1000) {
+    ipu_channel_ready (channel, 0);
+    ipu_channel_ready (channel, 1);
+
+    while (ipu_channel_busy (channel, 0) && ipu_channel_busy (channel, 1))
+      if (timer_delta (time, timer_read ()) > 2000) {
+	printf ("  timeout (%d frames read)\n", c);
+	return;
+      }
+    if (c == 0)
+      time = timer_read ();	/* Reset timer so we get a full second */
+    ++c;
+    if (IPU_INT_STAT5 & IPU_INT_STAT5_BAYER_FRM_LOST_ERR)
+      ++c_err;
+  }
+
+  printf ("count is %d for 1 second, %d errors\n", c, c_err);
 }
 
 static int cmd_ipu (int argc, const char** argv)
@@ -1616,7 +1694,6 @@ static int cmd_ipu (int argc, const char** argv)
     i2c_setup_sensor_i2c ();
     i2c_setup ();
     ipu_setup_sensor ();
-    setup_sensor ();
 //    ipu_setup_diagb ();
     ipu_setup ();
   }
@@ -1652,12 +1729,18 @@ static int cmd_ipu (int argc, const char** argv)
     ic7_time_frames ();
   }
 
+  /* Time */
+  if (strcmp (argv[1], "t2") == 0) {
+    rdy_time_frames ();
+  }
+
 
   /* Clear */
   if (strcmp (argv[1], "c") == 0) {
+    printf ("clearing status\n");
     IPU_INT_STAT3 = (1<<6);   /* CSI_EOF */
     IPU_INT_STAT3 = (1<<5);   /* CSI_NF */
-    IPU_INT_STAT5 = (1<<11);  /* BAYER_FRM_LOST_ERR */
+    IPU_INT_STAT5 = IPU_INT_STAT5_BAYER_FRM_LOST_ERR;
     IPU_INT_STAT1 = (1<<7);   /* IC7_EOF */
     IPU_INT_STAT2 = (1<<7);   /* IC7_NFACK */
   }

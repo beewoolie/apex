@@ -115,6 +115,7 @@ struct driver_d {
   size_t	(*seek)  (struct descriptor_d*, ssize_t cb, int whence);
   int		(*info)  (struct descriptor_d*);
   int		(*query) (struct descriptor_d*, int, void*);
+  void		(*flush) (struct descriptor_d*);
 };
 
 #define __driver_0 __used __section(.driver.0) /* serial */

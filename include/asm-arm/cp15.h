@@ -76,4 +76,8 @@
 # define CP15_WAIT
 #endif
 
+#define WAIT_FOR_INTERRUPT\
+  __asm volatile ("mcr p15, 0, %0, c7, c0, 4\n\t" :: "r" (0));
+
+
 #endif  /* __CP15_H__ */
