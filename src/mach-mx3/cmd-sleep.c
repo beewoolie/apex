@@ -53,20 +53,20 @@ static int cmd_sleep (int argc, const char** argv)
   switch (mode) {
   default:
   case 0:
-    printf ("wait mode\n");
+    printf ("Entering wait mode\n");
     mode = 0;
     break;
   case 1:
-    printf ("doze mode\n");
+    printf ("Entering doze mode\n");
     mode = 1;
     break;
   case 2:
-    printf ("state retention mode\n");
+    printf ("Entering state retention mode\n");
     mode = 2;
     well_bias = 1;
     break;
   case 3:
-    printf ("deep sleep mode\n");
+    printf ("Entering deep sleep mode\n");
     mode = 3;
     well_bias = 1;
     break;
@@ -89,46 +89,28 @@ static int cmd_sleep (int argc, const char** argv)
 		/* Flush serial device */
   release_services ();
 
+  /* We may want to flush caches before waiting for interrupts.  It
+     depends on whether the wait mode retains the state of the
+     cache. */
+
   WAIT_FOR_INTERRUPT;
 
-#if 0
-    // Wait few cycles
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
+  /* We will get here only if we implement some form of wake-up.  */
 
-    __asm("mcr 15, 0, r0, c7, c7, 0\n\t");        /* invalidate I cache and D cache */
-    __asm("mcr 15, 0, r0, c8, c7, 0\n\t");        /* invalidate TLBs */
-    __asm("mcr 15, 0, r0, c7, c10, 4\n\t");       /* Drain the write buffer */
-
-    // WFI
-    __asm("MCR p15,0,r1,c7,c0,4\n\t");
-
-
-    // Wait few cycles
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
-    __asm("nop");
-#endif
-
-    return 0;
+  return 0;
 }
-
 
 static __command struct command_d c_sleep = {
   .command = "sleep",
   .func = (command_func_t) cmd_sleep,
   COMMAND_DESCRIPTION ("sleep test ")
   COMMAND_HELP(
-"sleep\n"
-"  sleep tests.\n"
-"  0		enter wait mode\n"
-"  1		enter doze mode\n"
-"  2		enter state retention mode\n"
-"  3		enter deep sleep mode\n"
+"sleep N\n"
+"  Put CPU into a sleep mode.\n"
+"  The mode, N, is one of the following:\n"
+"    0 - enter wait mode\n"
+"    1 - enter doze mode\n"
+"    2 - enter state retention mode\n"
+"    3 - enter deep sleep mode\n"
   )
 };

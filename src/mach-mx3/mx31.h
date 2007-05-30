@@ -132,6 +132,7 @@
 #define CCM_CCMR		__REG(PHYS_CCM + 0x00)
 #define CCM_PDR0		__REG(PHYS_CCM + 0x04)
 #define CCM_PDR1		__REG(PHYS_CCM + 0x08)
+#define CCM_RCSR		__REG(PHYS_CCM + 0x0c)
 #define CCM_MPCTL		__REG(PHYS_CCM + 0x10)
 #define CCM_UPCTL		__REG(PHYS_CCM + 0x14)
 #define CCM_COSR		__REG(PHYS_CCM + 0x1c)

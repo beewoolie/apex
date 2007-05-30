@@ -38,6 +38,7 @@
 #define WDOG_WRSR	__REG16 (PHYS_WDOG + 0x04)
 
 #define WDOG_WCR_WDE	(1<<2)
+#define WDOG_WT_SH	(8)
 
 
 static void cmd_reset (int argc, const char** argv)
@@ -45,11 +46,9 @@ static void cmd_reset (int argc, const char** argv)
   release_services ();		/* Primarily to prep NOR flash */
 
   WDOG_WCR = WDOG_WCR_WDE;
-  WDOG_SR = 0x5555;
-  WDOG_SR = 0xaaaa;
 
-//  while (1)
-//    ;
+  while (1)
+    ;
 }
 
 static __command struct command_d c_reset = {
