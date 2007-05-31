@@ -37,7 +37,7 @@
 #define INITRD_LENGTH		(0x00400000)
 
 #define COMMANDLINE\
- "console=ttyS0,115200 rtc-x1205,probe0,0x6f noirgdebug"
+ "console=ttyS0,115200 rtc-x1205,probe0,0x6f noirqdebug"
 
 #define MACH_TYPE		   999
 
