@@ -65,7 +65,7 @@ const char cmdline[] = COMMANDLINE;
 
 void NAKED BOOT boot (u32 r0, u32 r1, u32 r2)
 {
-  __asm volatile (" nop");
+  __asm volatile ("nop");	/* Require to get compiler to jump here */
 }
 
 int NAKED start (void)
@@ -104,6 +104,7 @@ int NAKED start (void)
   *(volatile unsigned long*) 0xcc000000 = IXP4XX_SDR_CONFIG;
 #endif
 
+#if defined (CREATE_ATAGS) && defined (PHYS_PARAMS)
   p = (struct tag*) PHYS_PARAMS;
 
 	/* Always start with the CORE tag */
@@ -121,24 +122,24 @@ int NAKED start (void)
   p->u.mem.start	= RAM_BANK0_START;
   p = tag_next (p);
 
-#if defined (RAM_BANK1_START)
+# if defined (RAM_BANK1_START)
   p->hdr.tag		= ATAG_MEM;
   p->hdr.size		= tag_size (tag_mem32);
   p->u.mem.size		= RAM_BANK1_LENGTH;
   p->u.mem.start	= RAM_BANK1_START;
   p = tag_next (p);
-#endif
+# endif
 
-#if defined (INITRD_START)
+# if defined (INITRD_START)
   p->hdr.tag		= ATAG_INITRD2;
   p->hdr.size		= tag_size (tag_initrd);
   p->u.initrd.start	= INITRD_START;
   p->u.initrd.size	= INITRD_LENGTH;
   p = tag_next (p);
-#endif
+# endif
 
 	/* Command line */
-#if defined (COMMANDLINE)
+# if defined (COMMANDLINE)
   p->hdr.tag		= ATAG_CMDLINE;
   p->hdr.size		= tag_size (tag_cmdline)
     + (sizeof (cmdline)+3)/4 - 1;
@@ -149,12 +150,55 @@ int NAKED start (void)
       p->u.cmdline.cmdline[i] = sz[i];
   }
   p = tag_next (p);
-#endif
+# endif
 
 	/* End */
   p->hdr.tag		= ATAG_NONE;
   p->hdr.size		= 0;
 
-	/* Pass control to the kernel */
+#endif
+
+#if !defined (CREATE_ATAGS) && defined (GUARANTEE_ATAG_CMDLINE)\
+ &&  defined (PHYS_PARAMS)  && defined (COMMANDLINE)
+
+  {
+    char* cmdlineFound = 0;
+    for_each_tag (p, (struct tag*) PHYS_PARAMS)
+      if (p->hdr.tag == ATAG_CMDLINE)
+	cmdlineFound = p->u.cmdline.cmdline;
+
+    /* The pointer p is left at the start of the terminating
+       ATAG_NONE.  If cmdlineFound is non-null, we've found an
+       instance of the ATAG_CMDLINE.  If not, we append the default
+       command line and a new ATAG_NONE.
+
+       The original author was concerned about the possibility that
+       there may be more than one ATAG_CMDLINE record.  There is no
+       stipulation in the documentation for the cmdline tags, but it
+       makes sense that there would be only one.  Even if there were
+       more than one, I'm not sure it would matter since we won't
+       append one if we find any. */
+
+    if (!cmdlineFound || !*cmdlineFound) {
+      p->hdr.tag = ATAG_CMDLINE;
+      p->hdr.size	= tag_size (tag_cmdline)
+	+ (sizeof (cmdline)+3)/4 - 1;
+      {
+	const char* sz = cmdline + offset;
+	int i;
+	for (i = 0; i < sizeof (cmdline); ++i)
+	  p->u.cmdline.cmdline[i] = sz[i];
+      }
+      p = tag_next (p);
+      p->hdr.tag = ATAG_NONE;
+      p->hdr.size = 0;
+    }
+  }
+
+#endif
+
+	/* Pass control to the kernel.  The compile ought to optimize
+	   this to a branch (instead of a branch-link), but it doesn't
+	   matter if it doesn't. */
   boot (0, MACH_TYPE, PHYS_PARAMS);
 }

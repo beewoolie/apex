@@ -14,6 +14,17 @@
 #if !defined (__CONFIG_H__)
 #    define   __CONFIG_H__
 
+	/* CREATE_ATAGS indicates that the shim ought to build the
+	   ATAGS list.  If it is not defined, the ATAGS may be passed
+	   by another piece of code, e.g. a boot loader. */
+#define CREATE_ATAGS		/* Construct ATAGS from fields herein */
+
+	/* GUARANTEE_ATAG_CMDLINE makes sure that a command line is
+	   present in the ATAGS list.  If none is found, the
+	   COMMANDLINE below is added appended to the end of the
+	   ATAGS. */
+#define GUARANTEE_ATAG_CMDLINE
+
 #define PHYS_PARAMS		0x00000100 /* Address for the parameter list */
 
 #define RAM_BANK0_START		0x00000000
