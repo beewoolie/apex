@@ -38,6 +38,10 @@
 # include "mx31ads.h"
 #endif
 
+#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
+# include "rosencrantz.h"
+#endif
+
 #include "mx31.h"
 #include "mx31-pins.h"
 

@@ -457,5 +457,7 @@ enum {
 	(_GPIO_DR(_PIN_GPIO_R (p))   |=   1 << _PIN_GPIO_F (p))
 #define GPIO_PIN_CLEAR(p)\
 	(_GPIO_DR(_PIN_GPIO_R (p))   &= ~(1 << _PIN_GPIO_F (p)))
+#define GPIO_PIN_VALUE(p)\
+	((_GPIO_DR(_PIN_GPIO_R (p)) & (1 << _PIN_GPIO_F (p))) != 0)
 
 #endif

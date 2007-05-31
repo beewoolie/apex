@@ -32,6 +32,9 @@
 #include <arch-arm.h>
 #include "hardware.h"
 
+#define PIN_BOARD_ID1		MX31_PIN_GPIO1_4
+#define PIN_BOARD_ID2		MX31_PIN_GPIO1_6
+
 #if !defined (CONFIG_SMALL)
 
 static void cpuinfo_report (void)
@@ -74,6 +77,12 @@ static void cpuinfo_report (void)
     printf ("          stat1 0x%x  stat2 0x%x\n", CPLD_STATUS1, CPLD_STATUS2);
   }
 #endif
+
+#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
+  printf ("  board:  %s\n",
+	  IS_ROSENCRANTZ_FF ? "form-factor" : "non-form-factor");
+#endif
+
 }
 
 static __service_7 struct service_d cpuinfo_service = {

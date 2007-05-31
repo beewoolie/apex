@@ -95,8 +95,8 @@
 //# define FRAME_WIDTH		(752)
 //# define FRAME_HEIGHT		(480)
 
-//# define FRAME_WIDTH		(640)
-//# define FRAME_HEIGHT		(480)
+# define FRAME_WIDTH		(640)
+# define FRAME_HEIGHT		(480)
 
 //# define FRAME_WIDTH		(170)
 //# define FRAME_HEIGHT		(616)
@@ -104,8 +104,8 @@
 //# define FRAME_WIDTH		(176)
 //# define FRAME_HEIGHT		(616)
 
-# define FRAME_WIDTH		(608)
-# define FRAME_HEIGHT		(170)
+//# define FRAME_WIDTH		(608)
+//# define FRAME_HEIGHT		(170)
 
 //# define FRAME_WIDTH		(160)
 //# define FRAME_HEIGHT		(80)
@@ -115,15 +115,6 @@
 
 # define BYTES_PER_PEL		(2)
 #endif
-
-	/* Definitions for GPIO pins to make the code readable. */
-#define PIN_SENSOR_PWR_EN	MX31_PIN_CSI_D4
-#define PIN_SENSOR_BUF_EN	MX31_PIN_KEY_ROW4
-#define PIN_CMOS_STBY		MX31_PIN_KEY_ROW7
-#define PIN_NCMOS_RESET		MX31_PIN_KEY_ROW6
-#define PIN_CMOS_EXPOSURE	MX31_PIN_KEY_ROW5
-#define PIN_ILLUMINATION_EN1	MX31_PIN_KEY_COL5
-#define PIN_ILLUMINATION_EN2	MX31_PIN_KEY_COL4
 
 //#define I2C_IFDR_V		(0x19)			/* Divisor of 1280 */
 #define I2C_IFDR_V		(0x3f)			/* Divisor of 2048 */
@@ -1221,7 +1212,10 @@ static void i2c_setup_sensor_i2c (void)
 
   IOMUX_PIN_CONFIG_GPIO  (PIN_SENSOR_BUF_EN);
   GPIO_PIN_CONFIG_OUTPUT (PIN_SENSOR_BUF_EN);
-  GPIO_PIN_SET		 (PIN_SENSOR_BUF_EN);	/* Enable sensor signal bufr */
+  if (IS_ROSENCRANTZ_FF)
+    GPIO_PIN_CLEAR	 (PIN_SENSOR_BUF_EN);	/* Enable sensor signal bufr */
+  else
+    GPIO_PIN_SET	 (PIN_SENSOR_BUF_EN);	/* Enable sensor signal bufr */
 
   usleep (1000);		/* delay 1ms while camera powers on */
 
