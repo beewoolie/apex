@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri May 18 15:42:16 2007
+# Wed May 30 22:29:37 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -87,8 +87,8 @@ CONFIG_CMD_INFO=y
 # CONFIG_CMD_PAUSE is not set
 CONFIG_CMD_WAIT=y
 CONFIG_CMD_XRECEIVE=y
-# CONFIG_CMD_MEMLIMIT is not set
-# CONFIG_CMD_MEMSCAN is not set
+CONFIG_CMD_MEMLIMIT=y
+CONFIG_CMD_MEMSCAN=y
 
 #
 # Generic Drivers

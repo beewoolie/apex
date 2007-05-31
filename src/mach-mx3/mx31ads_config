@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue May 22 12:15:12 2007
+# Wed May 30 22:29:40 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -48,6 +48,7 @@ CONFIG_MACH_MX31ADS=y
 #
 CONFIG_MX31_UART1=y
 # CONFIG_MX31ADS_UARTA is not set
+# CONFIG_IPU_TEST is not set
 
 #
 # Platform Drivers
