@@ -192,6 +192,16 @@ void __naked __section (.reset) reset (void)
   }
   CP15_WAIT;
 #endif
+
+  /* This necessary because some versions of the cache flush code
+     will need to insert constants in this text segment. */
+#if defined (CONFIG_DISABLE_MMU_AT_BOOT)
+  __asm volatile ("b reset_exit\n\t");
+#endif
+}
+
+void __naked __section (.reset.exit) reset_exit (void)
+{
 }
 
 #if defined (CONFIG_INLINE_PLATFORM_INITIALIZATION)

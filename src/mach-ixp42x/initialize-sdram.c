@@ -41,6 +41,16 @@
   at will as long as we don't leave the function we're executing and
   we don't attempt to use the stack.
 
+  o Determining memory chip size and banks.  We do a little dance in
+    order to deduce the correct memory chip size.  We start by
+    initializing memory for the largest chip size and a single bank
+    which gives us the broadest addressing using a single chip select.
+    We sum addressable space in the regions found and we compare this
+    the expected sizes for the RAM chips.  Then, we initialize with
+    the correct memory size at two banks and decide if, in fact, there
+    are two banks.  The result appears to be a reliable heuristic for
+    initializing RAM regardless of the chip size..
+
 */
 
 #include <config.h>
@@ -207,15 +217,22 @@ static int cmd_initialize_sdram (int argc, const char** argv)
   }
 
   if (size == 0) {
-    struct mem_region regions[8];
+    struct mem_region regions[16];
     int c;
+    int cb = 0;			/* Total memory size */
     memset (regions, 0, sizeof (regions));
     do_sdram_initialization (MODE (512, 1));
     c = memory_scan (regions, sizeof (regions)/sizeof (*regions),
 		     0, 256*1024*1024);
-    if (regions[0].length >= 128*1024*1024)
+    {
+      int i;
+      for (i = c; i--; )
+	cb += regions[i].length;
+    }
+
+    if (cb >= 128*1024*1024)
       size = 512;
-    else if (regions[0].length >= 64*1024*1024)
+    else if (cb >= 64*1024*1024)
       size = 256;
     else
       size = 128;
@@ -246,8 +263,11 @@ static __command struct command_d c_initialize_sdram = {
   .func = cmd_initialize_sdram,
   COMMAND_DESCRIPTION ("reinitialize the SDRAM controller")
   COMMAND_HELP(
-"sdram-init\n"
+"sdram-init [SIZE [BANKS]]\n"
 "  reinitialize SDRAM controller using cache to hold the \n"
-"  program code while SDRAM is off-line.\n"
+"  program code while SDRAM is off-line.  The optional SIZE argument\n"
+"  sets the bank size.  The optional BANKS argument can be either\n"
+"  1 or 2 for the number of banks of memory chips.  The original\n"
+"  NSLU2 system memory configuration has 1 bank of 128Mib chips.\n"
   )
 };

@@ -394,6 +394,9 @@ static int cmd_memscan (int argc, const char** argv)
   if (strcmp (d.driver_name, "memory"))
     ERROR_RETURN (ERROR_UNSUPPORTED, "descriptor must refer to memory");
 
+  if (d.length < CB_BLOCK)
+    ERROR_RETURN (ERROR_PARAM, "region too small");
+
   memset (regions, 0, sizeof (regions));
   c = memory_scan (regions, sizeof (regions)/sizeof (*regions),
 		   d.start, d.length);

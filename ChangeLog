@@ -1,3 +1,25 @@
+2007-05-30  Marc Singer  <elf@cerise.buici.com>
+
+	* Makefile (SUBLEVEL): 1.5.4.  Rolling revision for the sake of
+	the xscale fixes.
+
+	* src/mach-mx3/cmd-sleep.c (cmd_sleep): Test code for MX31 sleep
+	modes.
+
+	* src/mach-mx3/cmd-reset.c (cmd_reset): Command verified.
+
+	* src/arch-arm/entry/reset.c: Added a jump to reset_exit() from
+	reset() in the event that we disable the MMU at startup.  The
+	ixp42x needs this because the xscale MMU flush code allocates data
+	in the text section.
+
+	* src/mach-ixp42x/initialize-sdram.c (cmd_initialize_sdram): Fixed
+	the scan of 256Mib SDRAM chips.  A small change to the algorithm
+	and we seem to be able to detect 64MiB of memory just fine.
+
+	* src/drivers/drv-mem.c (cmd_memscan): Error detection for region
+	too small.
+
 2007-05-24  Marc Singer  <elf@buici.com>
 
 	* src/drivers/driver.c (parse_descriptor): Unparseable regions
@@ -14,7 +36,7 @@
 
 	* src/mach-mx3/ipu.c (cmd_ipu): Fixed the shutter width to
 	increase frame rate.
-	
+
 	* src/mach-mx3/ipu.c (ipu_setup): Fixed the burst width to memory
 	through the IPU DMAC.
 

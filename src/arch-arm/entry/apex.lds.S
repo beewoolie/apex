@@ -19,6 +19,7 @@ SECTIONS
 	. = ALIGN (4);			/* should be redundant */
 	.reset : {		/* Reset handler, first real code */
 		*(.reset)
+		*(.reset.exit)		
 	}
 	.bootstrap.early : {	/* Early bootstrap setups */
 		*(.bootstrap.early)
