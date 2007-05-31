@@ -50,7 +50,7 @@ package: $(PACKAGE)-$(VERSION).tar.gz
 
 $(PACKAGE)-$(VERSION).tar.gz:
 	[ ! -d $(PACKAGE)-$(VERSION) ] || rm -rf $(PACKAGE)-$(VERSION)
-	svn export -q file:///svn/tools/tags/$(PACKAGE)\
+	svn export -q file:///svn/tools/tags/$(PACKAGE)/$(VERSION)\
 	  $(PACKAGE)-$(VERSION)
 	tar zcvf $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
