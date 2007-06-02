@@ -44,8 +44,8 @@ int cmd_xreceive (int argc, const char** argv)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open target %s (%d)\n", argv[1], result);
-    return ERROR_OPEN;
+    printf ("Unable to open '%s'\n", argv[1]);
+    return result
   }
 
   if (!d.length)

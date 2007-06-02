@@ -5,6 +5,12 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.jun.1
+    o It is possible to modify the environment s.t. the startup
+      commands prevent the system from booting.  Very bad.  We may
+      want a way out, e.g. ^C at startup (or another key) to disable
+      startup commands.
+
   o 2007.may.26
     o CRC revisited
       o I've discovered why the CRC code is having problems.

@@ -51,7 +51,7 @@ int cmd_info (int argc, const char** argv)
     return ERROR_PARAM;
 
   if ((result = parse_descriptor (argv[1], &din))) {
-    printf ("Unable to open target %s\n", argv[1]);
+    printf ("Unable to open '%s'\n", argv[1]);
     goto fail_early;
   }
 

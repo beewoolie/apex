@@ -74,8 +74,6 @@
 #include <environment.h>
 #include <driver.h>
 
-extern struct descriptor_d env_d;
-
 /* cmd_printenv
 
    show the contents of the environment.  This command is defined if
@@ -124,7 +122,7 @@ static int cmd_setenv (int argc, const char** argv)
   int cb;
   static char __xbss(env) sz[ENV_CB_MAX];
 
-  if (!is_descriptor_open (&env_d))
+  if (!is_descriptor_open (pd_env))
     ERROR_RETURN (ERROR_UNSUPPORTED, "environment descriptor not open");
 
   if (argc < 3)
@@ -169,7 +167,7 @@ static __command struct command_d c_setenv = {
 
 static int cmd_unsetenv (int argc, const char** argv)
 {
-  if (!is_descriptor_open (&env_d))
+  if (!is_descriptor_open (pd_env))
     return ERROR_UNSUPPORTED;
 
   if (argc != 2)
@@ -192,10 +190,43 @@ static __command struct command_d c_unsetenv = {
 };
 #endif
 
+#if defined (CONFIG_CMD_SETENV) && defined (CONFIG_ENV_SAVEATONCE)
+
+static int cmd_saveenv (int argc, const char** argv)
+{
+  if (!is_descriptor_open (&d_env))
+    ERROR_RETURN (ERROR_UNSUPPORTED, "environment descriptor not open");
+
+  if (argc != 1)
+    return ERROR_PARAM;
+
+  d_env.driver->seek (&d_env, 0, SEEK_SET);
+  d_env.driver->erase (&d_env, d_env.length);
+  d_env.driver->seek (&d_env, 0, SEEK_SET);
+  if (d_env.driver->write (&d_env, g_rgbEnv, CONFIG_ENV_SIZE)
+      != CONFIG_ENV_SIZE)
+    ERROR_RESULT (ERROR_IOFAILURE, "truncated write");
+
+  return 0;
+}
+
+static __command struct command_d c_saveenv = {
+  .command = "saveenv",
+  .func = cmd_saveenv,
+  COMMAND_DESCRIPTION ("save environment to non-volatile memory")
+  COMMAND_HELP(
+"saveenv\n"
+"  Write current environment to non-volatile memory.\n"
+"  Changes to the environment are held in RAM until this command\n"
+"  is used.  This command commits the changes to the environment\n"
+"  region: " CONFIG_ENV_REGION ".\n")
+};
+#endif
+
 #if defined (CONFIG_CMD_ERASEENV)
 static int cmd_eraseenv (int argc, const char** argv)
 {
-  if (!is_descriptor_open (&env_d))
+  if (!is_descriptor_open (pd_env))
     return ERROR_UNSUPPORTED;
 
   if (argc != 1)

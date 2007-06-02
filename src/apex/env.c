@@ -164,10 +164,23 @@ static __used __section (.envlink) struct env_link env_link = {
 
 static void env_init (void)
 {
-  if (parse_descriptor (ENV_REGION_STRING, &env_d))
+  if (parse_descriptor (ENV_REGION_STRING, &d_env))
     return;
-  if (env_d.driver->open (&env_d))
-    env_d.driver->close (&env_d);
+  if (d_env.driver->open (&d_env)) {
+    d_env.driver->close (&d_env);
+    return;
+  }
+
+  pd_env = &d_env;
+
+# if defined (CONFIG_ENV_SAVEATONCE) && defined (CONFIG_ENV_SIZE)
+  d_env.driver->seek (&d_env, 0, SEEK_SET);
+  d_env.driver->read (&d_env, g_rgbEnv, CONFIG_ENV_SIZE);
+  parse_descriptor_simple ("memory", (unsigned long) g_rgbEnv, CONFIG_ENV_SIZE,
+			   &d_envmem);
+  pd_env = &d_envmem;
+#endif
+
 }
 
 static __service_7 struct service_d env_service = {

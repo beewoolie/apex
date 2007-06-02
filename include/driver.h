@@ -136,6 +136,9 @@ extern void   close_descriptor (struct descriptor_d* d);
 extern int    is_descriptor_open (struct descriptor_d* d);
 extern int    open_descriptor (struct descriptor_d* d);
 extern int    parse_descriptor (const char* sz, struct descriptor_d* d);
+extern int    parse_descriptor_simple (const char* sz, unsigned long start,
+				       unsigned long length,
+				       struct descriptor_d* d);
 extern size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence);
 
 #endif  /* __DRIVER_H__ */

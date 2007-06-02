@@ -338,16 +338,6 @@ config ENV
 	  Unless you are trying to shrink APEX to it's smallest
 	  possible size, it is best to set this option Y.
 
-config ENV_MUTABLE
-	bool "Allow runtime changes to the environment"
-	depends on ENV
-	default y
-	help
-	  This option enables a runtime, user changeable environment.
-	  The target configuration must define a region to hold the
-	  environment data.  Without a changeable environment, only
-	  the default values will be available.
-
 config ENV_LINK
 	bool "Assist user-mode access to the environment"
 	depends on ENV && !CONFIG_SMALL
@@ -358,6 +348,16 @@ config ENV_LINK
 	  environment.  See the same program show-apex-env for
 	  details.  It is safe to enable this feature even if it won't
 	  be used.
+
+config ENV_MUTABLE
+	bool "Allow runtime changes to the environment"
+	depends on ENV
+	default y
+	help
+	  This option enables a runtime, user changeable environment.
+	  The target configuration must define a region to hold the
+	  environment data.  Without a changeable environment, only
+	  the default values will be available.
 
 config ENV_REGION
 	string "Environment region"
@@ -373,6 +373,34 @@ config ENV_REGION
 	default "null:"
 	help
 	  This region stores the user configurable environment.   
+
+config ENV_SAVEATONCE
+	bool "Use saveenv to write environment to non-volatile storage"
+	depends on ENV_MUTABLE
+	default n
+	help
+	  Some non-volatile memory technologies do not permit updates
+	  (or multuple writes) to the same page.  This option
+	  implements the saveenv command and a memory buffer for the
+	  environment.  The setenv and unsetenv commands will then
+	  update the memory buffer instead of writing directly to the
+	  environment region.  The saveenv command then commits the
+	  environment to non-volatile storage.
+
+	  NOR flash never requires SAVEATONCE.  Some NAND flash will,
+	  especially technologies that incorporate a controller,
+	  e.g. OneNAND or systems that integrate a NAND flash
+	  controller.
+
+config ENV_SIZE
+	int "Maximum size of the environment"
+	depends on ENV_SAVEATONCE
+	default 16384
+	help
+	  The saveenv command depends on a memory buffer to cache the
+	  updated environment until the user is ready to commit it to
+	  non-volatile storate.  This option defines the size of this
+	  memory buffer.
 
 config ENV_CHECK_LEN
 	int "Count of bytes of environment to scan for preexisting data"

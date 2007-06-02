@@ -64,15 +64,60 @@ int open_descriptor (struct descriptor_d* d)
   return d->driver->open (d);
 }
 
+static int find_driver (struct descriptor_d* d)
+{
+  size_t cb = strlen (d->driver_name);
+
+  extern char APEX_DRIVER_START;
+  extern char APEX_DRIVER_END;
+  struct driver_d* driver;
+  struct driver_d* driver_match = NULL;
+
+  for (driver = (struct driver_d*) &APEX_DRIVER_START;
+       driver < (struct driver_d*) &APEX_DRIVER_END;
+       ++driver) {
+    if (driver->name && strnicmp (d->driver_name, driver->name, cb) == 0) {
+	if (driver_match)
+	  return ERROR_AMBIGUOUS;
+	driver_match = driver;
+	if (d->driver_name[cb] == 0)
+	  break;
+    }
+  }
+  d->driver = driver_match;
+
+  return d->driver ? 0 : ERROR_NODRIVER;
+}
+
+int parse_descriptor_simple (const char* sz,
+			     unsigned long start,
+			     unsigned long length,
+			     struct descriptor_d* d)
+{
+  int result;
+
+  memzero (d, sizeof (*d));
+  strlcpy (d->driver_name, sz, sizeof (d->driver_name));
+
+  result = find_driver (d);
+  if (result)
+    return result;
+  d->start = start;
+  d->length = length;
+
+  return 0;
+}
+
 int parse_descriptor (const char* sz, struct descriptor_d* d)
 {
   size_t cb;
   size_t ib;
+  int result;
 
   memzero (d, sizeof (*d));
 
   ib = cb = strcspn (sz, ":");
-   if (sz[ib] == ':') {
+  if (sz[ib] == ':') {
     cb = ++ib;
     if (cb > sizeof (d->driver_name))
       cb = sizeof (d->driver_name);
@@ -82,29 +127,10 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
     strcpy (d->driver_name, "memory");
     ib = 0;
   }
-  cb = strlen (d->driver_name);
 
-  {
-    extern char APEX_DRIVER_START;
-    extern char APEX_DRIVER_END;
-    struct driver_d* driver;
-    struct driver_d* driver_match = NULL;
-    for (driver = (struct driver_d*) &APEX_DRIVER_START;
-	 driver < (struct driver_d*) &APEX_DRIVER_END;
-	 ++driver) {
-      if (driver->name && strnicmp (d->driver_name, driver->name, cb) == 0) {
-	if (driver_match)
-	  return ERROR_AMBIGUOUS;
-	driver_match = driver;
-	if (d->driver_name[cb] == 0)
-	  break;
-      }
-    }
-    d->driver = driver_match;
-  }
-
-  if (!d->driver)
-    return ERROR_NODRIVER;
+  result = find_driver (d);
+  if (result)
+    return result;
 
 #if defined (CONFIG_USES_PATHNAME_PARSER)
   if (d->driver->flags & DRIVER_DESCRIP_FS) {

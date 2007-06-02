@@ -269,18 +269,24 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
     cb = d->length - d->index;
 
   /* Make sure when we write bytes and shorts that we write exactly
-     those at the requested address. */
+     those at the requested address when the destination address is
+     aligned. */
   switch (cb) {
   case 1:
     *(char*) (d->start + d->index) = *(char*) pv;
     break;
   case 2:
+    if (d->index & 0x1)
+      goto nonaligned;
     *(unsigned short*) (d->start + d->index) = *(unsigned short*) pv;
     break;
   case 4:
+    if (d->index & 0x3)
+      goto nonaligned;
     *(unsigned long*) (d->start + d->index) = *(unsigned long*) pv;
     break;
   default:
+  nonaligned:
     memcpy ((void*) (d->start + d->index), pv, cb);
     break;
   }

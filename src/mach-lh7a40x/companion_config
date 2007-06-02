@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed May 30 22:29:38 2007
+# Fri Jun  1 17:35:37 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -143,9 +143,10 @@ CONFIG_DRIVERS_LH=y
 # Environment
 #
 CONFIG_ENV=y
-CONFIG_ENV_MUTABLE=y
 # CONFIG_ENV_LINK is not set
+CONFIG_ENV_MUTABLE=y
 CONFIG_ENV_REGION="nand:112k+16k"
+# CONFIG_ENV_SAVEATONCE is not set
 CONFIG_ENV_CHECK_LEN=0
 CONFIG_VARIATIONS=y
 CONFIG_VARIATION_SUFFIX="-alt"

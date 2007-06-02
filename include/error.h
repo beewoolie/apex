@@ -31,6 +31,7 @@
 
 extern const char* error_description;
 
+#define ERROR_NONE		(0)	/* It isn't necessary to use this */
 #define ERROR_FALSE		(-1)
 #define ERROR_IMPORTANT		(-1)	/* Errors less than will be reported */
 #define ERROR_BREAK		(-2)	/* User requested break */

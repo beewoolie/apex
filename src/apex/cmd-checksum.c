@@ -46,7 +46,7 @@ int cmd_checksum (int argc, const char** argv)
 
   if (   (result = parse_descriptor (argv[1], &d))
       || (result = open_descriptor (&d))) {
-    printf ("Unable to open target (%s)\n", argv[1]);
+    printf ("Unable to open '%s'\n", argv[1]);
     goto fail;
   }
 

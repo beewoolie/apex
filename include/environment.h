@@ -34,7 +34,13 @@
 /* ----- Types */
 
 #if defined (CONFIG_ENV_REGION)
-extern struct descriptor_d env_d;
+extern struct descriptor_d d_env;
+extern struct descriptor_d d_envmem;
+extern struct descriptor_d* pd_env;
+#endif
+
+#if defined (CONFIG_ENV_SIZE)
+extern char __xbss(env) g_rgbEnv[CONFIG_ENV_SIZE];
 #endif
 
 struct env_d {

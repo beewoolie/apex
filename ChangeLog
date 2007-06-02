@@ -1,3 +1,19 @@
+2007-06-01  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* Makefile (SUBLEVEL): 1.5.5 for the SAVEATONCE option, very
+	necessary for OneNAND stored environment. 
+
+	* src/lib/env.c: New option, CONFIG_ENV_SAVEATONCE implements a
+	cached environment that is saved at one time to non-volatile
+	storage instead of through incremental updates.  This is necessary
+	for some types of NAND flash where multiple writes to the same
+	page are limited.
+
+	* src/apex/*.c: Groomed error reporting for opening regions.
+
+	* src/lib/env.c: Changed the environment region descriptor name to
+	d_env so that it is easier to remember.
+
 2007-05-30  Marc Singer  <elf@cerise.buici.com>
 
 	* Makefile (SUBLEVEL): 1.5.4.  Rolling revision for the sake of

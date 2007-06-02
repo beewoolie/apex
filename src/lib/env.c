@@ -70,6 +70,27 @@
    128, the rgs array is only 256 which is the length of a moderately
    long string buffer.
 
+   CONFIG_ENV_SAVEATONCE
+   ---------------------
+
+   In the case of some types of NAND flash, especially when there is a
+   controller circuit involved, we need to rewrite the flash instead
+   of updating the data.  NOR flash allows us to write bytes
+   individually as long as we don't attempt to set a bit once it has
+   been cleared.  Some NAND performs the same way but others,
+   e.g. OneNAND, only allow four writes to a page before it must be
+   erased.
+
+   This code isn't very clever with respect to erasing the block.  It
+   erases the whole environment region and doesn't attempt to preserve
+   anything else in the erase block.  So, it is incumbent on the
+   configuration to properly place the environment data in flash.
+
+   An alternative would be to do some mumbo-jumbo with flash pages
+   s.t. we clobber the page and write the next one.  No erase.  The
+   environment load-up code must be changed as well to cope with this.
+   We'd have to change the environment format as well to reflect the
+   new form.
 
    ----
 
@@ -121,11 +142,17 @@ extern char APEX_VMA_END;
 			/sizeof (struct env_d))
 #define ENVLIST(i)	(((struct env_d*) &APEX_ENV_START)[i])
 
-struct descriptor_d env_d;	/* Environment storage region */
+struct descriptor_d d_env;	/* Environment storage region */
+struct descriptor_d d_envmem;	/* Environment storage region in memory */
+struct descriptor_d* pd_env;	/* Pointer to current environment region */
 
 static int idNext;		/* Next available index */
 static unsigned char rgId[127]; /* *** I'd rather this not be fixed max */
 static ssize_t ibLastFlag;
+#if defined (CONFIG_ENV_SIZE)
+char __xbss(env) g_rgbEnv[CONFIG_ENV_SIZE];
+#endif
+
 
 /* _env_reset_ids
 
@@ -142,19 +169,19 @@ static void _env_reset_ids (void)
 
 static ssize_t _env_read (void* pv, size_t cb)
 {
-  return env_d.driver->read (&env_d, pv, cb);
+  return pd_env->driver->read (pd_env, pv, cb);
 }
 
 static ssize_t _env_seek (ssize_t ib, int whence)
 {
-  return env_d.driver->seek (&env_d, ib, whence);
+  return pd_env->driver->seek (pd_env, ib, whence);
 }
 
 #if defined (CONFIG_CMD_SETENV)
 
 static ssize_t _env_write (const void* pv, size_t cb)
 {
-  return env_d.driver->write (&env_d, pv, cb);
+  return pd_env->driver->write (pd_env, pv, cb);
 }
 
 
@@ -178,7 +205,7 @@ static int _env_id (int index)
 
 static void _env_rewind (void)
 {
-  env_d.driver->seek (&env_d, 0, SEEK_SET);
+  pd_env->driver->seek (pd_env, 0, SEEK_SET);
 }
 
 static int _env_index (const char* sz)
@@ -237,6 +264,7 @@ static char _env_locate (int i)
   return ch;
 }
 
+
 /* env_check_magic
 
    performs a rewind of the environment descriptor and checks for the
@@ -262,7 +290,7 @@ int env_check_magic (int full_check)
 {
   unsigned char __aligned rgb[2];
 
-  if (env_d.driver == NULL)
+  if (pd_env->driver == NULL)
     return -1;
 
   _env_rewind ();
@@ -281,7 +309,7 @@ int env_check_magic (int full_check)
 #if defined (ENV_CHECK_LEN) && ENV_CHECK_LEN > 0
   {
     int c = ENV_CHECK_LEN/2;
-    unsigned short rgs[C_ENV_CHECK_READ]; /* More efficient that reading 1 short */
+    unsigned short rgs[C_ENV_CHECK_READ];	/* For efficient reading */
     while (c > 0) {
       int cRead = c;
       if (cRead > sizeof (rgs)/sizeof (*rgs))
@@ -313,7 +341,7 @@ static const char* _env_find (int i)
 {
   static char rgb[ENV_CB_MAX];
 
-  if (!is_descriptor_open (&env_d))
+  if (!is_descriptor_open (pd_env))
     return NULL;
 
   if (env_check_magic (0))
@@ -347,12 +375,6 @@ static int _env_fetch (const char* szKey, const char** pszValue)
   return i;
 }
 
-//#else
-//
-//#define _env_find(i) NULL
-//#define _env_fetch(s,p) -1
-//
-//#endif
 
 /* env_enumerate
 
@@ -427,7 +449,7 @@ int env_fetch_int (const char* szKey, int valueDefault)
 
    removes a key from the environment.
 
-   This function requires that the env_d descriptor be open.
+   This function requires that the d_env descriptor be open.
 
 */
 
@@ -460,7 +482,7 @@ void env_erase (const char* szKey)
    the key will be erased.  The return value is non-zero if the data
    cannot be written to flash.
 
-   This function requires that the env_d descriptor be open.
+   This function requires that the d_env descriptor be open.
 
 */
 
@@ -529,7 +551,7 @@ int env_store (const char* szKey, const char* szValue)
 void env_erase_all (void)
 {
   _env_rewind ();
-  env_d.driver->erase (&env_d, env_d.length);
+  pd_env->driver->erase (pd_env, pd_env->length);
 }
 
 #endif
