@@ -1,3 +1,8 @@
+2007-06-02  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): 1.5.6: Releasing version with fix section
+	ordering.
+
 2007-06-01  Marc Singer  <elf@cerise.buici.com>
 
 	* src/arch-arm/entry/reset.c: Fixed a problem in the ordering of
