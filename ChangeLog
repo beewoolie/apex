@@ -1,3 +1,9 @@
+2007-06-01  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/entry/reset.c: Fixed a problem in the ordering of
+	the reset sections that was illuminated by rwhitby's default
+	compiler.
+
 2007-06-01  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (SUBLEVEL): 1.5.5 for the SAVEATONCE option, very

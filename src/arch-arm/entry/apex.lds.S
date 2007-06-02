@@ -48,8 +48,8 @@ SECTIONS
 	}
 	.reset.post : {		/* Post-SDRAM init code.*/
 		*(.reset.post)
-		*(.reset.postfn)
-		*(.reset.postex)
+		*(.reset.post.func)
+		*(.reset.post.exit)
 	}
 	.rlocate : {		/* Final/only relocation of APEX to SDRAM */
 		*(.rlocate)

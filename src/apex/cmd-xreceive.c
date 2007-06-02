@@ -45,7 +45,7 @@ int cmd_xreceive (int argc, const char** argv)
 
   if ((result = parse_descriptor (argv[1], &d))) {
     printf ("Unable to open '%s'\n", argv[1]);
-    return result
+    return result;
   }
 
   if (!d.length)

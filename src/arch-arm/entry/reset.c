@@ -292,10 +292,10 @@ void __naked __section (.reset.post) reset_post_1 (void)
 //  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
 
   __asm volatile ("mov r0, %0" :: "r" (offset));
-  __asm volatile ("b reset_post_2");
+  __asm volatile ("b reset_post_exit");
 }
 
-void __naked __section (.reset.post) reset_post_2 (void)
+void __naked __section (.reset.post.exit) reset_post_exit (void)
 {
 }
 
