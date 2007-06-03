@@ -130,6 +130,19 @@ config CROSS_COMPILE
 	  environment variable CROSS_COMPILE.  The environment
 	  variable will override this configuration option.
 
+config AEABI
+	bool "Enable the ARM EABI"
+	default n
+	help
+	  The change introduced by this option is of limited benefit.
+	  As a standalone, boot loader APEX communicates with other
+	  software through well-defined and limited interfaces.
+	  However, if your toolchain complains about missing aeabi
+	  functions, e.g.  __aeabi_uidivmod, you will need to select
+	  this option to allow linkage of the EABI support functions.
+
+	  It is safe to leave this disabled until you see the error
+	  message.
 
 choice
 	prompt "Compiler Optimization"
