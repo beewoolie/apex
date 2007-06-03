@@ -121,6 +121,9 @@ void __naked __section (.reset) reset (void)
      we be starting in a mode that cannot reload CPSR, this won't do
      anything and we won't be able to execute anything. */
   {
+	/* Disable interrupts and set supervisor mode */
+//  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
+
     unsigned long l;
     __asm volatile ("mov %0, #0xd3\n\t"
 		    "msr cpsr_c, %0" : "=&r" (l));
@@ -205,7 +208,9 @@ void __naked __section (.reset.exit) reset_exit (void)
 }
 
 #if defined (CONFIG_INLINE_PLATFORM_INITIALIZATION)
-void __naked __section (.reset.pre) reset_pre (void)
+
+# if !defined (CONFIG_INLINE_PLATFORM_INITIALIZATION_SDRAM_PRE_OVERRIDE)
+void __naked __section (.bootstrap.sdram.pre) bootstrap_sdram_pre (void)
 {
   __asm volatile ("bl 0f\n\t"
 	       "0: cmp lr, %0\n\t"
@@ -213,30 +218,34 @@ void __naked __section (.reset.pre) reset_pre (void)
 		  "cmp lr, %1\n\t"
 		  "bhi 1f\n\t"
 		  "mov r0, #1\n\t"
-		  "b reset_post\n\t"
+		  "b bootstrap_sdram_post\n\t"
 		  "1:\n\t" :: "I" (SDRAM_START_PHYS),
 			      "I" (SDRAM_END_PHYS)
 		  : "cc");
   PUTC ('S');
-  __asm volatile ("b reset_pre_exit"); /* due to PUTC */
+  __asm volatile ("b bootstrap_sdram_pre_exit"); /* due to PUTC */
 }
 
-void __naked __section (.reset.pre.exit) reset_pre_exit (void)
+void __naked __section (.bootstrap.sdram.pre.exit)
+     bootstrap_sdram_pre_exit (void)
 {
 }
 
-void __naked __section (.reset.post) reset_post (void)
+# endif
+
+void __naked __section (.bootstrap.sdram.post) bootstrap_sdram_post (void)
 {
 #if defined (CONFIG_SDRAMBOOT_REPORT)
   __asm volatile ("str r0, [%0]\n\t" :: "r" (&fSDRAMBoot));
 #endif
   PUTC ('s');
-  __asm volatile ("b reset_post_1\n\t");
+  __asm volatile ("b bootstrap_sdram_post_cont\n\t");
 }
 
 #endif
 
-void __naked __section (.reset.post) reset_post_1 (void)
+void __naked __section (.bootstrap.sdram.post.cont)
+     bootstrap_sdram_post_cont (void)
 {
   int result;
   extern unsigned long reloc;
@@ -259,6 +268,7 @@ void __naked __section (.reset.post) reset_post_1 (void)
 #else
 				/* pre-relocate platform initialization  */
   result = !initialize_bootstrap ();
+  fSDRAMBoot = result
 #endif
 
 #if defined (CONFIG_BOOTSTRAP_MEMTEST)
@@ -292,10 +302,11 @@ void __naked __section (.reset.post) reset_post_1 (void)
 //  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_STACK_START));
 
   __asm volatile ("mov r0, %0" :: "r" (offset));
-  __asm volatile ("b reset_post_exit");
+  __asm volatile ("b bootstrap_sdram_post_exit");
 }
 
-void __naked __section (.reset.post.exit) reset_post_exit (void)
+void __naked __section (.bootstrap.sdram.post.exit)
+     bootstrap_sdram_post_exit (void)
 {
 }
 

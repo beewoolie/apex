@@ -32,11 +32,15 @@
 /* ----- Includes */
 
 #include <config.h>
+#include <mach/sdram.h>
 
 /* ----- Constants */
 
+#define SDRAM_START_PHYS	(SDRAM_BANK0_PHYS)
+#define SDRAM_END_PHYS		(SDRAM_BANK0_PHYS + SDRAM_BANK_SIZE)
+
 #if defined (CONFIG_SDRAM_BANK0)
-# define RAM_BANK0_START	0x00000000
+# define RAM_BANK0_START	SDRAM_BANK0_PHYS
 # define RAM_BANK0_LENGTH	CONFIG_SDRAM_BANK_LENGTH
 #endif
 

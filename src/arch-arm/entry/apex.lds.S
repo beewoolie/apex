@@ -36,20 +36,21 @@ SECTIONS
 		*(.bootstrap.pre.func)
 		*(.bootstrap.pre.exit)
 	}
-	.reset.pre : {		/* Pre-SDRAM init code, check PC in SDRAM */
-		*(.reset.pre)
-		*(.reset.pre.func)
-		*(.reset.pre.exit)
+	.bootstrap.sdram.pre : { /* Pre-SDRAM init code, check PC in SDRAM */
+		*(.bootstrap.sdram.pre)
+		*(.bootstrap.sdram.pre.func)
+		*(.bootstrap.sdram.pre.exit)
 	}
 	.bootstrap.sdram : {	/* Platform SDRAM initialization */
 		*(.bootstrap.sdram)
 		*(.bootstrap.sdram.func)
 		*(.bootstrap.sdram.exit)
 	}
-	.reset.post : {		/* Post-SDRAM init code.*/
-		*(.reset.post)
-		*(.reset.post.func)
-		*(.reset.post.exit)
+	.bootstrap.sdram.post : {		/* Post-SDRAM init code.*/
+		*(.bootstrap.sdram.post)
+		*(.bootstrap.sdram.post.cont)
+		*(.bootstrap.sdram.post.func)
+		*(.bootstrap.sdram.post.exit)
 	}
 	.rlocate : {		/* Final/only relocation of APEX to SDRAM */
 		*(.rlocate)

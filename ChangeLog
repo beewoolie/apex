@@ -1,3 +1,23 @@
+2007-06-03  Marc Singer  <elf@cerise.buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Renamed some of the sections to
+	make the meanings clear.  Preemtively fixed a vulnerability to
+	section reordering.  Fixed the setting of fSDRAMBoot so that it
+	works for INLINE init mode and for the older form.
+
+	* src/mach-ixp42x/initialize.c (bootstrap_sdram_pre): Revamped the
+	initialization code for ixp42x to use inline mode.  Took the
+	opportunity to elide a lot of cruft from the routines.  It isn't
+	yet tested as written to flash as this requires setup of one of
+	the wigglers.  None of the typical uses of APEX on the ixp42x
+	install APEX as the primary boot loader, so this can wait.
+
+	* src/arch-arm/Kconfig: Configuration option to override the
+	default SDRAM execution detection code.  Most platforms can use
+	the execution address to detect whether or not APEX is running in
+	SDRAM.  Some, like the ixp42x map flash over SDRAM, so we have to
+	use a custom piece of code to detect this circumstance.
+  
 2007-06-03  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/Kconfig: Added AEABI configuration option so that

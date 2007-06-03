@@ -22,6 +22,11 @@
 
 /* ----- Prototypes */
 
+	/* The core has 1GiB of address space for SDRAM, but only
+	   256MiB may be used. */
+#define SDRAM_BANK0_PHYS	(0x00000000)
+#define SDRAM_BANK_SIZE		(0x10000000) /* 256MiB */
+
 #if CONFIG_SDRAM_BANK_LENGTH == (32*1024*1024)
 # if defined CONFIG_SDRAM_BANK1
 #  define SDR_CONFIG_CHIPS	SDR_CONFIG_4x8Mx16

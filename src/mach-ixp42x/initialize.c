@@ -46,7 +46,7 @@
 #include <service.h>
 #include <debug_ll.h>
 #include <sdramboot.h>
-//#include "../src/arch-arm/entry/mmu.h"
+#include <asm/cp15.h>
 
 #include "hardware.h"
 #include "sdram.h"
@@ -64,7 +64,7 @@
 
  */
 
-void __section (.bootstrap) usleep (unsigned long us)
+void __section (.bootstrap.sdram.func) usleep (unsigned long us)
 {
   unsigned long s;
   __asm volatile ("ldr %0, [%1]" : "=r" (s) : "r" (OST_TS_PHYS));
@@ -82,24 +82,16 @@ void __section (.bootstrap) usleep (unsigned long us)
 }
 
 
-/* initialize_bootstrap
+/* bootstrap_pre
 
-   performs the critical bootstrap initializaton before APEX is copied
-   to SDRAM.
-
-   It *should* perform no work if we are already running from SDRAM.
-
-   The return value is true if SDRAM has been initialized and false if
-   this initialization has already been performed.  Note that the
-   non-SDRAM initializations are performed regardless of whether or
-   not we're running in SDRAM.
+   performs mandatory, pre-SDRAM initializations that were not
+   performed in the bootstrap_early function, if one even existed.  In
+   this case, we wait until now to setup the PLLs.
 
 */
 
-void __naked __section (.bootstrap) initialize_bootstrap (void)
+void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 {
-  unsigned long lr;
-
 #if 0
   __asm volatile ("mov r1, #0xc8000000\n\t"
 		  "add r1, r1, #0x4000\n\t"
@@ -113,8 +105,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "eor r0, r0, #0xf\n\t"
 		  "b 0b");
 #endif
-
-  __asm volatile ("mov %0, lr" : "=r" (lr));
 
 #if defined (CONFIG_STARTUP_UART)
   UART_LCR  = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
@@ -130,27 +120,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   _L(LEDf);			/* Start with all on */
   GPIO_ER &= ~0xf;		/* Enable LEDs as outputs */
 
-  /* *** FIXME: this CPSR and CP15 manipulation should not be
-     *** necessary as we don't allow warm resets.  This is here until
-     *** we get a working loader. */
-
-	/* Disable interrupts and set supervisor mode */
-  __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
-
-	/* Drain write buffer */
-  __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-  COPROCESSOR_WAIT;
-
-	/* Invalidate caches (I&D) and branch buffer (BTB) */
-  __asm volatile ("mcr p15, 0, r0, c7, c7, 0" : : : "r0");
-  COPROCESSOR_WAIT;
-
-	/* Invalidate TLBs (I&D) */
-  __asm volatile ("mcr p15, 0, r0, c8, c7, 0" : : : "r0");
-  COPROCESSOR_WAIT;
-
 	/* Disable write buffer coalescing */
-#if 1
   {
     unsigned long v;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t"
@@ -160,25 +130,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   }
 
   COPROCESSOR_WAIT;
-#endif
-
-#if 0
-	/* Fixup the CP15 control word.  This is done for the cases
-	   where we are bootstrapping from redboot which does not
-	   cleanup before jumping to code.  */
-  /* This isn't done here any more since we can disable the MMU in the
-     reset() code with a configuration option.  Caches are enabled
-     elsewhere as well based on configuration option. */
-  __asm volatile ("mrc p15, 0, r0, c1, c0, 0\n\t"
-		  "bic r0, r0, #(1<<0)\n\t" /* Disable MMU */
-//		  "bic r0, r0, #(1<<1)\n\t" /* Disable alignment check */
-//		  "orr r0, r0, #(1<<4)\n\t" /* Enable write buffer */
-//		  "bic r0, r0, #(1<<4)\n\t" /* Disable write buffer */
-//		  "orr r0, r0, #(1<<12)\n\t" /* Enable instruction cache */
-//		  "bic r0, r0, #(1<<12)\n\t" /* Disable instruction cache */
-		  "mcr p15, 0, r0, c1, c0, 0" : : : "r0");
-  COPROCESSOR_WAIT;
-#endif
 
 	/* Configure flash access */
 #if 0
@@ -200,9 +151,9 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   /* Expansion bus clock is 66MHz for a 15ns cycle time.  The flash
      memory has a 120ns minimum read timing requirement.  With more
-     aggressive timing we will see about 180ns per access.  This took
-     the read of the ramdisk from 4300ms to 2600ms. */
-#if 1
+     aggressive timing we will see about 180ns per access.  This
+     optimization took the read of the ramdisk from 4300ms to
+     2600ms. */
   EXP_TIMING_CS0 = 0
     | (( 0 & EXP_T1_MASK)	<<EXP_T1_SHIFT)
     | (( 0 & EXP_T2_MASK)	<<EXP_T2_SHIFT)
@@ -215,8 +166,77 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     | EXP_WR_EN
     | EXP_CS_EN
     ;
-#endif
 
+  __asm volatile ("b bootstrap_pre_exit");
+}
+
+void __naked __section (.bootstrap.pre.exit) bootstrap_pre_exit (void)
+{
+}
+
+
+/* bootstrap_sdram_pre
+
+   is an override implementation of the standard SDRAM initialization
+   pre function.  In the normal case, we use the pc to determine
+   whether or not APEX is executing from SDRAM.  But on the ixp4xx's,
+   256MiB of flash is remapped over SDRAM at 0x0 so it is difficult to
+   determine the execution mode from the pc. In fact, we cannot really
+   tell since we may have less than 256MiB total of SDRAM.
+
+   Instead, we use a bit in the EXP_CNFG0 register to detect that that
+   flash has been mapped to 0x0.  Also as part of this function, we
+   jump to the version of the loader in flash so that disabling the
+   remapping won't cause the loader instruction code from
+   disappearing when we change the configuration register.
+
+*/
+
+void __naked __section (.bootstrap.sdram.pre) bootstrap_sdram_pre (void)
+{
+	/* If the boot mode is disabled, jump over SDRAM
+	   initialization. */
+  if (!(EXP_CNFG0 & (1<<31))) {
+    PUTC ('n');
+    _L(LED2);
+    __asm volatile ("mov r0, #1\n\t"
+		    "b bootstrap_sdram_post\n\t" ::: "r0");
+  }
+
+  PUTC_LL ('b');
+  _L(LED1);
+  PUTC_LL ('f');
+
+	/* Jump to the proper flash address before disabling boot mode */
+  __asm volatile ("add pc, pc, %0" :: "r" (0x50000000 - 4));
+
+  DRAIN_WRITE_BUFFER;
+  COPROCESSOR_WAIT;
+
+  PUTC_LL ('+');
+  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
+  PUTC_LL ('#');
+
+  PUTC ('S');
+  __asm volatile ("b bootstrap_sdram_pre_exit"); /* due to PUTC's */
+}
+
+void __naked __section (.bootstrap.sdram.pre.exit)
+     bootstrap_sdram_pre_exit (void)
+{
+}
+
+
+/* bootstrap_sdram
+
+   performs the SDRAM initialization.  This piece of code is skipped
+   by the reset() code if it determines that APEX is already running
+   in SDRAM.
+
+*/
+
+void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
+{
   PUTC_LL ('\r');PUTC_LL ('\n');
   PUTHEX_LL (*(unsigned long *) 0x50000000);
   PUTC_LL ('\r');PUTC_LL ('\n');
@@ -224,57 +244,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   PUTC_LL ('\r');PUTC_LL ('\n');
   PUTHEX_LL (EXP_CNFG1);
   PUTC_LL ('\r');PUTC_LL ('\n');
-
-
-
-  if (EXP_CNFG0 & (1<<31)) {	/* Exit now if executing in SDRAM */
-    PUTC_LL ('b');
-    _L(LED1);
-
-    /* Boot mode */
-    __asm volatile ("cmp %0, %2\n\t"
-		    "bls 1f\n\t"
-		    "cmp %0, %1\n\t"
-		    "movls r0, #0\n\t"
-		    "movls pc, %0\n\t"
-		    "1:": : "r" (lr), "i" (0x40000000), "i" (256*1024*1024));
-
-    PUTC_LL ('f');
-    /* Jump to the proper flash address before disabling boot mode */
-
-    {
-      __asm volatile ("add %0, %0, %1\n\t"
-		      "add pc, pc, %1"
-		      : "=r" (lr) : "r" (0x50000000 - 4));
-    }
-
-	/* Disable interrupts and set supervisor mode */
-//    __asm volatile ("msr cpsr, %0" : : "r" ((1<<7)|(1<<6)|(0x13<<0)));
-
-	/* Drain write buffer */
-    __asm volatile ("mcr p15, 0, r0, c7, c10, 4" : : : "r0");
-    COPROCESSOR_WAIT;
-
-    PUTC_LL ('+');
-    EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
-    PUTC_LL ('#');
-  }
-  else {			/* Exit now if executing in SDRAM */
-    PUTC_LL ('n');
-    _L(LED2);
-
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-    fSDRAMBoot = 1;
-#endif
-
-    /* Non-boot mode */
-    __asm volatile ("cmp %0, %1\n\t"
-		    "movls r0, #0\n\t"
-		    "movls pc, %0\n\t"
-		    : : "r" (lr), "i" (0x40000000));
-  }
-
-  PUTC_LL ('X');
 
   usleep (1000);		/* Wait for CPU to stabilize SDRAM signals */
 
@@ -307,13 +276,12 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   _L(LED3);
 
-#if defined (CONFIG_SDRAMBOOT_REPORT)
-  barrier ();
-  fSDRAMBoot = 0;
-#endif
+  __asm volatile ("mov r0, #0");		/* SDRAM initialized */
+  __asm volatile ("b bootstrap_sdram_exit");
+}
 
-  __asm volatile ("mov r0, #-1\t\n"
-		  "mov pc, %0" : : "r" (lr));
+void __naked __section (.bootstrap.sdram.exit) bootstrap_sdram_exit (void)
+{
 }
 
 
@@ -328,8 +296,8 @@ static void target_init (void)
 {
   _L(LED6);
 
-  //  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
-  //  __REG(EXP_PHYS + 0x28) |= (1<<15); /* Undocumented, but set in redboot */
+//  EXP_CNFG0 &= ~EXP_CNFG0_MEM_MAP; /* Disable boot-mode for EXP_CS0  */
+//  __REG(EXP_PHYS + 0x28) |= (1<<15); /* Undocumented, but set in redboot */
 
 #if 0
     /* GPIO initialization for the Intel dev board */
@@ -400,6 +368,7 @@ static void target_init (void)
 
 static void target_release (void)
 {
+#if 0
   /* *** FIXME: I don't think this is necessary.  I'm trying to figure
      *** out why the kernel fails to boot.  */
 
@@ -424,6 +393,7 @@ static void target_release (void)
 		    : "=r" (v));
     COPROCESSOR_WAIT;
   }
+#endif
 }
 
 static __service_0 struct service_d ixp42x_target_service = {

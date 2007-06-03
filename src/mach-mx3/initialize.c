@@ -128,11 +128,11 @@ void __section (.bootstrap.sdram.func) usleep (unsigned long us)
 }
 
 
-/* boot_pre
+/* bootstrap_pre
 
    performs mandatory, pre-SDRAM initializations that were not
-   performed in the bootstrap_early function.  In this case, we wait
-   until now to setup the PLLs.
+   performed in the bootstrap_early function, if one even existed.  In
+   this case, we wait until now to setup the PLLs.
 
 */
 
@@ -214,7 +214,7 @@ void __naked __section (.bootstrap.pre.exit) bootstrap_pre_exit (void)
 
 */
 
-void __naked __section (.bootstrap.sdram) boot_sdram (void)
+void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 {
 		/* Initialize IOMUX for SDRAM */
   {
@@ -258,10 +258,10 @@ void __naked __section (.bootstrap.sdram) boot_sdram (void)
   }
 
   __asm volatile ("mov r0, #0");		/* SDRAM initialized */
-  __asm volatile ("b boot_sdram_exit");
+  __asm volatile ("b bootstrap_sdram_exit");
 }
 
-void __naked __section (.bootstrap.sdram.exit) boot_sdram_exit (void)
+void __naked __section (.bootstrap.sdram.exit) bootstrap_sdram_exit (void)
 {
 }
 
