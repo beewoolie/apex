@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Fri Jun  1 17:35:37 2007
+# Sun Jun  3 16:30:14 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -19,6 +19,7 @@ CONFIG_ARCH_S3C2410=y
 #
 CONFIG_TARGET_DESCRIPTION="M7200"
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
+# CONFIG_AEABI is not set
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set
