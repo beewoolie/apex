@@ -268,7 +268,9 @@ void __naked __section (.bootstrap.sdram.post.cont)
 #else
 				/* pre-relocate platform initialization  */
   result = !initialize_bootstrap ();
-  fSDRAMBoot = result
+# if defined (CONFIG_SDRAMBOOT_REPORT)
+  fSDRAMBoot = result;
+# endif
 #endif
 
 #if defined (CONFIG_BOOTSTRAP_MEMTEST)
