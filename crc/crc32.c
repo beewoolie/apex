@@ -198,6 +198,7 @@ unsigned long compute_crc32_1 (unsigned long crc, const void *pv, int cb)
   return crc;
 }
 
+
 /* compute_crc32_2
 
    implements the un-reversed table lookup version of the algorithm.
@@ -219,7 +220,39 @@ unsigned long compute_crc32_2 (unsigned long crc, const void *pv, int cb)
   return crc;
 }
 
-#define CALC compute_crc32_0
+
+/* compute_crc32_3
+
+   is a working, byte oriented version of the crc computation routine
+   that does not require zero shifting.  It is suitable for APEX,
+   though I wonder if it isn't worthwhile to use the table
+   implementation even though the latter is much longer, due to the
+   lookup table.  I suppose we can use CONFIG_SMALL to select one or
+   the other.
+
+*/
+
+unsigned long compute_crc32_3 (unsigned long crc, const void *pv, int cb)
+{
+  const unsigned char* pb = (const unsigned char *) pv;
+
+  while (cb--) {
+    int i;
+    crc ^= *pb++ << 24;
+
+    for (i = 8; i--; ) {
+      if (crc & (1<<31))
+	crc = (crc << 1) ^ POLY;
+      else
+	crc <<= 1;
+    }
+  }
+
+  return crc;
+}
+
+
+#define CALC compute_crc32_3
 
 inline unsigned long cksum (unsigned long (*p)(unsigned long,
 					       const void*, int),
@@ -279,8 +312,8 @@ int main (int argc, char** argv)
   printf ("checksum 0x%x (%u) 0x%x (%u) %d %s\n",
 	  crc, crc, ~crc, ~crc, cb, argv[1]);
 
-  printf ("1/2 %u %u\n",
-	  cksum(compute_crc32_0,pv,cb),
+  printf ("3/2 %u %u\n",
+	  cksum(compute_crc32_3,pv,cb),
 	  cksum(compute_crc32_2,pv,cb));
 
 #if 0
