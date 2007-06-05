@@ -143,6 +143,10 @@ unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
    the same check value as the "Painless Guide to CRC" does, but it's
    a start.
 
+   In order for this routine to produce a correct CRC, it must have a
+   word of zeros shifted in.  Unlike the byte oriented versions, this
+   one does not implicitly shift in zeros at the end of the input.
+
 */
 
 unsigned long compute_crc32_0 (unsigned long crc, const void *pv, int cb)
@@ -163,7 +167,6 @@ unsigned long compute_crc32_0 (unsigned long crc, const void *pv, int cb)
     }
   }
 
-  //  return crc ^ 0xffffffff;
   return crc;
 }
 
@@ -216,7 +219,18 @@ unsigned long compute_crc32_2 (unsigned long crc, const void *pv, int cb)
   return crc;
 }
 
-#define CALC compute_crc32_2
+#define CALC compute_crc32_0
+
+inline unsigned long cksum (unsigned long (*p)(unsigned long,
+					       const void*, int),
+			    const void* pv, int cb)
+{
+  unsigned long crc = p (0,pv,cb);
+  unsigned long v;
+  for (v = cb; v; v >>= 8)
+    crc = p (crc, &v, 1);
+  return ~crc;
+}
 
 int main (int argc, char** argv)
 {
@@ -245,11 +259,12 @@ int main (int argc, char** argv)
   crc = CALC (crc, pv, cb);
   printf ("crc %x\n", crc);
 
-  printf ("crc w/zeros %x (%u)\n", CALC (crc, &zero, 4), CALC (crc, &zero, 4));
+//printf ("crc w/zeros %x (%u)\n", CALC (crc, &zero, 4), CALC (crc, &zero, 4));
 
   {
     unsigned long v = cb;
     while (v) {
+      printf ("  length byte 0x%x\n", ((char*)&v)[0]);
       crc = CALC (crc, &v, 1);
       v >>= 8;
     }
@@ -264,8 +279,16 @@ int main (int argc, char** argv)
   printf ("checksum 0x%x (%u) 0x%x (%u) %d %s\n",
 	  crc, crc, ~crc, ~crc, cb, argv[1]);
 
-//  crc = compute_crc32 (crc, &crc, sizeof (crc));
-//  printf ("crc %x\n", crc);
+  printf ("1/2 %u %u\n",
+	  cksum(compute_crc32_0,pv,cb),
+	  cksum(compute_crc32_2,pv,cb));
+
+#if 0
+  printf ("rev/1/2 0x%08x 0x%08x 0x%08x\n",
+	  compute_crc32 (0, pv, cb),
+	  compute_crc32_1 (0, pv, cb),
+	  compute_crc32_2 (0, pv, cb));
+#endif
 
   return 0;
 }
