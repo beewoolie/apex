@@ -65,8 +65,18 @@ int cmd_checksum (int argc, const char** argv)
       index += cb;
     }
 
+	/* Add the length to the computation */
+    {
+      unsigned char b;
+      unsigned long v;
+      for (v = index; v; v >>= 8) {
+	b = v & 0xff;
+	crc = compute_crc32 (crc, &b, 1);
+      }
+    }
+
     printf ("\rcrc32 0x%lx (%lu) over %d (0x%x) bytes\n",
-	    crc, crc, index, index);
+	    ~crc, ~crc, index, index);
   }
 
  fail:
@@ -82,7 +92,7 @@ static __command struct command_d c_checksum = {
   COMMAND_HELP(
 "checksum REGION\n"
 "  Calculate a CRC32 checksum over REGION.\n"
-"  The result is the standard CCITT CRC32 polynomial.\n"
+"  The result conforms to the POSIX standard for the cksum command.\n"
   )
 
 };
