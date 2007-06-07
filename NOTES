@@ -5,6 +5,41 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.jun.5
+    o checksum verification.
+      o Use cases include copy to flash with checksum.
+        copy from xmodem to memory and then to flash.
+	Copy from running version to flash.
+      o What do we do if there is already a checksum?  Can we detect
+        it?  Should this be automatic in the copy?  Probably a good
+	idea because we make sure there are no errors anywhere.  Note
+	that we would need to leave space after the binary for this,
+	for APEX.
+      o One of the problems is that we need to have a checksum on the
+	checksum block if there is anything more than a simple
+	checksum and length there.  We don't want data that cannot be
+	verified.  For example, if there is a date, we want to know
+	that the date is correct.
+      o If a checksum is appended to APEX, it will be stored as part
+	of any load, xreceive or tftp, but it won't be included as
+	part of the $apex variable.
+      o If the block is aligned, we should make this alignment
+	relatively small.
+
+	| CRC-PAYLOAD | LENGTH-PAYLOAD | CRC-DATA | TIMESTAMP | DESCRIPTION |
+
+      o Seems like this block should be aligned to a 16 byte
+	boundary.  The timestamp is a 32 bit UNIX date.  CRC-DATA is
+	the same CRC algorithm run on the timestamp and description.
+      o What happens when we have a file with a checksum and we want
+	to verify it with cksum?  We cannot verify an image if there
+	is our trailer already there.  Perhaps not a problem.
+      o The above format gives 16 bytes for a description, not null
+	terminated.
+      o The version can be determined by the size of the block for
+	which the the CRC matches.  Clumsy, but we don't waste bits on
+	something redundant.
+
   o 2007.jun.3
     o GCC 4.x and EABI.  The missing function is __aeabi_uidivmod.
       Check the kernel.

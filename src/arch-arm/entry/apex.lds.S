@@ -181,6 +181,9 @@ SECTIONS
 #endif
 	APEX_VMA_STACKS_END = .;
 	. = ALIGN (4);
+	/* *** Here is where we'd insert the checksum avoidance block.
+	       However, it should be aligned to a cache line, at the
+	       very least. */
 	.bss . : {		/* Normal, zeroed BSS */
 		APEX_VMA_BSS_START = .;
 		*(.bss)

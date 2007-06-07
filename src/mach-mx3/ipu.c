@@ -1884,6 +1884,15 @@ static int cmd_ipu (int argc, const char** argv)
       if (result == 0)
 	printf ("I2C device found at address %d (0x%x)\n", address, address);
     }
+
+  }
+
+  if (strcmp (argv[1], "registers") == 0) {
+    unsigned short rgs[256];
+    int i;
+    for (i = 0; i < 256; ++i)
+      rgs[i] = i2c_sensor_read (i);
+    dumpw ((void*) rgs, sizeof (rgs), 0, 2);
   }
 
   return 0;
