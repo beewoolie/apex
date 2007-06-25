@@ -126,10 +126,9 @@ of flash.  The environment allows APEX to be customized at runtime.
   Checksum Compatibility
   ----------------------
 
-The checksum command built into APEX does not conform to the
-algorithms used by the checksum command.  The cksfv command *does* use
-the same CCITT polynomial and may be used to verify files transfered
-between the target and the host.
+The checksum command built into APEX conforms to the POSIX.2 standard
+algorithm which is also used by GNU cksum.  This is not compatible
+with the BSD sum command or with md5sum.
 
 
   Getting Help
