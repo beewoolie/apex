@@ -207,15 +207,6 @@ config NAND_LPD
 	  makes it possible to read NAND flash, NOR flash, and
 	  CompactFlash simultaneously.
 
-config ENV_STARTUP
-	string "Extra commands for startup"
-	default "emac mac 00:08:ee:00:51:e1;" if MACH_KEV79524
-	help
-	  This string is added to the default startup command string.
-	  This is generally not needed, but the facility is available
-	  just in case.  One platforms, for example, sets the MAC
-	  address of the Ethernet controller this way.
-
 endmenu
 
 menu "Platform Drivers"

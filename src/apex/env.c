@@ -100,10 +100,17 @@ static __env struct env_d e_startup = {
   .description = "Startup commands",
 };
 #elif (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
+    || defined (CONFIG_ENV_STARTUP_PREFIX
+    || defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
+    || defined (CONFIG_ENV_STARTUP_RAMDISK_COPY)
     || defined (CONFIG_AUTOBOOT)
 static __env struct env_d e_startup = {
   .key = "startup",
   .default_value =
+#if defined (CONFIG_ENV_STARTUP_PREFIX)
+  CONFIG_ENV_STARTUP_PREFIX
+  "; "
+#endif
 #if defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
     "copy "
 # if defined (CONFIG_ENV_REGION_KERNEL_SWAP)
@@ -117,9 +124,6 @@ static __env struct env_d e_startup = {
     "-s "
 # endif
     "$ramdisksrc $ramdiskaddr; "
-#endif
-#if defined (CONFIG_ENV_STARTUP)
-    CONFIG_ENV_STARTUP
 #endif
 #if defined (CONFIG_AUTOBOOT)
 # if CONFIG_AUTOBOOT_DELAY != 0

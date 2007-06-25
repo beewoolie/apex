@@ -600,9 +600,27 @@ config ENV_REGION_RAMDISK_SWAP
 	depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 	default n
 	help
-	  The ramdis source is in a different endian format from the
+	  The ramdisk source is in a different endian format from the
 	  system that will use it.  This option performs a byte-swap
 	  when copying it. 
+
+config ENV_STARTUP_PREFIX_P
+	bool "Define a prefix to the default startup command"
+	depends on ENV && !ENV_default_STARTUP_OVERRIDE
+	default n
+	help
+	  Sometimes, there are commands that must be run before the
+	  mainstartup commands and it is easier to define those
+	  instead of constructing the whole startup command as an
+	  override.
+
+config ENV_STARTUP_PREFIX
+	string "Startup command prefix"
+	depends on ENV_STARTUP_PREFIX_P
+	help
+	  These are commands to be prepended to the default startup
+	  commands.  There is no need to include a trailing semicolon
+	  as this will be added automatically.
 
 comment "   Regions"
 

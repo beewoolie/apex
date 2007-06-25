@@ -88,14 +88,6 @@ config NOR_BANK0_LENGTH
 	default "0x04000000"
 	depends on NOR_BANK0
 
-config ENV_STARTUP
-	string "Extra commands for startup"
-	help
-	  This string is added to the default startup command string.
-	  This is generally not needed, but the facility is available
-	  just in case.  One platforms, for example, sets the MAC
-	  address of the Ethernet controller this way.
-
 endmenu
 
 config MACH

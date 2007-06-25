@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Sun Jun  3 16:30:14 2007
+# Mon Jun 25 16:42:01 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -114,6 +114,7 @@ CONFIG_NOR_BOOT=y
 # CONFIG_ONENAND_BOOT is not set
 # CONFIG_COMPANION_EVT1_BOOT is not set
 # CONFIG_COMPANION_EVT2_BOOT is not set
+# CONFIG_ENV_STARTUP_PREFIX_P is not set
 
 #
 #    Regions
