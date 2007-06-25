@@ -100,9 +100,9 @@ static __env struct env_d e_startup = {
   .description = "Startup commands",
 };
 #elif (defined (CONFIG_ENV_REGION_KERNEL) && defined (CONFIG_KERNEL_LMA))\
-    || defined (CONFIG_ENV_STARTUP_PREFIX
-    || defined (CONFIG_ENV_STARTUP_KERNEL_COPY)
-    || defined (CONFIG_ENV_STARTUP_RAMDISK_COPY)
+    || defined (CONFIG_ENV_STARTUP_PREFIX)\
+    || defined (CONFIG_ENV_STARTUP_KERNEL_COPY)\
+    || defined (CONFIG_ENV_STARTUP_RAMDISK_COPY)\
     || defined (CONFIG_AUTOBOOT)
 static __env struct env_d e_startup = {
   .key = "startup",
