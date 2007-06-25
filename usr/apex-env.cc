@@ -99,9 +99,11 @@ static struct argp argp = {
   "Commands:\n"
   "  describe [KEY]\t- describe KEY or all variables\n"
   "  dump\t\t\t- hexadecimal/ascii dump of environment region\n"
-  "  printenv [KEY]\t- print KEY or all variables\n"
-  "  setenv KEY VALUE\t- set variable KEY to VALUE\n"
   "  eraseenv\t\t- erase environment region\n"
+  "  printenv [KEY]\t- print KEY or all variables\n"
+  "  region\t\t- report APEX environment region\n"
+  "  release\t\t- report APEX release version\n"
+  "  setenv KEY VALUE\t- set variable KEY to VALUE\n"
 };
 
 void cmd_printenv (Link& link, int argc, const char** argv)
@@ -158,10 +160,18 @@ void cmd_eraseenv (Link& link, int argc, const char** argv)
     throw "incorrect number of command arguments";
 }
 
-void cmd_version (Link& link, int argc, const char** argv)
+void cmd_release (Link& link, int argc, const char** argv)
 {
   if (argc == 1)
-    printf ("%s\n", link.apexversion ());
+    printf ("%s\n", link.apexrelease ());
+  else
+    throw "incorrect number of command arguments";
+}
+
+void cmd_region (Link& link, int argc, const char** argv)
+{
+  if (argc == 1)
+    printf ("%s\n", link.apexregion ());
   else
     throw "incorrect number of command arguments";
 }
@@ -173,7 +183,8 @@ static struct command commands[] = {
   { "setenv",		cmd_setenv },
   { "unsetenv",		cmd_unsetenv },
   { "eraseenv",		cmd_eraseenv },
-  { "version",		cmd_version },
+  { "release",		cmd_release },
+  { "region",		cmd_region },
 };
 
 int main (int argc, char** argv)
