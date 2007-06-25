@@ -1,3 +1,12 @@
+apex (1.5.7) unstable; urgency=low
+
+  * Since last official release, fixes to the memory detection, AEABI
+    support, OneNAND environment support with ENV_SAVEATONCE, lots of mx31
+    changes, completely restructured the reset vector to avoid function
+    calls, and lots of other stuff documented in the package ChangeLog.
+
+ -- Marc Singer <elf@buici.com>  Sun, 24 Jun 2007 18:41:27 -0700
+
 apex (1.4.15) unstable; urgency=low
 
   * Modified the rules file to support cross-building.
