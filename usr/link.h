@@ -82,6 +82,7 @@ protected:
 
   bool endian_mismatch;		// Controls swab32_maybe
   int env_link_version;		/* 1: legacy; 2: current version */
+  char* szVersion;		// APEX version number from link data
   struct env_link* env_link;	// Fixed up env_link structure
   int mapping_offset;		// Offset of APEX within mmap'd region
   struct env_d* env;		// APEX environment variables
@@ -153,6 +154,7 @@ public:
   void printenv (const char* key);
   void setenv (const char* key, const char* value);
   void unsetenv (const char* key);
+  const char* apexversion (void);
 
 };
 

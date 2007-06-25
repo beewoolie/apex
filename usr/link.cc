@@ -478,21 +478,22 @@ bool Link::open_apex (const MTDPartition& mtd)
 
   int cbLink = (sizeof (struct env_link) + 1024 + 4096 - 1) & ~4096;
   env_link = (struct env_link*) new char[cbLink];
+  bzero (env_link, cbLink);
 
   switch (env_link_version) {
   case 1:
     {
       const struct env_link_1& env_link_1
 	= *(const struct env_link_1*) ((unsigned char*) pv + index_env_link);
-      env_link->magic = env_link_1.magic;
-      env_link->apex_start = env_link_1.apex_start;
-      env_link->apex_end = env_link_1.apex_end;
-      env_link->env_start = env_link_1.env_start;
-      env_link->env_end = env_link_1.env_end;
+      env_link->magic		= env_link_1.magic;
+      env_link->apex_start	= env_link_1.apex_start;
+      env_link->apex_end	= env_link_1.apex_end;
+      env_link->env_start	= env_link_1.env_start;
+      env_link->env_end		= env_link_1.env_end;
       env_link->env_link	// *** Hack to accomodate partition w/swap
 	= (void*) swab32_maybe (swab32_maybe ((u32) env_link->apex_start)
 				+ index_env_link - 16);
-      env_link->env_d_size = env_link_1.env_d_size;
+      env_link->env_d_size	= env_link_1.env_d_size;
       memcpy ((void*) env_link->region, env_link_1.region,
 	      cbLink - sizeof (struct env_link));
     }
@@ -519,6 +520,9 @@ bool Link::open_apex (const MTDPartition& mtd)
   pvApexSwab = (void*) new char[cbApex];
   memcpy (pvApexSwab, pvApex, cbApex);
   swab32_block_maybe (pvApexSwab, cbApex);
+
+				// Guarantee termination
+  *(char*) &env_link->apexrelease[sizeof (env_link->apexrelease) - 1] = 0;
 
   return true;
 }

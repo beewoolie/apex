@@ -158,6 +158,14 @@ void cmd_eraseenv (Link& link, int argc, const char** argv)
     throw "incorrect number of command arguments";
 }
 
+void cmd_version (Link& link, int argc, const char** argv)
+{
+  if (argc == 1)
+    printf ("%s\n", link.apexversion ());
+  else
+    throw "incorrect number of command arguments";
+}
+
 static struct command commands[] = {
   { "describe",		cmd_describe },
   { "dump",		cmd_dump },
@@ -165,6 +173,7 @@ static struct command commands[] = {
   { "setenv",		cmd_setenv },
   { "unsetenv",		cmd_unsetenv },
   { "eraseenv",		cmd_eraseenv },
+  { "version",		cmd_version },
 };
 
 int main (int argc, char** argv)
