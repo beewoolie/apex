@@ -1,5 +1,12 @@
+2007-06-26  Marc Singer  <elf@buici.com>
+
+	* src/arch-arm/entry/apex.lds.S: Removed Companion section from
+	the general build.
+
 2007-06-25  Marc Singer  <elf@cerise.buici.com>
 
+	* Makefile (SUBLEVEL): 1.5.8: Releasing for Debian package.
+	
 	* usr/apex-env.cc: Added release and region commands for probing
 	the APEX environment.
 

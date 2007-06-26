@@ -201,12 +201,19 @@ SECTIONS
 		*(.pcm.xbss)    /* Audio xbss data */
 	}
 	APEX_VMA_END = .;
+#if defined (CONFIG_RELOCATE_COMPANION_EVT1)
 						/* Bootstrap data */
-	/* *** FIXME: this is truly bogus.  An early stack must be
-	   added to the configuration and setup by the initialization
-	   code. */
+	/* *** FIXME: this is added for an early bootstrap routine for
+	   the first generation of the Companion.  We needed some
+	   buffer space for reading SD/MMC data and the only place we
+	   could be sure was available was the static RAM in the
+	   processor die.  There should be another way to handle this,
+	   but this was the easiest (best) method for getting a
+	   statically allocated buffer.  There should be a better way
+	   to allocate memory at rlocate.early time. */
 	.bss_bootstrap (0xb0000000 + 80*1024 - 4096) (NOLOAD) : {
 		APEX_VMA_BOOTSTRAP_STACK_START = .;
 		*(.bss_bootstrap)
 	}		
+#endif
 }
