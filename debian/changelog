@@ -3,7 +3,7 @@ apex (1.5.8) unstable; urgency=low
   * Added 'release' comand to the apex-env.
   * Defaults for debian configs will detect all memory.
 
-  -- Marc Singer <elf@buici.com>  Mon, 25 Jun 2007 15:53:22 -0700
+ -- Marc Singer <elf@buici.com>  Mon, 25 Jun 2007 15:53:22 -0700
 
 apex (1.5.7) unstable; urgency=low
 
