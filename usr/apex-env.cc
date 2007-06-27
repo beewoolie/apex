@@ -32,9 +32,9 @@
    TODO
    ----
 
-   o Force option should be added to allow eraseenv to erase when
-     there is non-APEX data in the region.  This doesn't impeded
-     normal use of this application.
+   o It may be a good idea to add a confirmation step to the erase
+     command.  Doing so also requires a 'y' option to override the
+     question.
 
 */
 
@@ -55,7 +55,7 @@
 #endif
 
 
-const char* argp_program_version = "apex-env 1.0";
+const char* argp_program_version = "apex-env 1.1";
 
 struct arguments {
   arguments () {
@@ -63,11 +63,12 @@ struct arguments {
 
   int argc;
   const char* argv[3];		// command, key, value
+  bool force;			// Force for the sake of eraseenv
 };
 
 struct command {
   const char* sz;
-  void (*func) (Link&, int, const char**);
+  void (*func) (Link&, int, const char**, struct arguments*);
 };
 
 static error_t arg_parser (int key, char* arg, struct argp_state* state)
@@ -75,6 +76,9 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
   struct arguments& args = *(struct arguments*) state->input;
 
   switch (key) {
+  case 'F':
+    args.force = true;
+    break;
   case ARGP_KEY_ARG:
     if (args.argc >= sizeof (args.argv)/sizeof (*args.argv))
       argp_usage (state);
@@ -91,8 +95,13 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
   return 0;
 }
 
+static struct argp_option options[] = {
+  { "force", 'F', 0, 0, "Force a command that may cause data loss" },
+  { 0 }
+};
+
 static struct argp argp = {
-  0, arg_parser,
+  options, arg_parser,
   "COMMAND [ARG ...]",
   "apex-env provides for user-mode access to APEX boot loader environment\n"
   "\n"
@@ -102,11 +111,12 @@ static struct argp argp = {
   "  eraseenv\t\t- erase environment region\n"
   "  printenv [KEY]\t- print KEY or all variables\n"
   "  region\t\t- report APEX environment region\n"
-  "  release\t\t- report APEX release version\n"
+  "  release\t\t- report installed APEX release version\n"
   "  setenv KEY VALUE\t- set variable KEY to VALUE\n"
 };
 
-void cmd_printenv (Link& link, int argc, const char** argv)
+void cmd_printenv (Link& link, int argc, const char** argv,
+		   struct arguments* args)
 {
   switch (argc) {
   case 1:
@@ -120,7 +130,8 @@ void cmd_printenv (Link& link, int argc, const char** argv)
   }
 }
 
-void cmd_describe (Link& link, int argc, const char** argv)
+void cmd_describe (Link& link, int argc, const char** argv,
+		   struct arguments* args)
 {
   if (argc > 2)
     throw "incorrect number of command arguments";
@@ -128,7 +139,8 @@ void cmd_describe (Link& link, int argc, const char** argv)
   link.describe ((argc > 1) ? argv[1] : NULL);
 }
 
-void cmd_dump (Link& link, int argc, const char** argv)
+void cmd_dump (Link& link, int argc, const char** argv,
+	       struct arguments* args)
 {
   if (argc == 1)
     link.dump ();
@@ -136,7 +148,8 @@ void cmd_dump (Link& link, int argc, const char** argv)
     return throw "incorrect number of command arguments";
 }
 
-void cmd_setenv (Link& link, int argc, const char** argv)
+void cmd_setenv (Link& link, int argc, const char** argv,
+		 struct arguments* args)
 {
   if (argc == 3)
     link.setenv (argv[1], argv[2]);
@@ -144,7 +157,8 @@ void cmd_setenv (Link& link, int argc, const char** argv)
     return throw "incorrect number of command arguments";
 }
 
-void cmd_unsetenv (Link& link, int argc, const char** argv)
+void cmd_unsetenv (Link& link, int argc, const char** argv,
+		   struct arguments* args)
 {
   if (argc == 2)
     link.unsetenv (argv[1]);
@@ -152,15 +166,17 @@ void cmd_unsetenv (Link& link, int argc, const char** argv)
     throw "incorrect number of command arguments";
 }
 
-void cmd_eraseenv (Link& link, int argc, const char** argv)
+void cmd_eraseenv (Link& link, int argc, const char** argv,
+		   struct arguments* args)
 {
   if (argc == 1)
-    link.eraseenv ();
+    link.eraseenv (args->force);
   else
     throw "incorrect number of command arguments";
 }
 
-void cmd_release (Link& link, int argc, const char** argv)
+void cmd_release (Link& link, int argc, const char** argv,
+		  struct arguments* args)
 {
   if (argc == 1)
     printf ("%s\n", link.apexrelease ());
@@ -168,7 +184,8 @@ void cmd_release (Link& link, int argc, const char** argv)
     throw "incorrect number of command arguments";
 }
 
-void cmd_region (Link& link, int argc, const char** argv)
+void cmd_region (Link& link, int argc, const char** argv,
+		 struct arguments* args)
 {
   if (argc == 1)
     printf ("%s\n", link.apexregion ());
@@ -202,12 +219,18 @@ int main (int argc, char** argv)
       args.argv[0] = "printenv"; // Default command
     }
 
+    struct command* command_match = NULL;
     for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i)
-      if (strcasecmp (args.argv[0], commands[i].sz) == 0) {
-	commands[i].func (link, args.argc, args.argv);
-	return 0;
+      if (strncasecmp (args.argv[0], commands[i].sz,
+		       strlen (args.argv[0])) == 0) {
+	if (command_match)
+	  throw "ambiguous command";
+	command_match = &commands[i];
       }
-    throw "unknown command";
+    if (!command_match)
+      throw "unknown command";
+    command_match->func (link, args.argc, args.argv, &args);
+    return 0;
   }
   catch (char const* sz) {
     printf ("error: %s\n", sz);
