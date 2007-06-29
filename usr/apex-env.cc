@@ -55,7 +55,7 @@
 #endif
 
 
-const char* argp_program_version = "apex-env 1.1";
+const char* argp_program_version = "apex-env 1.2";
 
 struct arguments {
   arguments () {
@@ -64,6 +64,7 @@ struct arguments {
   int argc;
   const char* argv[3];		// command, key, value
   bool force;			// Force for the sake of eraseenv
+  bool verbose;			// Verbose output
 };
 
 struct command {
@@ -78,6 +79,9 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
   switch (key) {
   case 'F':
     args.force = true;
+    break;
+  case 'v':
+    args.verbose = true;
     break;
   case ARGP_KEY_ARG:
     if (args.argc >= sizeof (args.argv)/sizeof (*args.argv))
@@ -97,6 +101,7 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
 
 static struct argp_option options[] = {
   { "force", 'F', 0, 0, "Force a command that may cause data loss" },
+  { "verbose", 'v', 0, 0, "Verbose output, when available" },
   { 0 }
 };
 
@@ -109,6 +114,7 @@ static struct argp argp = {
   "  describe [KEY]\t- describe KEY or all variables\n"
   "  dump\t\t\t- hexadecimal/ascii dump of environment region\n"
   "  eraseenv\t\t- erase environment region\n"
+  "  locate\t\t - locate APEX among MTD partitions\n"
   "  printenv [KEY]\t- print KEY or all variables\n"
   "  region\t\t- report APEX environment region\n"
   "  release\t\t- report installed APEX release version\n"
@@ -193,6 +199,25 @@ void cmd_region (Link& link, int argc, const char** argv,
     throw "incorrect number of command arguments";
 }
 
+void cmd_locate (Link& link, int argc, const char** argv,
+		 struct arguments* args)
+{
+  if (argc == 1) {
+    const MTDPartition mtd = link.locate ();
+    if (mtd.is ()) {
+      if (args->verbose)
+	printf ("%s '%s' %d KiB @ 0x%08x\n", mtd.dev_block (), mtd.name,
+		mtd.size/1024, mtd.base);
+      else
+	printf ("%s\n", mtd.dev_block ());
+    }
+    else
+      printf ("none\n");
+  }
+  else
+    throw "incorrect number of command arguments";
+}
+
 static struct command commands[] = {
   { "describe",		cmd_describe },
   { "dump",		cmd_dump },
@@ -202,6 +227,7 @@ static struct command commands[] = {
   { "eraseenv",		cmd_eraseenv },
   { "release",		cmd_release },
   { "region",		cmd_region },
+  { "locate",		cmd_locate },
 };
 
 int main (int argc, char** argv)

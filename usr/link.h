@@ -111,16 +111,16 @@ protected:
     if (fhEnvBlock != -1)	{ ::close (fhEnvBlock); fhEnvBlock = -1; }
   }
 
-  inline unsigned long swab32(unsigned long l) {
+  inline unsigned long swab32(unsigned long l) const {
     return (  ((l & 0x000000ffUL) << 24)
 	    | ((l & 0x0000ff00UL) << 8)
 	    | ((l & 0x00ff0000UL) >> 8)
 	    | ((l & 0xff000000UL) >> 24)); }
 
-  inline unsigned long swab32_maybe (unsigned long l) {
+  inline unsigned long swab32_maybe (unsigned long l) const {
     return endian_mismatch ? swab32 (l) : l; }
 
-  inline void swab32_block_maybe (void* pv, int cb) {
+  inline void swab32_block_maybe (void* pv, int cb) const {
     if (!endian_mismatch)
       return;
 
@@ -134,6 +134,7 @@ protected:
   int scan_environment (void);
   bool open_apex (const MTDPartition& mtd);
   int read_env (void);
+  bool contains_apex (const MTDPartition& mtd) const;
 
 public:
 
@@ -145,6 +146,7 @@ public:
     release_this (); }
 
   void open (void);
+  const MTDPartition locate (void) const;
 
   void show_environment (void);
 

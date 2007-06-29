@@ -92,6 +92,13 @@ const MTDPartition MTDPartition::first (void)
   return g_rg[0];
 }
 
+const MTDPartition MTDPartition::next (void) const
+{
+  return (index + 1 < g_cPartitionMax && g_rg[index + 1].device)
+    ? g_rg[index + 1]
+    : MTDPartition ();
+}
+
 void MTDPartition::init (void)
 {
   int fh = open ("/proc/mtd", O_RDONLY);
@@ -129,6 +136,7 @@ void MTDPartition::init (void)
       pb[m[4].rm_eo] = 0;
       g_rg[c].name	= pb + m[4].rm_so;
       g_rg[c].base = base;
+      g_rg[c].index = c;
       base += g_rg[c].size;
       //      printf ("%s: 0x%x 0x%x '%s'\n",
 //	      g_rg[c].device, g_rg[c].size, g_rg[c].erasesize, g_rg[c].name);

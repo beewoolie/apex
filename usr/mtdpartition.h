@@ -41,6 +41,7 @@ struct MTDPartition {
   int erasesize;
   char* name;
   int base;			/* Offset from the start of flash */
+  int index;
 
   static const int g_cPartitionMax = 32;
   static const int g_cbMax = 4096;
@@ -65,10 +66,9 @@ struct MTDPartition {
   static const MTDPartition find (unsigned long addr);
   static const MTDPartition find (const char*);
   static const MTDPartition first (void);
+  const MTDPartition next () const;
 
 };
-
-
 
 
 /* ----- Globals */

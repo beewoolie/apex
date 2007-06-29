@@ -272,6 +272,73 @@ static struct descriptor parse_region (const char* sz)
 }
 
 
+/* Link::containus_apex
+
+   scans the MTD partition for APEX.  It returns true if APEX is
+   found.
+
+*/
+
+bool Link::contains_apex (const MTDPartition& mtd) const
+{
+  PRINTF ("%s: '%s'\n", __FUNCTION__, mtd.dev_block ());
+  int fh = ::open (mtd.dev_block (), O_RDONLY);
+  if (fh == -1)
+    throw "unable to open mtd device.  Root privileges may be required.";
+
+  void* pv = mmap (NULL, CB_LINK_SCAN, PROT_READ, MAP_SHARED, fh, 0);
+  if (pv == MAP_FAILED) {
+    ::close (fh);
+    throw "failed to mmap on open_apex";
+  }
+
+  int env_link_version = 0;
+  bool fFound = false;
+
+  {
+    unsigned long* rgl = (unsigned long*) pv;
+    for (int i = 0;
+	 i < CB_LINK_SCAN/sizeof (unsigned long)
+	   - sizeof (env_link)/sizeof (unsigned long);
+	 ++i) {
+//      printf ("%d 0x%x (%x %x)\n",
+//	      i, rgl[i], ENV_LINK_MAGIC, swab32 (ENV_LINK_MAGIC));
+
+      switch (rgl[i]) {
+      case ENV_LINK_MAGIC_1:
+	env_link_version = 1;
+	break;
+      case ENV_LINK_MAGIC:
+	env_link_version = 2;
+	break;
+      }
+
+      switch (swab32 (rgl[i])) {
+      case ENV_LINK_MAGIC_1:
+//	endian_mismatch = true;
+	env_link_version = 1;
+	break;
+      case ENV_LINK_MAGIC:
+//	endian_mismatch = true;
+	env_link_version = 2;
+	break;
+      }
+
+      if (!env_link_version)
+	continue;
+
+      fFound = true;
+      break;
+    }
+  }
+
+  munmap (pv, CB_LINK_SCAN);
+  close (fh);
+
+  return fFound;
+}
+
+
 /* Link::open
 
    opens the link by locating APEX, copying the loader, generating a
@@ -337,6 +404,31 @@ int Link::load_env (void)
   qsort (env, c_env, sizeof (struct env_d), compare_env);
 
   return c_env;
+}
+
+
+/* Link::locate
+
+   searches the MTD partitions for APEX.  The return value is the name
+   of the partition.
+
+   Note that this function returns an allocated pointer.  On the one
+   hand, this is a memory leak.  However, it is unnecessary to worry
+   about it since this is a short-running program.
+
+*/
+
+const MTDPartition Link::locate (void) const
+{
+	// First, look for the loader by the name of the partition
+  MTDPartition mtd = MTDPartition::find ("Loader");
+
+  if (!mtd.is () || !contains_apex (mtd))
+    for (mtd = MTDPartition::first (); mtd.is (); mtd = mtd.next ())
+      if (contains_apex (mtd))
+	break;
+
+  return mtd;
 }
 
 
@@ -415,8 +507,8 @@ bool Link::open_apex (const MTDPartition& mtd)
 	 i < CB_LINK_SCAN/sizeof (unsigned long)
 	   - sizeof (env_link)/sizeof (unsigned long);
 	 ++i) {
-      //      printf ("%d 0x%x (%x %x)\n",
-      //	      i, rgl[i], ENV_LINK_MAGIC, swab32 (ENV_LINK_MAGIC));
+//      printf ("%d 0x%x (%x %x)\n",
+//	      i, rgl[i], ENV_LINK_MAGIC, swab32 (ENV_LINK_MAGIC));
 
       switch (rgl[i]) {
       case ENV_LINK_MAGIC_1:
@@ -509,8 +601,8 @@ bool Link::open_apex (const MTDPartition& mtd)
   mapping_offset = index_env_link
     - ((char*) env_link->env_link - (char*) env_link->apex_start);
 
-  // *** FIXME: due to mapping_offset it could be the case that we
-  // haven't mapped enough of APEX.
+// *** FIXME: due to mapping_offset it could be the case that we
+// haven't mapped enough of APEX.
   pvApex = (void*) new char[cbApex];
   memcpy (pvApex, (const char*) pv + mapping_offset, cbApex);
 
