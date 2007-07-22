@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.jul.22
+    o Slug is having problems at 128MiB of RAM
+      o we could use a memory test command, just for grins.  The code
+        is there but there is no command.  This also requires us to
+        have a way to determine where APEX memory resides.
+    o Fix the memscan command to not be destructive.
+
   o 2007.jun.5
     o checksum verification.
       o Use cases include copy to flash with checksum.

@@ -58,6 +58,24 @@
 #define LOAD_DOMAIN(a)\
   __asm volatile ("mrc p15, 0, %0, c3, c0, 0\n\t" :  "=r" (a))
 
+#define MMU_DISABLE\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"\
+		     "bic %0, %0, #(1<<0)\n\t"\
+		     "mcr p15, 0, %0, c1, c0, 0\n\t"\
+		     : "=&r" (l)); } )
+
+#define MMU_ENABLE\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"\
+		     "orr %0, %0, #(1<<0)\n\t"\
+		     "mcr p15, 0, %0, c1, c0, 0\n\t"\
+		     : "=&r" (l)); } )
+
+#define WAIT_FOR_INTERRUPT\
+  __asm volatile ("mcr p15, 0, %0, c7, c0, 4\n\t" :: "r" (0));
+
+
 /* ----- Architecture specific coprocessor support */
 
 #if defined (CONFIG_CPU_ARMV4)
@@ -75,9 +93,5 @@
 #if !defined (CP15_WAIT)
 # define CP15_WAIT
 #endif
-
-#define WAIT_FOR_INTERRUPT\
-  __asm volatile ("mcr p15, 0, %0, c7, c0, 4\n\t" :: "r" (0));
-
 
 #endif  /* __CP15_H__ */

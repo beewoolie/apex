@@ -228,6 +228,15 @@ config CMD_MEMSCAN
 	  This command scans memory as APEX does when initializing.
 	  It is used primarily for debugging.
 
+config CMD_MEMTEST
+	bool "Define Memtest Command"
+	default n
+	help
+	  This command tests a region of RAM for errors.  It performs
+	  the simple test for crossed or disconnected lines as well as
+	  a (the unecessary) full test of the memory if
+	  CONFIG_BOOTSTRAP_MEMTEST_FULL is defined.
+
 config CMD_CLCDC_SPLASH
 	bool "Define CLCDC Splash sub-command"
 	depends on DRIVER_LH_CLCDC
