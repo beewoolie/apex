@@ -62,10 +62,10 @@ static void cpuinfo_report (void)
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
   printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx (%s)   cpsr 0x%08lx\n"
 	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n"
-	  "          chipid 0x%x %s\n"
+	  "          chipid 0x%x %s  csc_clkset 0x%08lx\n"
 	  "          cp15test 0x%04lx\n",
 	  id, ctrl, cp15_ctrl (ctrl), cpsr,
-	  ttbl, domain, cache, (unsigned) csc, sz,
+	  ttbl, domain, cache, (unsigned) csc, sz, CSC_CLKSET,
 	  test & 0xffff);
 
 #if defined (CPLD_REVISION)

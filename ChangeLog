@@ -1,3 +1,9 @@
+2007-07-24  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* src/mach-lh7a40x/initialize.c: Moved the clock speed setup to
+	the early initialization routine so that it is properly
+	configured.
+
 2007-06-26  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/apex.lds.S: Removed Companion section from

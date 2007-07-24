@@ -232,6 +232,59 @@ void __naked __section (.bootstrap.early) bootstrap_early (void)
      pool */
   //  __asm volatile ("b bootstrap_early_exit");
 #endif
+
+	/* Set the running clock speed.  This will increase the HCLK
+	   (bus) speed but not let the FCLK (CPU) speed be independent
+	   of HCLK until the CLOCKMODE is changed in the CP15 control
+	   register. */
+  CSC_CLKSET = CSC_CLKSET_V;
+
+	/* There are two bits that control bus clocking modes.
+	     iA (1<<31) Asynchronous clock select
+	     nF (1<<30) notFastBus
+	   The valid combinations are as follows:
+
+	     iA nF
+	      0  0	FastBus; mode after system reset
+	      0  1	Synchronous
+	      1  1	Asynchronous
+
+	    From the ARM 922 TRM, Chapter 5,
+
+	    FastBus mode, GCLK sources from BCLK and FCLK is
+	      ignored.  The BCLK signal controls both the ARM core
+	      as well as the AMBA AHB interface.
+	    Synchronous mode, GCLK is sourced from BCLK or FCLK.
+	      FCLK must be faster than BCLK.
+	      FCLK must be an integer multiple of BCLK.
+	    Asynchronous mode, GCLK is sourced from BCLK or FCLK.
+	      FCLK must be faster than BCLK.
+
+	    Use either synchronous or asynchronous mode for normal
+	    system operation.  Synchronous is more efficient because
+	    there is no cycle penalty for synchronizing the CPU to the
+	    bus.
+
+  */
+
+  {
+    unsigned long l;
+    __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
+#if (CLOCKMODE == 's')
+		    "bic	%0, %0, #(1<<31)\n\t"
+		    "orr	%0, %0, #(1<<30)\n\t"
+#endif
+#if (CLOCKMODE == 'a')
+		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
+#endif
+#if (CLOCKMODE == 'f')
+		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
+#endif
+		    "mcr	p15, 0, %0, c1, c0, 0"
+		    : "=&r" (l));
+  }
+
+  __asm volatile ("b bootstrap_early_exit");
 }
 
 void __naked __section (.bootstrap.early.exit) bootstrap_early_exit (void)
@@ -292,57 +345,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
   unsigned long lr;
   __asm volatile ("mov %0, lr" : "=r" (lr));
-
-	/* Set the running clock speed.  This will increase the HCLK
-	   (bus) speed but not let the FCLK (CPU) speed be independent
-	   of HCLK until the CLOCKMODE is changed in the CP15 control
-	   register. */
-  CSC_CLKSET = CSC_CLKSET_V;
-
-	/* There are two bits that control bus clocking modes.
-	     iA (1<<31) Asynchronous clock select
-	     nF (1<<30) notFastBus
-	   The valid combinations are as follows:
-
-	     iA nF
-	      0  0	FastBus; mode after system reset
-	      0  1	Synchronous
-	      1  1	Asynchronous
-
-	    From the ARM 922 TRM, Chapter 5,
-
-	    FastBus mode, GCLK sources from BCLK and FCLK is
-	      ignored.  The BCLK signal controls both the ARM core
-	      as well as the AMBA AHB interface.
-	    Synchronous mode, GCLK is sourced from BCLK or FCLK.
-	      FCLK must be faster than BCLK.
-	      FCLK must be an integer multiple of BCLK.
-	    Asynchronous mode, GCLK is sourced from BCLK or FCLK.
-	      FCLK must be faster than BCLK.
-
-	    Use either synchronous or asynchronous mode for normal
-	    system operation.  Synchronous is more efficient because
-	    there is no cycle penalty for synchronizing the CPU to the
-	    bus.
-
-  */
-
-  {
-    unsigned long l;
-    __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
-#if (CLOCKMODE == 's')
-		    "bic	%0, %0, #(1<<31)\n\t"
-		    "orr	%0, %0, #(1<<30)\n\t"
-#endif
-#if (CLOCKMODE == 'a')
-		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
-#endif
-#if (CLOCKMODE == 'f')
-		    "bic	%0, %0, #(1<<31)|(1<<30)\n\t"
-#endif
-		    "mcr	p15, 0, %0, c1, c0, 0"
-		    : "=&r" (l));
-  }
 
 	/* Enable PCMCIA.  This is a workaround for a buggy CPLD on
 	   the LPD boards.  Apparently, the PCMCIA signals float when
