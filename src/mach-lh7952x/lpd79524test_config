@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Jun 25 16:41:59 2007
+# Tue Jul 24 16:16:24 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -101,6 +101,7 @@ CONFIG_CMD_EMAC_LH79524=y
 CONFIG_CMD_EMAC_LH79524_DIAG=y
 # CONFIG_CMD_MEMLIMIT is not set
 # CONFIG_CMD_MEMSCAN is not set
+# CONFIG_CMD_MEMTEST is not set
 
 #
 # Generic Drivers
