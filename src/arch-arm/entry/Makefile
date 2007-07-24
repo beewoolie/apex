@@ -36,5 +36,8 @@ endif
 ifeq ('$(CONFIG_INTERRUPTS)','y')
 CPPFLAGS_apex.lds += -DCONFIG_INTERRUPTS
 endif
+ifeq ('$(CONFIG_RELOCATE_COMPANION_EVT1)','y')
+CPPFLAGS_apex.lds += -DCONFIG_RELOCATE_COMPANION_EVT1
+endif
 
 extra-y=apex.lds
