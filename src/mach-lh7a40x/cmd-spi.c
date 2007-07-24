@@ -239,8 +239,20 @@ static int cmd_spi (int argc, const char** argv)
     spi_write (&s, 1);
   /* 6 frames (2.7ms), one frame ~450us */
     mdelay (200);
+
+    s = 0x26;
+    spi_write (&s, 1);
+    s = 0x104;
+    spi_write (&s, 1);
+
     s = 0x29;
     spi_write (&s, 1);
+
+    s = 0x36;
+    spi_write (&s, 1);
+    s = 0x100;
+    spi_write (&s, 1);
+
     SSP_CR0 = 0;
   }
 
@@ -256,5 +268,7 @@ static __command struct command_d c_spi = {
 "spi r|w [VALUE]\n"
 "  Issue an SPI command.\n"
 "  If the direction is w, the VALUE must be defined.\n"
+"  i      	- initialize SPI interface\n"
+"  w VALUE	- write VALUE which is a 9 bit hexadecimal number\n"
   )
 };

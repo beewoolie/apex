@@ -5,6 +5,30 @@ APEX Boot Loader
 
 TODO:
 
+  o 2007.jul.23
+    o UBOOT annoyances
+      o flash info shows addresses; flash erase uses block numbers, WTF
+      o No type ahead, command line editing, or history
+      o units conversion is vague, hex numbers don't need 0x prefix
+      o No measurable progress long-running commands, just spinner
+      o help is vague.  bootm, for example, claims that there could be
+        more than two arguments, but that isn't really the case. 
+      o Allowing enter to redo a previous command is dangerous and
+        annoying since there is no ability to cancel a command while
+        it executes.
+      o Multiple code paths for common functions. e.g. booting linux
+        has more than one code path and the ARM path doesn't include a
+        ramdisk
+      o image format has data in it that doesn't belong there.  The
+        load address for a ramdisk isn't really the purview of the
+        ramdisk creator but the boot loader.  Moreover, since uboot
+	won't load a ramdisk as part of the bootm command, we have to
+        do it by hand.  what is the point of the header?
+      o Rampant #ifdef's based on the targets.  There is code in the
+        arm specific Linux command for several different targets to
+        copy the ramdisk to RAM.  This makes for very poor
+	maintainability.
+
   o 2007.jul.22
     o Slug is having problems at 128MiB of RAM
       o we could use a memory test command, just for grins.  The code
