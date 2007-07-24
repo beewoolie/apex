@@ -4,6 +4,13 @@
 	the early initialization routine so that it is properly
 	configured.
 
+2007-06-27  Marc Singer  <elf@buici.com>
+
+	* usr/apex-env.cc (arg_parser): Added force option to the apex-env
+	command.
+	(main): Added partial command support so that 'apex-env rel' shows
+	the release version.
+
 2007-06-26  Marc Singer  <elf@buici.com>
 
 	* src/arch-arm/entry/apex.lds.S: Removed Companion section from

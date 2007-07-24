@@ -33,8 +33,11 @@
    There have been some problems with the way we probe to find unique
    SDRAM.  The present implementation has only the restrictions that
 
-    1) the last word of the stack must be available during probing
-    2) that the CB_BLOCK is larger than the size of the loader footprint
+    1) the last word of the stack must be available during probing.
+       This should be easy since we don't expect stack to overflow.
+    2) that the CB_BLOCK is larger than the size of the loader
+       footprint.  This may not be the case if much memory is
+       allocated at runtime.
     3) that the loader is aligned to CB_BLOCK.
     4) if loader is longer than a CB_BLOCK, only the first CB_BLOCK of
        data is protected from probes.
@@ -83,17 +86,17 @@ int memory_scan (struct mem_region* regions, int c,
 {
   extern char APEX_VMA_START;
   extern char APEX_VMA_PROBE_END;
+  const unsigned long cbProtect = &APEX_VMA_PROBE_END - &APEX_VMA_START;
   unsigned long* pl;
   int i = 0;
 
 //  length = 1024*1024*36;
   PUTC_LL ('k');
   PRINTF ("  marking start %lx length %lx probe %x\n", start, length,
-	  &APEX_VMA_PROBE_END - &APEX_VMA_START);
+	  cbProtect);
 
 	/* Mark */
-  for (pl = (unsigned long*) (start + length - CB_BLOCK
-			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
+  for (pl = (unsigned long*) (start + length - CB_BLOCK + cbProtect);
        1;
        pl -= CB_BLOCK/sizeof (*pl)) {
     PRINTF ("   %p\n", pl);
@@ -112,8 +115,7 @@ int memory_scan (struct mem_region* regions, int c,
 #endif
 
 	/* Identify */
-  for (pl = (unsigned long*) (start
-			      + (&APEX_VMA_PROBE_END - &APEX_VMA_START));
+  for (pl = (unsigned long*) (start + cbProtect);
        pl < (unsigned long*) (start + length) && i < c;
        pl += CB_BLOCK/sizeof (*pl)) {
     PRINTF ("   %p %08lx\n", pl, *pl);
@@ -121,8 +123,7 @@ int memory_scan (struct mem_region* regions, int c,
     //      continue;
     if (*pl == (unsigned long) pl) {
       if (regions[i].length == 0)
-	regions[i].start
-	  = (unsigned long) pl - (&APEX_VMA_PROBE_END - &APEX_VMA_START);
+	regions[i].start = (unsigned long) pl - cbProtect;
       regions[i].length += CB_BLOCK;
     }
     else
