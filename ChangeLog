@@ -1,3 +1,8 @@
+2007-07-24  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): rolling to 1.5.10 for fix to CPU timing on
+	lh7a404.
+
 2007-07-24  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* src/mach-lh7a40x/initialize.c: Moved the clock speed setup to
