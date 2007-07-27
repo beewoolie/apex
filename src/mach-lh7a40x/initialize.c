@@ -233,6 +233,15 @@ void __naked __section (.bootstrap.early) bootstrap_early (void)
   //  __asm volatile ("b bootstrap_early_exit");
 #endif
 
+  /* Force async mode */
+  {
+    unsigned long l;
+    __asm volatile ("mrc	p15, 0, %0, c1, c0, 0\n\t"
+		    "orr	%0, %0, #(1<<31)|(1<<30)\n\t"
+		    "mcr	p15, 0, %0, c1, c0, 0"
+		    : "=&r" (l));
+  }
+
 	/* Set the running clock speed.  This will increase the HCLK
 	   (bus) speed but not let the FCLK (CPU) speed be independent
 	   of HCLK until the CLOCKMODE is changed in the CP15 control
