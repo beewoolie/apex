@@ -184,6 +184,12 @@
 # define SMC_BCR7_V	((2<<28)|(WST(150)<<5)|(0<<0)) // IOBarrier
 #endif
 
+#if defined (CONFIG_MACH_KARMA)
+# define SMC_BCR1_V	((1<<28)|(WST(160)<<5)|1<<10|0xf<<0) // Davicom dm9000
+# define SMC_BCR6_V	(0xffef)
+# define SMC_BCR7_V	((2<<28)|(WST(150)<<5)|(0<<0)) // IOBarrier
+#endif
+
 
 // LOLO timings (LH7A404).
 //#define SMC_BCR0_V		(0x20000200)

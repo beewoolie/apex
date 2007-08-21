@@ -52,7 +52,7 @@
 
 #include <mach/drv-dm9000.h>
 
-#define TALK 2
+//#define TALK 2
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
