@@ -39,7 +39,7 @@ config MACH_TROUNCER
 	select HAS_LH_MMC
 
 config MACH_COMPANION
-	bool "Synapse Companion"
+	bool "Comsonics Companion"
 	select ARCH_LH7A404
 	select DRIVERS_LH
 	select HAS_LH_ADC
@@ -52,6 +52,18 @@ config MACH_COMPANION
 	select USES_COMPANION_EVT2_BOOT
 	select USES_NAND
 	select USES_NAND_BOOTFLASH
+
+config MACH_KARMA
+	bool "Panasonic Karma"
+	select ARCH_LH7A404
+	select USES_NOR_CFI
+	select DRIVERS_LH
+	select HAS_LH_ADC
+	select HAS_LH_CLCDC
+	select HAS_LH_MMC
+	select HAS_LH_I2C
+	select USES_DM9000
+	select USES_NOR_BOOTFLASH
 
 endchoice
 

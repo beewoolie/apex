@@ -40,6 +40,7 @@
 
 //#define EMERGENCY
 #define USE_NAND
+//#define USE_SLOW_COPY
 
 
 /* wait_on_busy

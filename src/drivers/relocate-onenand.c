@@ -227,7 +227,8 @@ void __naked __section (.rlocate.func) relocate_apex_onenand (void)
 
   for (; page < cPages; ++page) {
       /* Use this to see how many blocks we're copying from flash */
-    PUTC_LL ('A' + (page&0xf));
+//    PUTC ('A' + (page&0xf));
+//    PUTC_LL ('A' + (page&0xf));
 
     ONENAND_PAGESETUP (page);
     ONENAND_BUFFSETUP (1, 0, 4);

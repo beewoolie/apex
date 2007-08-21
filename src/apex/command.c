@@ -49,7 +49,11 @@ const char* error_description;
 #define TIMECMD_REPORT
 #endif
 
-#if defined (CONFIG_ALIAS) || defined (CONFIG_ENV)
+#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
+# define USE_EXPAND_VARIABLES
+#endif
+
+#if defined (USE_EXPAND_VARIABLES)
 
 static char* expand_variables (const char* rgbSrc)
 {
@@ -133,7 +137,7 @@ int parse_command (char* rgb, int* pargc, const char*** pargv)
   int cb;
   int result = 0;
 
-#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
+#if defined (USE_EXPAND_VARIABLES)
   pb = expand_variables (rgb);
   if (pb) {
     rgb = pb;

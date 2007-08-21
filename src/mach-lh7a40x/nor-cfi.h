@@ -42,6 +42,11 @@
 # define NOR_CHIP_MULTIPLIER	(1)
 #endif
 
+#if defined CONFIG_MACH_KARMA
+# define NOR_WIDTH		(16)
+# define NOR_CHIP_MULTIPLIER	(1)
+#endif
+
 #if !defined (NOR_WIDTH)
 # define NOR_WIDTH		(32)
 #endif
