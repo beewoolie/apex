@@ -9,12 +9,22 @@
    DESCRIPTION
    -----------
 
+   The full memory test now uses a random bit pattern.  The test ought
+   to be improved to scan the memory array several times in order to
+   cover more ground.  The RNG is a relatively efficient linear
+   congruential genrator.  It's low quality for overall entropy, but
+   good for our purpose.
+
+   See
+   <http://www.gnu.org/software/gsl/manual/html_node/Other-random-number-generators.html>
+   for a description of different random number generators.
+
 */
 
 #include <config.h>
 #include <attributes.h>
 #include <memtest.h>
-
+#include <debug_ll.h>
 
 /* memory_test_0
 
@@ -40,13 +50,17 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 		/* Walking data bit.  Each write must be to a
 		   different address to avoid memory capacitance from
 		   generating a falsely correct value. */
-  for (mark = 1; mark; mark <<= 1)
+//  PUTC_LL ('a');
+  for (mark = 1; mark < c/4; mark <<= 1)
     *(volatile unsigned long*) (address + mark*4) = mark;
-  for (mark = 1; mark; mark <<= 1) {
+//  PUTC_LL ('b');
+  for (mark = 1; mark < c/4; mark <<= 1) {
     if (*(volatile unsigned long*) (address + mark*4) != mark)
       __asm volatile ("mov r0, #1\n\t"
 		      "mov pc, fp");
   }
+
+//  PUTC_LL ('c');
 
 		/* Walking address bits */
   for (offset = 1; offset < c; offset <<= 1)
@@ -54,6 +68,7 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 
   p[0] = pattern_b;
 
+//  PUTC_LL ('d');
   for (offset = 1; offset < c; offset <<= 1)
     if (p[offset] != pattern_a)
 	__asm volatile ("mov r0, #2\n\t"
@@ -61,6 +76,7 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 
   p[0] = pattern_a;
 
+//  PUTC_LL ('e');
   for (mark = 1; mark < c; mark <<= 1) {
     p[mark] = pattern_b;
     if (p[0] != pattern_a)
@@ -77,24 +93,38 @@ int __naked __section (.bootstrap) memory_test_0 (unsigned long address,
 
 #if defined (CONFIG_BOOTSTRAP_MEMTEST_FULL)
 
-		/* Full memory test.  This is probably unnecessary
-		   given the fact that failures in memory these days
-		   tend to be shorts or cold-solder joints in
-		   manufacturing and not 'stuck' cells.  */
-  for (offset = 0; offset < c; ++offset)
-    p[offset] = offset + 1;
+//  PUTC_LL ('f');
 
-  for (offset = 0; offset < c; ++offset) {
-    if (p[offset] != offset + 1)
-      __asm volatile ("mov r0, %0\n\t"
+	/* Full memory test.  This is probably unnecessary given the
+	   fact that failures in memory these days tend to be shorts
+	   or cold-solder joints in manufacturing and not 'stuck'
+	   cells.  */
+  {
+    unsigned long v;
+#define A 69069
+#define C 1
+#define M 0xffffffff
+#define RND(s) (((s)*A + C)&M)
+//#define RND(s) ((s) + 1)
+
+    v = 1;
+    for (offset = 0; offset < c; ++offset)
+      p[offset] = (v = RND (v));
+
+    v = 1;
+    for (offset = 0; offset < c; ++offset) {
+      if (p[offset] != (v = RND (v)))
+	__asm volatile ("mov r0, %0\n\t"
 		      "mov pc, fp" :: "r" (offset*4));
-    p[offset] = ~(offset + 1);
+      p[offset] = ~v;
+    }
+    v = 1;
+    for (offset = 0; offset < c; ++offset)
+      if (p[offset] != ~(v = RND (v)))
+	__asm volatile ("mov r0, %0\n\t"
+			"mov pc, fp" :: "r" (offset*4));
+
   }
-  for (offset = 0; offset < c; ++offset)
-    if (p[offset] != ~(offset + 1))
-      __asm volatile ("mov r0, %0\n\t"
-		      "mov pc, fp" :: "r" (offset*4));
-
 #endif
 
   __asm volatile ("mov r0, #0\n\t"

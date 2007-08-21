@@ -59,14 +59,17 @@
 #define ESDCTL_CTL0_COL10	(2<<20)	/* 10 columns */
 #define ESDCTL_CTL0_DSIZ32	(2<<16)	/* 32 bit interface */
 #define ESDCTL_CTL0_SREFR7_81	(3<<13)	/* 7.81 us refresh */
-#define ESDCTL_CTL0_BL8		(1<<7)	/* burst length of  */
+#define ESDCTL_CTL0_SREFR3_91	(4<<13)	/* 3.91 us refresh */
+#define ESDCTL_CTL0_BL8		(1<<7)	/* burst length of 8 */
+
+#define ESDCTL_CTL0_SREFR_V	ESDCTL_CTL0_SREFR7_81
 
 #define ESDCTL_CTL0_V1 0\
 	| ESDCTL_CTL0_SDE\
 	| ESDCTL_CTL0_ROW13\
 	| ESDCTL_CTL0_COL10\
 	| ESDCTL_CTL0_DSIZ32\
-	| ESDCTL_CTL0_SREFR7_81\
+	| ESDCTL_CTL0_SREFR_V\
 	| ESDCTL_CTL0_BL8
 
 #define ESDCTL_CTL0_V2 0\
@@ -74,12 +77,17 @@
 	| ESDCTL_CTL0_ROW13\
 	| ESDCTL_CTL0_COL9\
 	| ESDCTL_CTL0_DSIZ32\
-	| ESDCTL_CTL0_SREFR7_81\
+	| ESDCTL_CTL0_SREFR_V\
 	| ESDCTL_CTL0_BL8
 
 void __naked __section (.bootstrap.early) bootstrap_early (void)
 {
-  STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
+#if 0
+  unsigned long l;
+  LOAD_REMAP_PERIPHERAL_PORT (l);
+  if (l != (0x40000000 | 0x15))
+#endif
+    STORE_REMAP_PERIPHERAL_PORT (0x40000000 | 0x15); /* 1GiB @ 1GiB */
 }
 
 void __naked __section (.bootstrap.early.exit) bootstrap_early_exit (void)
@@ -231,6 +239,7 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 	/* SDRAM initialization */
   ESDCTL_CTL0 = 0;
   ESDCTL_CFG0 = 0x0075e73a;
+//  ESDCTL_CFG0 = 0x0079e73a;		/* 1Gib part */
   ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
   ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
   usleep (1);			/* > 200ns */
@@ -241,6 +250,7 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
   ESDCTL_CTL0 = 0xb2100000;
   __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
   __REG8 (0x81000000) = 0xff;
+//  PUTC ('1');
   ESDCTL_CTL0 = ESDCTL_CTL0_V1;
   __REG (0x80000000) = 0;
   /* *** FIXME: we should check for DDR here.  we can test CTL0_V */
@@ -248,8 +258,19 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
   __REG (0x80000000) = 0x55555555;
   __REG (0x80000004) = 0xaaaaaaaa;
 
+//  __asm volatile ("nop\n\tnop");
+
+  /*
+  if (__REG (0x80000000) != 0x55555555)
+    PUTC ('a');
+  if (__REG (0x80000004) != 0xaaaaaaaa)
+    PUTC ('b');
+  */
+
   /* Try another organization if the default fails  */
-  if (__REG (0x80000000) != 0x55555555 || __REG (0x80000000) != 0xaaaaaaaa) {
+  if (   __REG (0x80000000) != 0x55555555
+      || __REG (0x80000004) != 0xaaaaaaaa) {
+//    PUTC ('2');
     ESDCTL_CTL0 = ESDCTL_CTL0_V2;
     __REG (0x80000000) = 0;
     ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;

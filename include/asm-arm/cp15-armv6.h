@@ -100,6 +100,8 @@
 
 #define STORE_REMAP_PERIPHERAL_PORT(v)\
   __asm volatile ("mcr p15, 0, %0, c15, c2, 4\n\t" :: "r" (v))
+#define LOAD_REMAP_PERIPHERAL_PORT(v)\
+  __asm volatile ("mrc p15, 0, %0, c15, c2, 4\n\t" : "=r" (v))
 
 
 #endif  /* __CP15_ARMV6_H__ */
