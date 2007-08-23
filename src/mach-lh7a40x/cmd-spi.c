@@ -268,7 +268,7 @@ static __command struct command_d c_spi = {
 "spi r|w [VALUE]\n"
 "  Issue an SPI command.\n"
 "  If the direction is w, the VALUE must be defined.\n"
-"  i      	- initialize SPI interface\n"
+"  i	- initialize SPI interface\n"
 "  w VALUE	- write VALUE which is a 9 bit hexadecimal number\n"
   )
 };

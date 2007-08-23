@@ -310,7 +310,7 @@ static ssize_t read_pngr_idat (void* pv, char* rgb, size_t cb)
 //    printf ("%s: inflateInit\n", __FUNCTION__);
     memset (&png->z, 0, sizeof (png->z));
     png->z.zalloc = zlib_heap_alloc;
-    png->z.zfree = zlib_heap_free;
+    png->z.zfree  = zlib_heap_free;
     if (inflateInit (&png->z) != Z_OK)
       return -1;
   }
@@ -406,7 +406,7 @@ const unsigned char* read_pngr_row (void* pv)
   {
     static int code;
     static int row;
-    if (code != filter) {
+    if (code != filter || row == 0) {
       printf ("%s: code %d  row %d\n", __FUNCTION__, filter, row);
       code = filter;
     }

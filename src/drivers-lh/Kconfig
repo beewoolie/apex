@@ -40,10 +40,19 @@ config LCD_BGR
 	default n
 	help
 	  The AMBA framebuffer device drives red from bits 0-4 in the
-	  TFT color value, and blue from bits 10-14.  Setting this
-	  option swaps these roles.  This may be important if the
+	  TFT color value, and blue from bits 10-14 (or 11-15).  Setting
+	  this option swaps these roles.  This may be important if the
 	  kernel requires that blue be in the least significant bits
 	  of each framebuffer pel.
+
+config LCD_565
+	bool "Use 565 pel encoding"
+	depends on DRIVER_LH_CLCDC
+	default n
+	help
+	  The AMBA framebuffer device drives green from bits 5-9 or 5-10
+	  depending on the state of this option.  In 565 mode, the
+	  green has one ore bit than the other components.
 
 config LCD_RETAIN_SPLASH
 	bool "Retain splash image through kernel boot"
@@ -88,6 +97,9 @@ config LCD_LQ035Q7DH06
 
 config LCD_TD035TTEA1
 	bool "One Stop Display 3.5\" Landscape QVGA"
+
+config LCD_NOKIA_WIDE
+	bool "Nokia Wide Landscape HVGA"
 
 endchoice
 

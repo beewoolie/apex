@@ -327,6 +327,30 @@
 //# define INVERT_OE
 #endif
 
+#if defined (CONFIG_LCD_NOKIA_WIDE)
+	/* Wide NOKIA Display */
+# define PANEL_NAME		"Nokia Wide Landscape HVGA"
+# define PEL_CLOCK_EST		(8*1000*1000)
+# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
+# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
+# define PEL_WIDTH		(640)
+# define PEL_HEIGHT		(200)
+# define BIT_DEPTH		(16)
+# define BITS_PER_PEL_2		BPP16
+# define HORZ_CYCLE		(640+30+5+3)
+# define VERT_CYCLE		(200+1+10+10)
+# define HSYNC_WIDTH		(30)
+# define VSYNC_WIDTH		(1)
+# define HORZ_BP		(5)
+# define VERT_BP		(10)
+# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
+# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
+# define INVERT_HSYNC
+# define INVERT_VSYNC
+# define INVERT_PIXEL_CLOCK
+//# define INVERT_OE
+#endif
+
 	/* Inverse timing calculations for peculiar Sharp panels
 	   without complete datasheets. */
 #if defined (PANEL_TIMING0)
@@ -423,25 +447,41 @@
    the shifts and include the operator.  This make a big difference in
    the ARM assembler. */
 
+# define RED_WIDTH		5
+# define BLUE_WIDTH		5
+
+# define RED_MASK		(0xf8)
+# define BLUE_MASK		(0xf8)
+
+#if defined (CONFIG_LCD_565)
+# define GREEN_WIDTH		6
+# define GREEN_MASK		(0xfc)
+#else
+# define GREEN_WIDTH		5
+# define GREEN_MASK		(0xf8)
+#endif
+
 #if defined (CONFIG_LCD_BGR)
 
-# define RED_SHIFT		10
-# define GREEN_SHIFT		5
 # define BLUE_SHIFT		0
+# define GREEN_SHIFT		(BLUE_SHIFT + BLUE_WIDTH)
+# define RED_SHIFT		(GREEN_SHIFT + GREEN_WIDTH)
 
-# define RED_SHIFT_COMP		<<7
-# define GREEN_SHIFT_COMP	<<2
 # define BLUE_SHIFT_COMP	>>3
+# define GREEN_SHIFT_COMP	<<(GREEN_SHIFT-(8-GREEN_WIDTH))
+
+# define RED_SHIFT_COMP		<<(RED_SHIFT-(8-RED_WIDTH))
 
 #else
 
 # define RED_SHIFT		0
-# define GREEN_SHIFT		5
-# define BLUE_SHIFT		10
+# define GREEN_SHIFT		(RED_SHIFT + RED_WIDTH)
+# define BLUE_SHIFT		(GREEN_SHIFT + GREEN_WIDTH)
 
 # define RED_SHIFT_COMP		>>3
-# define GREEN_SHIFT_COMP	<<2
-# define BLUE_SHIFT_COMP	<<7
+# define GREEN_SHIFT_COMP	<<(GREEN_SHIFT-(8-GREEN_WIDTH))
+
+# define BLUE_SHIFT_COMP	<<(BLUE_SHIFT-(8-BLUE_WIDTH))
 
 #endif
 
@@ -469,14 +509,14 @@ static void _msleep (int ms)
 //#define I(c,i) ((c)*(i)/255)
 #define I(c,i) (c)
 
-#define RGB(r,g,b) ( (((r) & 0xf8) >>  3)\
-		    |(((g) & 0xf8) <<  2)\
-		    |(((b) & 0xf8) <<  7))
+#define RGB(r,g,b) ( (((r) & RED_MASK)   RED_SHIFT_COMP)\
+		    |(((g) & GREEN_MASK) GREEN_SHIFT_COMP)\
+		    |(((b) & BLUE_MASK)  BLUE_SHIFT_COMP))
 
 
-#define RGBI(r,g,b,i) ( (((r) & 0xf8) >>  3)\
-		       |(((g) & 0xf8) <<  2)\
-		       |(((b) & 0xf8) <<  7)\
+#define RGBI(r,g,b,i) ( (((r) & RED_MASK)   RED_SHIFT_COMP)\
+		       |(((g) & GREEN_MASK) GREEN_SHIFT_COMP)\
+		       |(((b) & BLUE_MASK)  BLUE_SHIFT_COMP)\
 		       |(((i) & 1) << 15))
 
 static void clcdc_init (void)
@@ -523,6 +563,7 @@ static void clcdc_init (void)
 #endif
 #endif
 
+  printf ("lcd setup\n");
   DRV_CLCDC_SETUP;
 
   CLCDC_TIMING0 = HBP (HORZ_BP) | HFP (HORZ_FP) | HSW (HSYNC_WIDTH)
@@ -635,7 +676,10 @@ static void clcdc_report (void)
 {
   unsigned long clk = HCLK/((CLCDC_TIMING2 & 0x1f) + 2);
   printf ("  clcd:   buffer 0x%p  red %d<<%d  green %d<<%d  blue %d<<%d\n",
-	  buffer, 5, RED_SHIFT, 5, GREEN_SHIFT, 5,  BLUE_SHIFT);
+	  buffer,
+	  RED_WIDTH, RED_SHIFT,
+	  GREEN_WIDTH, GREEN_SHIFT,
+	  BLUE_WIDTH,  BLUE_SHIFT);
   printf ("          ctrl 0x%lx", CLCDC_CTRL);
   if (clk < 1000000)
     printf ("  clk %ldHz", clk);
@@ -708,9 +752,9 @@ int cmd_splash (const char* region)
 
       case 2:		/* RGB */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = ((pb[j*3    ] & 0xf8) RED_SHIFT_COMP)
-	    +   ((pb[j*3 + 1] & 0xf8) GREEN_SHIFT_COMP)
-	    +   ((pb[j*3 + 2] & 0xf8) BLUE_SHIFT_COMP)
+	  *ps = ((pb[j*3    ] & RED_MASK)   RED_SHIFT_COMP)
+	    +   ((pb[j*3 + 1] & GREEN_MASK) GREEN_SHIFT_COMP)
+	    +   ((pb[j*3 + 2] & BLUE_MASK)  BLUE_SHIFT_COMP)
 	    ;
 	break;
 
@@ -725,9 +769,9 @@ int cmd_splash (const char* region)
 	case 8:
 	  for (j = 0; j < hdr.width; ++j, ++ps) {
 	    unsigned char* color = &rgbPalette[pb[j]*3];
-	    *ps = ((color[0] & 0xf8) RED_SHIFT_COMP)
-	      +   ((color[1] & 0xf8) GREEN_SHIFT_COMP)
-	      +   ((color[2] & 0xf8) BLUE_SHIFT_COMP)
+	    *ps = ((color[0] & RED_MASK)   RED_SHIFT_COMP)
+	      +   ((color[1] & GREEN_MASK) GREEN_SHIFT_COMP)
+	      +   ((color[2] & BLUE_MASK)  BLUE_SHIFT_COMP)
 	    ;
 	  }
 	}
@@ -735,9 +779,9 @@ int cmd_splash (const char* region)
 
       case 6:		/* RGBA */
 	for (j = 0; j < hdr.width; ++j, ++ps)
-	  *ps = ((pb[j*4    ] & 0xf8) RED_SHIFT_COMP)
-	    +   ((pb[j*4 + 1] & 0xf8) GREEN_SHIFT_COMP)
-	    +   ((pb[j*4 + 2] & 0xf8) BLUE_SHIFT_COMP);
+	  *ps = ((pb[j*4    ] & RED_MASK)   RED_SHIFT_COMP)
+	    +   ((pb[j*4 + 1] & GREEN_MASK) GREEN_SHIFT_COMP)
+	    +   ((pb[j*4 + 2] & BLUE_MASK)  BLUE_SHIFT_COMP);
 	break;
       }
     }
@@ -793,6 +837,8 @@ int cmd_clcdc (int argc, const char** argv)
       else if (i > 2*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<BLUE_SHIFT;
       else if (i > 1*(PEL_HEIGHT*PEL_WIDTH)/4)
+	/* *** FIXME: this is wrong because we need to make the width
+	   of green greater in 565 mode. */
 	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<GREEN_SHIFT;
       else if (i > 0*(PEL_HEIGHT*PEL_WIDTH)/4)
 	buffer[i] = I(0x1f,(i%PEL_WIDTH)*255/255)<<RED_SHIFT;
@@ -811,25 +857,26 @@ int cmd_clcdc (int argc, const char** argv)
   if (strcmp (argv[1], "red") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
-      buffer[i] = 0x1f << RED_SHIFT;
+      buffer[i] = (0xff & RED_MASK) RED_SHIFT_COMP;
     return 0;
   }
   if (strcmp (argv[1], "green") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
-      buffer[i] = 0x1f << GREEN_SHIFT;
+      buffer[i] = (0xff & GREEN_MASK) GREEN_SHIFT_COMP;
     return 0;
   }
   if (strcmp (argv[1], "blue") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
-      buffer[i] = 0x1f << BLUE_SHIFT;
+      buffer[i] = (0xff & BLUE_MASK) BLUE_SHIFT_COMP;
     return 0;
   }
 # endif
 #endif
 
   if (strcmp (argv[1],"on") == 0) {
+    printf ("lcd on\n");
     CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
     DRV_CLCDC_POWER_ENABLE;
     _msleep (20);		/* Wait 20ms for digital signals  */

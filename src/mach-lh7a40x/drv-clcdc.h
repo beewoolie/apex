@@ -62,14 +62,36 @@
 
 #endif
 
+#if defined (CONFIG_MACH_KARMA)
+# define DRV_CLCDC_SETUP\
+	({ extern void karma_clcdc_setup (void); \
+	   GPIO_PINMUX |= (1<<1) | (1<<0);\
+	    karma_clcdc_setup (); })
+
+# define DRV_CLCDC_WAKE\
+	({ extern void karma_clcdc_wake (void);\
+	   karma_clcdc_wake (); })
+
+# define DRV_CLCDC_SLEEP\
+	({ extern void karma_clcdc_sleep (void);\
+	   karma_clcdc_sleep (); })
+
+#endif
+
 #if defined (CONFIG_MACH_LPD7A400)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ CPLD_CONTROL |= CPLD_CONTROL_LCD_VEEEN; })
+# define DRV_CLCDC_BACKLIGHT_DISABLE\
+	({ CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN; })
 #endif
+
 #if defined (CONFIG_MACH_LPD7A404)
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ GPIO_PCDD &= ~(1<<3); GPIO_PCD  |= (1<<3); })
+# define DRV_CLCDC_BACKLIGHT_DISABLE\
+	({ GPIO_PCD  &= ~(1<<3); })
 #endif
+
 #if defined (CONFIG_MACH_COMPANION)
 
 # define BL_FREQ	(5*1000)	/* Hz */
@@ -80,17 +102,20 @@
 # define DRV_CLCDC_BACKLIGHT_ENABLE\
 	({ PWM_TC3 = PWM_TC3_V; PWM_DC3 = PWM_DC3_V; \
 	   PWM_INV3 = 0; PWM_EN3 = 1; })
+# define DRV_CLCDC_BACKLIGHT_DISABLE\
+	({ PWM_EN3 = 0; })
 #endif
 
-#if defined (CONFIG_MACH_LPD7A400)
-# define DRV_CLCDC_BACKLIGHT_DISABLE\
-	({ CPLD_CONTROL &= ~CPLD_CONTROL_LCD_VEEEN; })
-#endif
-#if defined (CONFIG_MACH_LPD7A404)
-# define DRV_CLCDC_BACKLIGHT_DISABLE\
-	({ GPIO_PCD  &= ~(1<<3); })
-#endif
-#if defined (CONFIG_MACH_COMPANION)
+#if defined (CONFIG_MACH_KARMA)
+
+# define BL_FREQ	(5*1000)	/* Hz */
+# define BL_DUTY	60		/* percentage*100 */
+# define PWM_TC3_V	((14745600/BL_FREQ) - 1)
+# define PWM_DC3_V	((BL_DUTY*(PWM_TC3_V + 1)/100) - 1)
+
+# define DRV_CLCDC_BACKLIGHT_ENABLE\
+	({ PWM_TC3 = PWM_TC3_V; PWM_DC3 = PWM_DC3_V; \
+	   PWM_INV3 = 0; PWM_EN3 = 1; })
 # define DRV_CLCDC_BACKLIGHT_DISABLE\
 	({ PWM_EN3 = 0; })
 #endif
