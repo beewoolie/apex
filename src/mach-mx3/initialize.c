@@ -269,7 +269,13 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 
   /* Try another organization if the default fails  */
   if (   __REG (0x80000000) != 0x55555555
-      || __REG (0x80000004) != 0xaaaaaaaa) {
+      || __REG (0x80000004) != 0xaaaaaaaa
+// *** FIXME: This is an annoying bug.  Our check for an invalid
+// *** memory configuration doesn't work.  We find that the
+// *** form-factor board fails this check and doesn't setup the proper
+// *** configuration.  Oddly, the non-form-factor is OK with this
+// *** a bogus configuration.
+      || 1) {
 //    PUTC ('2');
     ESDCTL_CTL0 = ESDCTL_CTL0_V2;
     __REG (0x80000000) = 0;
