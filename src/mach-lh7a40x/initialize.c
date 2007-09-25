@@ -461,6 +461,12 @@ static void target_init (void)
 //  GPIO_PCD  |=  (1<<1);		/* Enable power -- testing */
 # endif
 #endif
+
+#if defined (CONFIG_MACH_KARMA)
+  GPIO_PCD |= (1<<1);		/* Light attendant call */
+  GPIO_PCD |= (1<<2);		/* Light overhead light */
+#endif
+
 }
 
 

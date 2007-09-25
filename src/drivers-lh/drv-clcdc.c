@@ -337,12 +337,12 @@
 # define PEL_HEIGHT		(200)
 # define BIT_DEPTH		(16)
 # define BITS_PER_PEL_2		BPP16
-# define HORZ_CYCLE		(640+30+5+3)
-# define VERT_CYCLE		(200+1+10+10)
-# define HSYNC_WIDTH		(30)
+# define HORZ_CYCLE		(640+32+62+48)
+# define VERT_CYCLE		(200+1+1+1)
+# define HSYNC_WIDTH		(32)
 # define VSYNC_WIDTH		(1)
-# define HORZ_BP		(5)
-# define VERT_BP		(10)
+# define HORZ_BP		(62)
+# define VERT_BP		(1)
 # define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
 # define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
 # define INVERT_HSYNC
