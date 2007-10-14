@@ -1107,7 +1107,6 @@ complete-release: tgz release-every FORCE
 # ---------------------------------------------------------------------------
 
 boards := $(wildcard $(srctree)/src/mach-*/*_config)
-boards := $(notdir $(boards))
 
 help:
 	@echo  'Cleaning targets:'
@@ -1147,7 +1146,9 @@ help:
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
-		printf "  %-32s - Configure for %s\\n" $(b) $(subst _config,,$(b));) \
+		  printf "  %-32.32s - %s\\n"\
+		    $(notdir $(b)) $(shell grep -E\
+		      '^CONFIG_TARGET_DESCRIPTION=' $(b) |cut -d = -f 2-);) \
 		echo '')
 
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
