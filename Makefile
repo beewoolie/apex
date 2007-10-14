@@ -1106,7 +1106,7 @@ complete-release: tgz release-every FORCE
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
-boards := $(wildcard $(srctree)/arch/$(ARCH)/configs/*_defconfig)
+boards := $(wildcard $(srctree)/src/mach-*/*_config)
 boards := $(notdir $(boards))
 
 help:
@@ -1147,7 +1147,7 @@ help:
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
-		printf "  %-24s - Build for %s\\n" $(b) $(subst _defconfig,,$(b));) \
+		printf "  %-32s - Configure for %s\\n" $(b) $(subst _config,,$(b));) \
 		echo '')
 
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
