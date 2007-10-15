@@ -136,6 +136,9 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 	/* Jump to OneNAND loader only if we could be starting from NAND. */
   if ((pc >> 12) == (CONFIG_DRIVER_ONENAND_BASE>>12)) {
     PUTC ('N');
+    /* Note that we don't care about offset because
+       relocate_apex_onenand doesn't use it.  Instead, it copies the
+       while loader from OneNAND to SDRAM and then jumps to it. */
     __asm volatile ("b relocate_apex_onenand\n");
   }
 

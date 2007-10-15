@@ -29,6 +29,7 @@ config MACH_LPD79524
 	select USES_NOR_CFI
 	select USES_COMPACTFLASH
 	select USES_NOR_BOOTFLASH
+	select USES_NAND
 	select USES_NAND_BOOTFLASH
 	select DRIVERS_LH
 	select HAS_LH_ADC

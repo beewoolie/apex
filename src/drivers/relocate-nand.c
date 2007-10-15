@@ -34,6 +34,8 @@
 #include <apex.h>
 #include <asm/bootstrap.h>
 #include "mach/hardware.h"
+
+#include <drv-nand-base.h>
 #include "mach/drv-nand.h"
 
 #include <debug_ll.h>
@@ -57,49 +59,7 @@ static void __naked __section (.rlocate.func) wait_on_busy (void)
   __asm volatile ("mov pc, lr");
 }
 
-
-/* relocate_apex_nand
-
-   performs a memory move of the whole loader, presumed to be from
-   NAND flash into SDRAM.  The LMA is determined at runtime.  The
-   relocator will put the loader at the VMA and then return to the
-   relocated address.
-
-   *** FIXME: we can read eight bytes at a time to make the transfer
-   *** more efficient.  Probably, this isn't a big deal, but it would
-   *** be handy.
-
-*/
-
-void __naked __section (.rlocate.func) relocate_apex_nand (void)
-{
-  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
-  void* pv = &APEX_VMA_ENTRY;
-  int cAddr = NAM_DECODE (BOOT_PBC);
-  PUTC_LL('0' + cAddr);
-
-  NAND_CLE = NAND_Reset;
-  wait_on_busy ();
-
-  NAND_CLE = NAND_Read1;
-  while (cAddr--)
-    NAND_ALE = 0;
-  wait_on_busy ();
-
-  while (cPages--) {
-    int cb;
-
-    NAND_CLE = NAND_Read1;
-    for (cb = 512; cb--; )
-      *((char*) pv++) = NAND_DATA;
-    for (cb = 16; cb--; )
-      NAND_DATA;
-    wait_on_busy ();
-  }
-
-  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
-}
-
+void relocate_apex_exit (void);
 
 /* relocate_apex
 
@@ -115,12 +75,11 @@ void __naked __section (.rlocate.func) relocate_apex_nand (void)
 
 void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 {
-  unsigned long lr;
+//  unsigned long lr;
   unsigned long pc;		/* So we can detect the second stage */
-  extern unsigned long reloc;
-  unsigned long offset = (unsigned long) &reloc;
+//  extern unsigned long reloc_nand;
+//  unsigned long offset = (unsigned long) &reloc_nand;
 
-  PUTC ('>');
   PUTC ('>');
 
 	/* Setup bootstrap stack, trivially.  We do this so that we
@@ -128,28 +87,18 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 	   The C setup will move the stack into SDRAM just after this
 	   routine returns. */
 
-  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
+  /* This stack does exist when you are using the COMPANION_EVT1 boot,
+     but I don't think we need it here. */
+//  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
 
-  __asm volatile ("mov %0, lr\n\t"
-		  "bl reloc\n\t"
-	   "reloc: mov %2, lr\n\t"
-		  "subs %1, %1, lr\n\t"
-	   ".globl reloc\n\t"
-		  "moveq pc, %0\n\t"	   /* Simple return if we're reloc'd */
-		  "add %0, %0, %1\n\t"   /* Adjust lr for function return */
-		  : "=r" (lr),
-		    "+r" (offset),
-		    "=r" (pc)
-		  :: "lr", "cc");
-
+  __asm volatile ("mov %0, pc" : "=r" (pc));
   PUTHEX (pc);
   PUTC ('>');
 
   PUTC ('c');
-  //  PUTC_LL ('c');
 
   if (0) {
-    /* Dummy test so that the final clause can be an else */
+    /* Dummy test so that the next and final clauses can be elses */
   }
 
 #if defined (USE_NAND)
@@ -157,7 +106,10 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 	/* Jump to NAND loader only if we could be starting from NAND. */
   else if ((pc >> 12) == (CONFIG_NAND_BOOT_BASE>>12)) {
     PUTC ('N');
-    __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_nand));
+    /* Note that we don't care about offset since relocate_apex_nand
+       copies all of the loader from NAND flash into memory and then
+       jumps to it.  */
+    __asm volatile ("b relocate_apex_nand");
   }
 
 #endif
@@ -219,4 +171,50 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 
 void __naked __section (.rlocate.exit) relocate_apex_exit (void)
 {
+}
+
+
+/* relocate_apex_nand
+
+   performs a memory move of the whole loader, presumed to be from
+   NAND flash into SDRAM.  The LMA is determined at runtime.  The
+   relocator will put the loader at the VMA and then return to the
+   relocated address.
+
+   *** FIXME: we can read eight bytes at a time to make the transfer
+   *** more efficient.  Probably, this isn't a big deal, but it would
+   *** be handy.
+
+*/
+
+void __naked __section (.rlocate.func) relocate_apex_nand (void)
+{
+  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
+  void* pv = &APEX_VMA_ENTRY;
+  int cAddr = NAM_DECODE (BOOT_PBC);
+
+  PUTC ('>');
+
+  PUTC_LL('0' + cAddr);
+
+  NAND_CLE = NAND_Reset;
+  wait_on_busy ();
+
+  NAND_CLE = NAND_Read1;
+  while (cAddr--)
+    NAND_ALE = 0;
+  wait_on_busy ();
+
+  while (cPages--) {
+    int cb;
+
+    NAND_CLE = NAND_Read1;
+    for (cb = 512; cb--; )
+      *((char*) pv++) = NAND_DATA;
+    for (cb = 16; cb--; )
+      NAND_DATA;
+    wait_on_busy ();
+  }
+
+  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
 }
