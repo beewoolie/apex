@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 24 16:16:26 2007
+# Mon Oct 15 10:35:13 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -46,6 +46,7 @@ CONFIG_MACH="lh7a40x"
 CONFIG_MACH_LPD7A404=y
 # CONFIG_MACH_TROUNCER is not set
 # CONFIG_MACH_COMPANION is not set
+# CONFIG_MACH_KARMA is not set
 # CONFIG_MACH_LPD7A404_80000258 is not set
 
 #

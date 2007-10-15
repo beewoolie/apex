@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 24 16:16:27 2007
+# Mon Oct 15 10:35:13 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -46,6 +46,7 @@ CONFIG_MACH="lh7a40x"
 # CONFIG_MACH_LPD7A404 is not set
 # CONFIG_MACH_TROUNCER is not set
 CONFIG_MACH_COMPANION=y
+# CONFIG_MACH_KARMA is not set
 
 #
 # Platform Setup
@@ -125,6 +126,7 @@ CONFIG_DRIVER_LH_MMC=y
 # CONFIG_DRIVER_LH_I2C is not set
 CONFIG_DRIVER_LH_CLCDC=y
 # CONFIG_LCD_BGR is not set
+# CONFIG_LCD_565 is not set
 CONFIG_LCD_RETAIN_SPLASH=y
 # CONFIG_LCD_3_5_QVGA_20 is not set
 # CONFIG_LCD_5_7_QVGA_10 is not set
@@ -135,6 +137,7 @@ CONFIG_LCD_RETAIN_SPLASH=y
 # CONFIG_LCD_LQ036Q1DA01 is not set
 # CONFIG_LCD_LQ035Q7DH06 is not set
 CONFIG_LCD_TD035TTEA1=y
+# CONFIG_LCD_NOKIA_WIDE is not set
 CONFIG_HAS_LH_ADC=y
 CONFIG_HAS_LH_MMC=y
 CONFIG_HAS_LH_I2C=y

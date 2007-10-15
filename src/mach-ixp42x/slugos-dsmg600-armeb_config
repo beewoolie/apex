@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Tue Jul 24 16:16:16 2007
+# Mon Oct 15 10:35:10 2007
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
