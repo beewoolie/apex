@@ -1,3 +1,33 @@
+2007-10-16  Marc Singer  <elf@zealous.synapsedev.com>
+
+	* Makefile: The help make target now shows the configurations and
+	the descriptions of them.
+	(SUBLEVEL): 1.5.13.
+
+	* src/drivers/relocate-nand.c: Fixed the basic NAND relocator.
+	The code was previously broken as there was no configuration that
+	used it.
+ 
+	* src/drivers-lh/Kconfig: Added 565 option for LCD panel.  Odd,
+	that we'd never implemented this before, but it is important to
+	note that the NXP LCD controller doesn't cope with 565 as well as
+	555.
+
+	* src/mach-mx3/ipu.c: Inverted sense of LED outputs for testing
+	Rosencrantz.
+
+	* src/mach-lh7a40x/clcdc-karma.c: Added adapter code for Karam LCD
+	panel.
+
+	* src/mach-lh7a40x/cmd-karmaaccel.c: Added accelerometer test code
+	for Karma.
+
+	* src/mach-lh7a40x/cmd-karmatouch.c: Added touch controller test
+	code for Karma.
+
+	* Removed a lot of cruft associated with older NAND flash
+	implementations.  NAND code is moved to the drivers directory.
+
 2007-08-06  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile (SUBLEVEL): Rolling to 1.5.11 just to make sure we got
