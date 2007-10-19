@@ -184,7 +184,7 @@ static void env_init (void)
       != CONFIG_ENV_SIZE)
     memset (g_rgbEnv, 0, CONFIG_ENV_SIZE); /* Failed read?  Very
     	   	      	 		      bad. Set the array to
-    	   	      	 		      zero so we don't write
+					      zero so we don't write
 					      to it. */
   parse_descriptor_simple ("memory", (unsigned long) g_rgbEnv, CONFIG_ENV_SIZE,
 			   &d_envmem);

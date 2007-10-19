@@ -48,3 +48,8 @@ endif
 
 CFLAGS_cmd-version.o += -DAPEXRELEASE=\"$(APEXRELEASE)\"
 CFLAGS_env.o	     += -DAPEXRELEASE=\"$(APEXRELEASE)\"
+
+ifdef BUILDDATE
+CFLAGS_cmd-version.o += -DBUILDDATE=\"$(BUILDDATE)\"
+CFLAGS_env.o	     += -DBUILDDATE=\"$(BUILDDATE)\"
+endif

@@ -54,7 +54,7 @@ void close_descriptor (struct descriptor_d* d)
 
 int is_descriptor_open (struct descriptor_d* d)
 {
-  return d->length != 0;
+  return d->driver && d->length;
 }
 
 int open_descriptor (struct descriptor_d* d)

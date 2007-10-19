@@ -42,6 +42,38 @@
      serve a very small window of UART output in the early relocation.
      Blah.
 
+   o According to Micron, Mobile DDR SDRAM initialization requires:
+
+     1. To prevent device latch-up, the core power (VDD) and I/O power
+     	(VDDQ) must be brought up simultaneously. It is recommended
+     	that VDD and VDDQ be from the same power source or VDDQ must
+     	never exceed VDD. Assert and hold CKE HIGH.
+     2. Once power supply voltages are stable and the CKE has been
+     	driven HIGH, it is safe to apply the clock.
+     3. Once the clock is stable, a 200μs (minimum) delay is required
+     	by the Mobile DDR SDRAM prior to applying an executable
+     	command. During this time, NOP or DESELECT commands must be
+     	issued on the command bus.
+     4. Issue a PRECHARGE ALL command.
+     5. Issue NOP or DESELECT commands for at least tRP time.
+     6. Issue an AUTO REFRESH command followed by NOP or DESELECT
+     	commands for at least tRFC time. Issue a second AUTO REFRESH
+     	command followed by NOP or DESELECT commands for at least tRFC
+     	time. As part of the initialization sequence, two AUTO REFRESH
+     	commands must be issued. Typically, both of these commands are
+     	issued at this stage as described above. Alternately, the
+     	second AUTO REFRESH command and NOP or DESELECT sequence can
+     	be issued after step 10.
+     7. Using the LOAD MODE REGISTER command, load the standard mode
+     	register as desired.
+     8. Issue NOP or DESELECT commands for at least tMRD time.
+     9. Using the LOAD MODE REGISTER command, load the extended mode
+     	register to the desired operating modes. Note that the
+     	sequence in which the standard and extended mode registers are
+     	programmed is not critical.
+    10. Issue NOP or DESELECT commands for at least tMRD time.
+
+
 */
 
 #include <config.h>
@@ -52,6 +84,8 @@
 
 #include "hardware.h"
 #include <debug_ll.h>
+
+#define NO_INIT
 
 #define ESDCTL_CTL0_SDE		(1<<31)	/* Enable */
 #define ESDCTL_CTL0_ROW13	(2<<24)	/* 13 rows */
@@ -69,7 +103,7 @@
 	| ESDCTL_CTL0_ROW13\
 	| ESDCTL_CTL0_COL10\
 	| ESDCTL_CTL0_DSIZ32\
-	| ESDCTL_CTL0_SREFR_V\
+	| ESDCTL_CTL0_SEFR_V\
 	| ESDCTL_CTL0_BL8
 
 #define ESDCTL_CTL0_V2 0\
@@ -162,6 +196,7 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 //  CCM_MPCTL = 0x04001800;
 //  CCM_PDR0  = 0xff870b48;
 
+#if !defined (NO_INIT)
   barrier ();
   CCM_CCMR  &= ~(1<<3);				/* Disable PLL */
   CCM_CCMR   = 0x074b0bf5;			/* Source CKIH; MCU bypass */
@@ -189,6 +224,8 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
   //  WEIM_UCR(0) = 0x0000CC03; // ; Start 16 bit NorFlash on CS0
   //  WEIM_LCR(0) = 0xa0330D01; //
   //  WEIM_ACR(0) = 0x00220800; //
+
+#endif
 
 #if defined (CONFIG_MACH_MX31ADS)
 	/* Configure CPLD on CS4 -- necessary for ADS UART */
@@ -238,19 +275,20 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 
 	/* SDRAM initialization */
   ESDCTL_CTL0 = 0;
+  ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* BDI setup? Enable DDR */
   ESDCTL_CFG0 = 0x0075e73a;
 //  ESDCTL_CFG0 = 0x0079e73a;		/* 1Gib part */
   ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
   ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
   usleep (1);			/* > 200ns */
-  ESDCTL_CTL0 = 0x92100000;
-  __REG (0x80000f00) = 0;	/* DDR */
-  ESDCTL_CTL0 = 0xa2100000;
+  ESDCTL_CTL0 = 0x92100000;	/* SDE,Precharge,13row,9col,16bitH */
+  __REG (0x80000f00) = 0;	/* DDR; precharge all */
+  ESDCTL_CTL0 = 0xa2100000;	/* SDE,Precharge,13row,9col,16bitH */
   __REG (0x80000000) = 0;
   ESDCTL_CTL0 = 0xb2100000;
-  __REG8 (0x80000000 + 0x33) = 0;	/* Burst mode */
-  __REG8 (0x81000000) = 0xff;
-//  PUTC ('1');
+  __REG8 (0x80000000 + 0x33) = 0; /* Standard Mode Register <- CAS3;BURST8 */
+  __REG8 (0x81000000 + 0x00) = 0; /* Extended Mode Register <- 0 */
+  PUTC ('1');
   ESDCTL_CTL0 = ESDCTL_CTL0_V1;
   __REG (0x80000000) = 0;
   /* *** FIXME: we should check for DDR here.  we can test CTL0_V */
@@ -275,8 +313,8 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 // *** form-factor board fails this check and doesn't setup the proper
 // *** configuration.  Oddly, the non-form-factor is OK with this
 // *** a bogus configuration.
-      || 1) {
-//    PUTC ('2');
+      || 0) {
+    PUTC ('2');
     ESDCTL_CTL0 = ESDCTL_CTL0_V2;
     __REG (0x80000000) = 0;
     ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
@@ -318,6 +356,7 @@ static void target_init (void)
 
 #endif
 
+#if !defined (NO_INIT)
   /* Initialize AIPS (AHB to IP bus) */
   AIPS1_MPR1 = 0x77777777;
   AIPS1_MPR2 = 0x77777777;
@@ -353,6 +392,7 @@ static void target_init (void)
 
   /* Initialize M3IF (Multi-Master Memory Interface) */
   M3IF_CTL = (1<<M3IF_M_IPU1);
+#endif
 
 #if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
 				/* DM9000 and CS4 */
@@ -394,6 +434,26 @@ static __service_0 struct service_d mx3x_target_service = {
 ;;  WGPR  15         0x83F00000		; boot secret
 
 +    setup_sdram ddr X32 DDR 0
+
++SDRAM_PARAM1_DDR:          .word       0x4
++SDRAM_PARAM1_SDR:          .word       0x0
++SDRAM_PARAM2_DDR:          .word       0x80000F00
++SDRAM_PARAM2_SDR:          .word       0x80000400
++SDRAM_PARAM3_DDR:       .word   0x00100000
++SDRAM_PARAM3_SDR:       .word   0x0
++SDRAM_PARAM4_X32:       .word   0x00010000
++SDRAM_PARAM4_X16:       .word   0x0
++SDRAM_0x55555555:       .word   0x55555555
++SDRAM_0xAAAAAAAA:       .word   0xAAAAAAAA
++SDRAM_0x92100000:       .word   0x92100000
++SDRAM_0xA2100000:       .word   0xA2100000
++SDRAM_0xB2100000:       .word   0xB2100000
++SDRAM_0x82116080:       .word   0x82116080
++SDRAM_0x0075E73A:       .word   0x0075E73A
++#define SDRAM_FULL_PAGE_BIT     0x100
++#define SDRAM_FULL_PAGE_MODE    0x37
++#define SDRAM_BURST_MODE        0x33
+
 
 +    .macro setup_sdram, name, bus_width, mode, full_page
 +        /* It sets the "Z" flag in the CPSR at the end of the macro */
