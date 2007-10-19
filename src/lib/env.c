@@ -284,13 +284,21 @@ static char _env_locate (int i)
    the environment region viability.  For reading from the
    environment, only a magic number check is necessary.
 
+   0   -> MAGIC found
+   1   -> Region uninitialized
+   -1  -> Region filled with foreign data
+   -2  -> Region invalid
+
 */
 
 int env_check_magic (int full_check)
 {
   unsigned char __aligned rgb[2];
 
-  if (pd_env->driver == NULL)
+  if (!is_descriptor_open (&d_env)) /* Check for bogus environment region */
+    return -2;
+
+  if (!is_descriptor_open (pd_env)) /* Check for bogus env IO region */
     return -1;
 
   _env_rewind ();

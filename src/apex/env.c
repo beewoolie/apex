@@ -33,6 +33,7 @@
 #include <environment.h>
 #include <driver.h>
 #include <service.h>
+#include <linux/string.h>
 
 #define _s(v) #v
 #define _t(v) _s(v)
@@ -179,7 +180,12 @@ static void env_init (void)
 
 # if defined (CONFIG_ENV_SAVEATONCE) && defined (CONFIG_ENV_SIZE)
   d_env.driver->seek (&d_env, 0, SEEK_SET);
-  d_env.driver->read (&d_env, g_rgbEnv, CONFIG_ENV_SIZE);
+  if (d_env.driver->read (&d_env, g_rgbEnv, CONFIG_ENV_SIZE)
+      != CONFIG_ENV_SIZE)
+    memset (g_rgbEnv, 0, CONFIG_ENV_SIZE); /* Failed read?  Very
+    	   	      	 		      bad. Set the array to
+    	   	      	 		      zero so we don't write
+					      to it. */
   parse_descriptor_simple ("memory", (unsigned long) g_rgbEnv, CONFIG_ENV_SIZE,
 			   &d_envmem);
   pd_env = &d_envmem;

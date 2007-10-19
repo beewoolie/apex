@@ -1,0 +1,63 @@
+*.o
+*~
+.*cmd
+*.lds
+*.a
+.config
+.config.old
+include/mach
+
+apex
+apex.bin
+apex.map
+include/configfunc.h
+include/linux/config.h
+src/arch-arm/rom/apex.bin
+
+# -- From the Kernel
+
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.ko
+*.so
+*.mod.c
+*.i
+*.lst
+*.symtypes
+
+#
+# Top-level generic files
+#
+tags
+TAGS
+vmlinux*
+!vmlinux.lds.S
+System.map
+Module.symvers
+
+#
+# Generated include files
+#
+include/asm
+include/asm-*/asm-offsets.h
+include/config
+include/linux/autoconf.h
+include/linux/compile.h
+include/linux/version.h
+include/linux/utsrelease.h
+
+# stgit generated dirs
+patches-*
+
+# quilt's files
+patches
+series
+
+# cscope files
+cscope.*
+
+*.orig
+*.rej

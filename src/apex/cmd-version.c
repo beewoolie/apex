@@ -43,7 +43,7 @@ int cmd_version (int argc, const char** argv)
 "\n\nAPEX Boot Loader " APEXRELEASE
 " -- Copyright (c) 2004,2005,2006,2007 Marc Singer\n"
 #if defined (CONFIG_TARGET_DESCRIPTION) && !defined (CONFIG_SMALL)
-"  compiled for " CONFIG_TARGET_DESCRIPTION "\n"
+"  compiled for " CONFIG_TARGET_DESCRIPTION " on " BUILDDATE "\n"
 #endif
 "\n    APEX comes with ABSOLUTELY NO WARRANTY."
 #if defined (CONFIG_SMALL)
@@ -77,6 +77,9 @@ int cmd_version (int argc, const char** argv)
   default:
   case -1:
     printf ("no-write");
+    break;
+  case -2:
+    printf ("bad-region");
     break;
   }
   printf (")\n");
