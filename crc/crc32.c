@@ -292,6 +292,14 @@ int main (int argc, char** argv)
   crc = CALC (crc, pv, cb);
   printf ("crc %x\n", crc);
 
+  {
+    unsigned long v = CALC (crc, &zero, 4);
+    unsigned long y = htonl (crc);
+//    unsigned long x = CALC (v, &v, 4);
+    unsigned long x = CALC (crc, &y, 4);
+    printf ("crc w/zero %x (%u)  w/zero&crc %x (%u)\n", v, v, x, x);
+  }
+
 //printf ("crc w/zeros %x (%u)\n", CALC (crc, &zero, 4), CALC (crc, &zero, 4));
 
   {

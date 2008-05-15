@@ -86,11 +86,8 @@ config LCD_12_1_SVGA_10
 config LCD_NL2432HC22_40A
 	bool "NEC 3.5\" Portrait QVGA"
 
-config LCD_OSD035TTEA1
-	bool "Sharp 3.5\" Landscape QVGA"
-	
 config LCD_LQ036Q1DA01
-	bool "Sharp 3.5\" Landscape QVGA"
+	bool "Sharp 9.1cm (3.6\") Landscape QVGA"
 
 config LCD_LQ035Q7DH06
 	bool "Sharp 3.5\" Portrait QVGA"

@@ -246,31 +246,16 @@
 # define INVERT_VSYNC
 #endif
 
-#if defined (CONFIG_LCD_OSD035TTEA1)
-	/* Sharp QVGA 2432HC22-40A 320x240 70.08mmx52.56mm*/
-/* Is this bonafide? Or is this the OneStopDisplay? */
-# define PANEL_NAME		"Sharp LCD Landscape QVGA"
-# define PEL_CLOCK_EST		(8650*1000)	/* MHz/4/8/8.65 */
-# define PEL_CLOCK_DIV		CLOCK_TO_DIV(PEL_CLOCK_EST, HCLK)
-# define PEL_CLOCK		(HCLK/PEL_CLOCK_DIV)
-# define PEL_WIDTH		(320)
-# define PEL_HEIGHT		(240)
-# define BIT_DEPTH		(16)
-# define BITS_PER_PEL_2		BPP16
-# define HORZ_CYCLE		(440)		/* clock/326/440/472 */
-# define VERT_CYCLE		(264)		/* line/246/264/282 */
-# define HSYNC_WIDTH		(38)		/* clocks/2/38/256 */
-# define VSYNC_WIDTH		(8)		/* lines/2/8/14 */
-# define HORZ_BP		(42)		/* clock/2/42/256 */
-# define VERT_BP		(8)		/* lines/2/8/14 */
-# define HORZ_FP		(HORZ_CYCLE-HORZ_BP-HSYNC_WIDTH-PEL_WIDTH)
-# define VERT_FP		(VERT_CYCLE-VERT_BP-VSYNC_WIDTH-PEL_HEIGHT)
-# define INVERT_HSYNC
-# define INVERT_VSYNC
-#endif
-
-#if defined (CONFIG_LCD_LQ036Q1DA01)
+#if defined (CONFIG_LCD_LQ036Q1DA01) && 0
 	/* Sharp QVGA LQ036Q1DA01 320x240 9.1cm w/ASIC */
+/*
+  clcd:   buffer 0xc0300000  red 5<<0  green 5<<5  blue 5<<10
+          ctrl 0x10829  clk 4.166MHz [ Sharp LCD Landscape QVGA w/ASIC ]
+          timing0 0x140a114c  timing1 0x040404ef  timing2 0x013f3016
+          hpels 320 hbp 21 hsw 18 hfp 11 ioe 0 ipc 1 ihs 1 ivs 0
+          vpels 240 vbp 4 vsw 2 vfp 4
+*/
+
 #define PANEL_NAME		"Sharp LCD Landscape QVGA w/ASIC"
 
 #define PANEL_TIMING0		(0x140a114c)
@@ -282,6 +267,30 @@
 #define PANEL_ALI_CONTROL	(0x0003)
 #define PANEL_ALI_TIMING1	(0x082d)
 #define PANEL_ALI_TIMING2	(0x420d)
+
+#endif
+
+#if defined (CONFIG_LCD_LQ036Q1DA01)
+	/* Sharp QVGA LQ036Q1DA01 320x240 */
+/*
+  clcd:   buffer 0xc0300000  red 5<<0  green 5<<5  blue 5<<10
+          ctrl 0x10028  clk 6.666MHz [ Sharp LCD Landscape 9.1cm QVGA w/ASIC ]
+          timing0 0x03090d4c  timing1 0x030308ef  timing2 0x013f000d
+          hpels 320 hbp 4 hsw 14 hfp 10 ioe 0 ipc 0 ihs 0 ivs 0
+          vpels 240 vbp 3 vsw 3 vfp 3
+*/
+
+#define PANEL_NAME		"Sharp LCD Landscape 9.1cm QVGA w/ASIC"
+
+#define PANEL_TIMING0		(0x03090d4c)
+#define PANEL_TIMING1		(0x030308ef)
+#define PANEL_TIMING2		(0x013f000d)
+#define PANEL_CONTROL		(0x00010829)
+
+#define PANEL_ALI_SETUP		(0x33f0)
+#define PANEL_ALI_CONTROL	(0x0000)
+#define PANEL_ALI_TIMING1	(0x0000)
+#define PANEL_ALI_TIMING2	(0x0000)
 
 #endif
 
@@ -303,7 +312,7 @@
 
 #if defined (CONFIG_LCD_TD035TTEA1)
 	/* One Stop Display QVGA TD035TTEA1 320x240 */
-# define PANEL_NAME		"OSB LCD Landscape QVGA"
+# define PANEL_NAME		"OSD LCD Landscape QVGA"
 //# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */
 # define PEL_CLOCK_EST		(8000*1000)     /* MHz/4/8/8.65 */
 //# define PEL_CLOCK_EST		(8650*1000)     /* MHz/4/8/8.65 */

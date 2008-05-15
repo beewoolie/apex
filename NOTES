@@ -5,6 +5,11 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.mar.19
+
+    o Discovered that there is a bug in the ext2 driver.  A filesystem
+      with deletect files and directories doesn't show up correctly.
+
   o 2007.jul.23
     o UBOOT annoyances
       o flash info shows addresses; flash erase uses block numbers, WTF
