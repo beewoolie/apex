@@ -1,3 +1,26 @@
+apex (1.5.14) unstable; urgency=low
+
+  * Fixed the debian/copyright file to reflect the new wiki URL
+    syntax. (closes: #481736)
+  * Many upstream changes since last release, though most were not visible
+    to nslu2. There was a bug fixed in the envronment handling where a
+    broken environment region could cause unexpected boot-time problems.
+  * Included Kevin Price's patch for flash-apex.
+    o Added shlib dependencies for apex-env
+    o Updated FSF address in copyright
+    o Added manpage flash-apex(8)
+    o Removed boot option `rtc-x1205.probe=0,0x6f' from kernel command
+      line (closes: #471476)
+    o -- Kevin Price <kp@kevin-price.de>  Tue, 16 May 2008 17:52:00 +0200
+    o Bumped new upstream version
+    o Enabled CONFIG_AEABI=y
+    o [ Gordon Farquharson <gordonfarquharson@gmail.com> ]
+    o CONFIG_RAMDISK_SIZE=0x005FFFF0 (closes: #451882)
+    o Add flash-apex script. (closes: #421359)
+    o Add postinst script to run flash-apex on installation.
+  
+ -- Marc Singer <elf@buici.com>  Sun, 18 May 2008 14:04:25 -0700
+
 apex (1.5.8) unstable; urgency=low
 
   * Added 'release' comand to the apex-env.

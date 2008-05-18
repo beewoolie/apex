@@ -1,6 +1,6 @@
 This program is written, maintained, and packaged for Debian by Marc
 Singer <elf@debian.org>.  The upstream source may be found on this web
-site http://wiki.buici.com/ApexBootloader.
+site http://wiki.buici.com/wiki/Apex_Bootloader.
 
    Copyright (C) 2004,2005,2006.2007 Marc Singer
 
@@ -16,7 +16,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301,
 USA.
 
 The full text of the GPL copyright may be found in the original source
