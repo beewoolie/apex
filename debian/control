@@ -7,7 +7,7 @@ Build-Depends: perl, debhelper (>= 5)
 
 Package: apex-nslu2
 Architecture: arm armeb armel
-Depends:
+Depends: devio, ${shlibs:Depends}
 Description: APEX Boot Loader for Linksys NSLU2 
  The APEX Boot Loader is a modular and retargetable firmware loader
  suitable for embedded systems.  

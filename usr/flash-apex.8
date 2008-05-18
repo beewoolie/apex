@@ -1,0 +1,55 @@
+.TH flash-apex 8 27-January-2007 "Debian GNU/Linux"
+.SH NAME
+flash-apex \- write APEX binary into MTD flash
+.SH SYNOPSIS
+.B flash-apex
+
+.SH DESCRIPTION
+
+\fBflash-apex\fR is a script which will read the compiled APEX binary
+from the file /boot/apex.flash, which is also part of this package, and
+write it into MTD flash. This script is automatically called from this
+package's postinst.
+
+\fBflash-apex\fR will run on big and little endian machines and take care
+of endianness automatically. At the moment it supports only Linksys NSLU2
+machines. Before the flashing, it reads the APEX configuration using
+apex-env(8) and writes it back into MTD after flashing the binary.
+
+If you need to flash a non-standard APEX, just move the file
+\fI/boot/apex.flash\fR out of the way, replace it with your image, and run
+\fBflash-apex\fR.
+
+\fBflash-apex\fR requires the \fI/dev/mtd\fR driver.
+
+.SH WARNING
+This script was thoroughly tested, but because it writes to MTD, it might
+make your slug unbootable. You will then need to switch into upgrade mode
+to restore the previous state. Use this script only if you know what
+you're doing and if you have a backup copy of the previous MTD contents.
+
+.SH OPTIONS
+none
+
+.SH FILES
+
+.TP
+/boot/apex.flash
+The binary image from which \fBflash-apex\fR reads the APEX binary
+
+.SH BUGS
+Please check the debian bug tracking system at http://bugs.debian.org/src:apex
+for known bugs before reporting any new bugs there.
+
+.SH AUTHOR
+\fBflash-apex\fR was written by Gordon Farquharson
+<gordonfarquharson@gmail.com>, Martin Michlmayr <tbm@cyrius.com>, and Joey
+Hess <joeyh@debian.org>. This manpage was written by Kevin Price
+<kp@kevin-price.de>
+
+.SH SEE ALSO
+http://www.nslu2-linux.org/wiki/Info/BootFlash
+
+.SH COPYING
+
+The script and this manpage are copyrighted and protected by the GNU GPL.

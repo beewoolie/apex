@@ -1,3 +1,12 @@
+apex (1.4.15.1) unstable; urgency=low
+
+  * Release of old APEX version during Debian freeze.
+  * Adding flash-apex so that apex is written to flash on install of the
+    package (closes: #421359).
+  * Expanding CONFIG_RAMDISK_SIZE (closes: #451882).
+  
+ -- Marc Singer <elf@buici.com>  Sun, 18 May 2008 14:37:51 -0700
+
 apex (1.4.15) unstable; urgency=low
 
   * Modified the rules file to support cross-building.
