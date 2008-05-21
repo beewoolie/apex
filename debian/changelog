@@ -1,14 +1,13 @@
 apex (1.5.15) unstable; urgency=low
 
+  * Added CONFIG_AEABI=y to armel. (closes: #481848)
+  * Added shlib dependencies for the sake of apex-env. (closes: #481846)
   * Revised copyright messages, again, to remove all references to the FSF
     address.
   * debian/postinst: Fixed the postinst script to only run on the NSLU2.
     (closes: #482000)
-
- -- Marc Singer <elf@buici.com>  Tue, 20 May 2008 20:27:36 -0700
-
-apex (1.5.14) unstable; urgency=low
-
+  * The --force option to apex-env was fixed in a previous release.
+    (closes: #417757)
   * Fixed the debian/copyright file to reflect the new wiki URL
     syntax. (closes: #481736)
   * Many upstream changes since last release, though most were not visible
