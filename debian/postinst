@@ -3,6 +3,10 @@ set -e
 
 #DEBHELPER#
 
-if [ "$1" = configure ]; then
+# Install on NSLU2, only
+unset h
+if cat /proc/cpuinfo | grep -iq "Linksys NSLU2" ; then h=1 ; fi
+
+if [ "$1" = configure -a x"$h" = x"1" ]; then
 	flash-apex
 fi

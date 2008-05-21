@@ -1,3 +1,12 @@
+apex (1.4.15.2) unstable; urgency=low
+
+  * debian/postinst: Fixed the postinst script to only run on the NSLU2.
+    (closes: #482000)
+  * Makefile: Fixed the construction of the version when there is an
+    EXTRAVERSION.
+
+ -- Marc Singer <elf@buici.com>  Tue, 20 May 2008 20:34:48 -0700
+
 apex (1.4.15.1) unstable; urgency=low
 
   * Release of old APEX version during Debian freeze.
