@@ -1,3 +1,12 @@
+apex (1.5.15) unstable; urgency=low
+
+  * Revised copyright messages, again, to remove all references to the FSF
+    address.
+  * debian/postinst: Fixed the postinst script to only run on the NSLU2.
+    (closes: #482000)
+
+ -- Marc Singer <elf@buici.com>  Tue, 20 May 2008 20:27:36 -0700
+
 apex (1.5.14) unstable; urgency=low
 
   * Fixed the debian/copyright file to reflect the new wiki URL

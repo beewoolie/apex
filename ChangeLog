@@ -1,3 +1,8 @@
+2008-05-20  Marc Singer  <elf@buici.com>
+
+	* debian/postinst: Fixed the postinst script to only run on the
+	NSLU2.
+
 2007-10-16  Marc Singer  <elf@zealous.synapsedev.com>
 
 	* Makefile: The help make target now shows the configurations and
