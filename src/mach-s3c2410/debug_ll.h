@@ -3,9 +3,10 @@
    with modifications by David Anders
    06 Nov 2005
 
-   This program is licensed under the terms of the GNU General Public
-   License as published by the Free Software Foundation.  Please refer
-   to the file debian/copyright for further details.
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   version 2 as published by the Free Software Foundation.
+   Please refer to the file debian/copyright for further details.
 
    -----------
    DESCRIPTION
