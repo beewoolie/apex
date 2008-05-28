@@ -1100,7 +1100,7 @@ tgz: FORCE
 
 complete-release: tgz release-every FORCE
 	cp apex-$(APEXRELEASE).tar.gz ~ftp/pub/apex
-	git-tag -a $(APEXRELEASE)
+	git-tag -a $(APEXRELEASE) -m "Release $(APEXRELEASE)"
 	-(cd ~ftp/pub/apex ; rm LATEST_IS* ; touch LATEST_IS_$(APEXRELEASE) )
 
 # Brief documentation of the typical targets used
