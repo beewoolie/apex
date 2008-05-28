@@ -52,8 +52,8 @@
 #define LEDe	((0<<1)|(1<<0)|(0<<2)|(0<<3))
 #define LEDf	((1<<1)|(1<<0)|(0<<2)|(0<<3))
 
-#define _L(l) MASK_AND_SET(GPIO_OUTR, LED_MASK, l)
-
+/* #define _L(l) MASK_AND_SET(GPIO_OUTR, LED_MASK, l) */
+#define _L(l) 0
 
 /* %%% FIXME %%% */
 #define GPIO_ER_OUTPUTS	 (1<<0)		/* Power LED */\
