@@ -1,4 +1,4 @@
-apex (1.5.15) unstable; urgency=low
+apex (1.5.14) unstable; urgency=low
 
   * Added CONFIG_AEABI=y to armel. (closes: #481848)
   * Added shlib dependencies for the sake of apex-env. (closes: #481846)
@@ -26,8 +26,11 @@ apex (1.5.15) unstable; urgency=low
     o CONFIG_RAMDISK_SIZE=0x005FFFF0 (closes: #451882)
     o Add flash-apex script. (closes: #421359)
     o Add postinst script to run flash-apex on installation.
-  
- -- Marc Singer <elf@buici.com>  Sun, 18 May 2008 14:04:25 -0700
+  * Applied patches from rwhitby for Debian and slugos targets.
+  * Added overrides support to allow 'every' target really build every
+    configuration.
+
+ -- Marc Singer <elf@buici.com>  Tue, 27 May 2008 19:58:03 -0700
 
 apex (1.5.8) unstable; urgency=low
 
