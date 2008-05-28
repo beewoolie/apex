@@ -46,6 +46,10 @@ extern void (*interrupt_handlers[32])(void);
 # include "dsmg600.h"
 #endif
 
+#if defined (CONFIG_MACH_FSG3)
+# include "fsg3.h"
+#endif
+
 /* ----- Types */
 
 /* ----- Globals */

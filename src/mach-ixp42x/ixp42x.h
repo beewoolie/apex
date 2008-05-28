@@ -110,7 +110,7 @@
 
 #define GPIO_PHYS	(0xc8004000)
 #define GPIO_OUTR	__REG(GPIO_PHYS + 0x00)
-#define GPIO_ER		__REG(GPIO_PHYS + 0x04)
+#define GPIO_OER	__REG(GPIO_PHYS + 0x04)
 #define GPIO_INR	__REG(GPIO_PHYS + 0x08)
 #define GPIO_ISR	__REG(GPIO_PHYS + 0x0c)
 #define GPIO_IT1R	__REG(GPIO_PHYS + 0x10)
@@ -143,8 +143,8 @@
 #define GPIO_INT_TYPE_RISING   2
 #define GPIO_INT_TYPE_FALLING  3
 
-#define GPIO_OUT_ENABLE(i)	(GPIO_ER   &= ~(1 << (i)))
-#define GPIO_OUT_DISABLE(i)	(GPIO_ER   |=   1 << (i))
+#define GPIO_OUT_ENABLE(i)	(GPIO_OER   &= ~(1 << (i)))
+#define GPIO_OUT_DISABLE(i)	(GPIO_OER   |=   1 << (i))
 #define GPIO_OUT_SET(i)		(GPIO_OUTR |=   1 << (i))
 #define GPIO_OUT_CLEAR(i)	(GPIO_OUTR &= ~(1 << (i)))
 

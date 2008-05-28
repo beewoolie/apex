@@ -52,30 +52,25 @@
 #define _LG(l) MASK_AND_SET(GPIO_OUTR, LED_GREEN_MASK, l)
 
 
-#define GPIO_ER_OUTPUTS	 (1<<0)		/* Status LED */\
-			|(1<<1)		/* Ready LED */\
-			|(1<<2)		/* Disk2 LED */\
-			|(1<<3)		/* Disk1 LED */\
-			|(1<<4)		/* Buzzer */
+#define GPIO_OER_OUTPUTS	((1<<0)		/* Status LED */\
+				|(1<<1)		/* Ready LED */\
+				|(1<<2)		/* Disk2 LED */\
+				|(1<<3)		/* Disk1 LED */\
+				|(1<<4))	/* Buzzer */
 
-//#define GPIO_ER_V	(0x1f3f)	/* 0,1,6,7 are outputs */
-#define GPIO_ER_V	(0x1f30)	/* 0,1,6,7 are outputs */
-
-#define GPIO_CLKR_V	(0x1ff01ff)	/* MUX14&15 33MHz clocks */
-
-#define GPIO_I_LEDRED		0
-#define GPIO_I_LEDGREEN		1
-#define GPIO_I_DISK2		2
-#define GPIO_I_DISK1		3
+#define GPIO_I_LEDSTATUS	0	/* Red */
+#define GPIO_I_LEDREADY		1	/* Green */
+#define GPIO_I_LEDDISK2		2
+#define GPIO_I_LEDDISK1		3
 #define GPIO_I_BUZZER		4
-#define GPIO_I_POWERBUTTON	5	/* 0: pressed  */
+#define GPIO_I_POWERBUTTON	5	/* 0: pressed */
 #define GPIO_I_I2C_SCL		6
 #define GPIO_I_I2C_SDA		7
 #define GPIO_I_POWEROFF		8
 #define GPIO_I_PCI_INTC		9
 #define GPIO_I_PCI_INTB		10
 #define GPIO_I_PCI_INTA		11
-#define GPIO_I_RESETBUTTON	12	/* 1: pressed  */
+#define GPIO_I_RESETBUTTON	12	/* 1: pressed */
 #define GPIO_I_PCI_RESET	13
 #define GPIO_I_PCI_CLOCK	14
 

@@ -107,8 +107,8 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
   PUTC('A');
 #endif
 
-  _L(LEDf);			/* Start with all on */
-  GPIO_ER &= ~0xf;		/* Enable LEDs as outputs */
+  _L(LEDf);				/* Start with all on */
+  GPIO_OER &= ~GPIO_OER_OUTPUTS;	/* Enable LEDs as outputs */
 
 	/* Disable write buffer coalescing */
   {

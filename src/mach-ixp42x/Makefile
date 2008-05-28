@@ -38,6 +38,7 @@ obj-$(CONFIG_MMU) += initialize-sdram.o
 
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_SPINNER) += spinner-nslu2.o
 obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_VARIATIONS) += variation-nslu2.o
+obj-x$(CONFIG_MACH_FSG3)$(CONFIG_VARIATIONS) += variation-fsg3.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 
 obj-$(CONFIG_NPE)		+= npe.o npe-interface.o
