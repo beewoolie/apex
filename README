@@ -17,7 +17,7 @@ There is an ftp archive of APEX releases.
 
 There is also a wiki with information about APEX.
 
-  <http://wiki.buici.com>    
+  <http://wiki.buici.com/wiki/Apex_Bootloader>
 
 
   Supported Targets
@@ -26,6 +26,7 @@ There is also a wiki with information about APEX.
 The loader is fully functional for the LPD79524, LPD7A400, LPD7A404,
 IXP42X.  It builds for the LPD79520, but there is presently no version
 of the Linux kernel that recognizes the correct architecture number.
+APEX also builds for the MX31 and the S3C2410.
 
 
   Building APEX

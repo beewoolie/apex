@@ -1322,15 +1322,14 @@ every: distclean
 	@[ ! -d every ] || rm -rf every
 	@mkdir every
 	@for i in `find src/mach-*/ \
-		   -path '*/debian-*' -prune -o \
-		   -path '*/slugos-*' -prune -o \
 		   -name '*_config' -printf ' %f'` ; do \
 	 o=apex-$(APEXRELEASE)-`echo $$i | sed -s 's/_config//'`; \
 	 $(MAKE) clean ; \
 	 $(MAKE) $$i ; \
 	 echo "  BUILD   $$i ($$o)";\
 	 $(MAKE) oldconfig       < /dev/null >  makelog 2>&1 || exit 1 ; \
-	 $(MAKE) apex.srec apex.elf apex.bin >> makelog 2>&1 || exit 1 ; \
+	 $(MAKE) `scripts/overrides $$i` \
+	   apex.srec apex.elf apex.bin >> makelog 2>&1 || exit 1 ; \
 	 mkdir every/$$o ; \
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
 	 cp .config every/$$o/config ; \

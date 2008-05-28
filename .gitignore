@@ -10,6 +10,8 @@ include/mach
 apex
 apex.bin
 apex.map
+apex.elf
+apex.srec
 include/configfunc.h
 include/linux/config.h
 src/arch-arm/rom/apex.bin
