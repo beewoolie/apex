@@ -30,9 +30,13 @@
 /* ----- Prototypes */
 
 
+//#undef __used
+#undef __section
+#undef __aligned
+
 #define __weak			__attribute__((weak))
 #define __naked			__attribute__((naked))
-#define __used			__attribute_used__
+//#define __used			__attribute__((used))
 #define __section(s)		__attribute__((section(#s)))
 #define __xbss(s)		__attribute__((section("." #s ".xbss")))
 #define __rodata	  const __section(.rodata)

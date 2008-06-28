@@ -140,6 +140,7 @@
 #define PRINTF(f...)		printf (f)
 #else
 #define PRINTF(f...)		do {} while (0)
+#define TALK 0
 #endif
 
 #if TALK > 2

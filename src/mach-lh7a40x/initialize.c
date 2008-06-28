@@ -432,6 +432,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 static void target_init (void)
 {
+  extern void determine_arch_number (void);
+
 #if defined (CONFIG_MACH_LPD7A404)
   /* PE4 must be driven high to disable the CPLD JTAG & prevent CPLD crash */
   GPIO_PEDD &= ~(1<<4);
@@ -457,6 +459,7 @@ static void target_init (void)
   GPIO_PCD |= (1<<2);		/* Light overhead light */
 #endif
 
+  determine_arch_number ();
 }
 
 

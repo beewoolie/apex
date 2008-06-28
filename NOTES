@@ -5,6 +5,17 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.jun.27
+
+    o New Kbuild
+      o basic operation works
+      o Need packaging and _config target support
+    o Ian asked for a background task (service ()) invocation implementation
+    o Ian asked for peek/poke
+    o Need to fix ext2 driver bug
+    o Should look into orion port to fix performance issue on boot
+    o Should add u-boot image support, probably as a driver
+
   o 2008.mar.19
 
     o Discovered that there is a bug in the ext2 driver.  A filesystem

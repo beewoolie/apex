@@ -28,6 +28,14 @@
 #define _s(v) #v
 #define _t(v) _s(v)
 
+#if defined (CONFIG_ARCH_NUMBER)
+static __env struct env_d e_arch_number = {
+  .key = "arch-number",
+  .default_value = _t(CONFIG_ARCH_NUMBER),
+  .description = "Linux Kernel Architecture Number",
+};
+#endif
+
 #if defined (CONFIG_KERNEL_LMA)
 static __env struct env_d e_bootaddr = {
   .key = "bootaddr",

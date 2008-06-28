@@ -69,8 +69,8 @@ else
 	$(Q)$< -D src/arch-$(SRCARCH)/configs/$(KBUILD_DEFCONFIG) $(Kconfig)
 endif
 
-%_defconfig: $(obj)/conf
-	$(Q)$< -D src/arch-$(SRCARCH)/configs/$@ $(Kconfig)
+%_config: $(obj)/conf
+	$(Q)$< -D src/mach-*/$@ $(Kconfig)
 
 # Help text used by make help
 help:

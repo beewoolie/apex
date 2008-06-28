@@ -43,7 +43,7 @@
 /* ----- Prototypes */
 
 /* The FSG-3 LEDS are not directly accessible as GPIO pins */
-#define _L(l) 0
+#define _L(l)
 
 #define GPIO_OER_OUTPUTS	(0)
 

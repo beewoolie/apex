@@ -74,16 +74,19 @@ int cmd_boot (int argc, const char** argv)
     return 0;
   }
 
-#if defined (CONFIG_ARCH_NUMBER_FUNCTION)
-  {
-    extern int CONFIG_ARCH_NUMBER_FUNCTION (void);
-    arch_number = CONFIG_ARCH_NUMBER_FUNCTION ();
-  }
-#endif
-
+  /* *** FIXME: we could probably get away with eliminating this code
+     *** when there is an environment as long as we setup the
+     *** environment entry.  */
 #if defined (CONFIG_ARCH_NUMBER)
   arch_number = CONFIG_ARCH_NUMBER;
 #endif
+
+  /* Pull architecture ID from environment or alias */
+  {
+    const char* sz = lookup_alias_or_env ("arch-number", NULL);
+    if (sz)
+      arch_number = simple_strtoul (sz, NULL, 10);
+  }
 
 #if defined (CONFIG_ATAG)
   commandline_argc = argc - 1;

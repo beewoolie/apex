@@ -35,7 +35,7 @@
 
 //#define TALK 2
 
-#if TALK > 0
+#if defined (TALK) && TALK > 0
 # define DBG(l,f...)		if (l <= TALK) printf (f);
 #else
 # define DBG(l,f...)		do {} while (0)

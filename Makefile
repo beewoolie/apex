@@ -200,7 +200,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= $(SUBARCH)
-CROSS_COMPILE	?=
+# *** elf: removed
+#CROSS_COMPILE	?=
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -306,15 +307,15 @@ include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
 
-AS		= $(CROSS_COMPILE)as
-LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
+AS		= $(CROSS_COMPILE_)as
+LD		= $(CROSS_COMPILE_)ld
+CC		= $(CROSS_COMPILE_)gcc
 CPP		= $(CC) -E
-AR		= $(CROSS_COMPILE)ar
-NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+AR		= $(CROSS_COMPILE_)ar
+NM		= $(CROSS_COMPILE_)nm
+STRIP		= $(CROSS_COMPILE_)strip
+OBJCOPY		= $(CROSS_COMPILE_)objcopy
+OBJDUMP		= $(CROSS_COMPILE_)objdump
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 DEPMOD		= /sbin/depmod
@@ -469,6 +470,26 @@ endif # KBUILD_EXTMOD
 ifeq ($(dot-config),1)
 # Read in config
 -include include/config/auto.conf
+
+# *** We need to do some extra work to get the CROSS_COMPILE macro
+# *** from our configuration file while allowing for command line or
+# *** environment overrides.
+
+ifeq ($(CROSS_COMPILE_),)
+ CROSS_COMPILE_=$(ENV_CROSS_COMPILE)
+endif
+
+ifeq ($(CROSS_COMPILE_),)
+ CROSS_COMPILE_=$(CROSS_COMPILE)
+endif
+
+dquote:="
+# "
+
+ifeq ($(CROSS_COMPILE_),)
+ CROSS_COMPILE_=$(subst $(dquote),,$(CONFIG_CROSS_COMPILE))
+endif
+
 
 ifeq ($(KBUILD_EXTMOD),)
 # Read in dependencies to all Kconfig* files, make sure to run
@@ -936,7 +957,8 @@ endif
 prepare2: prepare3 outputmakefile
 
 prepare1: prepare2 include/linux/version.h include/linux/utsrelease.h \
-                   include/asm include/config/auto.conf
+                   include/asm include/config/auto.conf \
+		   include/mach
 	$(cmd_crmodverdir)
 
 archprepare: prepare1 scripts_basic
@@ -1127,6 +1149,8 @@ MRPROPER_FILES += .config .config.old include/asm .version .old_version \
                   include/linux/utsrelease.h                            \
                   include/linux/bounds.h include/asm*/asm-offsets.h     \
 		  Module.symvers tags TAGS cscope*
+CLEAN_FILES += include/asm
+CLEAN_FILES += include/mach
 
 # clean - Delete most, but leave enough to build external modules
 #
@@ -1151,7 +1175,7 @@ clean: archclean $(clean-dirs)
 #
 mrproper: rm-dirs  := $(wildcard $(MRPROPER_DIRS))
 mrproper: rm-files := $(wildcard $(MRPROPER_FILES))
-mrproper-dirs      := $(addprefix _mrproper_,Documentation/DocBook scripts)
+mrproper-dirs      := $(addprefix _mrproper_,scripts)
 
 PHONY += $(mrproper-dirs) mrproper archmrproper
 $(mrproper-dirs):
@@ -1188,9 +1212,9 @@ rpm: include/config/kernel.release FORCE
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
-boards := $(wildcard $(srctree)/src/arch-$(SRCARCH)/configs/*_defconfig)
+boards := $(wildcard $(srctree)/src/mach-*/*_config)
 boards := $(notdir $(boards))
-board-dirs := $(dir $(wildcard $(srctree)/src/arch-$(SRCARCH)/configs/*/*_defconfig))
+board-dirs := $(dir $(wildcard $(srctree)/src/mach-*/*_config))
 board-dirs := $(sort $(notdir $(board-dirs:/=)))
 
 help:
@@ -1234,8 +1258,8 @@ help:
 	@echo  'Kernel packaging:'
 	@$(MAKE) $(build)=$(package-dir) help
 	@echo  ''
-	@echo  'Documentation targets:'
-	@$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
+#	@echo  'Documentation targets:'
+#	@$(MAKE) -f $(srctree)/Documentation/DocBook/Makefile dochelp
 	@echo  ''
 	@echo  'Architecture specific targets ($(SRCARCH)):'
 	@$(if $(archhelp),$(archhelp),\
@@ -1243,7 +1267,7 @@ help:
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
-		printf "  %-24s - Build for %s\\n" $(b) $(subst _defconfig,,$(b));) \
+		printf "  %-32s - Build for %s\\n" $(b) $(subst _config,,$(b));) \
 		echo '')
 	@$(if $(board-dirs), \
 		$(foreach b, $(board-dirs), \
@@ -1265,20 +1289,20 @@ help-board-dirs := $(addprefix help-,$(board-dirs))
 
 help-boards: $(help-board-dirs)
 
-boards-per-dir = $(notdir $(wildcard $(srctree)/src/arch-$(SRCARCH)/configs/$*/*_defconfig))
+boards-per-dir = $(notdir $(wildcard $(srctree)/src/mach-*/*_config))
 
 $(help-board-dirs): help-%:
 	@echo  'Architecture specific targets ($(SRCARCH) $*):'
 	@$(if $(boards-per-dir), \
 		$(foreach b, $(boards-per-dir), \
-		printf "  %-24s - Build for %s\\n" $*/$(b) $(subst _defconfig,,$(b));) \
+		printf "  %-24s - Build for %s\\n" $*/$(b) $(subst _config,,$(b));) \
 		echo '')
 
 
 # Documentation targets
 # ---------------------------------------------------------------------------
 %docs: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=Documentation/DocBook $@
+#	$(Q)$(MAKE) $(build)=Documentation/DocBook $@
 
 else # KBUILD_EXTMOD
 
@@ -1614,6 +1638,8 @@ endif
 clean := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.clean obj
 
 endif	# skip-makefile
+
+-include Makefile.apex
 
 PHONY += FORCE
 FORCE:
