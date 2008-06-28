@@ -25,3 +25,5 @@ obj-$(CONFIG_DRIVER_NAND)		+= drv-nand.o
 obj-$(CONFIG_RELOCATE_NAND)		+= relocate-nand.o
 obj-$(CONFIG_DRIVER_ONENAND)		+= drv-onenand.o
 obj-$(CONFIG_RELOCATE_ONENAND)		+= relocate-onenand.o
+
+obj-$(CONFIG_IXP4XX_NPE)		+= ixp4xx-npe/

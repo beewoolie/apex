@@ -210,6 +210,7 @@ config DRIVER_IXP4XX_NPE_ETH
 	bool "IXP4xx NPE Ethernet"
 	depends on USES_IXP4XX_NPE_ETH && EXPERIMENTAL
 	select USE_ETHERNET
+	select USES_IXP4XX_NPE
 	default n
 	help
 	  This driver initializes and activates the internal NPE
@@ -236,6 +237,9 @@ config USES_DM9000
 	bool
 
 config USES_IXP4XX_NPE_ETH
+	bool
+
+config USES_IXP4XX_NPE
 	bool
 
 config USES_CS8900
