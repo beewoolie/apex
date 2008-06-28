@@ -3,11 +3,13 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#include <locale.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #define LKC_DIRECT_LINK
@@ -36,6 +38,14 @@ static struct menu *rootEntry;
 
 static char nohelp_text[] = N_("Sorry, no help available for this option yet.\n");
 
+static const char *get_help(struct menu *menu)
+{
+	if (menu_has_help(menu))
+		return _(menu_get_help(menu));
+	else
+		return nohelp_text;
+}
+
 static void strip(char *str)
 {
 	char *p = str;
@@ -63,27 +73,13 @@ static void check_stdin(void)
 	}
 }
 
-static char *fgets_check_stream(char *s, int size, FILE *stream)
-{
-	char *ret = fgets(s, size, stream);
-
-	if (ret == NULL && feof(stream)) {
-		printf(_("aborted!\n\n"));
-		printf(_("Console input is closed. "));
-		printf(_("Run 'make oldconfig' to update configuration.\n\n"));
-		exit(1);
-	}
-
-	return ret;
-}
-
-static void conf_askvalue(struct symbol *sym, const char *def)
+static int conf_askvalue(struct symbol *sym, const char *def)
 {
 	enum symbol_type type = sym_get_type(sym);
 	tristate val;
 
 	if (!sym_has_value(sym))
-		printf("(NEW) ");
+		printf(_("(NEW) "));
 
 	line[0] = '\n';
 	line[1] = 0;
@@ -92,7 +88,7 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 		printf("%s\n", def);
 		line[0] = '\n';
 		line[1] = 0;
-		return;
+		return 0;
 	}
 
 	switch (input_mode) {
@@ -102,23 +98,23 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 	case set_random:
 		if (sym_has_value(sym)) {
 			printf("%s\n", def);
-			return;
+			return 0;
 		}
 		break;
 	case ask_new:
 	case ask_silent:
 		if (sym_has_value(sym)) {
 			printf("%s\n", def);
-			return;
+			return 0;
 		}
 		check_stdin();
 	case ask_all:
 		fflush(stdout);
-		fgets_check_stream(line, 128, stdin);
-		return;
+		fgets(line, 128, stdin);
+		return 1;
 	case set_default:
 		printf("%s\n", def);
-		return;
+		return 1;
 	default:
 		break;
 	}
@@ -128,7 +124,7 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 	case S_HEX:
 	case S_STRING:
 		printf("%s\n", def);
-		return;
+		return 1;
 	default:
 		;
 	}
@@ -165,7 +161,7 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 		}
 	case set_random:
 		do {
-			val = (tristate)(random() % 3);
+			val = (tristate)(rand() % 3);
 		} while (!sym_tristate_within_range(sym, val));
 		switch (val) {
 		case no: line[0] = 'n'; break;
@@ -179,30 +175,29 @@ static void conf_askvalue(struct symbol *sym, const char *def)
 		break;
 	}
 	printf("%s", line);
+	return 1;
 }
 
 int conf_string(struct menu *menu)
 {
 	struct symbol *sym = menu->sym;
-	const char *def, *help;
+	const char *def;
 
 	while (1) {
-		printf("%*s%s ", indent - 1, "", menu->prompt->text);
+		printf("%*s%s ", indent - 1, "", _(menu->prompt->text));
 		printf("(%s) ", sym->name);
 		def = sym_get_string_value(sym);
 		if (sym_get_string_value(sym))
 			printf("[%s] ", def);
-		conf_askvalue(sym, def);
+		if (!conf_askvalue(sym, def))
+			return 0;
 		switch (line[0]) {
 		case '\n':
 			break;
 		case '?':
 			/* print help */
 			if (line[1] == '\n') {
-				help = nohelp_text;
-				if (menu->sym->help)
-					help = menu->sym->help;
-				printf("\n%s\n", menu->sym->help);
+				printf("\n%s\n", get_help(menu));
 				def = NULL;
 				break;
 			}
@@ -220,10 +215,9 @@ static int conf_sym(struct menu *menu)
 	struct symbol *sym = menu->sym;
 	int type;
 	tristate oldval, newval;
-	const char *help;
 
 	while (1) {
-		printf("%*s%s ", indent - 1, "", menu->prompt->text);
+		printf("%*s%s ", indent - 1, "", _(menu->prompt->text));
 		if (sym->name)
 			printf("(%s) ", sym->name);
 		type = sym_get_type(sym);
@@ -246,10 +240,11 @@ static int conf_sym(struct menu *menu)
 			printf("/m");
 		if (oldval != yes && sym_tristate_within_range(sym, yes))
 			printf("/y");
-		if (sym->help)
+		if (menu_has_help(menu))
 			printf("/?");
 		printf("] ");
-		conf_askvalue(sym, sym_get_string_value(sym));
+		if (!conf_askvalue(sym, sym_get_string_value(sym)))
+			return 0;
 		strip(line);
 
 		switch (line[0]) {
@@ -282,10 +277,7 @@ static int conf_sym(struct menu *menu)
 		if (sym_set_tristate_value(sym, newval))
 			return 0;
 help:
-		help = nohelp_text;
-		if (sym->help)
-			help = sym->help;
-		printf("\n%s\n", help);
+		printf("\n%s\n", get_help(menu));
 	}
 }
 
@@ -315,7 +307,7 @@ static int conf_choice(struct menu *menu)
 		case no:
 			return 1;
 		case mod:
-			printf("%*s%s\n", indent - 1, "", menu_get_prompt(menu));
+			printf("%*s%s\n", indent - 1, "", _(menu_get_prompt(menu)));
 			return 0;
 		case yes:
 			break;
@@ -325,16 +317,15 @@ static int conf_choice(struct menu *menu)
 	while (1) {
 		int cnt, def;
 
-		printf("%*s%s\n", indent - 1, "", menu_get_prompt(menu));
+		printf("%*s%s\n", indent - 1, "", _(menu_get_prompt(menu)));
 		def_sym = sym_get_choice_value(sym);
 		cnt = def = 0;
-		line[0] = '0';
-		line[1] = 0;
+		line[0] = 0;
 		for (child = menu->list; child; child = child->next) {
 			if (!menu_is_visible(child))
 				continue;
 			if (!child->sym) {
-				printf("%*c %s\n", indent, '*', menu_get_prompt(child));
+				printf("%*c %s\n", indent, '*', _(menu_get_prompt(child)));
 				continue;
 			}
 			cnt++;
@@ -343,20 +334,20 @@ static int conf_choice(struct menu *menu)
 				printf("%*c", indent, '>');
 			} else
 				printf("%*c", indent, ' ');
-			printf(" %d. %s", cnt, menu_get_prompt(child));
+			printf(" %d. %s", cnt, _(menu_get_prompt(child)));
 			if (child->sym->name)
 				printf(" (%s)", child->sym->name);
 			if (!sym_has_value(child->sym))
-				printf(" (NEW)");
+				printf(_(" (NEW)"));
 			printf("\n");
 		}
-		printf("%*schoice", indent - 1, "");
+		printf(_("%*schoice"), indent - 1, "");
 		if (cnt == 1) {
 			printf("[1]: 1\n");
 			goto conf_childs;
 		}
 		printf("[1-%d", cnt);
-		if (sym->help)
+		if (menu_has_help(menu))
 			printf("?");
 		printf("]: ");
 		switch (input_mode) {
@@ -370,11 +361,10 @@ static int conf_choice(struct menu *menu)
 			check_stdin();
 		case ask_all:
 			fflush(stdout);
-			fgets_check_stream(line, 128, stdin);
+			fgets(line, 128, stdin);
 			strip(line);
 			if (line[0] == '?') {
-				printf("\n%s\n", menu->sym->help ?
-					menu->sym->help : nohelp_text);
+				printf("\n%s\n", get_help(menu));
 				continue;
 			}
 			if (!line[0])
@@ -385,7 +375,8 @@ static int conf_choice(struct menu *menu)
 				continue;
 			break;
 		case set_random:
-			def = (random() % cnt) + 1;
+			if (is_new)
+				def = (rand() % cnt) + 1;
 		case set_default:
 		case set_yes:
 		case set_mod:
@@ -405,14 +396,13 @@ static int conf_choice(struct menu *menu)
 		if (!child)
 			continue;
 		if (line[strlen(line) - 1] == '?') {
-			printf("\n%s\n", child->sym->help ?
-				child->sym->help : nohelp_text);
+			printf("\n%s\n", get_help(child));
 			continue;
 		}
 		sym_set_choice_value(sym, child->sym);
-		if (child->list) {
+		for (child = child->list; child; child = child->next) {
 			indent += 2;
-			conf(child->list);
+			conf(child);
 			indent -= 2;
 		}
 		return 1;
@@ -444,7 +434,7 @@ static void conf(struct menu *menu)
 			if (prompt)
 				printf("%*c\n%*c %s\n%*c\n",
 					indent, '*',
-					indent, '*', prompt,
+					indent, '*', _(prompt),
 					indent, '*');
 		default:
 			;
@@ -506,12 +496,16 @@ static void check_conf(struct menu *menu)
 
 int main(int ac, char **av)
 {
-	int i = 1;
+	int opt;
 	const char *name;
 	struct stat tmpstat;
 
-	if (ac > i && av[i][0] == '-') {
-		switch (av[i++][1]) {
+	setlocale(LC_ALL, "");
+	bindtextdomain(PACKAGE, LOCALEDIR);
+	textdomain(PACKAGE);
+
+	while ((opt = getopt(ac, av, "osdD:nmyrh")) != -1) {
+		switch (opt) {
 		case 'o':
 			input_mode = ask_new;
 			break;
@@ -524,12 +518,7 @@ int main(int ac, char **av)
 			break;
 		case 'D':
 			input_mode = set_default;
-			defconfig_file = av[i++];
-			if (!defconfig_file) {
-				printf(_("%s: No default config file specified\n"),
-					av[0]);
-				exit(1);
-			}
+			defconfig_file = optarg;
 			break;
 		case 'n':
 			input_mode = set_no;
@@ -542,18 +531,22 @@ int main(int ac, char **av)
 			break;
 		case 'r':
 			input_mode = set_random;
-			srandom(time(NULL));
+			srand(time(NULL));
 			break;
 		case 'h':
-		case '?':
-			printf("%s [-o|-s] config\n", av[0]);
+			printf(_("See README for usage info\n"));
 			exit(0);
+			break;
+		default:
+			fprintf(stderr, _("See README for usage info\n"));
+			exit(1);
 		}
 	}
-  	name = av[i];
-	if (!name) {
+	if (ac == optind) {
 		printf(_("%s: Kconfig file missing\n"), av[0]);
+		exit(1);
 	}
+	name = av[optind];
 	conf_parse(name);
 	//zconfdump(stdout);
 	switch (input_mode) {
@@ -561,9 +554,9 @@ int main(int ac, char **av)
 		if (!defconfig_file)
 			defconfig_file = conf_get_default_confname();
 		if (conf_read(defconfig_file)) {
-			printf("***\n"
+			printf(_("***\n"
 				"*** Can't find default configuration \"%s\"!\n"
-				"***\n", defconfig_file);
+				"***\n"), defconfig_file);
 			exit(1);
 		}
 		break;
@@ -571,6 +564,7 @@ int main(int ac, char **av)
 		if (stat(".config", &tmpstat)) {
 			printf(_("***\n"
 				"*** You have not yet configured your kernel!\n"
+				"*** (missing kernel .config file)\n"
 				"***\n"
 				"*** Please run some configurator (e.g. \"make oldconfig\" or\n"
 				"*** \"make menuconfig\" or \"make xconfig\").\n"
@@ -587,7 +581,7 @@ int main(int ac, char **av)
 	case set_random:
 		name = getenv("KCONFIG_ALLCONFIG");
 		if (name && !stat(name, &tmpstat)) {
-			conf_read_simple(name);
+			conf_read_simple(name, S_DEF_USER);
 			break;
 		}
 		switch (input_mode) {
@@ -598,9 +592,9 @@ int main(int ac, char **av)
 		default: break;
 		}
 		if (!stat(name, &tmpstat))
-			conf_read_simple(name);
+			conf_read_simple(name, S_DEF_USER);
 		else if (!stat("all.config", &tmpstat))
-			conf_read_simple("all.config");
+			conf_read_simple("all.config", S_DEF_USER);
 		break;
 	default:
 		break;
@@ -613,7 +607,15 @@ int main(int ac, char **av)
 			input_mode = ask_silent;
 			valid_stdin = 1;
 		}
-	}
+	} else if (conf_get_changed()) {
+		name = getenv("KCONFIG_NOSILENTUPDATE");
+		if (name && *name) {
+			fprintf(stderr, _("\n*** Kernel configuration requires explicit update.\n\n"));
+			return 1;
+		}
+	} else
+		goto skip_check;
+
 	do {
 		conf_cnt = 0;
 		check_conf(&rootmenu);
@@ -622,5 +624,11 @@ int main(int ac, char **av)
 		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
 		return 1;
 	}
+skip_check:
+	if (input_mode == ask_silent && conf_write_autoconf()) {
+		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
+		return 1;
+	}
+
 	return 0;
 }

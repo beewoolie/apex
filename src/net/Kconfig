@@ -12,7 +12,7 @@ config ETHERNET
 
 config CMD_IPCONFIG
 	bool "IP configuration command"
-	depends ETHERNET
+	depends on ETHERNET
 	default y
 	help
 	  This command provides a user interface to the IP address
@@ -20,7 +20,7 @@ config CMD_IPCONFIG
 
 config CMD_IPCONFIG_STATIC
 	bool "Static method"
-	depends CMD_IPCONFIG
+	depends on CMD_IPCONFIG
 	default y
 	help
 	  This method allows for manual configuration of the IP
@@ -28,7 +28,7 @@ config CMD_IPCONFIG_STATIC
 
 config CMD_IPCONFIG_RARP
 	bool "RARP method"
-	depends CMD_IPCONFIG
+	depends on CMD_IPCONFIG
 	default y
 	help
 	  This method configures the IP address using the RARP
@@ -36,7 +36,7 @@ config CMD_IPCONFIG_RARP
 
 config CMD_IPCONFIG_BOOTP
 	bool "BOOTP method"
-	depends CMD_IPCONFIG
+	depends on CMD_IPCONFIG
 	default n
 	help
 	  This method configures the IP address using the BOOTP
@@ -44,7 +44,7 @@ config CMD_IPCONFIG_BOOTP
 
 config CMD_IPCONFIG_DHCP
 	bool "DHCP method"
-	depends CMD_IPCONFIG
+	depends on CMD_IPCONFIG
 	default n
 	help
 	  This method configures the IP address using the DHCP
@@ -52,7 +52,7 @@ config CMD_IPCONFIG_DHCP
 
 config PROTO_ICMP_ECHO
 	bool "ICMP Echo (Ping) Handler"
-	depends ETHERNET
+	depends on ETHERNET
 	default y
 	help
 	  This option enables an ICMP request handler.  With it, the
@@ -62,7 +62,7 @@ config PROTO_ICMP_ECHO
 
 config CMD_PING
 	bool "Ping Command"
-	depends ETHERNET
+	depends on ETHERNET
 	default n
 	help
 	  This option add the ping command for testing network
@@ -70,7 +70,7 @@ config CMD_PING
 
 config CMD_ARP
 	bool "ARP Command for Testing"
-	depends ETHERNET
+	depends on ETHERNET
 	default n
 	help
 	  This option adds an arp command for testing the ethernet
@@ -78,7 +78,7 @@ config CMD_ARP
 
 config CMD_TFTP
 	bool "TFTP File Transfer Command"
-	depends ETHERNET
+	depends on ETHERNET
 	default y
 	help
 	  This protocol transfers files over the network.

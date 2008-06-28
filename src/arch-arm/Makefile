@@ -20,8 +20,8 @@ quote:="
 # "
 CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
 
-arch-$(CONFIG_CPU_ARMV4)   :=-D__ARM_ARCH__=4 -march=armv4t
-arch-$(CONFIG_CPU_ARMV5)   :=-D__ARM_ARCH__=5 $(call cc-option,-march=armv5te,-march=armv4)
+arch-$(CONFIG_CPU_ARMV4)   :=-D__LINUX_ARM_ARCH__=4 -march=armv4t
+arch-$(CONFIG_CPU_ARMV5)   :=-D__LINUX_ARM_ARCH__=5 $(call cc-option,-march=armv5te,-march=armv4)
 
 tune-$(CONFIG_CPU_ARM720T) :=-mtune=arm7tdmi
 tune-$(CONFIG_CPU_ARM920T) :=-mtune=arm9tdmi
@@ -30,7 +30,7 @@ tune-$(CONFIG_CPU_ARM925T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_ARM926T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_XSCALE)  :=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
 
-CFLAGS+= $(arch-y) $(tune-y) -Wall
+KBUILD_CFLAGS+= $(arch-y) $(tune-y) -Wall
 
 ifneq ($(CONFIG_THUMB),)
 CFLAGS+= -mthumb-interwork
