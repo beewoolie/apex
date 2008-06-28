@@ -74,7 +74,8 @@ deb-pkg: FORCE
 	$(MAKE) KBUILD_SRC=
 	$(CONFIG_SHELL) $(srctree)/scripts/package/builddeb
 
-clean-dirs += $(objtree)/debian/
+# *** elf: removed because it clobbers our Debian files.
+#clean-dirs += $(objtree)/debian/
 
 
 # tarball targets

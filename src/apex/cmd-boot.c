@@ -26,7 +26,6 @@
 #include <command.h>
 #include <error.h>
 #include <linux/kernel.h>
-#include <configfunc.h>
 #include <environment.h>
 #include <service.h>
 #include <lookup.h>
