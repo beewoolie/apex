@@ -49,7 +49,7 @@ every: #distclean
 	 mkdir every/$$o ; \
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
 	 cp .config every/$$o/config ; \
-	 echo $(APEXRELEASE) > every/$$o/APEXVERSION ; \
+	 echo $(APEXVERSION) > every/$$o/APEXVERSION ; \
 	 cp README_every every/$$o/README ; \
 	 (cd every ; zip -rq $$o.zip $$o ) ; \
 	done
@@ -67,6 +67,35 @@ update-every:
 
 PHONY += release-every
 release-every: every
-	mkdir -p ~ftp/pub/apex/apex-$(APEXRELEASE)
-	cp every/*.zip ~ftp/pub/apex/apex-$(APEXRELEASE)
+	mkdir -p ~ftp/pub/apex/apex-$(APEXVERSION)
+	cp every/*.zip ~ftp/pub/apex/apex-$(APEXVERSION)
+
+
+#PHONY += tgz
+#tgz: FORCE
+#	$(Q)$(MAKE) -f $(package-dir)/Makefile $@
+
+PKGBASE := apex-$(APEXVERSION)
+
+PHONY += tgz.pkg
+tgz.pkg tgz:
+ifneq "$(wildcard $(PKGBASE))" ""
+	-rm -rf $(PKGBASE)
+endif
+	@git-clone -l ./ $(PKGBASE)
+	find $(PKGBASE) -depth -type d -name '_intel' -exec rm -rf \{\} \;
+	rm -rf $(PKGBASE)/include/splash
+	tar zc\
+	 --exclude='.git'\
+	 --exclude='cc-png.h'\
+	 --exclude='pcm*-*.h'\
+	 --exclude='colorbars*.png'\
+	 -f $(PKGBASE).tar.gz $(PKGBASE)
+	@rm -rf $(PKGBASE)
+
+PHONY += complete-release
+complete-release: tgz release-every FORCE
+	cp apex-$(APEXVERSION).tar.gz ~ftp/pub/apex
+	git-tag -a $(APEXVERSION) -m "Release $(APEXVERSION)"
+	-(cd ~ftp/pub/apex ; rm LATEST_IS* ; touch LATEST_IS_$(APEXVERSION) )
 

@@ -402,6 +402,7 @@ no-dot-config-targets := clean mrproper distclean \
 			 cscope TAGS tags help %docs check% \
 			 include/linux/version.h headers_% \
 			 kernelrelease kernelversion
+no-dot-config-targets += tgz every update-every complete-release tgz
 
 config-targets := 0
 mixed-targets  := 0
