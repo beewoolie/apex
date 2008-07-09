@@ -248,7 +248,7 @@ int main (int argc, char** argv)
     command_match->func (link, args.argc, args.argv, &args);
     return 0;
   }
-  catch (char const* sz) {
+  catch (const char* sz) {
     printf ("error: %s\n", sz);
     argp_help (&argp, stderr, ARGP_HELP_SEE, "apex-env");
   }

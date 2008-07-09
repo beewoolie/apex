@@ -1,0 +1,114 @@
+===========================
+     APEX Boot Loader
+       Boot Images
+===========================
+
+This README explains some of the features and implementation details
+of handling boot image formats.  APEX works with raw binary data file
+as well as U-BOOT images and APEX images.
+
+
+Image Formats and APEX Commands
+-------------------------------
+
+All image formats are handled uniformly.  Whether it is a U-BOOT image
+or an APEX image, the command will process either compatibly.  There
+is one new command, load, that will interpret the contents of an image
+and prepare the system to boot with it.  Other commands are modified
+to support analogous functions on images that they perform on regions.
+
+  load     - load all or part of an image into memory as specified by
+             the header
+  checksum - verify the checksums in an image
+  info     - display information about an image
+
+
+APEX Image Format
+-----------------
+
+This is a tagged image format designed to be easy to load, even when
+processed as a stream of bytes.  An image has the following form:
+
+  IMAGE
+  +--------+-----+---------+-----+---------+-----+-----+
+  | HEADER | CRC | PAYLOAD | CRC | PAYLOAD | CRC | ... |
+  +--------+-----+---------+-----+---------+-----+-----+
+
+The HEADER, and the first CRC are required.  The PAYLOADs are optional
+and there may be more than one.  The header must specify the length of
+each PAYLOAD.  The first CRC protects the SIGNATURE and HEADER.  Each
+PAYLOAD is protected by the CRC that follows it.  The CRC algorithm is
+such that checking all bytes up to and including the CRC will result
+in a CRC value of zero, allowing an image to be verified in one read
+of the data and without caching anything except the length.
+
+The header begins with a four byte SIGNATURE and a single byte
+HEADER_SIZE that specifies the number of 16 byte rows occupied by the
+HEADER including the SIGNATURE, HEADER_SIZE and the CRC.  A value of
+zero is reserved and invalid.  The rest of the header is a sequence of
+tagged fields followed by the CRC32 checksum in the last four bytes.
+Multi-byte values in the header are stored in network order, MSB
+first.
+
+
+  HEADER
+  +-----------+-------------+-------+-----+---------+-------+
+  | SIGNATURE | HEADER_SIZE | FIELD | ... | PADDING | CRC32 |
+  +-----------+-------------+-------+-----+---------+-------+
+
+
+  SIGNATURE (4B)
+  +------+------+------+------+
+  | 0x41 | 0x69 | 0x30 | 0xb9 |
+  +------+------+------+------+
+
+
+FIELDs begin with a one byte TAG that is a combination of a field ID
+and a two bit encoding of the field SIZE.
+
+  TAG (1B)
+  +---+---+---+---+---+---+---+---+
+  |        FIELD_ID       | SIZE  |
+  +---+---+---+---+---+---+---+---+
+    7   6   5   4   3   2   1   0
+
+The SIZE field encodes as follows:
+
+  1 1  - Field has no bytes following the TAG.
+  1 0  - Field has one data byte following the TAG.
+  0 1  - Field has 4 bytes of data following the TAG.
+  0 0  - First byte after the TAG defines the length of data
+         following the TAG.
+
+The length byte has a range from 0 to 127.  Values above 127 are
+reserved and invalid.  A zero length byte value is valid and may be
+used for FIELDs that usually have variable length data, but don't in a
+particular cases.
+
+FIELD_ID's have a range from 0x0 to 0xfc where the lowest two bits are
+set to zero.  IDs 0x00 - 0x0c and 0xe0 - 0xf8 are reserved.  ID 0xfc
+is a NOP field and a TAG of 0xff should be used as padding in the
+header.
+
+  Field IDs
+  ---------
+
+  0x10 | 0 - Image description (V)
+  0x14 | 1 - Image creation date (4B)
+  0x30 | 1 - Payload length in bytes, must be first for each payload (4B)
+  0x34 | 1 - Payload load address (4B)
+  0x38 | 1 - Payload entry point (4B)
+  0x3c | 2 - Payload type (1B)
+             0x01 Linux Kernel
+             0x02 Linux Kernel Initrd
+  0x40 | 0 - Payload description (V)
+  0x44 | 3 - Payload compression (0B)
+  0x80 | 1 - Linux Kernel architecture ID (4B)
+  0xfc | 3 - NOP (0B)
+
+As a matter of practical implementation, there shall be only one size
+encoding for each TAG.  This is both a convention, to make the
+generation and parsing of FIELDs easier, and a standardization of the
+header data format.  For example, even though a payload description
+may require just four bytes, the TAG is defined as 0x00 such that it
+always carries a length byte.

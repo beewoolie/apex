@@ -119,15 +119,15 @@ void MTDPartition::init (void)
     char ch = pb[cbLine];
     pb[cbLine] = 0;
     if (regexec (&rx, pb, sizeof (m)/sizeof (*m), m, 0) == 0) {
-      pb[m[1].rm_eo] = 0;
+      pb[m[1].rm_eo]    = 0;
       g_rg[c].device	= pb + m[1].rm_so;
       g_rg[c].size	= strtoul (pb + m[2].rm_so, NULL, 16);
       g_rg[c].erasesize = strtoul (pb + m[3].rm_so, NULL, 16);
-      pb[m[4].rm_eo] = 0;
+      pb[m[4].rm_eo]    = 0;
       g_rg[c].name	= pb + m[4].rm_so;
-      g_rg[c].base = base;
-      g_rg[c].index = c;
-      base += g_rg[c].size;
+      g_rg[c].base      = base;
+      g_rg[c].index     = c;
+      base             += g_rg[c].size;
       //      printf ("%s: 0x%x 0x%x '%s'\n",
 //	      g_rg[c].device, g_rg[c].size, g_rg[c].erasesize, g_rg[c].name);
       ++c;
