@@ -5,6 +5,10 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.jul.9
+    o Fixed ext2 to use inode_size.
+    o BUG: found that the region ext2://3/file@100 doesn't work.
+
   o 2008.mar.19
 
     o Discovered that there is a bug in the ext2 driver.  A filesystem
