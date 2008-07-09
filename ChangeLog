@@ -1,3 +1,9 @@
+2008-07-09  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/drivers/drv-ext2.c: Added support for the inode_size field
+	in the first revision of the second-extended filesystem's
+	superblock.
+
 2008-05-20  Marc Singer  <elf@buici.com>
 
 	* debian/postinst: Fixed the postinst script to only run on the

@@ -87,6 +87,14 @@
      partition changes and it is dumb to reproduce this code, even
      though it is small.
 
+   o superblock.inode_size.  EXT4 changes to the ext2/3/4 filesystem
+     format introduce an inode-size field in the superblock.  The
+     default value is 128 which was the size through EXT4.  The size
+     is now specified in the superblock and can be any multuple of 128
+     bytes.  We check the s_rev_level field of the supreblock to
+     determine whether or not the inode_size field is valid in the
+     superblock.  If not, we use the old default inode size.
+
 */
 
 #include <config.h>
@@ -120,6 +128,11 @@
 #define BLOCK_SIZE	1024	/* Of questionable value */
 
 #define BLOCK_SIZE_MAX	4096	/* Largest block buffer we support */
+
+#define EXT2_GOOD_OLD_REV		0
+#define EXT2_DYNAMIC_REV		1
+#define EXT2_GOOD_OLD_INODE_SIZE	128
+
 
 #if 0
 /* Defined in kernel headers */
@@ -166,7 +179,29 @@ struct superblock {
   __u32 s_rev_level;		/* Filesystem revision number */
   __u16 s_def_resuid;		/* Default uid for reserved blocks */
   __u16 s_def_resgid;		/* Default gid for reserved blocks */
-  __u32 s_reserved[235];	/* Padding */
+  __u32 s_first_ino;            /* First non-reserved inode number */
+  __u16 s_inode_size;           /* Size of struct inode */
+  __u16 s_block_group_nr;       /* Block group # of this superblock */
+  __u32 s_feature_compat;       /* Compatible feature set */
+  __u32 s_feature_incompat;     /* Incompatible feature set */
+  __u32 s_feature_ro_compat;    /* Read-only compatible feature set */
+  char  s_uuid[16];             /* 128-bit volume UUID */
+  char  s_volume_name[16];      /* Volume name */
+  char  s_last_mounted[64];     /* Directory where FS last mounted */
+  __u32 s_algorithm_usage_bitmap; /* Bitmap compression algorithm */
+
+      /* Directory preallocation; requires EXT2_FEATURE_COMPAT_DIR_PREALLOC. */
+  __u8  s_prealloc_blocks;      /* Number of blocks to try to preallocate*/
+  __u8  s_prealloc_dir_blocks;  /* Number to preallocate for directories */
+  __u16 s_padding1;
+
+      /* Journaling; requires EXT2_FEATURE_COMPAT_HAS_JOURNAL. */
+  char  s_journal_uuid[16];     /* Superblock journal UUID */
+  __u32 s_journal_inum;         /* Jorunal file inode number */
+  __u32 s_journal_dev;          /* Journal file device number */
+  __u32 s_last_orphan;          /* Head of inode list to delete */
+
+  __u32 s_reserved[196];	/* Padding */
 };
 
 struct block_group {
@@ -373,6 +408,10 @@ static int ext2_read_superblock (void)
   ext2.rg_blocking[1] = ext2.block_size/sizeof (long);
   ext2.rg_blocking[2] = ext2.rg_blocking[1]*(ext2.block_size/sizeof (long));
 
+	/* Make sure the inode_size field is useable */
+  if (ext2.superblock.s_rev_level == EXT2_GOOD_OLD_REV)
+    ext2.superblock.s_inode_size = EXT2_GOOD_OLD_INODE_SIZE;
+
   return 0;
 }
 
@@ -504,7 +543,7 @@ int ext2_find_inode (int inode)
 	/* Fetch the inode  */
   ext2.d.driver->seek (&ext2.d,
 		       ext2.block_size*group.bg_inode_table
-		       + (sizeof (struct inode)
+		       + (ext2.superblock.s_inode_size
 			  *((inode - 1)%ext2.superblock.s_inodes_per_group)),
 		       SEEK_SET);
 //  PRINTF ("%s: inode %d (%d %d} seeked to 0x%x of 0x%lx\n",
