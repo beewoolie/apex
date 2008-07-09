@@ -325,6 +325,39 @@ static char host_mac_address[6];
 
 static int initialized;
 
+#if !defined (SMC_IO_OVERRIDE)
+
+static inline u16 SMC_inw (unsigned long base, int r)
+{
+  u16 v = *(volatile u16*) (base + r);
+  return v;
+}
+
+static inline void SMC_insw (unsigned long base, int r,
+			     void* pv, int l)
+{
+  u16* ps = (u16*) pv;
+  while (l-- > 0) {
+    *ps++ = *(volatile u16*) (base + r);
+  }
+}
+
+static inline void SMC_outw (unsigned long base, int r, u16 v)
+{
+  *(volatile u16*) (base + r) = v;
+}
+
+static inline void SMC_outsw (unsigned long base, int r,
+			      const void* p, int l)
+{
+  const unsigned short* ps = (const unsigned short*) p;
+  while (l-- > 0) {
+    *(volatile u16*) (base + r) = *ps++;
+  }
+}
+
+#endif
+
 static inline void select_bank (int bank)
 {
   write_reg (SMC_BANK, bank & 0xf);

@@ -28,6 +28,8 @@
 	 /* Use the second static bank, with fast timings, as an IOBARRIER */
 #define SMC_IOBARRIER	(*(volatile unsigned char __force*) IOBARRIER_PHYS)
 
+#define SMC_IO_OVERRIDE         /* We have a platform implementation */
+
 static inline u16 SMC_inw (unsigned long base, int r)
 {
   u16 v = *(volatile u16*) (base + r);

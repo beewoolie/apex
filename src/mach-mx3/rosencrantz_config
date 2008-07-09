@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Mon Oct 15 10:35:13 2007
+# Wed Jul  9 15:31:00 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -43,6 +43,7 @@ CONFIG_SDRAM_BANK0=y
 CONFIG_MACH="mx3"
 # CONFIG_MACH_MX31ADS is not set
 CONFIG_MACH_EXBIBLIO_ROSENCRANTZ=y
+# CONFIG_MACH_PHYTEC_PCM037 is not set
 
 #
 # Platform Setup
@@ -55,6 +56,7 @@ CONFIG_IPU_TEST=y
 # Platform Drivers
 #
 CONFIG_ARCH_MX31=y
+CONFIG_USES_IPU_TEST=y
 
 #
 # Commands
