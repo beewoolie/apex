@@ -36,19 +36,19 @@ processed as a stream of bytes.  An image has the following form:
 
 The HEADER, and the first CRC are required.  The PAYLOADs are optional
 and there may be more than one.  The header must specify the length of
-each PAYLOAD.  The first CRC protects the SIGNATURE and HEADER.  Each
-PAYLOAD is protected by the CRC that follows it.  The CRC algorithm is
-such that checking all bytes up to and including the CRC will result
-in a CRC value of zero, allowing an image to be verified in one read
-of the data and without caching anything except the length.
+each PAYLOAD.  The first CRC protects whole header including the
+SIGNATURE.  Each PAYLOAD is protected by the CRC that follows it.  The
+CRC algorithm is such that checking all bytes up to and including the
+CRC will result in a CRC value of zero, allowing an image to be
+verified and processed in one pass through the data.
 
 The header begins with a four byte SIGNATURE and a single byte
-HEADER_SIZE that specifies the number of 16 byte rows occupied by the
+HEADER_SIZE that specifies the multiple of 16 bytes occupied by the
 HEADER including the SIGNATURE, HEADER_SIZE and the CRC.  A value of
 zero is reserved and invalid.  The rest of the header is a sequence of
 tagged fields followed by the CRC32 checksum in the last four bytes.
-Multi-byte values in the header are stored in network order, MSB
-first.
+The HEADER is padded between the last FIELD and the CRC32 to round the
+HEADER to an even multiple of 16 bytes.
 
 
   HEADER
@@ -56,6 +56,11 @@ first.
   | SIGNATURE | HEADER_SIZE | FIELD | ... | PADDING | CRC32 |
   +-----------+-------------+-------+-----+---------+-------+
 
+
+The signature identifies that the file is an APEX image as well as
+specifying the version number of the format; in this case, '0'.  The
+format is designed such that there ought not be a reason to revise it,
+but the option is left open.
 
   SIGNATURE (4B)
   +------+------+------+------+
@@ -80,10 +85,18 @@ The SIZE field encodes as follows:
   0 0  - First byte after the TAG defines the length of data
          following the TAG.
 
-The length byte has a range from 0 to 127.  Values above 127 are
-reserved and invalid.  A zero length byte value is valid and may be
-used for FIELDs that usually have variable length data, but don't in a
-particular cases.
+Four byte DATA usually carry 32 bit integers.  These values must be
+stored in MSB order.  To be more precise, multi-byte values in the
+header are always stored in network order, MSB first.
+
+Variable length fields are often UTF-8 strings.  These strings must be
+null terminated even though doing so is redundant.  Thus, the string
+field "Awesome" would require nine DATA bytes.
+
+The length byte for variable length fields has a range from 0 to 127.
+Values above 127 are reserved and invalid.  A zero length byte value
+is valid and may be used for FIELDs that usually have variable length
+data, but are empty in a particular cases.
 
 FIELD_ID's have a range from 0x0 to 0xfc where the lowest two bits are
 set to zero.  IDs 0x00 - 0x0c and 0xe0 - 0xf8 are reserved.  ID 0xfc
@@ -104,7 +117,7 @@ header.
   0x40 | 0 - Payload description (V)
   0x44 | 3 - Payload compression (0B)
   0x80 | 1 - Linux Kernel architecture ID (4B)
-  0xfc | 3 - NOP (0B)
+  0xfc | 3 - NOP; padding (0B)
 
 As a matter of practical implementation, there shall be only one size
 encoding for each TAG.  This is both a convention, to make the
