@@ -250,7 +250,7 @@ int main (int argc, char** argv)
   }
   catch (const char* sz) {
     printf ("error: %s\n", sz);
-    argp_help (&argp, stderr, ARGP_HELP_SEE, "apex-env");
+    argp_help (&argp, stderr, ARGP_HELP_SEE, (char*) "apex-env");
   }
 
   return 0;

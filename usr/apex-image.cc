@@ -12,6 +12,11 @@
 
     o CRC should be calculated using an iostream filter.
 
+    o Creation time.  It should be possible to override using the
+      current time for the creation time.  We could either be able to
+      use the timestamp on another file, set it by a string, or
+      suppress the field altogether.
+
 */
 
 //#define TALK 1
@@ -41,14 +46,14 @@ const char* argp_program_version = "apex-image 0.1";
 uint8_t signature[] = { 0x41, 0x69, 0x30, 0xb9 };
 
 enum {
-  sizeZero      = 0x3,
-  sizeOne       = 0x2,
-  sizeFour      = 0x1,
-  sizeVariable  = 0x0,
+  sizeZero      = 0x3,          // 11b
+  sizeOne       = 0x2,          // 10b
+  sizeFour      = 0x1,          // 01b
+  sizeVariable  = 0x0,          // 00b
 };
 
 enum {
-  fieldImageDescription                 = 0x10 | sizeZero,
+  fieldImageDescription                 = 0x10 | sizeVariable,
   fieldImageCreationDate                = 0x14 | sizeFour,
   fieldPayloadLength                    = 0x30 | sizeFour,
   fieldPayloadLoadAddress               = 0x34 | sizeFour,
@@ -78,8 +83,33 @@ inline uint32_t long swabl (uint32_t v)
 uint32_t compute_crc32 (uint32_t crc, const void* pv, int cb)
 {
 #define IPOLY		(0xedb88320)
+#define POLY		(0x04c11db7)
+
+#if 1
+  // This one works, but I should make sure I know that I cannot use
+  // the more efficient algorithm.  More importantly, it would be good
+  // to use the same poly that is alredy in APEX.
+
+  const unsigned char* pb = (const unsigned char *) pv;
+
+  while (cb--) {
+    int i;
+    crc ^= *pb++ << 24;
+
+    for (i = 8; i--; ) {
+      if (crc & (1<<31))
+        crc = (crc << 1) ^ POLY;
+      else
+        crc <<= 1;
+    }
+  }
+
+  return crc;
+#endif
+
+#if 0
   unsigned char* pb = (unsigned char*) pv;
-  uint32_t poly = IPOLY;	// Hack to get a register allocated
+  uint32_t poly = POLY;	// Hack to get a register allocated
 
   crc = crc ^ 0xffffffff;	// Invert because we're continuing
 
@@ -101,6 +131,7 @@ uint32_t compute_crc32 (uint32_t crc, const void* pv, int cb)
   }
 
   return crc ^ 0xffffffff;
+#endif
 }
 
 struct file {
@@ -194,13 +225,13 @@ struct Payload : public file {
       if (strlen (description) + 1 > 127)
         throw Exception ("description field too long");
       tag = fieldPayloadDescription;
-      unsigned char length = strlen (description) + 1;
+      uint8_t length = strlen (description) + 1;
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &length, 1);
-      crc = compute_crc32 (crc, &description, strlen (description) + 1);
+      crc = compute_crc32 (crc, description, length);
       write (fh, &tag, 1);
       write (fh, &length, 1);
-      write (fh, &description, strlen (description) + 1);
+      write (fh, description, length);
     }
     if (compressed) {
       tag = fieldPayloadCompression;
@@ -216,6 +247,7 @@ struct Payload : public file {
       write (fh, &tag, 1);
       write (fh, &_cb, sizeof (_cb));
     }
+    return crc;
   }
 
   Payload () : type (0),
@@ -230,12 +262,6 @@ struct arguments {
 
   Payload* m_payload;
 
-//  int image_type;
-//  uint32_t entry_point;
-//  uint32_t load_address;
-//  bool image_compressed;
-//  const char* description;
-
   arguments () {
     bzero (this, sizeof (*this)); }
 
@@ -243,10 +269,8 @@ struct arguments {
   int mode;
   bool verbose;
   bool force;
+  bool ignore_crc_errors;
   uint32_t crc_calculated;
-
-//  int architecture;
-//  int os;
 
   const char* image_name;
 
@@ -263,14 +287,16 @@ struct Image : public std::list<Payload*>, public file
   int architecture_id;
   Payload* payload;             // Pointer to payload as it is constructed
 
-  Image () : description (NULL), timeCreation (0), payload (NULL) {}
+  Image () : description (NULL), timeCreation (0), payload (NULL) {
+    timeCreation = time (NULL); }
 
   void load (const char* szPath);
 
   size_t header_size (void) {
     return 0
       + (description ? 1 + 1 + strlen (description) + 1 : 0)
-      + 5;	                // creation time
+      + 5	                // creation time
+      + (architecture_id ? 5 : 0);
   }
   uint32_t write_header (uint32_t crc, int fh) {
     unsigned char tag;
@@ -283,16 +309,17 @@ struct Image : public std::list<Payload*>, public file
       write (fh, &_timeCreation, sizeof (_timeCreation));
     }
     if (description) {
+      printf ("image has a description %s\n", description);
       if (strlen (description) + 1 > 127)
         throw Exception ("description field too long");
       tag = fieldImageDescription;
-      unsigned char length = strlen (description) + 1;
+      uint8_t length = strlen (description) + 1;
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &length, 1);
-      crc = compute_crc32 (crc, &description, strlen (description) + 1);
+      crc = compute_crc32 (crc, description, length);
       write (fh, &tag, 1);
       write (fh, &length, 1);
-      write (fh, &description, strlen (description) + 1);
+      write (fh, description, length);
     }
     if (architecture_id) {
       tag = fieldLinuxKernelArchitectureID;
@@ -302,6 +329,7 @@ struct Image : public std::list<Payload*>, public file
       write (fh, &tag, 1);
       write (fh, &_id, sizeof (_id));
     }
+    return crc;
   }
 };
 
@@ -319,11 +347,13 @@ struct argp_option options[] = {
 				"Set load address and entry point for image" },
 //  { "architecture",	'A', "ARCH", 0, "Set architecture [arm]" },
 //  { "os",		'O', "OS", 0, "Set operating system [GNU/Linux]" },
-//  { "label",		'n', "LABEL", 0, "Set image label or name" },
-  { "type",		't', "TYPE", 0, "Set image type [kernel]" },
+  { "image-description", 'n', "LABEL", 0, "Set description of image" },
+  { "type",		't', "TYPE", 0, "Set payload type [kernel]" },
+  { "description",       'd', "LABEL", 0, "Set description of payload" },
 
   { "force",		'f', 0, 0, "Force overwrite of output file", 3 },
   { "verbose",		'v', 0, 0, "Verbose output, when available", 3 },
+  { "ignore-crc-errors", 'C', 0, 0, "Ignore CRC errors", 3 },
 
   { 0 }
 };
@@ -468,6 +498,10 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 //    break;
 
   case 'n':
+    g_image.description = arg;
+    break;
+
+  case 'd':
     args.payload ()->description = arg;
     break;
 
@@ -483,6 +517,10 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 
   case 'v':
     args.verbose = true;
+    break;
+
+  case 'C':
+    args.ignore_crc_errors = true;
     break;
 
   case ARGP_KEY_ARG:
@@ -540,6 +578,123 @@ void Image::load (const char* szPath)
   // *** Parse the file header and generate the Payloads
 }
 
+
+/** Show and possibly verify an image header.  The pv/cb is the memory
+    to scan for the header which must be the first data in the
+    region. */
+
+void report_header (struct arguments& args, void* pv, size_t cb)
+{
+  if (cb < 16)
+    throw Exception ("invalid header");
+
+  if (memcmp (pv, signature, sizeof (signature)) != 0)
+    throw Exception ("no image signature found");
+
+  size_t cbHeader = ((uint8_t*) pv)[4]*16;
+  if (cbHeader > cb)
+    throw Exception ("header_size invalid");
+
+  uint32_t crc = compute_crc32 (0, pv, cbHeader);
+  if (crc != 0 && !args.ignore_crc_errors)
+    throw Exception ("incorrect header CRC");
+  crc = compute_crc32 (0, pv, cbHeader - 4);
+
+  // At this point, we have what we believe is a bona fide image
+  // header.  We skip the signature and header_size.  The loop on
+  // fields proceeds until the last byte before the CRC.
+
+  if (args.verbose) {
+    printf ("Signature:            0x%02x 0x%02x 0x%02x 0x%02x\n",
+            ((uint8_t*)pv)[0], ((uint8_t*)pv)[1],
+            ((uint8_t*)pv)[2], ((uint8_t*)pv)[3]);
+    printf ("Header Size:          %d (%d bytes)\n",
+            ((uint8_t*)pv)[4], ((uint8_t*)pv)[4]*16);
+  }
+
+  pv = (char*) pv + 5;
+  cbHeader -= 5;
+
+  while (cbHeader > 4) {
+    uint8_t tag = *(uint8_t*) pv;
+    size_t cbField = 1;
+    size_t cbData = 0;
+//    printf ("tag %x  size %x\n", tag, tag & 3);
+    switch (tag & 3) {
+    case sizeZero:		cbData = 0; break;
+    case sizeOne:		cbData = 1; break;
+    case sizeFour:		cbData = 4; break;
+    case sizeVariable:
+//      printf ("variable size\n");
+      cbData = ((uint8_t*)pv)[1];
+      if (cbData > 127)
+        throw Exception ("invalid field length");
+      ++cbField;
+      break;
+    }
+    cbField += cbData;
+
+    uint32_t v;
+    memcpy (&v, &((uint8_t*)pv)[1], 4);
+    v = swabl (v);
+
+//    printf ("tag %x %d %d\n", tag, cbField, cbData);
+    switch (tag) {
+    case fieldImageDescription:
+//      printf ("image description\n");
+      printf ("Image Description:    %s\n", &((char*)pv)[2]);
+      break;
+    case fieldImageCreationDate:
+      {
+        time_t t = v;
+        printf ("Image Creation Date:  %s", asctime (localtime (&t)));
+      }
+      break;
+    case fieldPayloadLength:
+      printf ("Payload Length:       %s\n", interpret_size (v));
+      break;
+    case fieldPayloadLoadAddress:
+      printf ("Payload Load Address: 0x%08lx\n", v);
+      break;
+    case fieldPayloadEntryPoint:
+      printf ("Payload Entry Point:  0x%08lx\n", v);
+      break;
+    case fieldPayloadType:
+      printf ("Payload Type:         %s\n",
+              describe_image_type (((uint8_t*)pv)[1]));
+      break;
+    case fieldPayloadDescription:
+      printf ("Payload Description:  \n", &((char*)pv)[2]);
+      break;
+    case fieldPayloadCompression:
+      printf ("Payload Compression:  gzip\n");
+      break;
+    case fieldLinuxKernelArchitectureID:
+      printf ("Linux Kernel Architecture ID: %d\n", v);
+      break;
+    case fieldNOP:
+//      printf ("NOP:\n");
+      break;
+    default:
+      break;                    // It's OK to skip unknown tags
+    }
+
+    if (cbField > cbHeader)
+      throw Exception ("field size exceeds header length");
+    cbHeader -= cbField;
+    pv = (char*) pv + cbField;
+  }
+
+  if (crc != 0 || args.verbose || args.ignore_crc_errors) {
+    uint32_t header_crc;
+    memcpy (&header_crc, pv, 4);
+    header_crc = swabl (header_crc);
+    bool ok = crc == header_crc;
+
+    printf ("Header CRC:           0x%08x %s 0x%08x %s\n",
+            header_crc, ok ? "==" : "!=", crc, ok ? "" : "ERROR");
+  }
+}
 
 #if 0
 
@@ -661,6 +816,10 @@ void apeximage (struct arguments& args)
     break;
   }
 
+  if (args.mode == modeShow) {
+    report_header (args, payloadIn.pv, payloadIn.cb);
+    return;
+  }
 
 
   if (args.mode == modeCreate) {
@@ -676,6 +835,7 @@ void apeximage (struct arguments& args)
     crc = compute_crc32 (crc, &signature, sizeof (signature));
     write (fhSave, &signature, sizeof (signature));
     int header_size = sizeof (signature) + 1 + g_image.header_size ();
+    printf ("base header is %d bytes\n", header_size);
     for (Image::iterator it = g_image.begin ();
          it != g_image.end (); ++it) {
       if ((*it) == &payloadOut)
@@ -683,10 +843,13 @@ void apeximage (struct arguments& args)
       header_size += (*it)->header_size ();
     }
     header_size += 4;           // CRC
+    printf ("total header with crc is %d bytes\n", header_size);
     unsigned char _header_size = (header_size + 15)/16;
     crc = compute_crc32 (crc, &_header_size, 1);
     write (fhSave, &_header_size, 1);
+    printf ("crc of sig and size 0x%08x\n", crc);
     crc = g_image.write_header (crc, fhSave);
+    printf ("crc of sig and size and image fields 0x%08x\n", crc);
     for (Image::iterator it = g_image.begin ();
          it != g_image.end (); ++it) {
       if ((*it) == &payloadOut)
@@ -722,6 +885,18 @@ void apeximage (struct arguments& args)
     }
 
     close (fhSave);
+
+		// Release all files that could be the same as the output
+    payloadIn.release_this ();
+    payloadOut.release_this ();
+
+    if (rename (szPathSave, payloadOut.szPath)) {
+      // I'm not sure it is possible to get this error since we've
+      // already been able to write a temporary file to the same directory.
+      unlink (szPathSave);
+      throw ResultException (errno, "unable to rename '%s' to '%s' (%s)",
+                             szPathSave, payloadOut.szPath, strerror (errno));
+    }
   }
 
 #if 0
