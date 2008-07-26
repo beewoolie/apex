@@ -7,15 +7,85 @@
 
     @brief Program to create or modify APEX format image files.
 
+    TODO
+    ----
+
+    o Auto detect mode.  This was done, to some extent, in the
+      ubootimage command.  It should be apparent from the command line
+      whether or not we are updating, showing or creating a new image.
+      o Much of this is done.  We need to think about update more
+        because there are some possible edge cases with it.  What if
+        the user specifies a single file, an image, and some metadata
+        for the payload.  Should we require the '.' file for updating?
+        There is no valid create mode with that.  Should we default to
+        create if there is more than one file and none of them are
+        update '.' files?  The use would then need to force or
+        override.  Also, what happens if there are more input files
+        for an update than were in the existing image?  Fewer input
+        files?
+
+    o Support update.  Especially, changes to the metadata.
+
+    o Define how the output will look in normal, verbose, and quiet
+      modes.
+
+    o Fixup comments for doxygen.
+
+    o Document the file format in this file, or refer to another
+      file.  It should, at a minimum, be in this directory.
+
+
     NOTES
     -----
 
-    o CRC should be calculated using an iostream filter.
+    o CRC could/should be calculated using an iostream filter.
 
-    o Creation time.  It should be possible to override using the
+    o Creation time.  It should be possible to override the use of the
       current time for the creation time.  We could either be able to
       use the timestamp on another file, set it by a string, or
       suppress the field altogether.
+      o If we do this, the modified() operator needs to do the right
+        thing since we now ignore the creation time.
+
+    o modeUpdate.  Up until now, the only thing we've been able to do
+      when updating an image are changes to the metadata.  The command
+      line needs to support this in a useful way.  For example, we
+      could use a special marker for 'same file that is already in the
+      image'.  However, it could be handy to allow replacement of one
+      of the components of an image.  For example, revise the initrd
+      and leave the kernel intact.  In fact, it could be inferred from
+      the input.
+
+      The syntax may look like this:
+
+        apex-image -u zImage-new aImage    # Replace zImage in aImage
+        apex-image -u . initrd-new aImage  # Replace initrd in aImage
+
+      It would be wise to make sure that the distinction between an
+      update the creation of a new image is clear.  Including a single
+      '.' could be construed as requesting an update.  However, it
+      isn't clear what to do if there are no metadata changes and the
+      image has only one payload.
+
+        apex-image zImage aImage	   # Update aImage or replace it
+
+      We could assume that update has priority and that the only way
+      to force creation is to use the -c/-f switches.  I don't like
+      this because it seems like the user should be require to make
+      his intention clear.  If there is no ambiguity, then the
+      application can do the rigth thing.  There is no harm in
+      creating an image if aImage doesn't exist.   Still, if the user
+      has used this form in the past and then does so again, he may
+      expect that we'll be creating a new image when, in fact, we fall
+      back to updating.
+
+      The only other way to manage this would be to report on the
+      progress.  If we say 'creating' or 'updating' then we give the
+      user sufficient feedback to make the process clear.  This would
+      also mean that there is no need for an --update switch, only a
+      --create switch.  Moreover, there is no need for --force since
+      the the user would only specify --create when the output file
+      already exists.
 
 */
 
@@ -86,9 +156,9 @@ uint32_t compute_crc32 (uint32_t crc, const void* pv, int cb)
 #define POLY		(0x04c11db7)
 
 #if 1
-  // This one works, but I should make sure I know that I cannot use
-  // the more efficient algorithm.  More importantly, it would be good
-  // to use the same poly that is alredy in APEX.
+  // This version works and it is identical to the one in APEX.  I
+  // should make sure I know that I cannot use a more efficient
+  // algorithm like the one below, but we don't really need to care.
 
   const unsigned char* pb = (const unsigned char *) pv;
 
@@ -134,7 +204,26 @@ uint32_t compute_crc32 (uint32_t crc, const void* pv, int cb)
 #endif
 }
 
-struct file {
+size_t verify_image_header (void* pv, size_t cb, bool ignore_crc_errors)
+{
+  if (cb < 16)
+    throw Exception ("invalid header");
+
+  if (memcmp (pv, signature, sizeof (signature)) != 0)
+    throw Exception ("no image signature found");
+
+  size_t cbHeader = ((uint8_t*) pv)[4]*16;
+  if (cbHeader > cb)
+    throw Exception ("header_size invalid");
+
+  uint32_t crc = compute_crc32 (0, pv, cbHeader);
+  if (crc != 0 && !ignore_crc_errors)
+    throw Exception ("incorrect header CRC");
+
+  return cbHeader;
+}
+
+struct File {
 
   const char* szPath;
   int fh;
@@ -144,6 +233,17 @@ struct file {
 
   bool is_open (void) {
     return fh != -1; }
+  bool is_update (void) {
+    return strcasecmp (szPath, ".") == 0; }
+  bool is_valid_image (void) {
+    try {
+      verify_image_header (pv, cb, false);
+    }
+    catch (...) {
+      return false;
+    }
+    return true;
+  }
   void release_this (void) {
     if (pv != NULL) {
       munmap (pv, cb);
@@ -154,9 +254,9 @@ struct file {
     fh = -1;
   }
 
-  file () : szPath (NULL), fh (-1), cb (0), pv (NULL) {}
-  file (const char* _szPath) : szPath (_szPath), fh (-1), cb (0), pv (NULL) {}
-  ~file () {
+  File () : szPath (NULL), fh (-1), cb (0), pv (NULL) {}
+  File (const char* _szPath) : szPath (_szPath), fh (-1), cb (0), pv (NULL) {}
+  ~File () {
     release_this (); }
 
   void set_path (const char* _szPath) {
@@ -179,7 +279,7 @@ struct file {
 /** The Payload object holds both the mmap'd source file and the
     attributes for the payload in the image. */
 
-struct Payload : public file {
+struct Payload : public File {
 
   int type;
   uint32_t load_address;
@@ -187,6 +287,13 @@ struct Payload : public file {
   const char* description;
   bool compressed;
 
+  bool modified (void) {
+    return type
+      || load_address != ~0
+      || entry_point != ~0
+      || description
+      //      || compressed
+      ; }
   size_t header_size (void) {
     return 5                    // Mandatory length
       + (type ? 2 : 0)
@@ -258,7 +365,7 @@ struct Payload : public file {
 };
 
 struct arguments {
-  int architecture_id;
+//  int architecture_id;
 
   Payload* m_payload;
 
@@ -268,6 +375,7 @@ struct arguments {
 //  int cFiles;
   int mode;
   bool verbose;
+  bool quiet;
   bool force;
   bool ignore_crc_errors;
   uint32_t crc_calculated;
@@ -280,15 +388,22 @@ struct arguments {
     return m_payload; }
 };
 
-struct Image : public std::list<Payload*>, public file
+struct Image : public std::list<Payload*>, public File
 {
   const char* description;
   time_t timeCreation;
   int architecture_id;
-  Payload* payload;             // Pointer to payload as it is constructed
 
-  Image () : description (NULL), timeCreation (0), payload (NULL) {
-    timeCreation = time (NULL); }
+  Image () : description (NULL),
+             timeCreation (time (NULL)),
+             architecture_id (0) { }
+
+  /** Return true if there is a change to the metadata for the image. */
+  bool modified (void) {
+    if (description || architecture_id)
+      return true;
+    return size () && front ()->modified ();
+  }
 
   void load (const char* szPath);
 
@@ -309,7 +424,7 @@ struct Image : public std::list<Payload*>, public file
       write (fh, &_timeCreation, sizeof (_timeCreation));
     }
     if (description) {
-      printf ("image has a description %s\n", description);
+//      printf ("image has a description %s\n", description);
       if (strlen (description) + 1 > 127)
         throw Exception ("description field too long");
       tag = fieldImageDescription;
@@ -325,7 +440,7 @@ struct Image : public std::list<Payload*>, public file
       tag = fieldLinuxKernelArchitectureID;
       uint32_t _id = swabl (architecture_id);
       crc = compute_crc32 (crc, &tag, 1);
-      crc = compute_crc32 (crc, &_id, 1);
+      crc = compute_crc32 (crc, &_id, sizeof (_id));
       write (fh, &tag, 1);
       write (fh, &_id, sizeof (_id));
     }
@@ -350,9 +465,12 @@ struct argp_option options[] = {
   { "image-description", 'n', "LABEL", 0, "Set description of image" },
   { "type",		't', "TYPE", 0, "Set payload type [kernel]" },
   { "description",       'd', "LABEL", 0, "Set description of payload" },
+  { "architecture-id",  'A', "NUMBER", 0,
+    "Set a value to override the architecture ID" },
 
   { "force",		'f', 0, 0, "Force overwrite of output file", 3 },
   { "verbose",		'v', 0, 0, "Verbose output, when available", 3 },
+  { "quiet",		'q', 0, 0, "Suppress output", 3 },
   { "ignore-crc-errors", 'C', 0, 0, "Ignore CRC errors", 3 },
 
   { 0 }
@@ -485,11 +603,9 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
       = interpret_number (arg);
     break;
 
-//  case 'A':
-//    args.architecture = interpret_architecture (arg);
-//    if (args.architecture == 0)
-//      argp_error (state, "unrecognized architecture '%s'", arg);
-//    break;
+  case 'A':
+    g_image.architecture_id = interpret_number (arg);
+    break;
 
 //  case 'O':
 //    args.os = interpret_os (arg);
@@ -517,6 +633,12 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 
   case 'v':
     args.verbose = true;
+    args.quiet = false;
+    break;
+
+  case 'q':
+    args.quiet = true;
+    args.verbose = false;
     break;
 
   case 'C':
@@ -533,6 +655,15 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 
     if (!g_image.size ())
       argp_usage (state);
+
+    if (!args.mode) {
+      if (g_image.size () == 1)
+        args.mode = g_image.modified ()
+          ? modeUpdate : modeShow;
+      else
+        args.mode = g_image.back ()->is_valid_image ()
+          ? modeUpdate : modeCreate;
+    }
 
     switch (args.mode) {
     default:
@@ -585,20 +716,9 @@ void Image::load (const char* szPath)
 
 void report_header (struct arguments& args, void* pv, size_t cb)
 {
-  if (cb < 16)
-    throw Exception ("invalid header");
-
-  if (memcmp (pv, signature, sizeof (signature)) != 0)
-    throw Exception ("no image signature found");
-
-  size_t cbHeader = ((uint8_t*) pv)[4]*16;
-  if (cbHeader > cb)
-    throw Exception ("header_size invalid");
-
-  uint32_t crc = compute_crc32 (0, pv, cbHeader);
-  if (crc != 0 && !args.ignore_crc_errors)
-    throw Exception ("incorrect header CRC");
-  crc = compute_crc32 (0, pv, cbHeader - 4);
+                                // Verify will throw on error
+  size_t cbHeader = verify_image_header (pv, cb, args.ignore_crc_errors);
+  uint32_t crc = compute_crc32 (0, pv, cbHeader - 4);
 
   // At this point, we have what we believe is a bona fide image
   // header.  We skip the signature and header_size.  The loop on
@@ -670,7 +790,7 @@ void report_header (struct arguments& args, void* pv, size_t cb)
       printf ("Payload Compression:  gzip\n");
       break;
     case fieldLinuxKernelArchitectureID:
-      printf ("Linux Kernel Architecture ID: %d\n", v);
+      printf ("Linux Kernel Architecture ID: %d (0x%x)\n", v, v);
       break;
     case fieldNOP:
 //      printf ("NOP:\n");
@@ -792,10 +912,12 @@ void apeximage (struct arguments& args)
   Payload& payloadIn = *(*g_image.begin ());
   Payload& payloadOut = *(*g_image.rbegin ());
 
+#if 0
   printf ("fileIn %s (%d B header)\n", payloadIn.szPath,
           payloadIn.header_size ());
   printf ("fileOut %s (%d B header)\n", payloadOut.szPath,
           payloadOut.header_size ());
+#endif
 
   switch (args.mode) {
   case modeUpdate:
@@ -821,8 +943,13 @@ void apeximage (struct arguments& args)
     return;
   }
 
+  if (args.mode == modeUpdate) {
+    printf ("Update not supported\n");
+    return;
+  }
 
   if (args.mode == modeCreate) {
+    printf ("Creating image %s.\n", payloadOut.szPath);
 		// Save the new image to a temporary filename
     size_t cbPathSave = strlen (payloadOut.szPath) + 32;
     char* szPathSave = (char*) alloca (cbPathSave);
@@ -835,7 +962,7 @@ void apeximage (struct arguments& args)
     crc = compute_crc32 (crc, &signature, sizeof (signature));
     write (fhSave, &signature, sizeof (signature));
     int header_size = sizeof (signature) + 1 + g_image.header_size ();
-    printf ("base header is %d bytes\n", header_size);
+//    printf ("base header is %d bytes\n", header_size);
     for (Image::iterator it = g_image.begin ();
          it != g_image.end (); ++it) {
       if ((*it) == &payloadOut)
@@ -843,13 +970,13 @@ void apeximage (struct arguments& args)
       header_size += (*it)->header_size ();
     }
     header_size += 4;           // CRC
-    printf ("total header with crc is %d bytes\n", header_size);
+//    printf ("total header with crc is %d bytes\n", header_size);
     unsigned char _header_size = (header_size + 15)/16;
     crc = compute_crc32 (crc, &_header_size, 1);
     write (fhSave, &_header_size, 1);
-    printf ("crc of sig and size 0x%08x\n", crc);
+//    printf ("crc of sig and size 0x%08x\n", crc);
     crc = g_image.write_header (crc, fhSave);
-    printf ("crc of sig and size and image fields 0x%08x\n", crc);
+//    printf ("crc of sig and size and image fields 0x%08x\n", crc);
     for (Image::iterator it = g_image.begin ();
          it != g_image.end (); ++it) {
       if ((*it) == &payloadOut)
@@ -876,8 +1003,8 @@ void apeximage (struct arguments& args)
       crc = swabl (crc);
       write (fhSave, &crc, sizeof (crc));
 
-      printf ("%x length  %d->%d\n",
-              swabl (crc), (*it)->cb, 16 - (((*it)->cb + 4) & 0xf));
+//      printf ("%x length  %d->%d\n",
+//              swabl (crc), (*it)->cb, 16 - (((*it)->cb + 4) & 0xf));
       for (int cbPad = 16 - (((*it)->cb + 4) & 0xf); cbPad--; ) {
         unsigned char b = 0xff;
         write (fhSave, &b, 1);
