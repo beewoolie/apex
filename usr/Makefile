@@ -9,7 +9,7 @@ CFLAGS += -I../include
 apex-env_SRCS:=apex-env.cc mtdpartition.cc link.cc
 apex-env_OBJS:=$(apex-env_SRCS:.cc=.o)
 
-apex-image_SRCS:=apex-image.cc
+apex-image_SRCS:=apex-image.cc dumpw.cc
 apex-image_OBJS:=$(apex-image_SRCS:.cc=.o)
 
 DEPS:=$(apex-env_SRCS:%.cc=%.d)
