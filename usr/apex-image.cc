@@ -10,35 +10,25 @@
     TODO
     ----
 
-    o Modified metadata on show is an error--report it.
+    o Revise help prose to reflect the auto-mode detection and the
+      basic operation of the program.
+
+    o Payload CRCs should be calculated the same as POSIX cksum
+      command so that it is easy to verify what they should be.  This
+      is, but we need to document this well.
+
+    o Normalize error reporting so that all errors look the same.  The
+      error messages from within the argument parser are a good
+      standard.
 
     o It would be nice if the verbose mode of update stated which
       fields and payloads were being updated.  This isn't super
       important since we can see the outcome with the dry-run.
 
-    o Clean up the output such that we don't have to abbreviate the
-      'Payload' label.
-
     o Need a definitive error when the number of updated files is
       greater than the number of input files.  The use of '.' notation
       for updates could introduce more payloads than there are source
       files.
-
-    o Make sure that CRC handling is even.  We are reading the CRC
-      from the file on Image::load() and using that value in the
-      describe function.  If we're updating, we need to clobber this
-      stored CRC and, probably, replace it with the new, correct
-      value.  Note that we also want the CRC as loaded to be useful in
-      verifying the image data.
-
-    o On update, the dry run should report the signature, header size,
-      and header checksum of the image as it will appear.  This may
-      require that we generate the new image header and store it as
-      part of the Image.  In fact, this may be the best way to handle
-      the describe () command so that there is no shenanigans with
-      checking the status of the last payload.  In the case of
-      showing, the header pv and cb could just be pointers into the
-      final Payload mmap'd region.
 
     o Define how the output will look in normal, verbose, and quiet
       modes.
@@ -311,6 +301,20 @@ uint32_t compute_crc32 (uint32_t crc, const void* pv, int cb)
 #endif
 }
 
+/** Append a CRC32 of the length of a region such that the length may
+    be any size.  We add bytes to the CRC starting with the LSB until
+    the length is empty.  This is the method compatible with the POSIX
+    cksum command. */
+
+uint32_t compute_crc32_length (uint32_t crc, size_t cb)
+{
+  for (; cb; cb >>= 8) {
+    uint8_t b = cb & 0xff;
+    crc = compute_crc32 (crc, &b, 1);
+  }
+  return crc;
+}
+
 size_t verify_image_header (void* pv, size_t cb, bool ignore_crc_errors)
 {
   if (cb < 16)
@@ -534,9 +538,6 @@ struct arguments {
 
   Payload* m_payload;
 
-  arguments () {
-    bzero (this, sizeof (*this)); }
-
   int mode;
   int verbose;
   bool dry_run;
@@ -546,6 +547,9 @@ struct arguments {
   uint32_t crc_calculated;
 
   const char* image_name;
+
+  arguments () {
+    bzero (this, sizeof (*this)); }
 
   Payload* payload (void) {
     if (!m_payload)
@@ -758,23 +762,23 @@ public:
 
 
 struct argp_option options[] = {
-  { "show",		'i', 0, 0,          "Mode to show an image header", 1 },
-  { "update",		'u', 0, 0,                  "Mode to update image"    },
-  { "create",		'c', 0, 0,            "Mode to create a new image"    },
+  { "show",		'i', 0, 0,        "Force 'show image header' mode", 1 },
+  { "update",		'u', 0, 0,             "Force 'update image' mode"    },
+  { "create",		'c', 0, 0,             "Force 'create image' mode"    },
 
   { "load-address",	'l', "ADDR", 0,       "Set load address for image", 2 },
   { "entry-point",	'e', "ADDR", 0,        "Set entry point for image"    },
   { "load-and-entry",	'L', "ADDR", 0,
-			      "Set load address and entry point for image"    },
-  { "image-description", 'D', "LABEL", 0,       "Set description of image"    },
+			        "Set payload load address and entry point"    },
+  { "image-description", 'D', "LABEL", 0,          "Set image description"    },
   { "type",		't', "TYPE", 0,        "Set payload type [kernel]"    },
-  { "description",      'd', "LABEL", 0,      "Set description of payload"    },
+  { "description",      'd', "LABEL", 0,         "Set payload description"    },
   { "architecture-id",  'A', "NUMBER", 0,
                              "Set a value to override the architecture ID"    },
 
   { "force",		'f', 0, 0,        "Force overwrite of output file", 3 },
   { "verbose",		'v', 0, 0,        "Verbose output, when available"    },
-  { "quiet",		'q', 0, 0,                       "Suppress output"    },
+  { "quiet",		'q', 0, 0,              "Suppress output messages"    },
   { "dry-run",		'n', 0, 0,               "Produce no output files"    },
   { "ignore-crc-errors", 'C', 0, 0,                    "Ignore CRC errors"    },
 
@@ -927,6 +931,8 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
       args.mode = modeShow;
       // -- fall through
     case modeShow:
+      if (g_image.modified ())
+        argp_error (state, "metadata may not be modified when showing an image header");
       if (g_image.size () != 1)
         argp_error (state, "show mode requires one and only one file");
       break;
@@ -1176,7 +1182,10 @@ void Image::describe (struct arguments& args)
     }
     if (payload.pv) {
       uint32_t crc = compute_crc32 (0, payload.pv, payload.cb);
-      printf ("%sCRC:          0x%08x ", sz,
+      crc = compute_crc32_length (crc, payload.cb);
+      crc = ~crc;
+      printf ("%sCRC:          0x%08x (%u) ", sz,
+              payload.crc_loaded ? payload.crc_loaded : crc,
               payload.crc_loaded ? payload.crc_loaded : crc);
       if (payload.crc_loaded) {
         if (crc == payload.crc_loaded)
@@ -1293,15 +1302,17 @@ void apeximage (struct arguments& args)
       break;
     uint32_t crc = 0;
     crc = compute_crc32 (crc, (*it)->pv, (*it)->cb);
-    write (fhSave, (*it)->pv, (*it)->cb);
+    crc = compute_crc32_length (crc, (*it)->cb);
+    crc = ~crc;
+    ::write (fhSave, (*it)->pv, (*it)->cb);
 //    if (args.verbose)
 //      printf ("Pyld #%d CRC:          0x%08x\n", i, crc);
     crc = swabl (crc);
-    write (fhSave, &crc, sizeof (crc));
+    ::write (fhSave, &crc, sizeof (crc));
 
     for (int cbPad = 16 - (((*it)->cb + 4) & 0xf); cbPad--; ) {
       unsigned char b = 0xff;
-      write (fhSave, &b, 1);
+      ::write (fhSave, &b, 1);
     }
   }
 
