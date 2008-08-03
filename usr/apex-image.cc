@@ -10,21 +10,26 @@
     TODO
     ----
 
-    o Auto detect mode.  This was done, to some extent, in the
-      ubootimage command.  It should be apparent from the command line
-      whether or not we are updating, showing or creating a new image.
-      o Much of this is done.  We need to think about update more
-        because there are some possible edge cases with it.  What if
-        the user specifies a single file, an image, and some metadata
-        for the payload.  Should we require the '.' file for updating?
-        There is no valid create mode with that.  Should we default to
-        create if there is more than one file and none of them are
-        update '.' files?  The use would then need to force or
-        override.  Also, what happens if there are more input files
-        for an update than were in the existing image?  Fewer input
-        files?
+    o Modified metadata on show is an error--report it.
 
-    o Support update.  Especially, changes to the metadata.
+    o It would be nice if the verbose mode of update stated which
+      fields and payloads were being updated.  This isn't super
+      important since we can see the outcome with the dry-run.
+
+    o Clean up the output such that we don't have to abbreviate the
+      'Payload' label.
+
+    o Need a definitive error when the number of updated files is
+      greater than the number of input files.  The use of '.' notation
+      for updates could introduce more payloads than there are source
+      files.
+
+    o Make sure that CRC handling is even.  We are reading the CRC
+      from the file on Image::load() and using that value in the
+      describe function.  If we're updating, we need to clobber this
+      stored CRC and, probably, replace it with the new, correct
+      value.  Note that we also want the CRC as loaded to be useful in
+      verifying the image data.
 
     o On update, the dry run should report the signature, header size,
       and header checksum of the image as it will appear.  This may
@@ -47,13 +52,6 @@
       past the end of a header in case the data is corrupt.  Done but
       not tested.
 
-    o Implement dry run which will be a type of verbose.
-
-    o The Image::load() call makes it impossible to load an image that
-      has a broken CRC.  This may not be desirable in the event that
-      we want to be able to analyze an image with a partially broken
-      header.  The thing is, we could tolerate a bad CRC if the
-      signature were intact.
 
     NOTES
     -----
@@ -127,11 +125,14 @@
 
 #include <list>
 #include <vector>
+#include <ext/rope>
 
 #include "exception.h"
 #include "talk.h"
 #include "oprintf.h"
 #include "dumpw.h"
+
+using __gnu_cxx::crope;
 
 const char* argp_program_version = "apex-image 0.1";
 
@@ -216,6 +217,34 @@ const char* interpret_size (uint32_t cb)
   snprintf (sz, sizeof (sz), "%d bytes (%d.%02d %ciB)",
             cb, (int) s, (int (s*100.0))%100, unit);
   return sz;
+}
+
+const char* describe_tag (uint8_t tag)
+{
+  switch (tag) {
+  case fieldImageDescription:
+    return "fieldImageDescription";
+  case fieldImageCreationDate:
+    return "fieldImageCreationDate";
+  case fieldPayloadLength:
+    return "fieldPayloadLength";
+  case fieldPayloadLoadAddress:
+    return "fieldPayloadLoadAddress";
+  case fieldPayloadEntryPoint:
+    return "fieldPayloadEntryPoint";
+  case fieldPayloadType:
+    return "fieldPayloadType";
+  case fieldPayloadDescription:
+    return "fieldPayloadDescription";
+  case fieldPayloadCompression:
+    return "fieldPayloadCompression";
+  case fieldLinuxKernelArchitectureID:
+    return "fieldLinuxKernelArchitectureID";
+  case fieldNOP:
+    return "fieldNOP";
+  default:
+    return "unknown-tag";
+  }
 }
 
 const char* describe_image_type (unsigned long v)
@@ -320,9 +349,9 @@ public:
     return fh == -2; }
   bool is_update (void) {
     return strcasecmp (szPath, ".") == 0; }
-  bool is_valid_image (void) {
+  bool is_valid_image (bool ignore_crc_errors = false) {
     try {
-      verify_image_header (pv, cb, false);
+      verify_image_header (pv, cb, ignore_crc_errors);
     }
     catch (...) {
       return false;
@@ -393,6 +422,8 @@ struct Payload : public File {
   uint32_t entry_point;
   bool compressed;
 
+  uint32_t crc_loaded;          // CRC as read from an existing image
+
   bool modified (void) {
     return type
       || load_address != ~0
@@ -408,31 +439,31 @@ struct Payload : public File {
       + (description ? 1 + 1 + strlen (description) + 1 : 0)
       + (compressed ? 1 : 0); }
 
-  uint32_t write_header (uint32_t crc, int fh) {
+  uint32_t build_header (uint32_t crc, crope& rope) {
     unsigned char tag;
     if (type) {
       tag = fieldPayloadType;
       unsigned char _type = type;
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_type, 1);
-      write (fh, &tag, 1);
-      write (fh, &_type, 1);
+      rope.append (tag);
+      rope.append (_type);
     }
     if (load_address != ~0) {
       tag = fieldPayloadLoadAddress;
       uint32_t _load_address = swabl (load_address);
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_load_address, sizeof (_load_address));
-      write (fh, &tag, 1);
-      write (fh, &_load_address, sizeof (_load_address));
+      rope.append (tag);
+      rope.append ((char*) &_load_address, sizeof (_load_address));
     }
     if (entry_point != ~0) {
       tag = fieldPayloadEntryPoint;
       uint32_t _entry_point = swabl (entry_point);
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_entry_point, sizeof (_entry_point));
-      write (fh, &tag, 1);
-      write (fh, &_entry_point, sizeof (_entry_point));
+      rope.append (tag);
+      rope.append ((char*) &_entry_point, sizeof (_entry_point));
     }
     if (description) {
       if (strlen (description) + 1 > 127)
@@ -442,14 +473,14 @@ struct Payload : public File {
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &length, 1);
       crc = compute_crc32 (crc, description, length);
-      write (fh, &tag, 1);
-      write (fh, &length, 1);
-      write (fh, description, length);
+      rope.append (tag);
+      rope.append (length);
+      rope.append (description, length);
     }
     if (compressed) {
       tag = fieldPayloadCompression;
       crc = compute_crc32 (crc, &tag, 1);
-      write (fh, &tag, 1);
+      rope.append (tag);
     }
     // Length is always last
     {
@@ -457,21 +488,21 @@ struct Payload : public File {
       uint32_t _cb = swabl (cb);
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_cb, sizeof (_cb));
-      write (fh, &tag, 1);
-      write (fh, &_cb, sizeof (_cb));
+      rope.append (tag);
+      rope.append ((char*) &_cb, sizeof (_cb));
     }
     return crc;
   }
 
   Payload () : description (NULL), type (0),
                load_address (~0), entry_point (~0),
-               compressed (false) {}
+               compressed (false), crc_loaded (0) {}
   ~Payload () { }
 
   /** Merge payload with this.  The process of updating an image
       somtimes involves makes  */
   Payload& operator+= (Payload& payload) {
-    printf ("operator+= on payload\n");
+//    printf ("operator+= on payload\n");
     if (is_void ()) {
       *(File*) this = payload;
       payload.void_this ();
@@ -484,6 +515,7 @@ struct Payload : public File {
       entry_point = payload.entry_point;
     if (!description)
       description = payload.description;
+    crc_loaded = 0;             // Clear the old value if it was loaded
   }
 
 };
@@ -506,7 +538,7 @@ struct arguments {
     bzero (this, sizeof (*this)); }
 
   int mode;
-  bool verbose;
+  int verbose;
   bool dry_run;
   bool quiet;
   bool force;
@@ -526,6 +558,8 @@ struct Image : public std::list<Payload*>, public File
   const char* description;
   time_t timeCreation;
   int architecture_id;
+
+  crope header;		// Rope for reading, building, and writing header
 
   Image () : description (NULL),
              timeCreation (time (NULL)),
@@ -552,7 +586,7 @@ struct Image : public std::list<Payload*>, public File
 
   /** Pull metadata and payloads from the final payload object in
       preparation for updating an image. */
-  void load (void);
+  void load (struct arguments&);
   void merge_payload (int, Payload*);
 
   size_t header_size (void) {
@@ -561,18 +595,39 @@ struct Image : public std::list<Payload*>, public File
       + 5	                // creation time
       + (architecture_id ? 5 : 0);
   }
-  uint32_t write_header (uint32_t crc, int fh) {
+  void build_header (struct arguments& args) {
+    header.clear ();
+
+	// Append the signature word
+    uint32_t crc = 0;
+    crc = compute_crc32 (crc, &signature, sizeof (signature));
+    header.append ((char*) signature, sizeof (signature));
+
+	// Calculate the header size in one go
+    int _header_size = sizeof (signature) + 1 + header_size ();
+    for (Image::iterator it = begin (); it != end (); ++it) {
+      if ((*it) == back ())
+        break;
+      _header_size += (*it)->header_size ();
+    }
+    _header_size += 4;           // CRC
+
+	// Compute and store the header size byte
+    uint8_t __header_size = (_header_size + 15)/16;
+    crc = compute_crc32 (crc, &__header_size, 1);
+    header.append (__header_size);
+
+	// Append the image header tags
     unsigned char tag;
     {
       tag = fieldImageCreationDate;
       uint32_t _timeCreation = swabl (timeCreation);
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_timeCreation, sizeof (_timeCreation));
-      write (fh, &tag, 1);
-      write (fh, &_timeCreation, sizeof (_timeCreation));
+      header.append (tag);
+      header.append ((char*) &_timeCreation, sizeof (_timeCreation));
     }
     if (description) {
-//      printf ("image has a description %s\n", description);
       if (strlen (description) + 1 > 127)
         throw Exception ("description field too long");
       tag = fieldImageDescription;
@@ -580,19 +635,32 @@ struct Image : public std::list<Payload*>, public File
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &length, 1);
       crc = compute_crc32 (crc, description, length);
-      write (fh, &tag, 1);
-      write (fh, &length, 1);
-      write (fh, description, length);
+      header.append (tag);
+      header.append (length);
+      header.append (description, length);
     }
     if (architecture_id) {
       tag = fieldLinuxKernelArchitectureID;
       uint32_t _id = swabl (architecture_id);
       crc = compute_crc32 (crc, &tag, 1);
       crc = compute_crc32 (crc, &_id, sizeof (_id));
-      write (fh, &tag, 1);
-      write (fh, &_id, sizeof (_id));
+      header.append (tag);
+      header.append ((char*) &_id, sizeof (_id));
     }
-    return crc;
+
+	// Append the payload tags
+    for (Image::iterator it = begin (); it != end (); ++it)
+      if ((*it) != back ())
+        crc = (*it)->build_header (crc, header);
+
+	// Pad out the header_size - 4 and then append the CRC
+    for (_header_size = __header_size*16 - _header_size; _header_size--; ) {
+      unsigned char b = 0xff;
+      crc = compute_crc32 (crc, &b, 1);
+      header.append ((char) 0xff);
+    }
+    crc = swabl (crc);
+    header.append ((char*) &crc, sizeof (crc));
   }
 
   void describe (struct arguments& args);
@@ -805,7 +873,7 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
     break;
 
   case 'v':
-    args.verbose = true;
+    ++args.verbose;
     args.quiet = false;
     break;
 
@@ -815,7 +883,7 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 
   case 'q':
     args.quiet = true;
-    args.verbose = false;
+    args.verbose = 0;
     break;
 
   case 'C':
@@ -888,6 +956,7 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
   return 0;
 }
 
+
 /** Load an image from a file such that it can be written out again.
     Usually, this would be used to modify an existing image, but it
     could also be used when verifying an image as well.
@@ -901,7 +970,7 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
 
  */
 
-void Image::load (void)
+void Image::load (struct arguments& args)
 {
   Payload& image = *back ();
 
@@ -909,9 +978,10 @@ void Image::load (void)
      *** paylaod isn't an image, we should be able to use it as a
      *** source payload. */
 
-  if (!image.is_valid_image ())
+  if (!image.is_valid_image (args.ignore_crc_errors))
     throw Exception ("invalid image");
 
+#if 0
 //  printf ("starting with\n");
   for (Image::iterator it = g_image.begin (); it != g_image.end (); ++it) {
     std::cout << **it << std::endl;
@@ -919,6 +989,7 @@ void Image::load (void)
       dumpw ((char*) (*it)->pv, 32, 0, 0);
   }
   printf ("---\n");
+#endif
 
   /*
     What we do is scan the header for tags, updating the image
@@ -931,12 +1002,20 @@ void Image::load (void)
 
    */
 
-  size_t cbHeader = verify_image_header (image.pv, image.cb, false);
-  Header header (image.pv, cbHeader);
+  size_t cbHeader = verify_image_header (image.pv, image.cb,
+                                         args.ignore_crc_errors);
+  header.clear ();
+  if (cbHeader > image.cb)
+    throw Exception ("invalid header");
+  header.append ((char*) image.pv, cbHeader);
+
+  Header h (image.pv, cbHeader);
   Payload* payload = new Payload; // *** Could probably use an auto
   void* pvPayload = (char*) image.pv + cbHeader;
   int iPayload = 0;
-  for (Header::Iterator it = header.begin (); it != header.end (); ++it) {
+  for (Header::Iterator it = h.begin (); it != h.end (); ++it) {
+    if (args.verbose > 1)
+      printf ("tag %s (0x%x)\n", describe_tag (it.tag ()), it.tag ());
     switch (it.tag ()) {
     case fieldImageDescription:
       if (!description)
@@ -948,9 +1027,11 @@ void Image::load (void)
     case fieldPayloadLength:
       {
         size_t cbPayload = uint32_t (it);
-        printf ("Payload Length:       %s\n", interpret_size (cbPayload));
+//        printf ("Payload Length:       %s\n", interpret_size (cbPayload));
 
         payload->set_external (pvPayload, cbPayload);
+        memcpy (&payload->crc_loaded, (char*) pvPayload + cbPayload, 4);
+        payload->crc_loaded = swabl (payload->crc_loaded);
         cbPayload += 4;         // CRC
         cbPayload += 15;        // Round up
         cbPayload &= ~0xf;      // Round-off
@@ -1003,7 +1084,7 @@ void Image::merge_payload (int index, Payload* payload)
   if (index >= size ())
     throw Exception ("index too large");
 
-  printf ("index %d size %d\n", index, size ());
+//  printf ("index %d size %d\n", index, size ());
 
   if (index < size () - 1) {        // Bonafide merge
     iterator it = begin ();
@@ -1029,72 +1110,95 @@ void Image::merge_payload (int index, Payload* payload)
 
 void Image::describe (struct arguments& args)
 {
-  size_t cbHeader = size ()
-    ? verify_image_header (back ()->pv, back ()->cb,
-                           args.ignore_crc_errors)
-    : 0;
+  if (header.size () < 16)
+    throw Exception ("unable to describe empty header");
+
+  size_t cbHeader = header.size ();
 
   if ((args.verbose || args.dry_run) && cbHeader) {
-    Payload& image = *back ();
-    void* pv = image.pv;
-    printf ("Signature:            0x%02x 0x%02x 0x%02x 0x%02x\n",
+    const void* pv = header.c_str ();
+    printf ("Signature:               0x%02x 0x%02x 0x%02x 0x%02x\n",
             ((uint8_t*)pv)[0], ((uint8_t*)pv)[1],
             ((uint8_t*)pv)[2], ((uint8_t*)pv)[3]);
-    printf ("Header Size:          %d (%d bytes)\n",
+    printf ("Header Size:             %d (%d bytes)\n",
             ((uint8_t*)pv)[4], ((uint8_t*)pv)[4]*16);
   }
 
   if (description)
-    printf ("Image Description:    %s\n", description);
+    printf ("Image Description:       '%s' (%d bytes)\n", description,
+            strlen (description) + 1);
   if (timeCreation)
-    printf ("Image Creation Date:  %s", asctime (localtime (&timeCreation)));
+    printf ("Image Creation Date:     %s", asctime (localtime (&timeCreation)));
   if (architecture_id)
-    printf ("Linux Kernel Arch ID: %d (0x%x)\n",
+    printf ("Linux Kernel Arch ID:    %d (0x%x)\n",
             architecture_id, architecture_id);
 
   char sz[20];
-  strcpy (sz, "Payload ");
+  strcpy (sz, "Payload    ");
+  bool multi_payload = (size () - (cbHeader ? 1 : 0) > 1);
+
   int i = 0;
   for (iterator it = begin (); it != end (); ++it, ++i) {
     if (cbHeader && *it == back ())
       continue;
 
-    if (size () - (cbHeader ? 1 : 0) > 1)
-      snprintf (sz, sizeof (sz), "Pyld #%d ", i);
+    if (multi_payload)
+      snprintf (sz, sizeof (sz), "Payload #%d ", i);
 
     struct Payload& payload = **it;
 
     if (payload.description) {
-      printf ("%sDescription:  %s\n", sz, payload.description);
-      strcpy (sz, "        ");
+      printf ("%sDescription:  '%s'\n", sz, payload.description,
+              strlen (payload.description) + 1);
+      if (multi_payload)
+        strcpy (sz, "           ");
     }
     if (payload.type) {
       printf ("%sType:         %s\n", sz,
               describe_image_type (payload.type));
-      strcpy (sz, "        ");
+      if (multi_payload)
+        strcpy (sz, "           ");
     }
     if (payload.load_address != ~0) {
       printf ("%sLoad Address: 0x%08lx\n", sz, payload.load_address);
-      strcpy (sz, "        ");
+      if (multi_payload)
+        strcpy (sz, "           ");
     }
     if (payload.entry_point != ~0) {
       printf ("%sEntry Point:  0x%08lx\n", sz, payload.entry_point);
-      strcpy (sz, "        ");
+      if (multi_payload)
+        strcpy (sz, "           ");
     }
     if (payload.cb) {
       printf ("%sLength:       %s\n", sz, interpret_size (payload.cb));
-      strcpy (sz, "        ");
+      if (multi_payload)
+        strcpy (sz, "           ");
+    }
+    if (payload.pv) {
+      uint32_t crc = compute_crc32 (0, payload.pv, payload.cb);
+      printf ("%sCRC:          0x%08x ", sz,
+              payload.crc_loaded ? payload.crc_loaded : crc);
+      if (payload.crc_loaded) {
+        if (crc == payload.crc_loaded)
+          printf ("OK\n");
+        else
+          printf ("!= 0x%08x ERROR\n", crc);
+      }
+      else
+        printf ("\n");
+      if (multi_payload)
+        strcpy (sz, "           ");
     }
   }
 
   if (cbHeader && (args.verbose || args.dry_run)) {
-    uint32_t crc = compute_crc32 (0, back ()->pv, cbHeader - 4);
+    uint32_t crc = compute_crc32 (0, header.c_str (), cbHeader - 4);
     uint32_t header_crc;
-    memcpy (&header_crc, (char*) back ()->pv + cbHeader - 4, 4);
+    memcpy (&header_crc, header.c_str () + cbHeader - 4, 4);
     header_crc = swabl (header_crc);
     bool ok = crc == header_crc;
 
-    printf ("Header CRC:           0x%08x", header_crc);
+    printf ("Header CRC:              0x%08x", header_crc);
     if (ok)
       printf (" OK\n");
     else
@@ -1130,124 +1234,91 @@ void apeximage (struct arguments& args)
 
   switch (args.mode) {
   case modeShow:
+    g_image.load (args);
+    g_image.describe (args);
+    return;
     break;
+
   case modeUpdate:
-    // *** FIXME: this may not be a valid test if we want to be able
-    // *** to 'update' a file that has no header as is available with
-    // *** the ubootimage program.
-    if (!payloadOut.is_valid_image ())
-      throw Exception ("unable to read file '%s'", payloadOut.szPath);
-    g_image.load ();
-#if 0
-    if (payloadOut.pv != NULL
-        && payloadOut.cb >= sizeof (header))
-      memcpy (&header, payloadOut.pv, sizeof (header));
-#endif
+    g_image.load (args);
+    g_image.timeCreation = time (NULL);
+
+    if (args.verbose > 1)
+      for (Image::iterator it = g_image.begin (); it != g_image.end (); ++it) {
+        std::cout << **it << std::endl;
+        if ((*it)->pv)
+          dumpw ((char*) (*it)->pv, 32, 0, 0);
+      }
 
     break;
+
   case modeCreate:
-    if (payloadOut.fh != -1 && !args.force)
+    if (payloadOut.fh != -1 && !args.force && !args.dry_run)
       throw Exception ("unable to write file '%s', file exists",
                        payloadOut.szPath);
     break;
   }
 
-  if (args.mode == modeShow) {
-    g_image.load ();
+  g_image.build_header (args);
+
+  if (args.dry_run || args.verbose) {
     g_image.describe (args);
-    return;
-  }
-
-  if (args.mode == modeUpdate) {
-    for (Image::iterator it = g_image.begin (); it != g_image.end (); ++it) {
-      std::cout << **it << std::endl;
-      if ((*it)->pv)
-        dumpw ((char*) (*it)->pv, 32, 0, 0);
-    }
-
     if (args.dry_run)
-      g_image.describe (args);
-    else
-      printf ("Update not supported\n");
-    return;
+      return;
   }
 
-  if (args.mode == modeCreate) {
-    printf ("Creating image %s.\n", payloadOut.szPath);
-		// Save the new image to a temporary filename
-    size_t cbPathSave = strlen (payloadOut.szPath) + 32;
-    char* szPathSave = (char*) alloca (cbPathSave);
-    snprintf (szPathSave, cbPathSave, "%s~%d~", payloadOut.szPath, getpid ());
-    int fhSave = open (szPathSave, O_WRONLY | O_TRUNC | O_CREAT, 0666);
-    if (fhSave == -1)
-      throw Exception ("unable to create output file '%s'", szPathSave);
+	// At this point, we're committed to constructing a new image
+	// and writing it to the output file.  The preexisting output
+	// file will be clobbered if there is one.
 
+  if (!args.quiet)
+    printf ("# %s image '%s'\n",
+            args.mode == modeCreate ? "Creating" : "Updating",
+            payloadOut.szPath);
+
+	// Save the new image to a temporary filename
+  size_t cbPathSave = strlen (payloadOut.szPath) + 32;
+  char* szPathSave = (char*) alloca (cbPathSave);
+  snprintf (szPathSave, cbPathSave, "%s~%d~", payloadOut.szPath, getpid ());
+  int fhSave = open (szPathSave, O_WRONLY | O_TRUNC | O_CREAT, 0666);
+  if (fhSave == -1)
+    throw Exception ("unable to create output file '%s'", szPathSave);
+
+  ::write (fhSave, g_image.header.c_str (), g_image.header.size ());
+
+	// Write the payloads
+  int i = 0;
+  for (Image::iterator it = g_image.begin (); it != g_image.end (); ++it, ++i) {
+    if ((*it) == &payloadOut)
+      break;
     uint32_t crc = 0;
-    crc = compute_crc32 (crc, &signature, sizeof (signature));
-    write (fhSave, &signature, sizeof (signature));
-    int header_size = sizeof (signature) + 1 + g_image.header_size ();
-//    printf ("base header is %d bytes\n", header_size);
-    for (Image::iterator it = g_image.begin ();
-         it != g_image.end (); ++it) {
-      if ((*it) == &payloadOut)
-        break;
-      header_size += (*it)->header_size ();
-    }
-    header_size += 4;           // CRC
-//    printf ("total header with crc is %d bytes\n", header_size);
-    unsigned char _header_size = (header_size + 15)/16;
-    crc = compute_crc32 (crc, &_header_size, 1);
-    write (fhSave, &_header_size, 1);
-//    printf ("crc of sig and size 0x%08x\n", crc);
-    crc = g_image.write_header (crc, fhSave);
-//    printf ("crc of sig and size and image fields 0x%08x\n", crc);
-    for (Image::iterator it = g_image.begin ();
-         it != g_image.end (); ++it) {
-      if ((*it) == &payloadOut)
-        break;
-      crc = (*it)->write_header (crc, fhSave);
-    }
-
-    for (header_size = _header_size*16 - header_size; header_size--; ) {
-      unsigned char b = 0xff;
-      crc = compute_crc32 (crc, &b, 1);
-      write (fhSave, &b, 1);
-    }
+    crc = compute_crc32 (crc, (*it)->pv, (*it)->cb);
+    write (fhSave, (*it)->pv, (*it)->cb);
+//    if (args.verbose)
+//      printf ("Pyld #%d CRC:          0x%08x\n", i, crc);
     crc = swabl (crc);
     write (fhSave, &crc, sizeof (crc));
 
-    // Write the payloads
-    for (Image::iterator it = g_image.begin ();
-         it != g_image.end (); ++it) {
-      if ((*it) == &payloadOut)
-        break;
-      crc = 0;
-      crc = compute_crc32 (crc, (*it)->pv, (*it)->cb);
-      write (fhSave, (*it)->pv, (*it)->cb);
-      crc = swabl (crc);
-      write (fhSave, &crc, sizeof (crc));
-
-//      printf ("%x length  %d->%d\n",
-//              swabl (crc), (*it)->cb, 16 - (((*it)->cb + 4) & 0xf));
-      for (int cbPad = 16 - (((*it)->cb + 4) & 0xf); cbPad--; ) {
-        unsigned char b = 0xff;
-        write (fhSave, &b, 1);
-      }
+    for (int cbPad = 16 - (((*it)->cb + 4) & 0xf); cbPad--; ) {
+      unsigned char b = 0xff;
+      write (fhSave, &b, 1);
     }
+  }
 
-    close (fhSave);
+  close (fhSave);
 
-		// Release all files that could be the same as the output
-    payloadIn.release_this ();
-    payloadOut.release_this ();
+	// Release all files that could be the same as the output
+  char szPathOut[strlen (payloadOut.szPath) + 1];
+  strcpy (szPathOut, payloadOut.szPath);
+  payloadIn.release_this ();
+  payloadOut.release_this ();
 
-    if (rename (szPathSave, payloadOut.szPath)) {
+  if (rename (szPathSave, szPathOut)) {
       // I'm not sure it is possible to get this error since we've
       // already been able to write a temporary file to the same directory.
-      unlink (szPathSave);
-      throw ResultException (errno, "unable to rename '%s' to '%s' (%s)",
-                             szPathSave, payloadOut.szPath, strerror (errno));
-    }
+    unlink (szPathSave);
+    throw ResultException (errno, "unable to rename '%s' to '%s' (%s)",
+                           szPathSave, szPathOut, strerror (errno));
   }
 }
 
