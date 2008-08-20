@@ -46,7 +46,7 @@
 
 void relocate_apex_exit (void);
 
-static void __naked __section (.rlocate.early.func) wait_on_busy (void)
+static void __section (.rlocate.early.func) wait_on_busy (void)
 {
   while (ONENAND_IS_BUSY)
     ;
@@ -98,7 +98,7 @@ void __naked __section (.rlocate.early.exit) relocate_early_exit (void)
 }
 
 
-/* relocate_apex
+/* relocate_apex_maybe_onenand
 
    relocates the loader from either OneNAND flash or from SDRAM to the
    linked VMA.  The determination of our boot method is based on the
@@ -108,9 +108,13 @@ void __naked __section (.rlocate.early.exit) relocate_early_exit (void)
    piece of code to perform the check because it may require some
    other technique to determine the boot mode.
 
+   Note that without the name relocate_apex(), this function requires
+   inline initialization.
+
 */
 
-void __naked __section (.rlocate) relocate_apex (unsigned long offset)
+void __naked __section (.rlocate)
+  relocate_apex_maybe_onenand (unsigned long offset)
 {
   unsigned long pc;		/* So we can detect the stage */
 

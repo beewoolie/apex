@@ -24,7 +24,7 @@
 #include <service.h>
 #include <debug_ll.h>
 
-#if defined (CONFIG_CMD_ALIAS)
+#if defined (CONFIG_ALIASES)
 #include <alias.h>
 #endif
 extern int cmd_version (int, const char**);

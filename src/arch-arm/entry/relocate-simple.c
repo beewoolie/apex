@@ -35,8 +35,8 @@
 #include <debug_ll.h>
 
 #if defined (CONFIG_DEBUG_LL)
-//# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
-# define USE_SMALL_COPY		/* Reduced register copy */
+# define USE_LDR_COPY		/* Simpler copy loop, more free registers */
+//# define USE_SMALL_COPY		/* Reduced register copy */
 # define USE_COPY_VERIFY
 #else
 # define USE_COPY_VERIFY	/* Verify all of the time */
@@ -149,6 +149,9 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
     PUTC ('A');
     PUTC ('I');
     PUTC ('L');
+    PUTHEX (pc);
+    PUTC ('/');
+    PUTHEX (pc + offset);
     __asm volatile ("0: b 0b");
   }
 #endif

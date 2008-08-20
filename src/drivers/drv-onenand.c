@@ -125,6 +125,9 @@ static void execute (int page, int command)
 
   while (ONENAND_IS_BUSY)
     ;
+#if defined (TALK)
+  printf ("OK\n");
+#endif
 }
 
 static void onenand_unlock (void)

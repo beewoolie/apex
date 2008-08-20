@@ -61,7 +61,7 @@
 # define PRINTF(f...) do {} while (0)
 #endif
 
-#define CB_BLOCK	     (1024*1024)
+//#define CB_BLOCK	     (1024*1024)
 
 /* memory_test
 
@@ -93,7 +93,7 @@ int memory_test (unsigned long address, unsigned long c)
 //    printf ("m 0x%08lx 0x%08lx\n", (address + mark*4), mark);
     *(volatile unsigned long*) (address + mark*4) = mark;
   }
-  printf ("wd\n");
+  PRINTF ("wd\n");
 
   for (mark = 1; mark; mark <<= 1) {
     if (*(volatile unsigned long*) (address + mark*4) != mark)
@@ -101,20 +101,20 @@ int memory_test (unsigned long address, unsigned long c)
   }
 
 		/* Walking address bits */
-  printf ("wa0\n");
+  PRINTF ("wa0\n");
   for (offset = 1; offset < c; offset <<= 1)
     p[offset] = pattern_a;
 
   p[0] = pattern_b;
 
-  printf ("wa1\n");
+  PRINTF ("wa1\n");
   for (offset = 1; offset < c; offset <<= 1)
     if (p[offset] != pattern_a)
       return 2;
 
   p[0] = pattern_a;
 
-  printf ("wa2\n");
+  PRINTF ("wa2\n");
   for (mark = 1; mark < c; mark <<= 1) {
     p[mark] = pattern_b;
     if (p[0] != pattern_a)
@@ -132,14 +132,14 @@ int memory_test (unsigned long address, unsigned long c)
 		   (and ineffective) given the fact that failures in
 		   memory these days tend to be shorts or cold-solder
 		   joints in manufacturing and not 'stuck' cells.  */
-//  printf ("f0\n");
+  PRINTF ("f0\n");
   for (offset = 0; offset < c; ++offset) {
     p[offset] = offset + 1;
     if ((offset & 0xfff) == 0)
       SPINNER_STEP;
   }
 
-//  printf ("f1\n");
+  PRINTF ("f1\n");
   for (offset = 0; offset < c; ++offset) {
     if (p[offset] != offset + 1)
       return offset*4;
@@ -147,7 +147,7 @@ int memory_test (unsigned long address, unsigned long c)
     if ((offset & 0xfff) == 0)
       SPINNER_STEP;
   }
-//  printf ("f2\n");
+  PRINTF ("f2\n");
   for (offset = 0; offset < c; ++offset) {
     if (p[offset] != ~(offset + 1))
       return offset*4;
@@ -192,10 +192,12 @@ static int cmd_memtest (int argc, const char** argv)
   if (strcmp (d.driver_name, "memory"))
     ERROR_RETURN (ERROR_UNSUPPORTED, "descriptor must refer to memory");
 
+#if defined (CB_BLOCK)
   if (d.length < CB_BLOCK)
     ERROR_RETURN (ERROR_PARAM, "region too small");
+#endif
 
-  printf ("before mmu disable\n");
+  PRINTF ("before mmu disable\n");
 
 #if defined (CONFIG_MMU)
   CLEANALL_DCACHE;
@@ -207,7 +209,7 @@ static int cmd_memtest (int argc, const char** argv)
   CP15_WAIT;
 #endif
 
-  printf ("before test 0x%08lx 0x%08lx\n", d.start, d.length);
+  PRINTF ("before test 0x%08lx 0x%08lx\n", d.start, d.length);
 
 //  result = 0;
   result = memory_test (d.start, d.length);
@@ -218,7 +220,7 @@ static int cmd_memtest (int argc, const char** argv)
 #endif
 
   if (result) {
-    printf ("test returned error 0x%x\n", result);
+    PRINTF ("test returned error 0x%x\n", result);
     ERROR_RETURN (ERROR_FAILURE, "memory test failed\n");
   }
 

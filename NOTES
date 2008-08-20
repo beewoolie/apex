@@ -5,6 +5,16 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.aug.18
+    o Memtest would be nice to protect the user from testing invalid
+      memory.  We could add a -f switch to force any address, but
+      normally protect the user from invalid RAM addresses.
+    o It would be handy if we could add a check to the build process
+      to make sure that a particular symbol is smaller than a known
+      value.  This would make it possible to detect when the bootstrap
+      is too long, and therefore, unable to execute because it will
+      not be available in RAM when it needs to be. 
+
   o 2008.jul.9
     o Fixed ext2 to use inode_size.
     o BUG: found that the region ext2://3/file@100 doesn't work.

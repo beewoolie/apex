@@ -321,6 +321,12 @@ void __naked __section (.reset.finish) reset_finish (void)
    performs setup necessary to make standard C (APCS) happy, a stack,
    a clear BSS, and data in RAM.  The latter is handled by relocation.
 
+   It is important that the END macros are the address of the first
+   byte following the region we are clearing.
+
+   The STACK_START is really the initial top of stack while the
+   STACKS_START is the lowest address for all stacks.
+
 */
 
 void __naked __section (.reset.finish) setup_c (void)
@@ -335,9 +341,10 @@ void __naked __section (.reset.finish) setup_c (void)
  {
    void* p = &APEX_VMA_STACKS_START;
    __asm volatile (
-		   "0: stmia %0!, {%2}\n\t"
-		   "   cmp %0, %1\n\t"
-		   "   bls 0b\n\t"
+		   "0: cmp %0, %1\n\t"
+		      "stmloia %0!, {%2}\n\t"
+		      "blo 0b\n\t"
+
 		   : "+r" (p)
 		   :  "r" (&APEX_VMA_STACKS_END), "r" (0xe5e5e5e5));
  }
@@ -348,8 +355,8 @@ void __naked __section (.reset.finish) setup_c (void)
    void* p = &APEX_VMA_BSS_START;
    __asm volatile (
 		   "0: cmp %0, %1\n\t"
-		      "stmlsia %0!, {%2}\n\t"
-		      "bls 0b\n\t"
+		      "stmloia %0!, {%2}\n\t"
+		      "blo 0b\n\t"
 		   : "+r" (p)
 		   :  "r" (&APEX_VMA_BSS_END), "r" (0));
  }

@@ -25,7 +25,7 @@
 
    o UART initialization.  Again, because of the large size of MX31
      initialization code, we cannot fit the UART initialization into
-     the .bootstrap_pre section anf have enough room for the early
+     the .bootstrap_pre section and have enough room for the early
      relocation to fit in 512 bytes.  So, we leave it out for now.  We
      could do some sort of low-speed setup of the CPU clock speed and
      *maybe* get the UART clock to work correctly, but this is all to
@@ -63,6 +63,53 @@
      	programmed is not critical.
     10. Issue NOP or DESELECT commands for at least tMRD time.
 
+  o Memory size detection.  We support 512Mib (V2) and 1Gib (V1)
+    configurations.  We determine which we have by initializing the
+    1Gib mode first and checking that writes to a particular address
+    are not being reflected in the a different address.  In our case,
+    the difference is 0x800 bytes.  If the addressing is OK, a write
+    to 0x80000800 will not appear at address 0x80000000.
+
+  o Refresh timer.  The value of the refresh timer is based on the
+    number of rows.  A 13 row part must refresh 8192 rows.  To do this
+    in 64ms (typical), the timer should be 7.81us.
+
+  o PRECHARGE and MODE SET commands.  Normally, the address sent to
+    the SDRAM would be shifted to account for the width of the memory
+    devices.  However, The PRECHARGE and MODE SET commands disable
+    this shifting.  Thus, to drive A10 the address bit use an address
+    or'd with 0x0400.  The mode register value need not be shifted.
+
+  o Extended Mode.  Setting the extended mode requires setting the
+    BA[1:0] bits to binary 10.  The placement of these bits in the
+    address register is dependendent on the organization of the memory
+    array.  Our best estimate, at the moment, is that the table 19-30
+    of the reference manual gives the correct offset.  It is hard to
+    tell of this is really the case for setting the mode because the
+    secont 19.4.3 states that no address multiplexing occurs while
+    setting the mode.  Thus, the bit index could be one or two fewer
+    than the value determined from the table.  Note that the
+    calculation below is for the configured organization regardless of
+    the configuration of the memory chips.
+
+    Calculate the memory size: 2^(rows+cols)*(width/2).
+
+      Memory Size	Address line for BA0
+    ----------------------------------------
+    8MB   (64Mib)		A21
+    16MB  (128Mib)		A22
+    32MB  (256Mib)		A23
+    64MB  (512Mib)		A24
+    128MB (1Gib)		A25
+    ----------------------------------------
+
+  o ESDCTL_CFG.  An incorrect value for this register has been known
+    to prevent proper operation of the system.  The symptom was that
+    IO with SDRAM would sometimes return invalid results.  The CFG
+    value doesn't have to be exactly and precisely correct in that the
+    values for the MT46H32M32LF (1Gib) work for the MT46H16M32LF
+    (512Mib).  Just be sure that the timings are close to correct and
+    you should be OK.
 
 */
 
@@ -75,7 +122,7 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
-#define NO_INIT
+//#define NO_INIT
 
 #define ESDCTL_CTL0_SDE		(1<<31)	/* Enable */
 #define ESDCTL_CTL0_ROW13	(2<<24)	/* 13 rows */
@@ -103,6 +150,16 @@
 	| ESDCTL_CTL0_DSIZ32\
 	| ESDCTL_CTL0_SREFR_V\
 	| ESDCTL_CTL0_BL8
+
+#define ADDR_CHECK_0	(0x80000000)
+#define ADDR_CHECK_1	(0x80000800)
+
+//#define ESDCTL_CFG_V	(0x0075e73a)
+#define ESDCTL_CFG_V	(0x00096728)	/* 1Gib   MT46H32M32LF-6 */
+//#define ESDCTL_CFG_V	(0x0069e728)	/* 512Mib MT46H16M32LF-6 */
+
+#define BA0(r,c,w)	((r) + (c) + (w)/16)
+#define BA1(r,c,w)	((r) + (c) + (w)/16 + 1)
 
 void __naked __section (.bootstrap.early) bootstrap_early (void)
 {
@@ -174,7 +231,8 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 
   /* This is an apparent work-around for some sort of bug in the IPU
      related to clock setup. */
-  __REG (PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
+  __REG (PHYS_IPU + 0x00) = 0x40;			/* Enable DI. */
+//  __REG (PHYS_CCM + 0x00) = 0x074B0B7D;
 
   /* Reset clock controls.  This seems to make APEX behave better when
      we're being executed after the clocks and memory have been
@@ -266,50 +324,44 @@ void __naked __section (.bootstrap.sdram) bootstrap_sdram (void)
 	/* SDRAM initialization */
   ESDCTL_CTL0 = 0;
   ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* BDI setup? Enable DDR */
-  ESDCTL_CFG0 = 0x0075e73a;
-//  ESDCTL_CFG0 = 0x0079e73a;		/* 1Gib part */
+  ESDCTL_CFG0 = ESDCTL_CFG_V;
   ESDCTL_MISC = ESDCTL_MISC_RST;	/* Reset */
   ESDCTL_MISC = ESDCTL_MISC_MDDREN;	/* Enable DDR */
   usleep (1);			/* > 200ns */
-  ESDCTL_CTL0 = 0x92100000;	/* SDE,Precharge,13row,9col,16bitH */
-  __REG (0x80000f00) = 0;	/* DDR; precharge all */
-  ESDCTL_CTL0 = 0xa2100000;	/* SDE,Precharge,13row,9col,16bitH */
+  ESDCTL_CTL0 = 0x92120000;	/* SDE,Precharge,13row,9col,32bit */
+  __REG8 (0x80000000
+          | 1<<10) = 0;         /* DDR; precharge all */
+  ESDCTL_CTL0 = 0xa2120000;	/* SDE,Precharge,13row,9col,32bit */
   __REG (0x80000000) = 0;
-  ESDCTL_CTL0 = 0xb2100000;
-  __REG8 (0x80000000 + 0x33) = 0; /* Standard Mode Register <- CAS3;BURST8 */
-  __REG8 (0x81000000 + 0x00) = 0; /* Extended Mode Register <- 0 */
+  __REG (0x80000000) = 0;
+  ESDCTL_CTL0 = 0xb2120000;	/* SDE,LoadMode,13row,9col,32bit */
+  __REG8 (0x80000000
+          | 0x33) = 0;     	/* Standard Mode <- 0x33; CAS3, BURST8 */
+  __REG8 (0x80000000
+          | (2<<BA0(13,9,32))
+          | 0x00) = 0;          /* Extended Mode <- 0x00 */
   PUTC ('1');
   ESDCTL_CTL0 = ESDCTL_CTL0_V1;
   __REG (0x80000000) = 0;
   /* *** FIXME: we should check for DDR here.  we can test CTL0_V */
   ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
-  __REG (0x80000000) = 0x55555555;
-  __REG (0x80000004) = 0xaaaaaaaa;
+  __REG (ADDR_CHECK_0 + 0) = 0x55555555;
+  __REG (ADDR_CHECK_0 + 4) = 0xaaaaaaaa;
+  __REG (ADDR_CHECK_1 + 0) = 0xaaaaaaaa;
+  __REG (ADDR_CHECK_1 + 4) = 0x55555555;
 
 //  __asm volatile ("nop\n\tnop");
 
-  /*
-  if (__REG (0x80000000) != 0x55555555)
-    PUTC ('a');
-  if (__REG (0x80000004) != 0xaaaaaaaa)
-    PUTC ('b');
-  */
-
-  /* Try another organization if the default fails  */
-  if (   __REG (0x80000000) != 0x55555555
-      || __REG (0x80000004) != 0xaaaaaaaa
-// *** FIXME: This is an annoying bug.  Our check for an invalid
-// *** memory configuration doesn't work.  We find that the
-// *** form-factor board fails this check and doesn't setup the proper
-// *** configuration.  Oddly, the non-form-factor is OK with this
-// *** a bogus configuration.
+  /* Try second organization if the first fails  */
+  if (   __REG (ADDR_CHECK_0 + 0) != 0x55555555
+      || __REG (ADDR_CHECK_0 + 4) != 0xaaaaaaaa
       || 0) {
     PUTC ('2');
     ESDCTL_CTL0 = ESDCTL_CTL0_V2;
     __REG (0x80000000) = 0;
     ESDCTL_MISC = ESDCTL_MISC_RST | ESDCTL_MISC_MDDREN;
-    __REG (0x80000000) = 0x55555555;
-    __REG (0x80000004) = 0xaaaaaaaa;
+//    __REG (ADDR_CHECK_0) = 0x55555555;
+//    __REG (ADDR_CHECK_1) = 0xaaaaaaaa;
   }
 
   __asm volatile ("mov r0, #0");		/* SDRAM initialized */

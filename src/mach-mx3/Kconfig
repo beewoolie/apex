@@ -32,6 +32,27 @@ endchoice
 
 menu "Platform Setup"
 
+choice
+	prompt "CPU/Peripheral Clock"
+	default FREQ_533_133_66
+
+config FREQ_533_133_66
+	bool "MPLL 533 MHz - HCLK 133 MHz - IPGCLK 66MHz"
+	help
+	  This setting configures the CPU frequency to 532 MHz.
+
+config FREQ_399_133_66
+	bool "MPLL 399 MHz - HCLK 133 MHz - IPGCLK 66MHz"
+	help
+	  This setting configures the CPU frequency to 399 MHz.
+
+config FREQ_208_104_52
+	bool "MPLL 208 MHz - HCLK 104 MHz - IPGCLK 52MHz"
+	help
+	  This setting configures the CPU frequency to 208 MHz.
+
+endchoice
+
 config ATAG_PHYS
 	hex "Physical address for ATAGs list"
 	default "0x80000100"
