@@ -231,7 +231,7 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 
   /* This is an apparent work-around for some sort of bug in the IPU
      related to clock setup. */
-  __REG (PHYS_IPU + 0x00) = 0x40;			/* Enable DI. */
+  __REG (PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
 //  __REG (PHYS_CCM + 0x00) = 0x074B0B7D;
 
   /* Reset clock controls.  This seems to make APEX behave better when
