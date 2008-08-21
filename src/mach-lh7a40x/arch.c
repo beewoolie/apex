@@ -20,6 +20,8 @@
 
 #include <config.h>
 #include "hardware.h"
+#include <linux/kernel.h>
+#include "alias.h"
 
 /* determine_arch_number
 
@@ -29,15 +31,21 @@
 
 */
 
-int determine_arch_number (void)
+void determine_arch_number (void)
 {
+  int arch_id = 0;
+  char sz[10];
+
   switch (((CSC_PWRSR >> CSC_PWRSR_CHIPID_SHIFT)
 	   & CSC_PWRSR_CHIPID_MASK)
 	  & 0xf0) {
   default:
   case 0x00:
-    return 389;			/* LPD7A400 */
+    arch_id = 389;              /* LPD7A400 */
   case 0x20:
-    return 390;			/* LPD7A404 */
+    arch_id = 390;              /* LPD7A404 */
   }
+
+  snprintf (sz, 10, "%d", arch_id);
+  alias_set ("arch-number", sz);
 }
