@@ -100,19 +100,29 @@
 #define DFS_FBA(x)		(((x)&0x3ff) | ((x)&0x400 << 4))
 #define DBS(x)			(((x)&1)<<15)
 #define FPA_FSA(x)		(x)
+/** Assemble the bits for the BufferStartAddress_BufferStartCount
+    register. 'd' is 0 for BootRAM, and 1 for DataRAM.  's' is the
+    starting sector of the buffer (0-3).  'c' is the count of
+    sectors (0-3). */
 #define BSA_BSC(d,s,c)		(((d)?(1<<11):0)|(((s)&0x7)<<8)|((c)&0x3))
 #define SBA(x)			(((x)/PAGES_PER_BLOCK)&0x3ff)
 
 #define ONENAND_IS_ERROR	(ONENAND_STATUS & ONENAND_STATUS_ERROR)
 #define ONENAND_IS_BUSY		(!(ONENAND_INTR & ONENAND_INTR_READY))
 
+/** Setup array addressing registers for OneNAND.  'p' is the 2KiB
+    page to address, and 's' is the 512B sector within that page. */
 #define ONENAND_ADDRSETUP(p,s)\
 	({ ONENAND_SA_1 = DFS_FBA ((p)/PAGES_PER_BLOCK);\
 	   ONENAND_SA_2 = DBS (0);\
 	   ONENAND_SA_8 = FPA_FSA (((p)%PAGES_PER_BLOCK)*4 + (s)); })
 
+/** Shortcut to setup OneNAND array addressing for the start of a page. */
 #define ONENAND_PAGESETUP(p) ONENAND_ADDRSETUP((p),0)
 
+/** Setup the buffer to receive the data from the OneNAND array.  'b'
+    is the Data RAM buffer (0-1), 's' is the sector within that buffer
+    (0-3), and 'c' is the count of 512B sectors. */
 #define ONENAND_BUFFSETUP(b,s,c)\
 	({ ONENAND_SB = BSA_BSC (1, (((b)&1)*4) + ((s)&0x3), (c)); })
 

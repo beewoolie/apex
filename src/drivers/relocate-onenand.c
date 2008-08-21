@@ -65,15 +65,16 @@ static void __section (.rlocate.early.func) wait_on_busy (void)
    with trying to figure out where APEX is executing.  We already can
    be sure that the OneNAND flash is available.
 
+   Also beware attempting to output data to the console at this stage.
+   The setup for the UART is lengthy and tends to exhaust our code
+   space for the early initialization.  An alternative would be to
+   initialize the UART after we perform the relocation, but then we
+   wouldn't see much.
+
 */
 
 void __naked __section (.rlocate.early) relocate_early (void)
 {
-  //#if defined (CONFIG_STARTUP_UART)
-  //  INITIALIZE_CONSOLE_UART;
-  //  PUTC('P');
-  //#endif
-
   ONENAND_ADDRSETUP (0, 2);
   ONENAND_BUFFSETUP (0, 0, 2);
   ONENAND_INTR = 0;
@@ -87,8 +88,6 @@ void __naked __section (.rlocate.early) relocate_early (void)
   ONENAND_CMD = ONENAND_CMD_LOAD;
 
   wait_on_busy ();
-
-  PUTC ('n');
 
   __asm volatile ("b relocate_early_exit\n\t");
 }

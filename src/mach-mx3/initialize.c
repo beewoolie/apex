@@ -26,11 +26,12 @@
    o UART initialization.  Again, because of the large size of MX31
      initialization code, we cannot fit the UART initialization into
      the .bootstrap_pre section and have enough room for the early
-     relocation to fit in 512 bytes.  So, we leave it out for now.  We
-     could do some sort of low-speed setup of the CPU clock speed and
-     *maybe* get the UART clock to work correctly, but this is all to
-     serve a very small window of UART output in the early relocation.
-     Blah.
+     relocation to fit in 512 bytes (the amount of code available from
+     OneNAND when we come out of reset).  So, we leave it out for now.
+     We could do some sort of low-speed setup of the CPU clock speed
+     and *maybe* get the UART clock to work correctly, but this is all
+     to serve a very small window of UART output in the early
+     relocation.  Blah.
 
    o According to Micron, Mobile DDR SDRAM initialization requires:
 
@@ -231,7 +232,7 @@ void __naked __section (.bootstrap.pre) bootstrap_pre (void)
 
   /* This is an apparent work-around for some sort of bug in the IPU
      related to clock setup. */
-  __REG (PHYS_IPU + 0x00) |= 0x40;			/* Enable DI. */
+  __REG (PHYS_IPU + 0x00) = 0x40;			/* Enable DI. */
 //  __REG (PHYS_CCM + 0x00) = 0x074B0B7D;
 
   /* Reset clock controls.  This seems to make APEX behave better when
