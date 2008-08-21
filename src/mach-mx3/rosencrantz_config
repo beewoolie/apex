@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Wed Aug 20 13:44:15 2008
+# Thu Aug 21 14:36:35 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -54,7 +54,7 @@ CONFIG_FREQ_533_133_66=y
 # CONFIG_FREQ_208_104_52 is not set
 CONFIG_MX31_UART1=y
 # CONFIG_MX31ADS_UARTA is not set
-CONFIG_IPU_TEST=y
+# CONFIG_IPU_TEST is not set
 
 #
 # Platform Drivers
@@ -90,7 +90,7 @@ CONFIG_CMD_WAIT=y
 CONFIG_CMD_ETH_DM9000=y
 CONFIG_CMD_MEMLIMIT=y
 # CONFIG_CMD_MEMSCAN is not set
-CONFIG_CMD_MEMTEST=y
+# CONFIG_CMD_MEMTEST is not set
 
 #
 # Generic Drivers
