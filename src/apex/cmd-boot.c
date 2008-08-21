@@ -88,6 +88,10 @@ int cmd_boot (int argc, const char** argv)
       arch_number = simple_strtoul (sz, NULL, 10);
   }
 
+#if !defined (CONFIG_SMALL)
+  printf ("ARCH_ID: %d (0x%x)\n", arch_number, arch_number);
+#endif
+
 #if defined (CONFIG_ATAG)
   commandline_argc = argc - 1;
   commandline_argv = argv + 1;
