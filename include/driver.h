@@ -33,14 +33,14 @@ struct descriptor_d {
   char driver_name[32];		/* *** FIXME: should be removed */
   unsigned long start;
   unsigned long length;
-  size_t index;
-  size_t width;		   /* Request for witdh of access */
+  size_t index;                 /* From zero to length */
+  size_t width;                 /* Request for witdh of access */
 
 				/* Paths */
-  char rgb[256];	   /* *** FIXME: contributes to stack bloat */
+  char rgb[256];	   	/* *** FIXME: contributes to stack bloat */
   char* pb[32];
-  int c;		/* Total elements in path */
-  int iRoot;		/* Index of root element */
+  int c;                        /* Total elements in path */
+  int iRoot;                    /* Index of root element */
 
   unsigned long private;	/* Available to driver */
 };

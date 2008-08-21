@@ -25,6 +25,7 @@ lib-y += sort.o
 lib-$(CONFIG_ALIASES) += alias.o
 lib-y += lookup.o
 lib-y += memtest.o
+lib-y += strimatch.o
 
 ifneq ($(CONFIG_THUMB),)
 CFLAGS_vsprintf.o	+= -mthumb

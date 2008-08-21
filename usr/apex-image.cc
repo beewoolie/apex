@@ -10,6 +10,12 @@
     TODO
     ----
 
+    o Some verbose level should dump hex of header.
+
+    o Invalid image message should be more specific.  For example, we
+      could state that the image has no signature, an invalid length,
+      or a broken CRC.
+
     o Revise help prose to reflect the auto-mode detection and the
       basic operation of the program.
 
@@ -790,27 +796,35 @@ error_t arg_parser (int key, char* arg, struct argp_state* state);
 struct argp argp = {
   options, arg_parser,
   "FILE...",
-  "  Create, update, or view an APEX image file\n"
+  "  Create, update, and view an APEX image files\n"
   "\v"
-  "  In the absence of any mode options, the program will show the header\n"
-  "of an existing image.\n"
-  "  Update mode may be used to insert a header in a data file that doesn't\n"
-  "already have a header.  Otherwise, update mode is useful for modifying\n"
-  "header parameters for an existing image, the load address for example.\n"
-  "  Images may be created from one or more input files.  If the file type\n"
-  "is not Multi, the inputs are simply contenated form the payload of the\n"
-  "image.  For Multi images, a 0 terminated sub-imagge size array \n"
-  "immediately follows the header after which the the input files are\n"
-  "contenated and written.\n"
+  "  The program attempts to guess the mode of operation.  If there is\n"
+  "only one file argument and no metadata switches, it will display the\n"
+  "metadata for the image file.  The distinction between a create or an\n"
+  "update is the completeness of the arguments and whether or not the\n"
+  "final file argument is an image.  The automatic mode detection may\n"
+  "be overriden by specifying one of the mode switches.\n"
+  "  The order or switches and files is significant.  Metadata switches\n"
+  "must preceede the source file they modify.  The last argument is output\n"
+  "file name for creating images or the name of the image to update when\n"
+  "updating an existing image.\n"
+  "  The CRC of the header is a simple CRC of the header data, from the\n"
+  "signature to the last byte before the CRC.  The CRC that protects each\n"
+  "payload is computed the same way that the POSIX cksum command computes\n"
+  "the CRC.  This makes it easy to verify the identity of a payload."
   "\n"
   "  ADDR is a 32 bit number in decimal or hexadecimal if prefixed with 0x\n"
   "  TYPE is one of: kernel, initrd\n"
   "  FILE is either a filename, or possibly '.' when updating an image.\n"
-  "\n"
-  "  e.g. apex-image aImage                    # Show image metadata\n"
-//  "       apex-image -u -L 0x8000 aImage       # Change the load/entry point\n"
-//  "                                            # Create 2MiB kernel uImage\n"
-//  "       apex-image -c -L 0x8000 -A arm -t kernel vmlinuz '*_2m' uImage\n"
+  "\n  e.g.\n"
+  "              # Show image metadata\n"
+  "   apex-image aImage\n"
+  "              # Create image with kernel and initrd\n"
+  "   apex-image -t kernel zImage -t initrd aImage\n"
+  "              # Update the load address for the first payload\n"
+  "   apex-image -l 0xc0008000 aImage\n"
+  "              # Update the load address for the second payload\n"
+  "   apex-image . -l 0xc2000000 zImage\n"
 };
 
 enum {
@@ -932,7 +946,8 @@ error_t arg_parser (int key, char* arg, struct argp_state* state)
       // -- fall through
     case modeShow:
       if (g_image.modified ())
-        argp_error (state, "metadata may not be modified when showing an image header");
+        argp_error (state, "metadata may not be modified when showing"
+                    " an image header");
       if (g_image.size () != 1)
         argp_error (state, "show mode requires one and only one file");
       break;
@@ -1270,20 +1285,21 @@ void apeximage (struct arguments& args)
 
   g_image.build_header (args);
 
-  if (args.dry_run || args.verbose) {
+  if (args.dry_run || args.verbose)
     g_image.describe (args);
-    if (args.dry_run)
-      return;
-  }
 
 	// At this point, we're committed to constructing a new image
 	// and writing it to the output file.  The preexisting output
 	// file will be clobbered if there is one.
 
   if (!args.quiet)
-    printf ("# %s image '%s'\n",
+    printf ("# %s image '%s'%s\n",
             args.mode == modeCreate ? "Creating" : "Updating",
-            payloadOut.szPath);
+            payloadOut.szPath,
+            args.dry_run ? "; dry-run, no output files produced" : "");
+
+  if (args.dry_run)
+    return;
 
 	// Save the new image to a temporary filename
   size_t cbPathSave = strlen (payloadOut.szPath) + 32;

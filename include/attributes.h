@@ -30,7 +30,12 @@
 /* ----- Prototypes */
 
 
-//#undef __used
+// *** Be cautions about uncommenting __used.  Some systems may
+// *** already have it defined, but it is necessary on sime systems.
+// *** So, either detect the need to comment this line out, or find a
+// *** work-around, e.g. renaming the attribute macro.
+
+#undef __used
 #undef __section
 #undef __aligned
 

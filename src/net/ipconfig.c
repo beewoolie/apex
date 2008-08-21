@@ -265,7 +265,7 @@ int cmd_ipconfig (int argc, const char** argv)
   }
 
   if (argc >= 2) {
-    if (strcmp (argv[1], "clear") == 0) {
+    if (PARTIAL_MATCH (argv[1], "c", "lear") == 0) {
       memset (host_ip_address, 0, 4);
       memset (server_ip_address, 0, 4);
       memset (gw_ip_address, 0, 4);
@@ -278,21 +278,21 @@ int cmd_ipconfig (int argc, const char** argv)
     }
 
 #if defined (CONFIG_CMD_IPCONFIG_RARP)
-    if (strcmp (argv[1], "rarp") == 0) {
+    if (PARTIAL_MATCH (argv[1], "r", "arp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;
       return cmd_ipconfig_rarp (argc, argv);
     }
 #endif
 #if defined (CONFIG_CMD_IPCONFIG_BOOTP)
-    if (strcmp (argv[1], "bootp") == 0) {
+    if (PARTIAL_MATCH (argv[1], "b", "ootp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;
       return cmd_ipconfig_bootp (argc, argv);
     }
 #endif
 #if defined (CONFIG_CMD_IPCONFIG_DHCP)
-    if (strcmp (argv[1], "dhcp") == 0) {
+    if (PARTIAL_MATCH (argv[1], "d", "hcp") == 0) {
       if (!UNCONFIGURED_IP)
 	goto alreadyconfig;
       return cmd_ipconfig_dhcp (argc, argv);

@@ -170,7 +170,7 @@ static int cmd_eth (int argc, const char** argv)
   }
   else {
 	/* Set mac address */
-    if (strcmp (argv[1], "mac") == 0) {
+    if (PARTIAL_MATCH (argv[1], "m", "ac") == 0) {
       char __aligned rgb[6];
       if (argc != 3)
 	return ERROR_PARAM;
@@ -192,7 +192,7 @@ static int cmd_eth (int argc, const char** argv)
       memcpy (host_mac_address, rgb, 6); /* For networking layer */
     }
 
-    if (strcmp (argv[1], "save") == 0) {
+    if (PARTIAL_MATCH (argv[1], "s", "ave") == 0) {
       u16 rgs[3];
       rgs[0] = host_mac_address[0] | (host_mac_address[1] << 8);
       rgs[1] = host_mac_address[2] | (host_mac_address[3] << 8);
@@ -203,7 +203,7 @@ static int cmd_eth (int argc, const char** argv)
       dm9000_read_eeprom (dm);
     }
 
-    if (strcmp (argv[1], "re") == 0) {
+    if (PARTIAL_MATCH (argv[1], "r", "ead-eeprom") == 0) {
       dm9000_read_eeprom (dm);
       dump ((void*) dm9000[dm].rgs_eeprom, sizeof (dm9000[dm].rgs_eeprom), 0);
     }
@@ -235,6 +235,7 @@ static __command struct command_d c_eth = {
 "  save  - saves the MAC address to the mac: EEPROM device.\n"
 "    A saved MAC address will be used to automatically configure the MAC\n"
 "    at startup.  For this feature to work, there must be a mac: driver.\n"
+"  read-eeprom - reads and dumps the contents of the EEPROM.\n"
 "  e.g.  eth mac 01:23:45:67:89:ab         # Never use this MAC address\n"
 "        eth save\n"
   )

@@ -810,7 +810,7 @@ int cmd_clcdc (int argc, const char** argv)
   }
 
 #if defined (CONFIG_CMD_CLCDC_SPLASH)
-  if (strcmp (argv[1], "splash") == 0) {
+  if (PARTIAL_MATCH (argv[1], "sp", "lash") == 0) {
     if (argc != 3)
       return ERROR_PARAM;
     return cmd_splash (argv[2]);
@@ -818,7 +818,7 @@ int cmd_clcdc (int argc, const char** argv)
 #endif
 
 #if defined (CONFIG_CMD_CLCDC_TEST)
-  if (strcmp (argv[1], "bars") == 0) {
+  if (PARTIAL_MATCH (argv[1], "ba", "rs") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i) {
       if (i < PEL_WIDTH
@@ -844,28 +844,28 @@ int cmd_clcdc (int argc, const char** argv)
     }
     return 0;
   }
-  if (strcmp (argv[1], "white") == 0) {
+  if (PARTIAL_MATCH (argv[1], "w", "hite") == 0) {
     memset (buffer, 0xff, PEL_HEIGHT*PEL_WIDTH*(BIT_DEPTH/8));
     return 0;
   }
-  if (strcmp (argv[1], "black") == 0) {
+  if (PARTIAL_MATCH (argv[1], "bla", "ck") == 0) {
     memset (buffer, 0, PEL_HEIGHT*PEL_WIDTH*(BIT_DEPTH/8));
     return 0;
   }
 # if (BIT_DEPTH==16)
-  if (strcmp (argv[1], "red") == 0) {
+  if (PARTIAL_MATCH (argv[1], "r", "ed") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
       buffer[i] = (0xff & RED_MASK) RED_SHIFT_COMP;
     return 0;
   }
-  if (strcmp (argv[1], "green") == 0) {
+  if (PARTIAL_MATCH (argv[1], "g", "reen") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
       buffer[i] = (0xff & GREEN_MASK) GREEN_SHIFT_COMP;
     return 0;
   }
-  if (strcmp (argv[1], "blue") == 0) {
+  if (PARTIAL_MATCH (argv[1], "blu", "e") == 0) {
     int i;
     for (i = 0; i < PEL_HEIGHT*PEL_WIDTH; ++i)
       buffer[i] = (0xff & BLUE_MASK) BLUE_SHIFT_COMP;
@@ -874,7 +874,7 @@ int cmd_clcdc (int argc, const char** argv)
 # endif
 #endif
 
-  if (strcmp (argv[1],"on") == 0) {
+  if (PARTIAL_MATCH (argv[1], "on", "") == 0) {
     printf ("lcd on\n");
     CLCDC_CTRL      |= LCDEN;	/* Enable CLCDC */
     DRV_CLCDC_POWER_ENABLE;
@@ -895,7 +895,7 @@ int cmd_clcdc (int argc, const char** argv)
     return 0;
   }
 
-  if (strcmp (argv[1],"off") == 0) {
+  if (PARTIAL_MATCH (argv[1], "of", "f") == 0) {
     DRV_CLCDC_BACKLIGHT_DISABLE;
 
     DRV_CLCDC_SLEEP;
