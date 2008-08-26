@@ -1,3 +1,22 @@
+2008-08-26  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/mach-mx3/nor-cfi.h: Removed bogus override of the NOR flash
+	memory command type.
+
+	* src/mach-mx3/initialize.c (target_init): New initialization of
+	the DM9000 memory region for MX31.  The timing is much tighter and
+	the OE and R_Wn timing has a better guarantee of accuracy.
+
+	* src/drivers/drv-dm9000.c (cmd_eth): New 'r' and 'w' subcommands
+	for inspecting registers of the DM9000.  Renamed the 're' command
+	to eeprom since that's what it does.
+
+	* src/apex/services.c (init_services): More clear output from
+	service startup in LL mode.
+
+	* Makefile (SUBLEVEL): New version for changes to DM9000 code and
+	for new KarmaV configuration.
+
 2008-07-09  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/drivers/drv-ext2.c: Added support for the inode_size field

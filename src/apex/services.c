@@ -34,19 +34,23 @@ void init_services (void)
   int i = 0;
 
   PUTC_LL ('S');
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
 
   for (service = (struct service_d*) &APEX_SERVICE_START;
        service < (struct service_d*) &APEX_SERVICE_END;
        ++service, ++i) {
     PUTC_LL (i%8 + '0');
     PUTC_LL (',');
-    PUTHEX_LL (&service->init);
-    PUTC_LL (',');
     PUTHEX_LL (service->init);
+    PUTC_LL (' ');
+    PUTC_LL ('@');
+    PUTHEX_LL (&service->init);
     PUTC_LL ('\r');
     PUTC_LL ('\n');
     if (service->init)
       service->init ();
+    PUTC_LL ('#');
     PUTC_LL ('\r');
     PUTC_LL ('\n');
   }
@@ -62,14 +66,17 @@ void release_services (void)
   int i = 0;
 
   PUTC_LL ('S');
+  PUTC_LL ('\r');
+  PUTC_LL ('\n');
 
-  for (service = (struct service_d*) &APEX_SERVICE_END;
+  for (service   = (struct service_d*) &APEX_SERVICE_END;
        service-- > (struct service_d*) &APEX_SERVICE_START; ++i) {
     PUTC_LL (i%8 + '0');
     PUTC_LL (',');
-    PUTHEX_LL (&service->release);
-    PUTC_LL (',');
     PUTHEX_LL (service->release);
+    PUTC_LL (' ');
+    PUTC_LL ('@');
+    PUTHEX_LL (&service->release);
     PUTC_LL ('\r');
     PUTC_LL ('\n');
     if (service->release)

@@ -30,6 +30,7 @@
 #if defined (CONFIG_MACH_COMPANION)
 
 # define DM_WIDTH	16
+# define DM_IO_DELAY	udelay(1)
 
 # define C_DM		(2)
 

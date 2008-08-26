@@ -42,7 +42,7 @@
 
 #include <mach/drv-dm9000.h>
 
-//#define TALK 2
+//#define TALK 3
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -60,6 +60,10 @@
 
 #if DM_WIDTH != 16
 # error "DM9000 driver only supports 16 bit bus"
+#endif
+
+#if !defined DM_IO_DELAY
+# define DM_IO_DELAY
 #endif
 
 struct dm9000 {
@@ -85,7 +89,7 @@ static void write_reg (int dm, int index, u16 value)
 {
   DBG (3, "%s: [%d] %x <- %x\n", __FUNCTION__, dm, index, value);
   *dm9000[dm].index = index;
-  udelay (1);
+  DM_IO_DELAY;
   *dm9000[dm].data  = value;
 }
 
@@ -93,7 +97,7 @@ static u16 read_reg (int dm, int index)
 {
   int value;
   *dm9000[dm].index = index;
-  udelay (1);
+  DM_IO_DELAY;
   value =  *dm9000[dm].data;
   DBG (3, "%s: [%d] %x -> %x\n", __FUNCTION__, dm, index, value);
   return value;
@@ -167,6 +171,10 @@ static int cmd_eth (int argc, const char** argv)
   if (argc == 1) {
     printf ("dm9000[%d]: vendor 0x%x  product 0x%x  chip 0x%x\n",
 	    dm, dm9000[dm].vendor, dm9000[dm].product, dm9000[dm].chip);
+    printf ("  0x%02x 0x%02x 0x%02x 0x%02x 0x%04x\n",
+            read_reg (dm, DM9000_VIDH), read_reg (dm, DM9000_VIDL),
+            read_reg (dm, DM9000_PIDH), read_reg (dm, DM9000_PIDL),
+            read_reg (dm, DM9000_CHIPR));
   }
   else {
 	/* Set mac address */
@@ -203,9 +211,33 @@ static int cmd_eth (int argc, const char** argv)
       dm9000_read_eeprom (dm);
     }
 
-    if (strcmp (argv[1], "re") == 0) {
+    if (strcmp (argv[1], "eeprom") == 0) {
       dm9000_read_eeprom (dm);
       dump ((void*) dm9000[dm].rgs_eeprom, sizeof (dm9000[dm].rgs_eeprom), 0);
+    }
+
+    if (strcmp (argv[1], "r") == 0) {
+      if (argc == 2) {
+        int reg;
+        char rgb[256];
+        for (reg = 0; reg < sizeof (rgb); ++reg) {
+          unsigned char value = read_reg (dm, reg);
+          rgb[reg] = value;
+        }
+        dumpw (rgb, sizeof (rgb), 0, 0);
+      }
+      else {
+        int reg = simple_strtoul (argv[2], NULL, 0);
+        unsigned char value = read_reg (dm, reg);
+        printf ("reg 0x%x -> 0x%x (%d)\n", reg, value, value);
+      }
+    }
+
+    if (strcmp (argv[1], "w") == 0) {
+      int reg = simple_strtoul (argv[2], NULL, 0);
+      unsigned char value = simple_strtoul (argv[3], NULL, 0);
+      write_reg (dm, reg, value);
+      printf ("reg 0x%x <- 0x%x (%d)\n", reg, value, value);
     }
   }
 
@@ -227,14 +259,15 @@ static __command struct command_d c_eth = {
 //"  send  - send a test packet.\n"
 //"  loop  - enable loopback mode.\n"
 //"  force - force power-up and restart auto-negotiation.\n"
-"  mac   - set the MAC address to PARAMETER.\n"
+"  mac    - set the MAC address to PARAMETER.\n"
 "    PARAMETER has the form XX:XX:XX:XX:XX:XX where each X is a\n"
 "    hexadecimal digit.  Be aware that MAC addresses must be unique for\n"
 "    proper operation of the network.  This command may be added to the\n"
 "    startup commands to set the MAC address at boot-time.\n"
-"  save  - saves the MAC address to the mac: EEPROM device.\n"
+"  save   - saves the MAC address to the mac: EEPROM device.\n"
 "    A saved MAC address will be used to automatically configure the MAC\n"
 "    at startup.  For this feature to work, there must be a mac: driver.\n"
+"  eeprom - read whole EEPROM.\n"
 "  e.g.  eth mac 01:23:45:67:89:ab         # Never use this MAC address\n"
 "        eth save\n"
   )

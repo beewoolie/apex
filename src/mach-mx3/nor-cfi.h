@@ -26,9 +26,10 @@
 
 /* ----- Constants */
 
-#undef CONFIG_DRIVER_NOR_CFI_TYPE_INTEL
-#undef CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION
-#define CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION
+/* These must be defined in the configuration for the board. */
+//#undef CONFIG_DRIVER_NOR_CFI_TYPE_INTEL
+//#undef CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION
+//#define CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION
 
 #if !defined (NOR_WIDTH)
 # define NOR_WIDTH		(16)

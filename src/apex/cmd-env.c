@@ -195,7 +195,7 @@ static int cmd_saveenv (int argc, const char** argv)
   d_env.driver->seek (&d_env, 0, SEEK_SET);
   if (d_env.driver->write (&d_env, g_rgbEnv, CONFIG_ENV_SIZE)
       != CONFIG_ENV_SIZE)
-    ERROR_RESULT (ERROR_IOFAILURE, "truncated write");
+    ERROR_RETURN (ERROR_IOFAILURE, "truncated write");
 
   return 0;
 }

@@ -123,6 +123,10 @@
 #include "hardware.h"
 #include <debug_ll.h>
 
+#if defined (CONFIG_USES_DM9000)
+# include "drv-dm9000.h"
+#endif
+
 //#define NO_INIT
 
 #define ESDCTL_CTL0_SDE		(1<<31)	/* Enable */
@@ -437,11 +441,36 @@ static void target_init (void)
   M3IF_CTL = (1<<M3IF_M_IPU1);
 #endif
 
-#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
-				/* DM9000 and CS4 */
-  WEIM_UCR(4) = 0x0000DCF6;
-  WEIM_LCR(4) = 0x444A4541;
-  WEIM_ACR(4) = 0x44443302;
+#if defined (CONFIG_USES_DM9000)
+
+	/* Configure the DM9000 for Asynchronous level sensitive DTACK mode */
+  WEIM_UCR(DM_WEIM_CS) = 0
+    | (3<<14)                   /* CNC, AHB clock width minimum CS pulse */
+    | (3<<8)                    /* WSC */
+    | (1<<7)                    /* EW, DTACK level sensitive */
+    | (2<<4)                    /* WWS, two extra clocks for write setup */
+	/* DM9000 needs 2 clocks @20ns each to recover from a transaction */
+    | (6<<0)                    /* EDC, 6 cycles between transactions */
+    ;
+
+  WEIM_LCR(DM_WEIM_CS) = 0
+	/* DM9000 needs a slight delay within CS for nOE */
+    | (4<<28)                   /* OEA, 1/2 AHB clock delay til assert OE */
+    | (4<<24)                   /* OEN, 1/2 AHB clock delay til deassert OE */
+    | (5<<8)                    /* DSZ, 16 bit bus width */
+    | (1<<0)                    /* CSEN, enable CS */
+    ;
+
+  WEIM_ACR(DM_WEIM_CS) = 0
+	/* DM9000 needs a slight delay within CS for R_Wn */
+	/* Karma needs a delay so that the address, which passes
+           through a buffer, is ready before the R_Wn signal is
+           asserted.  Rosencrantz doesn't need this, but it doesn't
+           really hurt. */
+    | (4<<20)                   /* RWA, 1/2 AHB clock delay til assert RW */
+    | (4<<16)                   /* RWN, 1/2 AHB clock delay til deassert RW */
+    | (3<<4)                    /* DCT, AHB clock delay til nDTACK check */
+    ;
 #endif
 }
 

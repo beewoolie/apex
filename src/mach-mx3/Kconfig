@@ -28,6 +28,14 @@ config MACH_PHYTEC_PCM037
 	select USES_SMC91X
 	select INLINE_PLATFORM_INITIALIZATION
 
+config MACH_KARMA5
+	bool "Panasonic KarmaV"
+	select ARCH_MX31
+	select USES_DM9000
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select INLINE_PLATFORM_INITIALIZATION
+
 endchoice
 
 menu "Platform Setup"
@@ -67,6 +75,7 @@ config ARCH_NUMBER
 	int
 	default 447 if MACH_MX31ADS
 	default 1348 if MACH_EXBIBLIO_ROSENCRANTZ
+	default 1348 if MACH_KARMA5
 	default 447 if MACH_PHYTEC_PCM037
 
 config APEX_VMA
