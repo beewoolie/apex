@@ -149,7 +149,7 @@ int cmd_copy (int argc, const char** argv)
 
 #if defined (USE_COPY_VERIFY)
       if (verify) {
-	char rgbVerify[512];
+	char __aligned rgbVerify[512];
 	ssize_t cbVerify = dout_v.driver->read (&dout_v, rgbVerify,
 						sizeof (rgbVerify));
 	if (cbVerify != cb) {

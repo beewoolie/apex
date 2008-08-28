@@ -200,6 +200,8 @@ static int memory_open (struct descriptor_d* d)
   return 0;			/* OK */
 }
 
+/** Read from a memory region into a buffer. */
+
 static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   if (d->index + cb > d->length)
@@ -254,27 +256,44 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   return cb;
 }
 
+
+/** Write from a buffer into a memory region.  There are special cases
+    for single byte, single aligned short, and single aligned word
+    accesses.  Ideally, the width of the memory descriptor would
+    determine the access width regardless of the length of the
+    request.  Doing so would permit well defined access to memory
+    mapped register regions.
+
+ */
 static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
+	/* The masks are the bit masks we need to check for short and
+           word access to verify that the alignment constraints are
+           being met.  Short accesses must be aligned to even
+           addresses (1<<2).  Word accesses must be aligned to word
+           boundaries (3<<4). */
+  static const unsigned char masks = (1<<2)|(3<<4);
+
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  /* Make sure when we write bytes and shorts that we write exactly
-     those at the requested address when the destination and source
-     addresses are aligned. */
+	/* If either the source or destination address is misaligned,
+           we use the memcpy() path.  Note that we don't check for cb
+           <= 4 since it doesn't matter.  Aligned accesses longer than
+           4 bytes will default to memcpy(). */
+  if (  ((d->start + d->index) | (unsigned long) pv)
+      & ((masks >> (cb & 7)) & 3))
+    goto nonaligned;
+
   switch (cb) {
   case 1:
-    *(char*) (d->start + d->index) = *(char*) pv;
+    *(char*)           (d->start + d->index) = *(char*)           pv;
     break;
   case 2:
-    if (((d->start + d->index) & 0x1) || ((unsigned long) pv & 1))
-      goto nonaligned;
     *(unsigned short*) (d->start + d->index) = *(unsigned short*) pv;
     break;
   case 4:
-    if (((d->start + d->index) & 0x3) || ((unsigned long) pv & 3))
-      goto nonaligned;
-    *(unsigned long*) (d->start + d->index) = *(unsigned long*) pv;
+    *(unsigned long*)  (d->start + d->index) = *(unsigned long*)  pv;
     break;
   default:
   nonaligned:
