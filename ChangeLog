@@ -1,3 +1,10 @@
+2008-08-28  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/apex/cmd-help.c (compare_commands): Righted command sort
+	order.
+	(cmd_help): Eliminated a possible overflow of command listing
+	array.
+
 2008-08-27  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/drivers/drv-mem.c (memory_write): Fixed un-aligned write

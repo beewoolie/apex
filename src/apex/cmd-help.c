@@ -14,6 +14,9 @@
    DESCRIPTION
    -----------
 
+   o ***FIXME: without the sort, there is no need for the rgc array.
+     This function could be shorter without the sort.
+
 */
 
 #include <linux/types.h>
@@ -32,7 +35,7 @@ static int compare_commands (const void* _a, const void* _b)
   struct command_d** a = (struct command_d**) _a;
   struct command_d** b = (struct command_d**) _b;
 
-  return strcmp ((*b)->command, (*a)->command);
+  return strcmp ((*a)->command, (*b)->command);
 }
 
 #endif
@@ -69,12 +72,14 @@ int cmd_help (int argc, const char** argv)
   {
     struct command_d* command;
     for (command = (struct command_d*) &APEX_COMMAND_START;
-	 command < (struct command_d*) &APEX_COMMAND_END;
+         cCommands < sizeof (rgc)/sizeof (*rgc)
+         && command < (struct command_d*) &APEX_COMMAND_END;
 	 ++command, ++cCommands)
       rgc[cCommands] = command;
   }
 
 #if defined (CONFIG_ALPHABETIZE_COMMANDS)
+  printf ("sorting %d\n", cCommands);
   sort (rgc, cCommands, sizeof (struct command_d*), compare_commands, NULL);
 #endif
 
