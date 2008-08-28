@@ -1,3 +1,9 @@
+2008-08-27  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/drivers/drv-mem.c (memory_write): Fixed un-aligned write
+	code.  The original test used were allowing invalid unaligned
+	accesses.
+
 2008-08-26  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/mach-mx3/nor-cfi.h: Removed bogus override of the NOR flash

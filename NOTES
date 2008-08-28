@@ -5,6 +5,14 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.aug.27
+    o The setenv command should be able to cope with a bad flash
+    environment region by letting the user set variables in the memory
+    copy.  The user wouldn't be able to save, but variables could be
+    set.  The trouble is that erasing the flash doesn't clear the
+    error in the environment being unwritable.  Perhaps we need a
+    status which is unsaveable.
+
   o 2008.aug.18
     o Memtest would be nice to protect the user from testing invalid
       memory.  We could add a -f switch to force any address, but

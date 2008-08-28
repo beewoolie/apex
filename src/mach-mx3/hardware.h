@@ -32,6 +32,10 @@
 # include "rosencrantz.h"
 #endif
 
+#if defined (CONFIG_MACH_KARMA5)
+//# include "karma.h"
+#endif
+
 #include "mx31.h"
 #include "mx31-pins.h"
 

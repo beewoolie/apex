@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 
-# Thu Aug 21 14:36:35 2008
+# Tue Aug 26 11:46:31 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -20,7 +20,7 @@ CONFIG_ARCH_MX3=y
 #
 CONFIG_TARGET_DESCRIPTION="ExBiblio oPen (Rosencrantz)"
 CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
-# CONFIG_AEABI is not set
+CONFIG_AEABI=y
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 # CONFIG_CC_NO_OPTIMIZATION is not set
@@ -45,6 +45,7 @@ CONFIG_MACH="mx3"
 # CONFIG_MACH_MX31ADS is not set
 CONFIG_MACH_EXBIBLIO_ROSENCRANTZ=y
 # CONFIG_MACH_PHYTEC_PCM037 is not set
+# CONFIG_MACH_KARMA5 is not set
 
 #
 # Platform Setup

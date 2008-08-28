@@ -101,7 +101,7 @@
 #include <linux/kernel.h>
 #include <driver.h>
 
-//#define TALK 1
+//#define TALK 2
 
 #if defined (TALK)
 #define PRINTF(f...)		printf (f)
@@ -164,6 +164,7 @@ static ssize_t _env_read (void* pv, size_t cb)
 
 static ssize_t _env_seek (ssize_t ib, int whence)
 {
+  DBG (2, "%s: %d %d\n", __FUNCTION__, ib, whence);
   return pd_env->driver->seek (pd_env, ib, whence);
 }
 
@@ -171,7 +172,15 @@ static ssize_t _env_seek (ssize_t ib, int whence)
 
 static ssize_t _env_write (const void* pv, size_t cb)
 {
-  return pd_env->driver->write (pd_env, pv, cb);
+  ssize_t result;
+//  dumpw ((char*) pd_env->start, 32, 0, 0);
+//  dumpw ((char*) pv, 32, 0, 0);
+  DBG (2, "%s: (%d) %p [%x %x]\n", __FUNCTION__,
+       cb, pv, ((char*)pv)[0], ((char*)pv)[1]);
+  DBG (2, "  %lx %d %ld\n", pd_env->start, pd_env->index, pd_env->length);
+  result = pd_env->driver->write (pd_env, pv, cb);
+//  dumpw ((char*) pd_env->start, 32, 0, 0);
+  return result;
 }
 
 
@@ -515,6 +524,7 @@ int env_store (const char* szKey, const char* szValue)
 	/* Erase existing environment entries */
   while ((ch = _env_locate (i)) != ENV_END) {
     ssize_t ib = _env_seek (0, SEEK_CUR);
+    DBG (2, "locate %x %d\n\n", ch, ibLastFlag);
     ch = (ch & ~ENV_MASK_DELETED) | ENV_VAL_DELETED;
     _env_seek (ibLastFlag, SEEK_SET);
     _env_write (&ch, 1);

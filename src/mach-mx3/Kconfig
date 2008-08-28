@@ -34,6 +34,7 @@ config MACH_KARMA5
 	select USES_DM9000
 	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
+	select USES_IPU_TEST
 	select INLINE_PLATFORM_INITIALIZATION
 
 endchoice

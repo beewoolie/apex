@@ -1197,6 +1197,7 @@ static void i2c_setup_sensor_i2c (void)
 {
   ENTRY;
 
+#if defined (PIN_SENSOR_PWR_EN)
   IOMUX_PIN_CONFIG_GPIO	 (PIN_SENSOR_PWR_EN);
   GPIO_PIN_CONFIG_OUTPUT (PIN_SENSOR_PWR_EN);
   GPIO_PIN_SET		 (PIN_SENSOR_PWR_EN);	/* Enable sensor power */
@@ -1212,6 +1213,7 @@ static void i2c_setup_sensor_i2c (void)
 
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_CSI_PIXCLK);
   IOMUX_PIN_CONFIG_FUNC  (MX31_PIN_CSI_MCLK);
+#endif
 
 	/* Post divider for CSI. */
   MASK_AND_SET (CCM_PDR0, (0x1ff << 23), (0x58 << 23));
@@ -1260,6 +1262,7 @@ static void ipu_setup_sensor (void)
 {
   ENTRY;
 
+#if defined (PIN_CMOS_STBY)
   IOMUX_PIN_CONFIG_GPIO  (PIN_CMOS_STBY);
   GPIO_PIN_CONFIG_OUTPUT (PIN_CMOS_STBY);
   GPIO_PIN_SET		 (PIN_CMOS_STBY);	/* Put camera in standby */
@@ -1299,6 +1302,7 @@ static void ipu_setup_sensor (void)
   GPIO_PIN_SET		 (PIN_NCMOS_RESET);
   udelay (1);
   GPIO_PIN_CLEAR	 (PIN_CMOS_STBY); /* Release camera from standby */
+#endif
 }
 
 #if defined (MODE_VF)
@@ -1659,7 +1663,7 @@ static int cmd_ipu (int argc, const char** argv)
   if (argc < 2)
     return ERROR_PARAM;
 
-  if (rgbFrameA == 0) {
+  if (rgbFrameA == 0 && 0) {
     rgbFrameA = alloc_uncached (CB_FRAME, 4096);
     rgbFrameB = alloc_uncached (CB_FRAME, 4096);
     rgbFrameC = alloc_uncached (CB_FRAME, 4096);
@@ -1737,11 +1741,24 @@ static int cmd_ipu (int argc, const char** argv)
 #if 0
   /* Dump */
   if (strcmp (argv[1], "d") == 0) {
+
+    char rgb[(132 + 7)/8];
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*14 + 0, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
+    memset (rgb, 0, sizeof (rgb));
+    ipu_read_ima (1, 2*14 + 1, rgb, 132);
+    dumpw (rgb, sizeof (rgb), 0, 0);
+
+
+#if 0
+
     char rgb[96*64/8];
     memset (rgb, 0, sizeof (rgb));
 //    ipu_read_ima (7, 0, rgb, sizeof (rgb)*8);
     ipu_read_ima (8, 0, rgb, 64);
     dumpw (rgb, sizeof (rgb), 0, 0);
+#endif
   }
 #endif
 
