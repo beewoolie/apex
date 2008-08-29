@@ -14,4 +14,4 @@ obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 obj-$(CONFIG_IPU_TEST)		+= ipu.o
 obj-$(CONFIG_MX31ADS_UARTA)	+= serial-sc16c652.o
 obj-$(CONFIG_MX31_UART1)	+= serial-mx31.o
-obj-$(CONFIG_MACH_KARMA5)	+= clcdc-karma.o
+obj-$(CONFIG_MACH_KARMA5)	+= karma-cmd-clcdc.o karma-cmd-accel.o
