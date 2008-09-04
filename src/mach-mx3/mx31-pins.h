@@ -34,6 +34,9 @@
      none is 0
    GPIO field is bits 15-11.
  */
+
+/** Pin definition macro.  This is the general macro for declaring a
+    pin's encoding. */
 #define __P(mux_r,mux_f,pad_r,pad_f,gpio_r,gpio_f)\
 	(((((mux_r) & 0x7f) + (0x00c >>2)) << 2) /* MUX register */\
 	|( ((mux_f) & 0x3 )		  << 0)	 /* MUX field w/in register */\
@@ -42,8 +45,12 @@
 	|((((gpio_r) + 1) & 0x3 )	  << 28) /* GPIO register */\
 	|( ((gpio_f)      & 0x1f)	  << 11))/* GPIO field w/in reg. */\
 
+/** GPIO pin declaration.  Used to declare a pin that has GPIO capabilities. */
 #define __G(mux_r,mux_f,pad_r,pad_f,gpio_r,gpio_f)\
 	__P (mux_r, mux_f, pad_r, pad_f, gpio_r, gpio_f)
+/** Non-GPIO pin declaration.  Used to delcare a ping that has no GPIO
+    capabilities.  This is a convenience since the GPIO fields are at
+    the end of the parameter list and are zero for non-gpio pins. */
 #define __N(mux_r,mux_f,pad_r,pad_f)	  __P(mux_r,mux_f,pad_r,pad_f,0,0)
 
 enum {
@@ -391,8 +398,8 @@ enum {
 #define _PIN_GPIO_F(v)	(((v) >> 11) & 0x1f)
 
   /* These registers are indexed from bases in the PIN macros.  There
-     we store a real index of the register instead of an offset from
-     the base.  That's why the MUX and PAD register references are
+     we store a real index of the register instead of an address
+     offset from the base--which is why the MUX and PAD macros are
      identical.  The GPIO indices include the bits needed to find each
      of the GPIO regions. */
 #define _SW_MUX_CTL(r)	__REG(PHYS_IOMUXC + (r))
@@ -429,6 +436,14 @@ enum {
 	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
 		     (0x7f<<(_PIN_MUX_F (p)*8)),\
 		     ((0<<4)|((n)<<2))<<(_PIN_MUX_F (p)*8))
+
+  /* Configure pin as alternate input (1,2)/output (1,2,3,4,5,6).  It
+     is not clear if this macro is necessary as most pins are defined
+     either as an output or an input, seldom either. */
+#define IOMUX_PIN_CONFIG_ALT_IN_OUT(p,i,o)               \
+	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
+		     (0x7f<<(_PIN_MUX_F (p)*8)),\
+                     (((1+(o))<<4)|((i)<<2))<<(_PIN_MUX_F (p)*8))
 
 #define IOMUX_PIN_REG(p)\
 	_SW_PAD_CTL (_PIN_MUX_R (p))

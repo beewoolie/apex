@@ -31,6 +31,8 @@
 
 #if defined (CONFIG_MX31_UART1)
 # define UART PHYS_UART1
+//# define UARTB PHYS_UART2
+//# define UARTB PHYS_UART3
 #endif
 
 #define UART_RXD		0x00
@@ -106,6 +108,23 @@
      __REG (UART + UART_BMR) = UART_BMR_115200;\
      __REG (UART + UART_CR1) = UART_CR1_EN;\
      INITIALIZE_CONSOLE_UART_MX31ADS;\
+   })
+
+# define INITIALIZE_UARTB\
+  ({ __REG (UARTB + UART_CR1) = 0;\
+     __REG (UARTB + UART_CR2) = UART_CR2_IRTS | UART_CR2_CTSC | UART_CR2_WS\
+			     | UART_CR2_TXEN | UART_CR2_RXEN;\
+     __REG (UARTB + UART_CR3) = UART_CR3_RXDMUXSEL;\
+     __REG (UARTB + UART_CR4) = (32<<UART_CR4_CTSTL_SH)\
+			     | UART_CR4_LPBYP | UART_CR4_DREN;\
+     __REG (UARTB + UART_FCR) = (16<<UART_FCR_RXTL_SH)\
+			     | ( 0<<UART_FCR_RFDIV_SH)\
+			     | (16<<UART_FCR_TXTL_SH);\
+     __REG (UARTB + UART_SR1) = ~0;\
+     __REG (UARTB + UART_SR2) = ~0;\
+     __REG (UARTB + UART_BIR) = UART_BIR_115200;\
+     __REG (UARTB + UART_BMR) = UART_BMR_115200;\
+     __REG (UARTB + UART_CR1) = UART_CR1_EN;\
    })
 
 #endif  /* __UART_H__ */

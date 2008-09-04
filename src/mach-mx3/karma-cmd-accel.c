@@ -111,7 +111,10 @@ void accel_setup (void)
   spi_exchange (0, 0xa, 4);     /* Self-test 1 */
 }
 
-#define ACCELERATION(l,m) ((int)(( ((int)((signed char)m))<<2) | (((l) >> 6) & 0x3)))
+#define ACCELERATION(l,m) ((int)(( ((int)((signed char)m))<<2)\
+                                 | (((l) >> 6) & 0x3)))
+#define ACC_INT(v,g)  ((ABS(v))*(g)/512)
+#define ACC_FRAC(v,g) (((1000*(ABS(v))*(g) + 512/2)/512)%1000)
 
 #define RAW(l,m) (((unsigned) ((m)<<2)) | (((unsigned) ((l)>>6)) & 0x3))
 
@@ -122,6 +125,8 @@ void accel_query (void)
   int acc_x;
   int acc_y;
   int acc_z;
+  static const int g_range = 4;
+  //  static const int scalar = g_range*1000/512;
 
   ENTRY (0);
 
@@ -134,15 +139,21 @@ void accel_query (void)
   acc_y = ACCELERATION (rgb[4], rgb[5]);
   acc_z = ACCELERATION (rgb[6], rgb[7]);
 
-  printf ("x%c %d.%03dg (%5d 0x%03x)  "
-          "y%c %d.%03dg (%5d 0x%03x)  "
-          "z%c %d.%03dg (%5d 0x%03x)\n",
+  printf ("x%c %c%d.%03dg (%5d 0x%03x)  "
+          "y%c %c%d.%03dg (%5d 0x%03x)  "
+          "z%c %c%d.%03dg (%5d 0x%03x)\n",
           (rgb[2] & 1) ? '*' : ' ',
-          acc_x/1000, ABS(acc_x%1000), acc_x, RAW (rgb[2], rgb[3]),
+          acc_x < 0 ? '-' : ' ',
+          ACC_INT (acc_x, g_range), ACC_FRAC (acc_x, g_range), acc_x,
+          RAW (rgb[2], rgb[3]),
           (rgb[4] & 1) ? '*' : ' ',
-          acc_y/1000, ABS(acc_y%1000), acc_y, RAW (rgb[4], rgb[5]),
+          acc_y < 0 ? '-' : ' ',
+          ACC_INT (acc_y, g_range), ACC_FRAC (acc_y, g_range), acc_y,
+          RAW (rgb[4], rgb[5]),
           (rgb[6] & 1) ? '*' : ' ',
-          acc_z/1000, ABS(acc_z%1000), acc_z, RAW (rgb[6], rgb[7])
+          acc_z < 0 ? '-' : ' ',
+          ACC_INT (acc_z, g_range), ACC_FRAC (acc_z, g_range), acc_z,
+          RAW (rgb[6], rgb[7])
           );
   printf ("temp %d C\n", (rgb[8]/2) - 30);
 }

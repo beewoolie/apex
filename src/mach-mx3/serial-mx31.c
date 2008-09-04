@@ -34,6 +34,22 @@ void mx31_serial_init (void)
 {
   INITIALIZE_CONSOLE_UART;
 
+#if defined (UARTB)
+  /* UART2 PinMUX */
+  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_RXD2);
+  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_TXD2);
+  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_RTS2);
+  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_CTS2);
+
+  /* UART3 PinMUX */
+  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_MISO, 1, 1);
+  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_MOSI, 1, 1);
+  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_SCLK, 1, 1);
+  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_SPI_RDY, 1, 1);
+
+  INITIALIZE_UARTB;
+#endif
+
   if (console_driver == 0)
     console_driver = &mx31_serial_driver;
 }
@@ -82,6 +98,9 @@ ssize_t mx31_serial_write (struct descriptor_d* d,
       ;				/* Wait for room in the FIFO */
 
     __REG (UART + UART_TXD) = *pb;
+#if defined (UARTB)
+    __REG (UARTB + UART_TXD) = *pb;
+#endif
 
     ++cWrote;
   }
