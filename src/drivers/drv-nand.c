@@ -505,7 +505,7 @@ int cmd_nand (int argc, const char** argv)
   if (!chip)
     return 0;
 
-  if (strcmp (argv[1], "mark") == 0) {
+  if (PARTIAL_MATCH (argv[1], "m", "ark") == 0) {
     unsigned long cb = 32*1024*1024;
     int c;
     int last = -1;
@@ -542,7 +542,7 @@ int cmd_nand (int argc, const char** argv)
   }
 
 #if defined (NAND_Read3)
-  if (strcmp (argv[1], "scan") == 0) {
+  if (PARTIAL_MATCH (argv[1], "s", "can") == 0) {
     int index;
     int cBad = 0;
 

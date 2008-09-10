@@ -27,6 +27,26 @@
 
 /* ----- Prototypes */
 
+#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
+
+int lookup_alias_or_env_int (const char* szKey, int valueDefault);
+unsigned lookup_alias_or_env_unsigned (const char* szKey,
+                                       unsigned valueDefault);
 const char* lookup_alias_or_env (const char* szKey, const char* szDefault);
+
+#else
+
+inline int lookup_alias_or_env_int (const char* szKey, int valueDefault) {
+  return valueDefault; }
+inline unsigned lookup_alias_or_env_unsigned (const char* szKey,
+                                              unsigned valueDefault) {
+  return valueDefault; }
+inline const char* lookup_alias_or_env (const char* szKey,
+                                        const char* szDefault) {
+  return szDefault; }
+
+#endif
+
+
 
 #endif  /* __LOOKUP_H__ */

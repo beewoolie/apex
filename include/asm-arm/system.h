@@ -3,7 +3,7 @@
 
 #ifdef __KERNEL__
 
-#include <linux/config.h>
+#include <asm/memory.h>
 
 #define CPU_ARCH_UNKNOWN	0
 #define CPU_ARCH_ARMv3		1
@@ -14,6 +14,7 @@
 #define CPU_ARCH_ARMv5TE	6
 #define CPU_ARCH_ARMv5TEJ	7
 #define CPU_ARCH_ARMv6		8
+#define CPU_ARCH_ARMv7		9
 
 /*
  * CR1 bits (CP#15 CR1)
@@ -47,58 +48,50 @@
 #define CPUID_TCM	2
 #define CPUID_TLBTYPE	3
 
-#define read_cpuid(reg)							\
-	({								\
-		unsigned int __val;					\
-		asm("mrc%? p15, 0, %0, c0, c0, " __stringify(reg)	\
-		    : "=r" (__val));					\
-		__val;							\
-	})
-
-#define __cacheid_present(val)		(val != read_cpuid(CPUID_ID))
-#define __cacheid_vivt(val)		((val & (15 << 25)) != (14 << 25))
-#define __cacheid_vipt(val)		((val & (15 << 25)) == (14 << 25))
-#define __cacheid_vipt_nonaliasing(val)	((val & (15 << 25 | 1 << 23)) == (14 << 25))
-#define __cacheid_vipt_aliasing(val)	((val & (15 << 25 | 1 << 23)) == (14 << 25 | 1 << 23))
-
-#define cache_is_vivt()							\
-	({								\
-		unsigned int __val = read_cpuid(CPUID_CACHETYPE);	\
-		(!__cacheid_present(__val)) || __cacheid_vivt(__val);	\
-	})
-		
-#define cache_is_vipt()							\
-	({								\
-		unsigned int __val = read_cpuid(CPUID_CACHETYPE);	\
-		__cacheid_present(__val) && __cacheid_vipt(__val);	\
-	})
-
-#define cache_is_vipt_nonaliasing()					\
-	({								\
-		unsigned int __val = read_cpuid(CPUID_CACHETYPE);	\
-		__cacheid_present(__val) &&				\
-		 __cacheid_vipt_nonaliasing(__val);			\
-	})
-
-#define cache_is_vipt_aliasing()					\
-	({								\
-		unsigned int __val = read_cpuid(CPUID_CACHETYPE);	\
-		__cacheid_present(__val) &&				\
-		 __cacheid_vipt_aliasing(__val);			\
-	})
-
 /*
  * This is used to ensure the compiler did actually allocate the register we
  * asked it for some inline assembly sequences.  Apparently we can't trust
  * the compiler from one version to another so a bit of paranoia won't hurt.
  * This string is meant to be concatenated with the inline asm string and
  * will cause compilation to stop on mismatch.
+ * (for details, see gcc PR 15089)
  */
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 
 #ifndef __ASSEMBLY__
 
 #include <linux/linkage.h>
+#include <linux/stringify.h>
+#include <linux/irqflags.h>
+
+#ifdef CONFIG_CPU_CP15
+#define read_cpuid(reg)							\
+	({								\
+		unsigned int __val;					\
+		asm("mrc	p15, 0, %0, c0, c0, " __stringify(reg)	\
+		    : "=r" (__val)					\
+		    :							\
+		    : "cc");						\
+		__val;							\
+	})
+#else
+extern unsigned int processor_id;
+#define read_cpuid(reg) (processor_id)
+#endif
+
+/*
+ * The CPU ID never changes at run time, so we might as well tell the
+ * compiler that it's constant.  Use this function to read the CPU ID
+ * rather than directly reading processor_id or read_cpuid() directly.
+ */
+static inline unsigned int read_cpuid_id(void) __attribute_const__;
+
+static inline unsigned int read_cpuid_id(void)
+{
+	return read_cpuid(CPUID_ID);
+}
+
+#define __exception	__attribute__((section(".exception.text")))
 
 struct thread_info;
 struct task_struct;
@@ -114,39 +107,54 @@ struct pt_regs;
 void die(const char *msg, struct pt_regs *regs, int err)
 		__attribute__((noreturn));
 
-void die_if_kernel(const char *str, struct pt_regs *regs, int err);
+struct siginfo;
+void arm_notify_die(const char *str, struct pt_regs *regs, struct siginfo *info,
+		unsigned long err, unsigned long trap);
 
 void hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int,
 				       struct pt_regs *),
 		     int sig, const char *name);
 
-//#include <asm/proc-fns.h>
-
 #define xchg(ptr,x) \
 	((__typeof__(*(ptr)))__xchg((unsigned long)(x),(ptr),sizeof(*(ptr))))
 
-#define tas(ptr) (xchg((ptr),1))
-
 extern asmlinkage void __backtrace(void);
+extern asmlinkage void c_backtrace(unsigned long fp, int pmode);
+
+struct mm_struct;
+extern void show_pte(struct mm_struct *mm, unsigned long addr);
+extern void __show_regs(struct pt_regs *);
 
 extern int cpu_architecture(void);
+extern void cpu_init(void);
 
-#define set_cr(x)					\
-	__asm__ __volatile__(				\
-	"mcr	p15, 0, %0, c1, c0, 0	@ set CR"	\
-	: : "r" (x) : "cc")
+void arm_machine_restart(char mode);
+extern void (*arm_pm_restart)(char str);
 
-#define get_cr()					\
-	({						\
-	unsigned int __val;				\
-	__asm__ __volatile__(				\
-	"mrc	p15, 0, %0, c1, c0, 0	@ get CR"	\
-	: "=r" (__val) : : "cc");			\
-	__val;						\
-	})
+/*
+ * Intel's XScale3 core supports some v6 features (supersections, L2)
+ * but advertises itself as v5 as it does not support the v6 ISA.  For
+ * this reason, we need a way to explicitly test for this type of CPU.
+ */
+#ifndef CONFIG_CPU_XSC3
+#define cpu_is_xsc3()	0
+#else
+static inline int cpu_is_xsc3(void)
+{
+	extern unsigned int processor_id;
 
-extern unsigned long cr_no_alignment;	/* defined in entry-armv.S */
-extern unsigned long cr_alignment;	/* defined in entry-armv.S */
+	if ((processor_id & 0xffffe000) == 0x69056000)
+		return 1;
+
+	return 0;
+}
+#endif
+
+#if !defined(CONFIG_CPU_XSCALE) && !defined(CONFIG_CPU_XSC3)
+#define	cpu_is_xscale()	0
+#else
+#define	cpu_is_xscale()	1
+#endif
 
 #define UDBG_UNDEFINED	(1 << 0)
 #define UDBG_SYSCALL	(1 << 1)
@@ -157,47 +165,96 @@ extern unsigned long cr_alignment;	/* defined in entry-armv.S */
 extern unsigned int user_debug;
 
 #if __LINUX_ARM_ARCH__ >= 4
-#define vectors_base()	((cr_alignment & CR_V) ? 0xffff0000 : 0)
+#define vectors_high()	(cr_alignment & CR_V)
 #else
-#define vectors_base()	(0)
+#define vectors_high()	(0)
 #endif
 
-#define mb() __asm__ __volatile__ ("" : : : "memory")
-#define rmb() mb()
-#define wmb() mb()
-#define read_barrier_depends() do { } while(0)
-#define set_mb(var, value)  do { var = value; mb(); } while (0)
-#define set_wmb(var, value) do { var = value; wmb(); } while (0)
+#if __LINUX_ARM_ARCH__ >= 7
+#define isb() __asm__ __volatile__ ("isb" : : : "memory")
+#define dsb() __asm__ __volatile__ ("dsb" : : : "memory")
+#define dmb() __asm__ __volatile__ ("dmb" : : : "memory")
+#elif defined(CONFIG_CPU_XSC3) || __LINUX_ARM_ARCH__ == 6
+#define isb() __asm__ __volatile__ ("mcr p15, 0, %0, c7, c5, 4" \
+				    : : "r" (0) : "memory")
+#define dsb() __asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 4" \
+				    : : "r" (0) : "memory")
+#define dmb() __asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 5" \
+				    : : "r" (0) : "memory")
+#else
+#define isb() __asm__ __volatile__ ("" : : : "memory")
+#define dsb() __asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 4" \
+				    : : "r" (0) : "memory")
+#define dmb() __asm__ __volatile__ ("" : : : "memory")
+#endif
+
+#ifndef CONFIG_SMP
+#define mb()	do { if (arch_is_coherent()) dmb(); else barrier(); } while (0)
+#define rmb()	do { if (arch_is_coherent()) dmb(); else barrier(); } while (0)
+#define wmb()	do { if (arch_is_coherent()) dmb(); else barrier(); } while (0)
+#define smp_mb()	barrier()
+#define smp_rmb()	barrier()
+#define smp_wmb()	barrier()
+#else
+#define mb()		dmb()
+#define rmb()		dmb()
+#define wmb()		dmb()
+#define smp_mb()	dmb()
+#define smp_rmb()	dmb()
+#define smp_wmb()	dmb()
+#endif
+#define read_barrier_depends()		do { } while(0)
+#define smp_read_barrier_depends()	do { } while(0)
+
+#define set_mb(var, value)	do { var = value; smp_mb(); } while (0)
 #define nop() __asm__ __volatile__("mov\tr0,r0\t@ nop\n\t");
 
-#ifdef CONFIG_SMP
-/*
- * Define our own context switch locking.  This allows us to enable
- * interrupts over the context switch, otherwise we end up with high
- * interrupt latency.  The real problem area is switch_mm() which may
- * do a full cache flush.
- */
-#define prepare_arch_switch(rq,next)					\
-do {									\
-	spin_lock(&(next)->switch_lock);				\
-	spin_unlock_irq(&(rq)->lock);					\
-} while (0)
+extern unsigned long cr_no_alignment;	/* defined in entry-armv.S */
+extern unsigned long cr_alignment;	/* defined in entry-armv.S */
 
-#define finish_arch_switch(rq,prev)					\
-	spin_unlock(&(prev)->switch_lock)
+static inline unsigned int get_cr(void)
+{
+	unsigned int val;
+	asm("mrc p15, 0, %0, c1, c0, 0	@ get CR" : "=r" (val) : : "cc");
+	return val;
+}
 
-#define task_running(rq,p)						\
-	((rq)->curr == (p) || spin_is_locked(&(p)->switch_lock))
-#else
-/*
- * Our UP-case is more simple, but we assume knowledge of how
- * spin_unlock_irq() and friends are implemented.  This avoids
- * us needlessly decrementing and incrementing the preempt count.
- */
-#define prepare_arch_switch(rq,next)	local_irq_enable()
-#define finish_arch_switch(rq,prev)	spin_unlock(&(rq)->lock)
-#define task_running(rq,p)		((rq)->curr == (p))
+static inline void set_cr(unsigned int val)
+{
+	asm volatile("mcr p15, 0, %0, c1, c0, 0	@ set CR"
+	  : : "r" (val) : "cc");
+	isb();
+}
+
+#ifndef CONFIG_SMP
+extern void adjust_cr(unsigned long mask, unsigned long set);
 #endif
+
+#define CPACC_FULL(n)		(3 << (n * 2))
+#define CPACC_SVC(n)		(1 << (n * 2))
+#define CPACC_DISABLE(n)	(0 << (n * 2))
+
+static inline unsigned int get_copro_access(void)
+{
+	unsigned int val;
+	asm("mrc p15, 0, %0, c1, c0, 2 @ get copro access"
+	  : "=r" (val) : : "cc");
+	return val;
+}
+
+static inline void set_copro_access(unsigned int val)
+{
+	asm volatile("mcr p15, 0, %0, c1, c0, 2 @ set copro access"
+	  : : "r" (val) : "cc");
+	isb();
+}
+
+/*
+ * switch_mm() may do a full cache flush over the context switch,
+ * so enable interrupts over the context switch to avoid high
+ * latency.
+ */
+#define __ARCH_WANT_INTERRUPTS_ON_CTXSW
 
 /*
  * switch_to(prev, next) should switch from task `prev' to `next'
@@ -208,151 +265,8 @@ extern struct task_struct *__switch_to(struct task_struct *, struct thread_info 
 
 #define switch_to(prev,next,last)					\
 do {									\
-	last = __switch_to(prev,prev->thread_info,next->thread_info);	\
+	last = __switch_to(prev,task_thread_info(prev), task_thread_info(next));	\
 } while (0)
-
-/*
- * CPU interrupt mask handling.
- */
-#if __LINUX_ARM_ARCH__ >= 6
-
-#define local_irq_save(x)					\
-	({							\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ local_irq_save\n"	\
-	"cpsid	i"						\
-	: "=r" (x) : : "memory", "cc");				\
-	})
-
-#define local_irq_enable()  __asm__("cpsie i	@ __sti" : : : "memory", "cc")
-#define local_irq_disable() __asm__("cpsid i	@ __cli" : : : "memory", "cc")
-#define local_fiq_enable()  __asm__("cpsie f	@ __stf" : : : "memory", "cc")
-#define local_fiq_disable() __asm__("cpsid f	@ __clf" : : : "memory", "cc")
-
-#else
-
-/*
- * Save the current interrupt enable state & disable IRQs
- */
-#define local_irq_save(x)					\
-	({							\
-		unsigned long temp;				\
-		(void) (&temp == &x);				\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ local_irq_save\n"	\
-"	orr	%1, %0, #128\n"					\
-"	msr	cpsr_c, %1"					\
-	: "=r" (x), "=r" (temp)					\
-	:							\
-	: "memory", "cc");					\
-	})
-	
-/*
- * Enable IRQs
- */
-#define local_irq_enable()					\
-	({							\
-		unsigned long temp;				\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ local_irq_enable\n"	\
-"	bic	%0, %0, #128\n"					\
-"	msr	cpsr_c, %0"					\
-	: "=r" (temp)						\
-	:							\
-	: "memory", "cc");					\
-	})
-
-/*
- * Disable IRQs
- */
-#define local_irq_disable()					\
-	({							\
-		unsigned long temp;				\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ local_irq_disable\n"	\
-"	orr	%0, %0, #128\n"					\
-"	msr	cpsr_c, %0"					\
-	: "=r" (temp)						\
-	:							\
-	: "memory", "cc");					\
-	})
-
-/*
- * Enable FIQs
- */
-#define __stf()							\
-	({							\
-		unsigned long temp;				\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ stf\n"		\
-"	bic	%0, %0, #64\n"					\
-"	msr	cpsr_c, %0"					\
-	: "=r" (temp)						\
-	:							\
-	: "memory", "cc");					\
-	})
-
-/*
- * Disable FIQs
- */
-#define __clf()							\
-	({							\
-		unsigned long temp;				\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ clf\n"		\
-"	orr	%0, %0, #64\n"					\
-"	msr	cpsr_c, %0"					\
-	: "=r" (temp)						\
-	:							\
-	: "memory", "cc");					\
-	})
-
-#endif
-
-/*
- * Save the current interrupt enable state.
- */
-#define local_save_flags(x)					\
-	({							\
-	__asm__ __volatile__(					\
-	"mrs	%0, cpsr		@ local_save_flags"	\
-	: "=r" (x) : : "memory", "cc");				\
-	})
-
-/*
- * restore saved IRQ & FIQ state
- */
-#define local_irq_restore(x)					\
-	__asm__ __volatile__(					\
-	"msr	cpsr_c, %0		@ local_irq_restore\n"	\
-	:							\
-	: "r" (x)						\
-	: "memory", "cc")
-
-#ifdef CONFIG_SMP
-#error SMP not supported
-
-#define smp_mb()		mb()
-#define smp_rmb()		rmb()
-#define smp_wmb()		wmb()
-#define smp_read_barrier_depends()		read_barrier_depends()
-
-#else
-
-#define smp_mb()		barrier()
-#define smp_rmb()		barrier()
-#define smp_wmb()		barrier()
-#define smp_read_barrier_depends()		do { } while(0)
-
-#define clf()			__clf()
-#define stf()			__stf()
-
-#define irqs_disabled()			\
-({					\
-	unsigned long flags;		\
-	local_save_flags(flags);	\
-	flags & PSR_I_BIT;		\
-})
 
 #if defined(CONFIG_CPU_SA1100) || defined(CONFIG_CPU_SA110)
 /*
@@ -366,6 +280,9 @@ do {									\
  *
  * We choose (1) since its the "easiest" to achieve here and is not
  * dependent on the processor type.
+ *
+ * NOTE that this solution won't work on an SMP system, so explcitly
+ * forbid it here.
  */
 #define swp_is_buggy
 #endif
@@ -377,43 +294,94 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 #ifdef swp_is_buggy
 	unsigned long flags;
 #endif
+#if __LINUX_ARM_ARCH__ >= 6
+	unsigned int tmp;
+#endif
 
 	switch (size) {
-#ifdef swp_is_buggy
-		case 1:
-			local_irq_save(flags);
-			ret = *(volatile unsigned char *)ptr;
-			*(volatile unsigned char *)ptr = x;
-			local_irq_restore(flags);
-			break;
-
-		case 4:
-			local_irq_save(flags);
-			ret = *(volatile unsigned long *)ptr;
-			*(volatile unsigned long *)ptr = x;
-			local_irq_restore(flags);
-			break;
-#else
-		case 1:	__asm__ __volatile__ ("swpb %0, %1, [%2]"
-					: "=&r" (ret)
-					: "r" (x), "r" (ptr)
-					: "memory", "cc");
-			break;
-		case 4:	__asm__ __volatile__ ("swp %0, %1, [%2]"
-					: "=&r" (ret)
-					: "r" (x), "r" (ptr)
-					: "memory", "cc");
-			break;
+#if __LINUX_ARM_ARCH__ >= 6
+	case 1:
+		asm volatile("@	__xchg1\n"
+		"1:	ldrexb	%0, [%3]\n"
+		"	strexb	%1, %2, [%3]\n"
+		"	teq	%1, #0\n"
+		"	bne	1b"
+			: "=&r" (ret), "=&r" (tmp)
+			: "r" (x), "r" (ptr)
+			: "memory", "cc");
+		break;
+	case 4:
+		asm volatile("@	__xchg4\n"
+		"1:	ldrex	%0, [%3]\n"
+		"	strex	%1, %2, [%3]\n"
+		"	teq	%1, #0\n"
+		"	bne	1b"
+			: "=&r" (ret), "=&r" (tmp)
+			: "r" (x), "r" (ptr)
+			: "memory", "cc");
+		break;
+#elif defined(swp_is_buggy)
+#ifdef CONFIG_SMP
+#error SMP is not supported on this platform
 #endif
-		default: __bad_xchg(ptr, size), ret = 0;
+	case 1:
+		raw_local_irq_save(flags);
+		ret = *(volatile unsigned char *)ptr;
+		*(volatile unsigned char *)ptr = x;
+		raw_local_irq_restore(flags);
+		break;
+
+	case 4:
+		raw_local_irq_save(flags);
+		ret = *(volatile unsigned long *)ptr;
+		*(volatile unsigned long *)ptr = x;
+		raw_local_irq_restore(flags);
+		break;
+#else
+	case 1:
+		asm volatile("@	__xchg1\n"
+		"	swpb	%0, %1, [%2]"
+			: "=&r" (ret)
+			: "r" (x), "r" (ptr)
+			: "memory", "cc");
+		break;
+	case 4:
+		asm volatile("@	__xchg4\n"
+		"	swp	%0, %1, [%2]"
+			: "=&r" (ret)
+			: "r" (x), "r" (ptr)
+			: "memory", "cc");
+		break;
+#endif
+	default:
+		__bad_xchg(ptr, size), ret = 0;
+		break;
 	}
 
 	return ret;
 }
 
-#endif /* CONFIG_SMP */
+extern void disable_hlt(void);
+extern void enable_hlt(void);
+
+#include <asm-generic/cmpxchg-local.h>
+
+/*
+ * cmpxchg_local and cmpxchg64_local are atomic wrt current CPU. Always make
+ * them available.
+ */
+#define cmpxchg_local(ptr, o, n)				  	       \
+	((__typeof__(*(ptr)))__cmpxchg_local_generic((ptr), (unsigned long)(o),\
+			(unsigned long)(n), sizeof(*(ptr))))
+#define cmpxchg64_local(ptr, o, n) __cmpxchg64_local_generic((ptr), (o), (n))
+
+#ifndef CONFIG_SMP
+#include <asm-generic/cmpxchg.h>
+#endif
 
 #endif /* __ASSEMBLY__ */
+
+#define arch_align_stack(x) (x)
 
 #endif /* __KERNEL__ */
 

@@ -11,6 +11,7 @@
 
 obj-y := init.o services.o console.o console-printf.o
 obj-y += command.o cmd-version.o cmd-help.o cmd-boot.o
+obj-y += region-copy.o region-checksum.o
 
 obj-$(CONFIG_COMMAND_HISTORY)   += command-history.o
 
@@ -31,6 +32,7 @@ obj-$(CONFIG_CMD_MEMTEST)	+= cmd-memtest.o
 obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
 obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
 obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
+obj-$(CONFIG_CMD_IMAGE)		+= cmd-image.o
 
 ifneq ($(CONFIG_THUMB),)
 # CFLAGS += -mthumb

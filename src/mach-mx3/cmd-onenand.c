@@ -57,7 +57,7 @@ static int cmd_onenand (int argc, const char** argv)
     return 0;
   }
 
-  if (strcmp (argv[1], "select") == 0) {
+  if (PARTIAL_MATCH (argv[1], "se", "lect") == 0) {
     int chip;
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "select requires chip number");
@@ -65,11 +65,11 @@ static int cmd_onenand (int argc, const char** argv)
     ONENAND_SA_2 = DBS (chip);
   }
 
-  if (strcmp (argv[1], "reset") == 0) {
+  if (PARTIAL_MATCH (argv[1], "r", "eset") == 0) {
     ONENAND_OP = ONENAND_CMD_RESET_CORE;
   }
 
-  if (strcmp (argv[1], "load") == 0) {
+  if (PARTIAL_MATCH (argv[1], "l", "oad") == 0) {
     int page;
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "load requires page number");
@@ -88,7 +88,7 @@ static int cmd_onenand (int argc, const char** argv)
       printf ("error\n");
   }
 
-  if (strcmp (argv[1], "store") == 0) {
+  if (PARTIAL_MATCH (argv[1], "st", "ore") == 0) {
     int page;
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "load requires page number");
@@ -105,7 +105,7 @@ static int cmd_onenand (int argc, const char** argv)
       printf ("error\n");
   }
 
-  if (strcmp (argv[1], "unlock") == 0) {
+  if (PARTIAL_MATCH (argv[1], "u", "nlock") == 0) {
     int page;
     if (argc < 3)
       ERROR_RETURN (ERROR_PARAM, "unlock requires page number");
@@ -121,11 +121,11 @@ static int cmd_onenand (int argc, const char** argv)
       printf ("error\n");
   }
 
-  if (strcmp (argv[1], "burst") == 0) {
+  if (PARTIAL_MATCH (argv[1], "bu", "rst") == 0) {
     ONENAND_CONFIG_1 |= 0x8000;
   }
 
-  if (strcmp (argv[1], "sync") == 0) {
+  if (PARTIAL_MATCH (argv[1], "sy", "nc") == 0) {
     __REG (0xb8002000)
       |= (1<<20)		/* SYNC */
       |  (2<<28)		/* BCD, /3 */
@@ -133,7 +133,7 @@ static int cmd_onenand (int argc, const char** argv)
       ;
   }
 
-  if (strcmp (argv[1], "boot") == 0) {
+  if (PARTIAL_MATCH (argv[1], "bo", "ot") == 0) {
 //    memset ((void*) ONENAND_DATARAM0, 0xa5, 2048);
     ONENAND_SA_1 = DFS_FBA (0);
     ONENAND_SA_2 = DBS (0);
@@ -180,6 +180,8 @@ static __command struct command_d c_onenand = {
 "  reset           - Resets the OneNAND chip controller\n"
 "  load PAGE       - Loads a page from OneNAND to Data0\n"
 "  store PAGE      - Writes page to OneNAND from Data0\n"
+"  unlock PAGE     - Unlock a page\n"
 "  burst           - Enable burst read mode\n"
+"  boot            - Reset to boot-time status [?]\n"
   )
 };

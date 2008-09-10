@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <attributes.h>
+#include <strimatch.h>
 
 /* ----- Types */
 
@@ -52,6 +53,18 @@ struct command_d {
 #endif
 
 #define __command __used __section(.command)
+
+#if defined (CONFIG_PARTIAL_MATCHES)
+
+#define PARTIAL_MATCH(a,ms,me)\
+  strimatch (a, ms me, sizeof (ms) - 1)
+
+#else
+
+#define PARTIAL_MATCH(a,ms,me)\
+  strcmp (a, ms me)
+
+#endif
 
 /* ----- Globals */
 

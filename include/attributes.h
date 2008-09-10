@@ -30,9 +30,18 @@
 /* ----- Prototypes */
 
 
+// *** Be cautions about uncommenting __used.  Some systems may
+// *** already have it defined, but it is necessary on sime systems.
+// *** So, either detect the need to comment this line out, or find a
+// *** work-around, e.g. renaming the attribute macro.
+
+#undef __used
+#undef __section
+#undef __aligned
+
 #define __weak			__attribute__((weak))
 #define __naked			__attribute__((naked))
-#define __used			__attribute_used__
+#define __used			__attribute__((used))
 #define __section(s)		__attribute__((section(#s)))
 #define __xbss(s)		__attribute__((section("." #s ".xbss")))
 #define __rodata	  const __section(.rodata)

@@ -3,20 +3,15 @@
 
 /* We don't want strings.h stuff being user by user stuff by accident */
 
-#ifdef __KERNEL__
+#ifndef __KERNEL__
+#include <string.h>
+#else
 
 #include <linux/compiler.h>	/* for inline */
 #include <linux/types.h>	/* for size_t */
 #include <linux/stddef.h>	/* for NULL */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern char * strpbrk(const char *,const char *);
-extern char * strsep(char **,const char *);
-extern __kernel_size_t strspn(const char *,const char *);
-extern __kernel_size_t strcspn(const char *,const char *);
+extern char *strndup_user(const char __user *, long);
 
 /*
  * Include machine specific inline routines
@@ -50,6 +45,12 @@ extern int strncmp(const char *,const char *,__kernel_size_t);
 #ifndef __HAVE_ARCH_STRNICMP
 extern int strnicmp(const char *, const char *, __kernel_size_t);
 #endif
+#ifndef __HAVE_ARCH_STRCASECMP
+extern int strcasecmp(const char *s1, const char *s2);
+#endif
+#ifndef __HAVE_ARCH_STRNCASECMP
+extern int strncasecmp(const char *s1, const char *s2, size_t n);
+#endif
 #ifndef __HAVE_ARCH_STRCHR
 extern char * strchr(const char *,int);
 #endif
@@ -59,6 +60,7 @@ extern char * strnchr(const char *, size_t, int);
 #ifndef __HAVE_ARCH_STRRCHR
 extern char * strrchr(const char *,int);
 #endif
+extern char * strstrip(char *);
 #ifndef __HAVE_ARCH_STRSTR
 extern char * strstr(const char *,const char *);
 #endif
@@ -67,6 +69,18 @@ extern __kernel_size_t strlen(const char *);
 #endif
 #ifndef __HAVE_ARCH_STRNLEN
 extern __kernel_size_t strnlen(const char *,__kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_STRPBRK
+extern char * strpbrk(const char *,const char *);
+#endif
+#ifndef __HAVE_ARCH_STRSEP
+extern char * strsep(char **,const char *);
+#endif
+#ifndef __HAVE_ARCH_STRSPN
+extern __kernel_size_t strspn(const char *,const char *);
+#endif
+#ifndef __HAVE_ARCH_STRCSPN
+extern __kernel_size_t strcspn(const char *,const char *);
 #endif
 
 #ifndef __HAVE_ARCH_MEMSET
@@ -88,9 +102,14 @@ extern int memcmp(const void *,const void *,__kernel_size_t);
 extern void * memchr(const void *,int,__kernel_size_t);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+extern char *kstrdup(const char *s, gfp_t gfp);
+extern char *kstrndup(const char *s, size_t len, gfp_t gfp);
+extern void *kmemdup(const void *src, size_t len, gfp_t gfp);
+
+extern char **argv_split(gfp_t gfp, const char *str, int *argcp);
+extern void argv_free(char **argv);
+
+extern bool sysfs_streq(const char *s1, const char *s2);
 
 #endif
 #endif /* _LINUX_STRING_H_ */

@@ -629,7 +629,7 @@ int Link::scan_environment (void)
   entries->clear ();
   idNext = 0;
 
-  if (pb[0] == 0xff && pb[1] == 0xff) {
+  if (pb[0] == (char)0xff && pb[1] == (char)0xff) {
     PRINTF ("# empty environment\n");
     m_state = envEmpty;
     return entries->size ();
@@ -646,7 +646,7 @@ int Link::scan_environment (void)
   pb += 2;
 
   const char* pbEnd = pb + cbEnv;
-  while (pb < pbEnd && *pb != 0xff) {
+  while (pb < pbEnd && *pb != (char) 0xff) {
     const char* head = pb;
     char flags = *pb++;
     int id = (unsigned char) flags & 0x7f;

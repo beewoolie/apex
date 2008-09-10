@@ -1,34 +1,24 @@
-/* Never include this file directly.  Include <linux/compiler.h> instead.  */
+#ifndef __LINUX_COMPILER_H
+#error "Please don't include <linux/compiler-gcc3.h> directly, include <linux/compiler.h> instead."
+#endif
 
 /* These definitions are for GCC v3.x.  */
 #include <linux/compiler-gcc.h>
 
-#if __GNUC_MINOR__ >= 1
-# define inline		inline		__attribute__((always_inline))
-# define __inline__	__inline__	__attribute__((always_inline))
-# define __inline	__inline	__attribute__((always_inline))
-#endif
-
-#if __GNUC_MINOR__ > 0
-# define __deprecated	__attribute__((deprecated))
-#endif
-
 #if __GNUC_MINOR__ >= 3
-# define __attribute_used__	__attribute__((__used__))
+# define __used			__attribute__((__used__))
 #else
-# define __attribute_used__	__attribute__((__unused__))
+# define __used			__attribute__((__unused__))
 #endif
 
-#define __attribute_pure__	__attribute__((pure))
-#define __attribute_const__	__attribute__((__const__))
-
-#if __GNUC_MINOR__ >= 1
-#define  noinline __attribute__((noinline))
-#endif
 #if __GNUC_MINOR__ >= 4
-#define __must_check __attribute__((warn_unused_result))
+#define __must_check		__attribute__((warn_unused_result))
 #endif
 
-#if __GNUC_MINOR__ >= 5
-#define __compiler_offsetof(a,b) __builtin_offsetof(a,b)
-#endif
+/*
+ * A trick to suppress uninitialized variable warning without generating any
+ * code
+ */
+#define uninitialized_var(x) x = x
+
+#define __always_inline		inline __attribute__((always_inline))

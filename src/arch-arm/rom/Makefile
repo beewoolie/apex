@@ -12,7 +12,7 @@
 targets += apex.bin apex.srec
 
 $(obj)/apex.bin: apex FORCE
-	$(call if_changed,objcopy)
+	@$(call if_changed,objcopy)
 	@[ -L apex.bin ] || ln -s $@ apex.bin
 
 $(obj)/apex.bin_swap: $(obj)/apex.bin FORCE
@@ -23,9 +23,9 @@ $(obj)/apex.bin_swap: $(obj)/apex.bin FORCE
 # *** FIXME: there may need to be an adjustment to the start address
 OBJCOPYFLAGS_apex.srec := -O srec
 $(obj)/apex.srec: apex FORCE
-	$(call if_changed,objcopy)
+	@$(call if_changed,objcopy)
 	@[ -L apex.srec ] || ln -s $@ apex.srec
 
 $(obj)/apex.elf: apex FORCE
-	$(STRIP) apex -o $@
+	@$(STRIP) apex -o $@
 	@[ -L apex.elf ] || ln -s $@ apex.elf

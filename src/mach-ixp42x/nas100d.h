@@ -33,7 +33,7 @@
 /* ----- Prototypes */
 
 /* We haven't worked out how to control the LEDs properly yet */
-#define _L(l) (0)
+#define _L(l)
 
 #define GPIO_OER_OUTPUTS	((1<<0)		/* WLAN LED */\
 				|(1<<3)		/* Disk LED */\

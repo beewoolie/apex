@@ -48,7 +48,15 @@ static __env struct env_d e_bootaddr = {
 static __env struct env_d e_ramdiskaddr = {
   .key = "ramdiskaddr",
   .default_value = _t(CONFIG_RAMDISK_LMA),
-  .description = "Ramdisk load address",
+  .description = "Ramdisk start address for kernel",
+};
+#endif
+
+#if defined (CONFIG_RAMDISK_SIZE)
+static __env struct env_d e_ramdisksize = {
+  .key = "ramdisksize",
+  .default_value = _t(CONFIG_RAMDISK_SIZE),
+  .description = "Ramdisk size for kernel",
 };
 #endif
 

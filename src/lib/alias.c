@@ -25,8 +25,9 @@
 #include <linux/types.h>
 //#include <environment.h>
 #include <linux/string.h>
-//#include <linux/kernel.h>
+#include <linux/kernel.h>
 //#include <driver.h>
+#include <alias.h>
 #include <error.h>
 
 #define CB_ALIAS_HEAP_MAX	(4*1024)
@@ -91,6 +92,13 @@ const char* alias_lookup (const char* szKey)
 
   entry = _alias_find (szKey);
   return entry ? (entry->rgb + strlen (entry->rgb) + 1) : NULL;
+}
+
+int alias_set_hex (const char* szKey, unsigned value)
+{
+  char sz[60];
+  snprintf (sz, sizeof (sz), "0x%x", value);
+  return alias_set (szKey, sz);
 }
 
 int alias_set (const char* szKey, const char* szValue)

@@ -26,7 +26,6 @@
 #include <command.h>
 #include <error.h>
 #include <linux/kernel.h>
-#include <configfunc.h>
 #include <environment.h>
 #include <service.h>
 #include <lookup.h>
@@ -91,6 +90,13 @@ int cmd_boot (int argc, const char** argv)
 #if !defined (CONFIG_SMALL)
   printf ("ARCH_ID: %d (0x%x)\n", arch_number, arch_number);
 #endif
+
+  /* Pull architecture ID from environment or alias */
+  {
+    const char* sz = lookup_alias_or_env ("arch-number", NULL);
+    if (sz)
+      arch_number = simple_strtoul (sz, NULL, 10);
+  }
 
 #if defined (CONFIG_ATAG)
   commandline_argc = argc - 1;

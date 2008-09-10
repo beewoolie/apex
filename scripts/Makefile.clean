@@ -4,10 +4,17 @@
 
 src := $(obj)
 
-.PHONY: __clean
+PHONY := __clean
 __clean:
 
--include $(obj)/Makefile
+# Shorthand for $(Q)$(MAKE) scripts/Makefile.clean obj=dir
+# Usage:
+# $(Q)$(MAKE) $(clean)=dir
+clean := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.clean obj
+
+# The filename Kbuild has precedence over Makefile
+kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
+include $(if $(wildcard $(kbuild-dir)/Kbuild), $(kbuild-dir)/Kbuild, $(kbuild-dir)/Makefile)
 
 # Figure out what we need to build from the various variables
 # ==========================================================================
@@ -30,10 +37,10 @@ subdir-ymn      := $(sort $(subdir-ym) $(subdir-n) $(subdir-))
 
 subdir-ymn	:= $(addprefix $(obj)/,$(subdir-ymn))
 
-# build a list of files to remove, usually releative to the current
+# build a list of files to remove, usually relative to the current
 # directory
 
-__clean-files	:= $(extra-y) $(EXTRA_TARGETS) $(always) \
+__clean-files	:= $(extra-y) $(always)                  \
 		   $(targets) $(clean-files)             \
 		   $(host-progs)                         \
 		   $(hostprogs-y) $(hostprogs-m) $(hostprogs-)
@@ -80,7 +87,7 @@ endif
 # Descending
 # ---------------------------------------------------------------------------
 
-.PHONY: $(subdir-ymn)
+PHONY += $(subdir-ymn)
 $(subdir-ymn):
 	$(Q)$(MAKE) $(clean)=$@
 
@@ -88,7 +95,8 @@ $(subdir-ymn):
 
 cmd = @$(if $($(quiet)cmd_$(1)),echo '  $($(quiet)cmd_$(1))' &&) $(cmd_$(1))
 
-# Shorthand for $(Q)$(MAKE) scripts/Makefile.clean obj=dir
-# Usage:
-# $(Q)$(MAKE) $(clean)=dir
-clean := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.clean obj
+
+# Declare the contents of the .PHONY variable as phony.  We keep that
+# information in a variable se we can use it in if_changed and friends.
+
+.PHONY: $(PHONY)

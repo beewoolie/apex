@@ -41,15 +41,15 @@ obj-x$(CONFIG_MACH_NSLU2)$(CONFIG_VARIATIONS) += variation-nslu2.o
 obj-x$(CONFIG_MACH_FSG3)$(CONFIG_VARIATIONS) += variation-fsg3.o
 obj-$(CONFIG_INTERRUPTS)	+= exception_vectors.o
 
-obj-$(CONFIG_NPE)		+= npe.o npe-interface.o
+#obj-$(CONFIG_NPE)		+= npe.o npe-interface.o
 
-obj-$(CONFIG_DRIVER_IXP4XX_NPE_ETH) += drv-npe.o
+#obj-$(CONFIG_DRIVER_IXP4XX_NPE_ETH) += drv-npe.o
 
 obj-y				+= cmd-reset.o
 
 obj-y += $(obj-xyy)
 
-libs-$(CONFIG_NPE) += _intel/lib/libnpeDl.a
-newlibs += $(obj)/_intel/lib/libnpeDl.a
+#libs-$(CONFIG_NPE) += _intel/lib/libnpeDl.a
+#newlibs += $(obj)/_intel/lib/libnpeDl.a
 
 #libs-$(CONFIG_NPE) := _intel/

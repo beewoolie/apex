@@ -552,7 +552,8 @@ config NAND_BOOT_BASE
 	  address and, therefore, whether or not we need to perform
 	  the relocation.
 
-comment "   Default Startup"
+comment "Default Startup"
+
 depends on !ENV_DEFAULT_STARTUP_OVERRIDE
 
 config AUTOBOOT
@@ -622,7 +623,7 @@ config ENV_STARTUP_PREFIX
 	  commands.  There is no need to include a trailing semicolon
 	  as this will be added automatically.
 
-comment "   Regions"
+comment "Regions"
 
 config ENV_REGION_KERNEL
 	string "Source region for kernel"
@@ -671,7 +672,7 @@ config ENV_REGION_RAMDISK_ALT
 	help
 	  This is the region of the alternative ramdisk image.
 
-comment "   Overrides"
+comment "Overrides"
 
 config ENV_DEFAULT_CMDLINE_OVERRIDE
 	bool "Override the target default kernel command line"
@@ -767,7 +768,7 @@ config LITTLEENDIAN
 config ALIGNMENT_TRAP
 	bool
 	default y
-	depends INTERRUPTS
+	depends on INTERRUPTS
 
 config CLEAR_STACKS
 	bool

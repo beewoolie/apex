@@ -27,6 +27,33 @@ TODO:
     o Fixed ext2 to use inode_size.
     o BUG: found that the region ext2://3/file@100 doesn't work.
 
+  o 2008.aug.24
+    o We have added environment variables for the ramdisk, but there
+      is a redundancy.  The length is represented in the source region
+      as well as the variable for the size.  It would be ideal if the
+      source region simple referred to the size and it was expanded when
+      the region is referenced.  We may live with the redundance for a
+      while.  
+    o It would be good to merge the environment and the aliases into a
+      single environment.  Doing so requires that we allow the program
+      and user to distinguish between immediately saved environment
+      variables and the transient ones, like aliases.  Moreover, it
+      should be possible to distinguish which variables cannot be
+      saved, e.g. the $apex or the $variation.  Also, we should start
+      allowing the user to save to the environment even if there isn't
+      a environment variable struct.
+
+  o 2008.jun.27
+
+    o New Kbuild
+      o basic operation works
+      o Need packaging and _config target support
+    o Ian asked for a background task (service ()) invocation implementation
+    o Ian asked for peek/poke
+    - Need to fix ext2 driver bug (done)
+    o Should look into orion port to fix performance issue on boot
+    o Should add u-boot image support, probably as a driver
+
   o 2008.mar.19
 
     o Discovered that there is a bug in the ext2 driver.  A filesystem

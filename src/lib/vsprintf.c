@@ -27,8 +27,6 @@
 
 #define PAGE_SIZE 1024		/* Not really, but a convenient limit */
 
-#define WARN_ON(v)
-
 //#define SMALL
 
 /**

@@ -32,6 +32,23 @@ config ALPHABETIZE_COMMANDS
          function, so it is automatically disabled when the SMALL
          configuration option is set.
  
+config PARTIAL_MATCHES
+	bool "Allow partial, case-insensitive matching for subcommands"
+	default y
+	depends on !SMALL
+	help
+	  Many commands have second arguments that select sub-commands.
+          For example, the ipconfig command takes as a second
+          argument the method of configuring the ip address.
+          With this option, the matching of this argument is
+          for relaxed.  If there is only one option that begins
+          with 's', then that single letter is sufficient to select
+          the option.  'ipconfig D' is sufficient for 'ipconfig dhcp'
+          given that there are no other options beginning with 'd'.
+
+	  This option is a nicety, but it adds a wee bit of code to
+          the program, so the SMALL option suppresses it.
+
 config DEL_IS_BS
 	bool "Use DEL as alias for Backspace"
 	depends on !SMALL
@@ -131,10 +148,43 @@ config CMD_ERASEENV
 	  complete erasure of the environment even when the erase
 	  block of the environment is shared with other data.
 
+config CMD_IMAGE
+       bool "Define Image Command"
+       default y
+       help
+         The image command allows APEX to manupulate image files
+	 that may contain executables and data, e.g. the Linux Kernel.
+	 Images have metadata that identifies the purpose of the data
+	 and usually CRCs to prevent data corruption.
+
+config CMD_IMAGE_APEX
+       bool "Support APEX Images"
+       default y
+       depends on CMD_IMAGE
+       help
+         Support loading of APEX images.  This is the preferred image
+         format as it is flexible and extensible.
+
+config CMD_IMAGE_UBOOT
+       bool "Support UBOOT Images"
+       default n
+       depends on CMD_IMAGE
+       help
+         Support loading of UBOOT images.
+
+config CMD_IMAGE_SHOW
+       bool "Define Image Show Command"
+       default y
+       depends on CMD_IMAGE
+       help
+         The image command can implement this sub-command to show the
+         contents of an image header.  Unless tight on code space,
+         this option should be left 'Y'.
+
 config CMD_SETENV
-	bool "Define Set/unset Environment Variable Commands"
-	depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
-	default y
+       bool "Define Set/unset Environment Variable Commands"
+       depends on ENV && CMD_ENV=y && ENV_MUTABLE=y
+       default y
 
 config CMD_PRINTENV_ALPHABETIZE
        bool "Sort environment variables alphabetically"
