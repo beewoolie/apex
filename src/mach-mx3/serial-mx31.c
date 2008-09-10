@@ -94,6 +94,7 @@ ssize_t mx31_serial_write (struct descriptor_d* d,
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
+//    while (!(__REG (UART + UART_SR2) & UART_SR2_TXFE))
     while (!(__REG (UART + UART_SR1) & UART_SR1_TRDY))
       ;				/* Wait for room in the FIFO */
 

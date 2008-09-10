@@ -177,15 +177,17 @@ const char* describe_size (uint32_t cb)
 {
   static __xbss(image) char sz[60];
 
-  float s = cb/1024.0;
+  int s = cb/1024;
+  int rem = cb%1024;
   char unit = 'K';
 
   if (s > 1024) {
-    s /= 1024.0;
+    rem = s%1024;
+    s /= 1024;
     unit = 'M';
   }
   snprintf (sz, sizeof (sz), "%d bytes (%d.%02d %ciB)",
-            cb, (int) s, ((int) (s*100.0))%100, unit);
+            cb, (int) s, rem/10, unit);
   return sz;
 }
 
