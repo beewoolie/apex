@@ -28,5 +28,6 @@ void*       alias_enumerate (void* pv, const char** pszKey,
 const char* alias_lookup (const char* szKey);
 int	    alias_set (const char* szKey, const char* szValue);
 int	    alias_unset (const char* szKey);
+int	    alias_set_hex (const char* szKey, unsigned value);
 
 #endif  /* __ALIAS_H__ */

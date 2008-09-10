@@ -160,7 +160,7 @@ enum {
   typeLinuxInitrd = 2,
 };
 
-inline uint32_t long swabl (uint32_t v)
+inline uint32_t swabl (uint32_t v)
 {
   return 0
     | ((v & (uint32_t) (0xff <<  0)) << 24)
@@ -199,7 +199,7 @@ int interpret_image_type (const char* sz)
   return value;
 }
 
-const char* interpret_size (uint32_t cb)
+const char* describe_size (uint32_t cb)
 {
   static char sz[128];
 
@@ -1048,7 +1048,7 @@ void Image::load (struct arguments& args)
     case fieldPayloadLength:
       {
         size_t cbPayload = uint32_t (it);
-//        printf ("Payload Length:       %s\n", interpret_size (cbPayload));
+//        printf ("Payload Length:       %s\n", describe_size (cbPayload));
 
         payload->set_external (pvPayload, cbPayload);
         memcpy (&payload->crc_loaded, (char*) pvPayload + cbPayload, 4);
@@ -1191,7 +1191,7 @@ void Image::describe (struct arguments& args)
         strcpy (sz, "           ");
     }
     if (payload.cb) {
-      printf ("%sLength:       %s\n", sz, interpret_size (payload.cb));
+      printf ("%sLength:       %s\n", sz, describe_size (payload.cb));
       if (multi_payload)
         strcpy (sz, "           ");
     }

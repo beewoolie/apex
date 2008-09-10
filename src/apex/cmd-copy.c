@@ -25,42 +25,27 @@
 #include <driver.h>
 #include <error.h>
 #include <spinner.h>
-
-static inline unsigned long swab32(unsigned long l)
-{
-  return (  ((l & 0x000000ffUL) << 24)
-	  | ((l & 0x0000ff00UL) << 8)
-	  | ((l & 0x00ff0000UL) >> 8)
-	  | ((l & 0xff000000UL) >> 24));
-}
-
-#if !defined (CONFIG_SMALL)
-//# define USE_COPY_VERIFY	/* Define to include verify feature */
-#endif
+#include "region-copy.h"
 
 int cmd_copy (int argc, const char** argv)
 {
   struct descriptor_d din;
   struct descriptor_d dout;
-  int swap = 0;
+  unsigned flags = regionCopySpinner;
 #if defined (USE_COPY_VERIFY)
   struct descriptor_d din_v;
   struct descriptor_d dout_v;
-  int verify = 0;
 #endif
 
   int result = 0;
-  ssize_t cbCopy = 0;
 
   for (; argc > 1 && *argv[1] == '-'; --argc, ++argv) {
     switch (argv[1][1]) {
-#if defined (USE_COPY_VERIFY)
     case 'v':
-      verify = 1;
+      flags |= regionCopyVerify;
       break;
-#endif
     case 's':
-      swap = 1;
+      flags |= regionCopySwap;
       break;
     default:
       return ERROR_PARAM;
@@ -90,102 +75,10 @@ int cmd_copy (int argc, const char** argv)
   if (!dout.length)
     dout.length = DRIVER_LENGTH_MAX;
 
-#if defined (USE_COPY_VERIFY)
-  /* Create descriptors for rereading and verification */
-  /* *** FIXME: we ought to perform a dup () */
-  memcpy (&din_v, &din, sizeof (din));
-  memcpy (&dout_v, &dout, sizeof (dout));
-  dout_v.length = din_v.length;
-#endif
+  result = region_copy (&dout, &din, flags);
 
-  {
-    char __aligned rgb[512];
-    ssize_t cb;
-    int report_last = -1;
-    int step = DRIVER_PROGRESS (&din, &dout);
-    if (step)
-      step += 10;
-
-    for (; (cb = din.driver->read (&din, rgb, sizeof (rgb))) > 0;
-	 cbCopy += cb) {
-      int report;
-      size_t cbWrote;
-      if (cb == 0) {
-	result = ERROR_RESULT (ERROR_FAILURE, "premature end of input");
-	goto fail;
-      }
-
-#if defined (USE_COPY_VERIFY)
-      if (verify) {
-	char __aligned rgbVerify[512];
-	ssize_t cbVerify = din_v.driver->read (&din_v, rgbVerify,
-					       sizeof (rgbVerify));
-	if (cbVerify != cb) {
-	  printf ("\rVerify failed: reread of input %d, expected %d, at"
-		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 512);
-	  return ERROR_FAILURE;
-	}
-	if (memcmp (rgb, rgbVerify, cb)) {
-	  printf ("\rVerify failed: reread input compare at 0x%x+0x%x\n",
-		  cbCopy, 512);
-	  return ERROR_FAILURE;
-	}
-      }
-#endif
-
-      if (swap) {
-	int i;
-	unsigned long* p = (unsigned long*) rgb;
-	for (i = cb/4; i-- > 0; ++p)
-	  *p = swab32 (*p);
-      }
-
-      SPINNER_STEP;
-      cbWrote = dout.driver->write (&dout, rgb, cb);
-      if (cbWrote != cb) {
-	result = ERROR_RESULT (ERROR_FAILURE, "truncated write");
-	goto fail;
-      }
-
-#if defined (USE_COPY_VERIFY)
-      if (verify) {
-	char rgbVerify[512];
-	ssize_t cbVerify = dout_v.driver->read (&dout_v, rgbVerify,
-						sizeof (rgbVerify));
-	if (cbVerify != cb) {
-	  printf ("\rVerify failed: reread of output %d, expected %d, at"
-		  " 0x%x+0x%x\n", cbVerify, cb, cbCopy, 512);
-	  return ERROR_FAILURE;
-	}
-	if (swap) {
-	  int i;
-	  unsigned long* p = (unsigned long*) rgbVerify;
-	  for (i = cb/4; i-- > 0; ++p)
-	    *p = swab32 (*p);
-	}
-	if (memcmp (rgb, rgbVerify, cb)) {
-	  printf ("\rVerify failed: reread output compare at 0x%x+0x%x\n",
-		  cbCopy, 512);
-	  return ERROR_FAILURE;
-	}
-      }
-#endif
-
-      report = cbCopy>>step;
-      if (step && report != report_last) {
-	printf ("\r   %d KiB\r", cbCopy/1024);
-	report_last = report;
-      }
-    }
-
-    if (cb < 0) {
-      printf ("\rcopy error\n");
-      result = cb;
-    }
-  }
-
-  if (result == 0)
-    printf ("\r%d bytes transferred\n", cbCopy);
+  if (result > 0)
+    printf ("\r%d bytes transferred\n", result);
 
  fail:
   close_descriptor (&din);

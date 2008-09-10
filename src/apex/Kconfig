@@ -157,6 +157,30 @@ config CMD_IMAGE
 	 Images have metadata that identifies the purpose of the data
 	 and usually CRCs to prevent data corruption.
 
+config CMD_IMAGE_APEX
+       bool "Support APEX Images"
+       default y
+       depends on CMD_IMAGE
+       help
+         Support loading of APEX images.  This is the preferred image
+         format as it is flexible and extensible.
+
+config CMD_IMAGE_UBOOT
+       bool "Support UBOOT Images"
+       default n
+       depends on CMD_IMAGE
+       help
+         Support loading of UBOOT images.
+
+config CMD_IMAGE_SHOW
+       bool "Define Image Show Command"
+       default y
+       depends on CMD_IMAGE
+       help
+         The image command can implement this sub-command to show the
+         contents of an image header.  Unless tight on code space,
+         this option should be left 'Y'.
+
 config CMD_SETENV
        bool "Define Set/unset Environment Variable Commands"
        depends on ENV && CMD_ENV=y && ENV_MUTABLE=y

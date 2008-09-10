@@ -23,6 +23,7 @@
 #include <driver.h>
 #include <error.h>
 #include <spinner.h>
+#include "region-checksum.h"
 
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
 
@@ -30,6 +31,8 @@ int cmd_checksum (int argc, const char** argv)
 {
   struct descriptor_d d;
   int result = 0;
+  unsigned long crc;
+  ssize_t cb;
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -40,34 +43,14 @@ int cmd_checksum (int argc, const char** argv)
     goto fail;
   }
 
-  {
-    int index = 0;
-    unsigned long crc = 0;
-    while (index < d.length) {
-      char __aligned rgb[512];
-      int cb = d.driver->read (&d, rgb, sizeof (rgb));
-      if (cb < 0) {
-	result = cb;
-	goto fail;
-      }
-      SPINNER_STEP;
-      crc = compute_crc32 (crc, rgb, cb);
-      index += cb;
-    }
+  cb = d.length - d.index;
 
-	/* Add the length to the computation */
-    {
-      unsigned char b;
-      unsigned long v;
-      for (v = index; v; v >>= 8) {
-	b = v & 0xff;
-	crc = compute_crc32 (crc, &b, 1);
-      }
-    }
+  result = region_checksum (&d, regionChecksumSpinner | regionChecksumLength,
+                            &crc);
+  if (result)
+    goto fail;
 
-    printf ("\rcrc32 0x%lx (%lu) over %d (0x%x) bytes\n",
-	    ~crc, ~crc, index, index);
-  }
+  printf ("\rcrc32 0x%lx (%lu) over %d (0x%x) bytes\n", ~crc, ~crc, cb, cb);
 
  fail:
   close_descriptor (&d);

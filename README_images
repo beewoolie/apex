@@ -30,9 +30,9 @@ This is a tagged image format designed to be easy to load, even when
 processed as a stream of bytes.  An image has the following form:
 
   IMAGE
-  +--------+-----+---------+-----+---------+-----+-----+
-  | HEADER | CRC | PAYLOAD | CRC | PAYLOAD | CRC | ... |
-  +--------+-----+---------+-----+---------+-----+-----+
+  +--------+-----+---------+-----+---------+---------+-----+-----+
+  | HEADER | CRC | PAYLOAD | CRC | PADDING | PAYLOAD | CRC | ... |
+  +--------+-----+---------+-----+---------+---------+-----+-----+
 
 The HEADER, and the first CRC are required.  The PAYLOADs are optional
 and there may be more than one.  The header must specify the length of
@@ -47,9 +47,12 @@ every byte in the header including the CRC will yield a zero.
 
 The CRC computation for each PAYLOAD is compatible with the POSIX
 cksum program.  It is the CRC over the data bytes in the PAYLOAD
-followed by the binary integer of the PAYLOAD length in LSB order
-which is then inverted.  The recorded PAYLOAD CRC will match the value
-returned by cksum over the source data for the PAYLOAD.
+followed by the non-zero bytes of the binary integer for the PAYLOAD
+length in LSB order.  The result is inverted.  The recorded PAYLOAD
+CRC will match the value returned by cksum over the source data for
+the PAYLOAD.  The image file is padded between the PAYLOAD CRC and the
+next payload to force the next PAYLOAD to begin on an even 16 byte
+boundary.
 
 The header begins with a four byte SIGNATURE and a single byte
 HEADER_SIZE that specifies the multiple of 16 bytes occupied by the

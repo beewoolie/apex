@@ -20,8 +20,25 @@
 #include <apex.h>
 #include <lookup.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
 #include <environment.h>
 #include <alias.h>
+
+int lookup_alias_or_env_int (const char* szKey, int valueDefault)
+{
+  const char* sz = lookup_alias_or_env (szKey, NULL);
+  if (sz)
+    valueDefault = simple_strtoul (sz, NULL, 0);
+  return valueDefault;
+}
+
+unsigned lookup_alias_or_env_unsigned (const char* szKey, unsigned valueDefault)
+{
+  const char* sz = lookup_alias_or_env (szKey, NULL);
+  if (sz)
+    valueDefault = simple_strtoul (sz, NULL, 0);
+  return valueDefault;
+}
 
 const char* lookup_alias_or_env (const char* szKey,
 				 const char* szDefault)

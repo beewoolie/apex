@@ -11,6 +11,7 @@
 
 obj-y := init.o services.o console.o console-printf.o
 obj-y += command.o cmd-version.o cmd-help.o cmd-boot.o
+obj-y += region-copy.o region-checksum.o
 
 obj-$(CONFIG_COMMAND_HISTORY)   += command-history.o
 

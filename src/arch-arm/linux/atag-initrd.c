@@ -23,6 +23,7 @@
 #include <linux/string.h>
 #include <config.h>
 #include <apex.h>
+#include <lookup.h>
 
    /* *** Hack to prevent serious problems until all of the targets
       get the ramdisk size defined. */
@@ -33,8 +34,10 @@ struct tag* atag_initrd (struct tag* p)
 	p->hdr.tag = ATAG_INITRD2;
 	p->hdr.size = tag_size (tag_initrd);
 
-	p->u.initrd.start = CONFIG_RAMDISK_LMA;
-	p->u.initrd.size  = CONFIG_RAMDISK_SIZE;
+	p->u.initrd.start = lookup_alias_or_env_unsigned ("ramdiskaddr",
+                                                          CONFIG_RAMDISK_LMA);
+	p->u.initrd.size  = lookup_alias_or_env_unsigned ("ramdisksize",
+                                                          CONFIG_RAMDISK_SIZE);
 
 # if !defined (CONFIG_SMALL)
 	printf ("ATAG_INITRD2: start 0x%08x  size 0x%08x\n",

@@ -26,6 +26,7 @@ lib-$(CONFIG_ALIASES) += alias.o
 lib-y += lookup.o
 lib-y += memtest.o
 lib-y += strimatch.o
+lib-y += gmtime.o
 
 ifneq ($(CONFIG_THUMB),)
 CFLAGS_vsprintf.o	+= -mthumb
