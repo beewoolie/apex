@@ -64,6 +64,7 @@
 #define PHYS_ATADMA		(0x50020000)
 #define PHYS_MSHC1		(0x50024000)
 #define PHYS_MSHC2		(0x50028000)
+#define PHYS_SPBA		(0x5003C000)
 #define PHYS_CCM		(0x53f80000)
 #define PHYS_CSPI3		(0x53f84000)
 #define PHYS_FIR		(0x53f8c000)
@@ -328,5 +329,18 @@
 #define M3IF_M_MPEG4	5
 #define M3IF_M_IPU1	6
 #define M3IF_M_IPU2	7
+
+#define SPBA_MASTER_A		(1<<0)
+#define SPBA_MASTER_B		(1<<1) /* No MASTER_B in MX31 */
+#define SPBA_MASTER_C		(1<<2)
+
+#define SPBA_SDHC1		__REG (PHYS_SPBA + 0x04)
+#define SPBA_SDHC2		__REG (PHYS_SPBA + 0x08)
+#define SPBA_UART3		__REG (PHYS_SPBA + 0x0C)
+#define SPBA_CSPI2		__REG (PHYS_SPBA + 0x10)
+#define SPBA_SSI2		__REG (PHYS_SPBA + 0x14)
+#define SPBA_SIM		__REG (PHYS_SPBA + 0x18)
+#define SPBA_IIM		__REG (PHYS_SPBA + 0x1C)
+#define SPBA_ATA		__REG (PHYS_SPBA + 0x20)
 
 #endif  /* __MX31_H__ */
