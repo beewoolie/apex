@@ -16,6 +16,8 @@
 
 */
 
+//#define TALK 1
+
 #include <linux/types.h>
 #include <linux/string.h>
 #include <apex.h>
@@ -25,6 +27,7 @@
 #include <environment.h>
 #include <spinner.h>
 #include <lookup.h>
+#include <talk.h>
 
 const char* error_description;
 
@@ -255,9 +258,12 @@ void exec_monitor (void)
     const char** argv;
     strcpy (sz, szStartup);
 
+    DBG (1, "%s: startup '%s'\n", __FUNCTION__, sz);
+
     while (pch && *pch) {
       int result;
       char* pchEnd = strchr (pch, ';');
+      DBG (1, " pchEnd 0x%p *pchEnd %x\n", pchEnd, pchEnd ? *pchEnd : 0);
       if (pchEnd)
 	*pchEnd = 0;
       while (*pch == ' ')
@@ -269,6 +275,7 @@ void exec_monitor (void)
 	  break;
       }
       pch = (pchEnd ? pchEnd + 1 : 0);
+      DBG (1, " pch 0x%p *pch %x\n", pch, pch ? *pch : 0);
     }
   }
 

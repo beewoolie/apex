@@ -85,7 +85,7 @@ int cmd_copy (int argc, const char** argv)
   close_descriptor (&dout);
  fail_early:
 
-  return result;
+  return result <= 0 ? result : 0;
 }
 
 	/* Work-around for gcc-2.95 */
