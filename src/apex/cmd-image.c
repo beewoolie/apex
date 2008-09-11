@@ -38,6 +38,9 @@
    o Interruptability.  Once we start to read the payloads, this
      command must be interuptable.
 
+   o The check routine needs to be able to scan all of the payloads
+     and return a CRC error if one failed.  Currently, it stops at the
+     first one that fails.
 
 */
 
@@ -96,9 +99,36 @@ enum {
 
 enum {
   opShow = 1,
-  opVerify = 2,
+  opCheck = 2,
   opLoad = 3,
 };
+
+enum {
+  imageLoad            = 1<<0,
+  imageCheck           = 1<<1,
+  imageShow            = 1<<2,
+  imageRegionCanExpand = 1<<7,
+};
+
+struct payload_info {
+  uint32_t v;
+  char* szField;
+
+  int type;
+  unsigned int addrLoad;
+  unsigned int addrEntry;
+  unsigned int length;
+  const char* sz;
+};
+
+static void clear_info (struct payload_info* info)
+{
+  info->type      =  0;
+  info->addrLoad  = ~0;
+  info->addrEntry = ~0;
+  info->length    =  0;
+  info->sz        =  NULL;
+}
 
 static inline uint32_t swabl (uint32_t v)
 {
@@ -132,13 +162,13 @@ bool tag_lengths (uint8_t* pb, int* pcbTag, int* pcbData)
   return true;
 }
 
-int verify_apex_image (struct descriptor_d* d, bool fCanExpand)
+int verify_apex_image (struct descriptor_d* d, bool fRegionCanExpand)
 {
   int result = 0;
   size_t cbHeader;
   uint32_t crc;
 
-  if (fCanExpand && d->length - d->index < 5)
+  if (fRegionCanExpand && d->length - d->index < 5)
     d->length = d->index + 5;
 
   ENTRY (0);
@@ -156,7 +186,7 @@ int verify_apex_image (struct descriptor_d* d, bool fCanExpand)
   if (cbHeader > sizeof (rgbHeader))
     ERROR_RETURN (ERROR_FAILURE, "impossible header length");
 
-  if (fCanExpand && d->length - d->index < cbHeader - 5)
+  if (fRegionCanExpand && d->length - d->index < cbHeader - 5)
     d->length = d->index + cbHeader - 5;
 
   result = d->driver->read (d, rgbHeader + 5, cbHeader - 5);
@@ -165,12 +195,10 @@ int verify_apex_image (struct descriptor_d* d, bool fCanExpand)
 
   crc = compute_crc32 (0, rgbHeader, cbHeader);
   if (crc != 0)
-    ERROR_RETURN (ERROR_FAILURE, "broken header CRC");
+    ERROR_RETURN (ERROR_CRCFAILURE, "broken header CRC");
 
   return result;
 }
-
-#if defined (CONFIG_CMD_IMAGE_SHOW)
 
 const char* describe_apex_image_type (unsigned long v)
 {
@@ -181,6 +209,8 @@ const char* describe_apex_image_type (unsigned long v)
   case typeLinuxInitrd:	return "Initrd";			break;
   }
 };
+
+#if defined (CONFIG_CMD_IMAGE_SHOW)
 
 const char* describe_size (uint32_t cb)
 {
@@ -200,80 +230,54 @@ const char* describe_size (uint32_t cb)
   return sz;
 }
 
-int report_apex_image_header (void)
+
+/** Handle reporting on APEX image and payloads. */
+
+int handle_report_apex_image (int field,
+                              struct descriptor_d* d, bool fRegionCanExpand,
+                              struct payload_info* info)
 {
-  int cbHeader = rgbHeader[4]*16;
-  int i;
-
-  ENTRY (0);
-
-  for (i = 5; i < cbHeader - 4; ) {
-    int cbTag;
-    int cbData;
-    uint32_t v = 0;
-    char* sz = NULL;
-
-    if (!tag_lengths (rgbHeader + i, &cbTag, &cbData)) {
-      DBG (1, "header parse error %d/%d 0x%x\n", i, cbHeader, rgbHeader[i]);
-      ERROR_RETURN (ERROR_FAILURE, "invalid header tag");
+  switch (field) {
+  case fieldImageDescription:
+    printf ("Image Description:       '%s' (%d bytes)\n", info->szField,
+            strlen (info->szField) + 1);
+    break;
+  case fieldImageCreationDate:
+    {
+      struct tm tm;
+      time_t t = info->v;
+      char sz[32];
+      asctime_r (gmtime_r (&t, &tm), sz);
+      sz[24] = 0;             /* Knock out the newline */
+      printf ("Image Creation Date:     %s UTC (0x%x %d)\n",
+              sz, info->v, info->v);
     }
-
-    switch (rgbHeader[i] & 3) {
-    case sizeZero:
-      break;
-    case sizeOne:
-      v = (unsigned char) rgbHeader[i + cbTag];
-      break;
-    case sizeFour:
-      memcpy (&v, rgbHeader + i + cbTag, sizeof (uint32_t));
-      v = swabl (v);
-      break;
-    case sizeVariable:
-      sz = rgbHeader + i + cbTag;
-      break;
-    }
-
-    switch (rgbHeader[i]) {
-    case fieldImageDescription:
-      printf ("Image Description:       '%s' (%d bytes)\n", sz,
-              strlen (sz) + 1);
-      break;
-    case fieldImageCreationDate:
-      {
-        struct tm tm;
-        time_t t = v;
-        char sz[32];
-        asctime_r (gmtime_r (&t, &tm), sz);
-        sz[24] = 0;             /* Knock out the newline */
-        printf ("Image Creation Date:     %s UTC (0x%x %d)\n", sz, v, v);
-      }
-      break;
-    case fieldPayloadLength:
-      printf ("Payload Length:          %s\n", describe_size (v));
-      break;
-    case fieldPayloadLoadAddress:
-      printf ("Payload Address:         0x%08x\n", v);
-      break;
-    case fieldPayloadEntryPoint:
-      printf ("Payload Entry Point:     0x%08x\n", v);
-      break;
-    case fieldPayloadType:
-      printf ("Payload Type:            %s\n", describe_apex_image_type (v));
-      break;
-    case fieldPayloadDescription:
-      printf ("Payload Description:    '%s' (%d bytes)\n", sz,
-              strlen (sz) + 1);
-      break;
+    break;
+  case fieldPayloadLength:
+    printf ("Payload Length:          %s\n", describe_size (info->v));
+    break;
+  case fieldPayloadLoadAddress:
+    printf ("Payload Address:         0x%08x\n", info->v);
+    break;
+  case fieldPayloadEntryPoint:
+    printf ("Payload Entry Point:     0x%08x\n", info->v);
+    break;
+  case fieldPayloadType:
+    printf ("Payload Type:            %s\n",
+            describe_apex_image_type (info->v));
+    break;
+  case fieldPayloadDescription:
+    printf ("Payload Description:    '%s' (%d bytes)\n", info->szField,
+            strlen (info->szField) + 1);
+    break;
 //    case fieldPayloadCompression:
 //      printf ("Payload Compression:    gzip\n");
 //      break;
-    case fieldLinuxKernelArchitectureID:
-      printf ("Linux Kernel Arch ID:    %d (0x%x)\n", v, v);
-      break;
-    default:
-      break;                    // It's OK to skip unknown tags
-    }
-    i += cbTag + cbData;
+  case fieldLinuxKernelArchitectureID:
+    printf ("Linux Kernel Arch ID:    %d (0x%x)\n", info->v, info->v);
+    break;
+  default:
+    break;                    // It's OK to skip unknown tags
   }
   return 0;
 }
@@ -281,31 +285,172 @@ int report_apex_image_header (void)
 #endif
 
 
-/** Copy APEX image payloads to memory.  The header must be loaded
-    into the global rgbHeader and the descriptor must be ready to read
-    the first byte of the first payload.  For kernel payloads, it sets
+/** Handle loading of APEX image payloads.  It loads the payload into
+    memory at the load address.  For kernel payloads, it sets
     environment variables for the entry point and Linux kernel
     architecture ID.  For initrd payloads it sets the environment
     variables for the start address and size of the initrd.  Also, if
     an image has no load address, the payload will be loaded to the
     default address built into APEX. */
 
-int load_apex_image (struct descriptor_d* d, bool fCanExpand)
+int handle_load_apex_image (int field,
+                            struct descriptor_d* d, bool fRegionCanExpand,
+                            struct payload_info* info)
+{
+  int result = 0;
+  struct descriptor_d dout;
+  unsigned long crc;
+  unsigned long crc_calc;
+  ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
+
+  switch (field) {
+  case fieldImageDescription:
+    printf ("Image '%s'\n", info->szField);
+    break;
+  case fieldPayloadLength:
+    if (info->addrLoad == ~0)
+      ERROR_RETURN (ERROR_FAILURE, "no load address for payload");
+
+    /* Copy image and check CRC */
+    if (fRegionCanExpand
+        && d->length - d->index < info->length + 4 + cbPadding)
+      d->length = d->index + info->length + 4 + cbPadding;
+
+    parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
+    result = region_copy (&dout, d, regionCopySpinner);
+    if (result < 0)
+      return result;
+    parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
+    result = region_checksum (&dout,
+                              regionChecksumSpinner | regionChecksumLength,
+                              &crc_calc);
+    if (result < 0)
+      return result;
+    if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
+      ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
+    crc = swabl (crc);
+    if (crc != ~crc_calc) {
+      DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, ~crc_calc);
+      ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
+    }
+    while (cbPadding--) {
+      if (d->driver->read (d, &crc, 1) != 1)
+        ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
+    }
+#if defined (CONFIG_ALIASES)
+    if (info->type == typeLinuxKernel && info->addrEntry != ~0) {
+      unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+      if (addr != info->addrEntry)
+        alias_set_hex ("bootaddr", info->addrEntry);
+    }
+    if (info->type == typeLinuxInitrd) {
+      unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+      if (size != info->length)
+        alias_set_hex ("ramdisksize", info->length);
+      if (info->addrLoad != ~0) {
+        unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+        if (addr != info->addrLoad)
+          alias_set_hex ("ramdiskaddr", info->addrLoad);
+      }
+    }
+#endif
+    printf ("\r%d bytes transferred [%s @ 0x%08x] %s",
+            info->length, describe_apex_image_type (info->type), info->addrLoad,
+            info->sz ? info->sz : "");
+    break;
+  default:
+    break;
+  }
+
+  return 0;
+}
+
+
+/** Handle checking APEX image payloads.  The header must be loaded
+    into the global rgbHeader and the descriptor must be ready to read
+    the first byte of the first payload.  The payload CRCs will be
+    checked without copying the data to the memory. */
+
+int handle_check_apex_image (int field,
+                             struct descriptor_d* d, bool fRegionCanExpand,
+                             struct payload_info* info)
+{
+  int result = 0;
+  unsigned long crc;
+  unsigned long crc_calc;
+  ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
+
+  switch (field) {
+  case fieldImageDescription:
+    printf ("Image '%s'\n", info->szField);
+    break;
+  case fieldPayloadLength:
+                                /* Verify the CRC */
+    if (fRegionCanExpand
+        && d->length - d->index < info->length + 4 + cbPadding)
+      d->length = d->index + info->length + 4 + cbPadding;
+
+    result = region_checksum (d,
+                              regionChecksumSpinner | regionChecksumLength,
+                              &crc_calc);
+    if (result < 0)
+      return result;
+    if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
+      ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
+    crc = swabl (crc);
+    while (cbPadding--) {
+      if (d->driver->read (d, &crc, 1) != 1)
+        ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
+    }
+    printf ("\r%d bytes CRC 0x%08lx ", info->length, crc);
+    if (crc == ~crc_calc)
+      printf ("OK");
+    else
+      printf ("!= 0x%08lx ERR", ~crc_calc);
+    printf ("[%s @ 0x%08x] %s",
+            describe_apex_image_type (info->type), info->addrLoad,
+            info->sz ? info->sz : "");
+    if (crc != ~crc_calc)
+      ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
+    break;
+  case fieldLinuxKernelArchitectureID:
+    printf ("Linux Kernel Arch ID:    %d (0x%x)\n", info->v, info->v);
+    break;
+
+  default:
+    break;
+  }
+
+  return 0;
+}
+
+
+/** Process APEX image payloads.  The header must be loaded into the
+    global rgbHeader and the descriptor must be ready to read the
+    first byte of the first payload.
+
+    The pfn parameter is a handler function that is called for each
+    field.  This function accumulates payload information into a
+    structure so that the handler function doesn't need to do this
+    common task. */
+
+int apex_image (int (*pfn) (int, struct descriptor_d*,
+                            bool, struct payload_info*),
+                struct descriptor_d* d, bool fRegionCanExpand)
 {
   int result = 0;
   int cbHeader = rgbHeader[4]*16;
 
-  int type = 0;
-  unsigned int addrLoad = ~0;
-  unsigned int addrEntry = ~0;
-  const char* szPayload = NULL;
+  struct payload_info info;
   int i;
+
+  clear_info (&info);
 
   for (i = 5; i < cbHeader - 4; ) {
     int cbTag;
     int cbData;
-    uint32_t v = 0;
-    char* sz = NULL;
+//    uint32_t v = 0;
+//    char* sz = NULL;
 
     if (!tag_lengths (rgbHeader + i, &cbTag, &cbData)) {
       DBG (1, "header parse error %d/%d 0x%x\n", i, cbHeader, rgbHeader[i]);
@@ -316,111 +461,54 @@ int load_apex_image (struct descriptor_d* d, bool fCanExpand)
     case sizeZero:
       break;
     case sizeOne:
-      v = (unsigned char) rgbHeader[i + cbTag];
+      info.v = (unsigned char) rgbHeader[i + cbTag];
       break;
     case sizeFour:
-      memcpy (&v, rgbHeader + i + cbTag, sizeof (uint32_t));
-      v = swabl (v);
+      memcpy (&info.v, rgbHeader + i + cbTag, sizeof (uint32_t));
+      info.v = swabl (info.v);
       break;
     case sizeVariable:
-      sz = rgbHeader + i + cbTag;
+      info.szField = rgbHeader + i + cbTag;
       break;
     }
 
     switch (rgbHeader[i]) {
-    case fieldImageDescription:
-      printf ("Image '%s'\n", sz);
-      break;
-//    case fieldImageCreationDate:
-//      printf ("Image Creation Date:     0x%x (%d)", v, v);
-//      break;
     case fieldPayloadLength:
       /* Make sure we have a good load address */
-      if (addrLoad == ~0 && type == typeLinuxKernel)
-        addrLoad = lookup_alias_or_env_int ("bootaddr", addrLoad);
-      if (addrLoad == ~0 && type == typeLinuxInitrd)
+      if (info.addrLoad == ~0 && info.type == typeLinuxKernel)
+        info.addrLoad = lookup_alias_or_env_int ("bootaddr", info.addrLoad);
+      if (info.addrLoad == ~0 && info.type == typeLinuxInitrd)
         ;                       /* *** FIXME: we should have a place */
-      if (addrLoad == ~0)
-        ERROR_RETURN (ERROR_FAILURE, "no load address for payload");
 
-		/* Copy and verify the CRC */
-      {
-        struct descriptor_d dout;
-        unsigned long crc;
-        unsigned long crc_calc;
-        ssize_t cbPadding = 16 - ((v + sizeof (crc)) & 0xf);
-
-        if (fCanExpand && d->length - d->index < v + 4 + cbPadding)
-          d->length = d->index + v + 4 + cbPadding;
-
-        parse_descriptor_simple ("memory", addrLoad, v, &dout);
-        result = region_copy (&dout, d, regionCopySpinner);
-        if (result < 0)
-          return result;
-        parse_descriptor_simple ("memory", addrLoad, v, &dout);
-        result = region_checksum (&dout,
-                                  regionChecksumSpinner | regionChecksumLength,
-                                  &crc_calc);
-        if (result < 0)
-          return result;
-        if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
-          ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
-        crc = swabl (crc);
-        if (crc != ~crc_calc) {
-          DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, ~crc_calc);
-          ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
-        }
-        while (cbPadding--) {
-          if (d->driver->read (d, &crc, 1) != 1)
-            ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
-        }
-#if defined (CONFIG_ALIASES)
-        if (type == typeLinuxKernel && addrEntry != ~0) {
-          unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
-          if (addr != addrEntry)
-            alias_set_hex ("bootaddr", addrEntry);
-        }
-        if (type == typeLinuxInitrd) {
-          unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
-          if (size != v)
-            alias_set_hex ("ramdisksize", v);
-          if (addrLoad != ~0) {
-            unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
-            if (addr != addrLoad)
-              alias_set_hex ("ramdiskaddr", addrLoad);
-          }
-        }
-#endif
-        printf ("\r%d bytes transferred [%s @ 0x%08x]\n",
-                v, describe_apex_image_type (type), addrLoad);
-      }
-      type = 0;
-      addrLoad = ~0;
-      addrEntry = ~0;
-      szPayload = NULL;
+      info.length = info.v;
       break;
     case fieldPayloadLoadAddress:
-      addrLoad = v;
+      info.addrLoad = info.v;
       break;
     case fieldPayloadEntryPoint:
-      addrEntry = v;
+      info.addrLoad = info.v;
       break;
     case fieldPayloadType:
-      type = v;
+      info.type = info.v;
       break;
     case fieldPayloadDescription:
-      szPayload = sz;
-      break;
-    case fieldLinuxKernelArchitectureID:
-      printf ("Linux Kernel Arch ID:    %d (0x%x)\n", v, v);
+      info.sz = info.szField;
       break;
     default:
       break;                    // It's OK to skip unknown tags
     }
+
+    result = pfn (rgbHeader[i], d, fRegionCanExpand, &info);
+    if (result < 0)
+      return result;
+
+    if (rgbHeader[i] == fieldPayloadLength)
+      clear_info (&info);
+
     i += cbTag + cbData;
   }
 
-  return result;
+  return 0;
 }
 
 int cmd_image (int argc, const char** argv)
@@ -428,7 +516,7 @@ int cmd_image (int argc, const char** argv)
   struct descriptor_d d;
   int result = 0;
   int op = opShow;
-  bool fCanExpand = false;
+  bool fRegionCanExpand = false;
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -439,8 +527,8 @@ int cmd_image (int argc, const char** argv)
       op = opShow;
     else
 #endif
-    if      (PARTIAL_MATCH (argv[1], "v", "erify") == 0)
-      op = opVerify;
+    if      (PARTIAL_MATCH (argv[1], "c", "heck") == 0)
+      op = opCheck;
     else if (PARTIAL_MATCH (argv[1], "l", "oad") == 0)
       op = opLoad;
     else
@@ -454,23 +542,25 @@ int cmd_image (int argc, const char** argv)
     goto fail;
   }
 
-  fCanExpand = d.length == 0;
+  fRegionCanExpand = d.length == 0;
 
-  if ((result = verify_apex_image (&d, fCanExpand)) < 0) {
-    DBG (1, "verification failed %d\n", result);
+  if ((result = verify_apex_image (&d, fRegionCanExpand)) < 0) {
+    DBG (1, "header verification failed %d\n", result);
     goto fail;
     return result;
   }
 
   switch (op) {
-  case opVerify:
-    /* *** FIXME: we should check that the payload CRC is correct as well */
+  case opCheck:
+    result = apex_image (handle_check_apex_image, &d, fRegionCanExpand);
     break;
+#if defined (CONFIG_CMD_IMAGE_SHOW)
   case opShow:
-    result = report_apex_image_header ();
+    result = apex_image (handle_report_apex_image, &d, fRegionCanExpand);
     break;
+#endif
   case opLoad:
-    result = load_apex_image (&d, fCanExpand);
+    result = apex_image (handle_load_apex_image, &d, fRegionCanExpand);
     break;
   }
 
@@ -492,11 +582,11 @@ static __command struct command_d c_image = {
 #if defined (CONFIG_CMD_IMAGE_SHOW)
 "    show     - show the image metadata\n"
 #endif
-"    verify   - verify the integrity of the image\n"
+"    check    - check the integrity of the image\n"
 "  In some cases, the region length may be omitted and the command\n"
 "  will infer the length from the image header.\n"
-"  e.g.  image show 0xc0000000\n"
-"        image verify 0xc1000000\n"
-"        image load 0xc0000000\n"
+"  e.g.  image show  0xc0000000\n"
+"        image check 0xc1000000\n"
+"        image load  0xc0000000\n"
   )
 };

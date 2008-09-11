@@ -1,3 +1,8 @@
+2008-09-10  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-image.c (apex_image): Refactored cmd-image code to
+	support a single driver for parsing through the header data.
+	
 2008-09-10  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-image.c (cmd_image): Fixed cascade testing of
