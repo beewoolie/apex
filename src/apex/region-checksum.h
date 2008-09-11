@@ -27,7 +27,7 @@ enum {
   regionChecksumLength	= (1<<1), /* Add non-zero length bytes, LSB first */
 };
 
-int region_checksum (struct descriptor_d* dout, unsigned flags,
+int region_checksum (size_t cbCheck, struct descriptor_d* din, unsigned flags,
                      unsigned long* crc_result);
 
 

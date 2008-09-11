@@ -1,3 +1,13 @@
+2008-09-11  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/apex/cmd-image.c (handle_load_apex_image): Cleaned up the
+	output and make the check and load functions look similar in
+	output.
+
+	* src/apex/region-checksum.c (region_checksum): Fixed checksumming
+	so that we can sum over a defined range instead of being limited
+	to summing the whole region.
+
 2008-09-10  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-image.c (apex_image): Refactored cmd-image code to

@@ -45,7 +45,7 @@ int cmd_checksum (int argc, const char** argv)
 
   cb = d.length - d.index;
 
-  result = region_checksum (&d, regionChecksumSpinner | regionChecksumLength,
+  result = region_checksum (0, &d, regionChecksumSpinner | regionChecksumLength,
                             &crc);
   if (result)
     goto fail;

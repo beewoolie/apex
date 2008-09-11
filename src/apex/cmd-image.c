@@ -42,9 +42,26 @@
      and return a CRC error if one failed.  Currently, it stops at the
      first one that fails.
 
+   o APEX image handlers for load and check do their work on parsing
+     the payload length field.  This marker must be the last payload
+     marker in the header for each payload.  Thus, when we know the
+     lenght of the payload, we also know everything else about it.
+
+   o Overlapping source and destination regions.  There is no support
+     in this image handling code to cope with an image that overlaps
+     the place in memory where a payload is to be copied.  For the
+     most part, this shouldn't be necessary since APEX images can be
+     processed as a stream.  In the event that this does come into
+     play, we may need to relocate the source image before starting
+     the copy. This isn't so simple since we would have to make a map
+     of the memory to be used that would have to be more than a simple
+     range.  Imagine loading one piece of data at the start of RAM and
+     another at the top.  We'd have to be able to relocate to the
+     middle.
+
 */
 
-#define TALK 1
+//#define TALK 2
 
 #include <config.h>
 #include <linux/types.h>
@@ -117,7 +134,7 @@ struct payload_info {
   int type;
   unsigned int addrLoad;
   unsigned int addrEntry;
-  unsigned int length;
+  size_t length;
   const char* sz;
 };
 
@@ -257,7 +274,7 @@ int handle_report_apex_image (int field,
     printf ("Payload Length:          %s\n", describe_size (info->v));
     break;
   case fieldPayloadLoadAddress:
-    printf ("Payload Address:         0x%08x\n", info->v);
+    printf ("Payload Load Address:    0x%08x\n", info->v);
     break;
   case fieldPayloadEntryPoint:
     printf ("Payload Entry Point:     0x%08x\n", info->v);
@@ -308,6 +325,10 @@ int handle_load_apex_image (int field,
     printf ("Image '%s'\n", info->szField);
     break;
   case fieldPayloadLength:
+    printf ("# %s mem:0x%08x+0x%08x %s\n",
+            describe_apex_image_type (info->type), info->addrLoad,
+            info->length, info->sz ? info->sz : "");
+
     if (info->addrLoad == ~0)
       ERROR_RETURN (ERROR_FAILURE, "no load address for payload");
 
@@ -318,12 +339,13 @@ int handle_load_apex_image (int field,
 
     parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
     result = region_copy (&dout, d, regionCopySpinner);
-    if (result < 0)
-      return result;
-    parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
-    result = region_checksum (&dout,
-                              regionChecksumSpinner | regionChecksumLength,
-                              &crc_calc);
+    if (result >= 0) {
+      parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
+      result = region_checksum (0, &dout,
+                                regionChecksumSpinner | regionChecksumLength,
+                                &crc_calc);
+    }
+    printf ("\r");
     if (result < 0)
       return result;
     if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
@@ -354,9 +376,7 @@ int handle_load_apex_image (int field,
       }
     }
 #endif
-    printf ("\r%d bytes transferred [%s @ 0x%08x] %s",
-            info->length, describe_apex_image_type (info->type), info->addrLoad,
-            info->sz ? info->sz : "");
+    printf ("%d bytes transferred\n", info->length);
     break;
   default:
     break;
@@ -385,31 +405,34 @@ int handle_check_apex_image (int field,
     printf ("Image '%s'\n", info->szField);
     break;
   case fieldPayloadLength:
-                                /* Verify the CRC */
+    printf ("# %s mem:0x%08x+0x%08x  %s\n",
+            describe_apex_image_type (info->type), info->addrLoad,
+            info->length, info->sz ? info->sz : "");
+
     if (fRegionCanExpand
         && d->length - d->index < info->length + 4 + cbPadding)
       d->length = d->index + info->length + 4 + cbPadding;
 
-    result = region_checksum (d,
+    result = region_checksum (info->length, d,
                               regionChecksumSpinner | regionChecksumLength,
                               &crc_calc);
     if (result < 0)
       return result;
+    DBG (2, " %d %lx %d %ld\n",
+         fRegionCanExpand, d->start, d->index, d->length);
     if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
       ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
     crc = swabl (crc);
     while (cbPadding--) {
-      if (d->driver->read (d, &crc, 1) != 1)
+      char b;
+      if (d->driver->read (d, &b, 1) != 1)
         ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
     }
-    printf ("\r%d bytes CRC 0x%08lx ", info->length, crc);
+    printf ("\r%d bytes checked, CRC 0x%08lx ", info->length, crc);
     if (crc == ~crc_calc)
-      printf ("OK");
+      printf ("OK\n");
     else
-      printf ("!= 0x%08lx ERR", ~crc_calc);
-    printf ("[%s @ 0x%08x] %s",
-            describe_apex_image_type (info->type), info->addrLoad,
-            info->sz ? info->sz : "");
+      printf ("!= 0x%08lx ERR\n", ~crc_calc);
     if (crc != ~crc_calc)
       ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
     break;
