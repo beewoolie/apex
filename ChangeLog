@@ -1,3 +1,16 @@
+2008-09-10  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/apex/cmd-image.c (cmd_image): Fixed cascade testing of
+	options.
+
+	* src/lib/gmtime.c (gmtime_r): Fixed year calc (typo).
+	(gmtime_r): Fixed month calc, off by one.
+	(convert_two_digits): Fixed representation of numbers; digits
+	swapped.
+
+	* src/lib/strimatch.c (strimatch): Fixed this function to properly
+	match when the case is identical.
+
 2008-08-28  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-help.c (compare_commands): Righted command sort

@@ -40,9 +40,6 @@ int strimatch (const char* sz1, const char* sz2, size_t cbMin)
     if (!ch2)
       break;
 
-    if (ch1 == ch2)
-      continue;
-
     ch1 = tolower (ch1);
     ch2 = tolower (ch2);
 

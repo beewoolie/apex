@@ -146,8 +146,8 @@ public:
   void printenv (const char* key);
   void setenv (const char* key, const char* value);
   void unsetenv (const char* key);
-  const char* apexrelease (void) {
-    return env_link ? env_link->apexrelease : 0; }
+  const char* apexversion (void) {
+    return env_link ? env_link->apexversion : 0; }
   const char* apexregion (void) {
     return env_link ? env_link->region : 0; }
 

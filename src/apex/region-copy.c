@@ -146,5 +146,5 @@ int region_copy (struct descriptor_d* dout, struct descriptor_d* din,
       ERROR_RETURN (ERROR_FAILURE, "copy overrun");
   }
 
-  return 0;
+  return cbCopied;
 }

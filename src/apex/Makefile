@@ -38,8 +38,8 @@ ifneq ($(CONFIG_THUMB),)
 # CFLAGS += -mthumb
 endif
 
-CFLAGS_cmd-version.o += -DAPEXRELEASE=\"$(APEXRELEASE)\"
-CFLAGS_env.o	     += -DAPEXRELEASE=\"$(APEXRELEASE)\"
+CFLAGS_cmd-version.o += -DAPEXVERSION=\"$(APEXVERSION)\"
+CFLAGS_env.o	     += -DAPEXVERSION=\"$(APEXVERSION)\"
 
 ifdef BUILDDATE
 CFLAGS_cmd-version.o += -DBUILDDATE=\"$(BUILDDATE)\"

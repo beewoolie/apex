@@ -15,7 +15,7 @@
 
 #include <config.h>
 #include <linux/string.h>
-#include "time.h"
+#include "simple-time.h"
 
 #define SECONDS_PER_DAY		(24*60*60) /* 86400 */
 
@@ -55,8 +55,8 @@ static int is_leap (int year)
 
 static void convert_two_digits (char* rgb, int value)
 {
-  rgb[0] = (value % 10) + '0';
-  rgb[1] = (value / 10) + '0';
+  rgb[0] = (value / 10) + '0';
+  rgb[1] = (value % 10) + '0';
 }
 
 
@@ -84,7 +84,7 @@ struct tm* gmtime_r (const time_t* time_p, struct tm* tm_p)
       break;
     t -= days;
   }
-  tm_p->tm_year = year = 1900;
+  tm_p->tm_year = year - 1900;
   tm_p->tm_yday = t;
 
 	/* Account for leap day */
@@ -96,15 +96,13 @@ struct tm* gmtime_r (const time_t* time_p, struct tm* tm_p)
   }
 
 	/* Day of the month requires a search */
-  for (month = 0; month < sizeof (days_in_month)/sizeof (*days_in_month);
-       ++month) {
-    if (t <= days_in_month[month])
-      break;
+  for (month = 0;
+       month < sizeof (days_in_month)/sizeof (*days_in_month)
+         && t > days_in_month[month];
+       ++month)
     t -= days_in_month[month];
-    continue;
-  }
   tm_p->tm_mday += t;
-  tm_p->tm_mon = month + 1;
+  tm_p->tm_mon = month;
 
   return tm_p;
 }

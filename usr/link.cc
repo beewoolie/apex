@@ -604,7 +604,7 @@ bool Link::open_apex (const MTDPartition& mtd)
   swab32_block_maybe (pvApexSwab, cbApex);
 
 				// Guarantee termination
-  *(char*) &env_link->apexrelease[sizeof (env_link->apexrelease) - 1] = 0;
+  *(char*) &env_link->apexversion[sizeof (env_link->apexversion) - 1] = 0;
 
   return true;
 }

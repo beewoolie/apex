@@ -175,7 +175,7 @@ void cmd_release (Link& link, int argc, const char** argv,
 		  struct arguments* args)
 {
   if (argc == 1)
-    printf ("%s\n", link.apexrelease ());
+    printf ("%s\n", link.apexversion ());
   else
     throw "incorrect number of command arguments";
 }

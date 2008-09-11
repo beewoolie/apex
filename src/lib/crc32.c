@@ -225,3 +225,19 @@ unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
 }
 
 #endif
+
+#if 0
+/** Append a CRC32 of the length of a region such that the length may
+    be any size.  We add bytes to the CRC starting with the LSB until
+    the length is empty.  This is the method compatible with the POSIX
+    cksum command. */
+
+uint32_t compute_crc32_length (uint32_t crc, size_t cb)
+{
+  for (; cb; cb >>= 8) {
+    uint8_t b = cb & 0xff;
+    crc = compute_crc32 (crc, &b, 1);
+  }
+  return crc;
+}
+#endif

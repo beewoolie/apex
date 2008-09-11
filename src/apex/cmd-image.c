@@ -30,13 +30,18 @@
    o The source region may not specify a length.  It is useful to
      allow passing of a start address for a region without a length.
      In this case, the image handling code timidly extends the region
-     to account for the bytes it knows should exist.
+     to account for the bytes it knows should exist.  It is the
+     responsibility of the underlying drivers to cope with an invalid
+     length, especially because this length could be set after the
+     descriptor is opened.
 
    o Interruptability.  Once we start to read the payloads, this
      command must be interuptable.
 
 
 */
+
+#define TALK 1
 
 #include <config.h>
 #include <linux/types.h>
@@ -52,11 +57,13 @@
 #include <driver.h>
 #include "region-copy.h"
 #include "region-checksum.h"
-#include <time.h>
+#include <simple-time.h>
+#include <talk.h>
 
 #include <debug_ll.h>
 
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
+extern uint32_t compute_crc32_length (uint32_t crc, size_t cb);
 
 static const uint8_t signature[] = { 0x41, 0x69, 0x30, 0xb9 };
 static char __xbss(image) rgbHeader[(1<<8)*16];
@@ -108,31 +115,33 @@ bool tag_lengths (uint8_t* pb, int* pcbTag, int* pcbData)
   *pcbTag = 1;
   *pcbData = 0;
 
-//      printf ("tag %x  size %x", tag, tag & 3);
+  DBG (2, "tag %x  size %x", tag, tag & 3);
   switch (tag & 3) {
   case sizeZero:	*pcbData = 0; break;
   case sizeOne:		*pcbData = 1; break;
   case sizeFour:	*pcbData = 4; break;
   case sizeVariable:
-//        printf (" (variable)");
+    DBG (2," (variable)");
     *pcbData = pb[1];
     if (*pcbData > 127)
       return false;
     ++*pcbTag;
     break;
   }
-//      printf ("  cbTag %d cbData %d\n", cbTag, cbData);
+  DBG (2, "  cbTag %d cbData %d\n", *pcbTag, *pcbData);
   return true;
 }
 
-int verify_apex_image (struct descriptor_d* d)
+int verify_apex_image (struct descriptor_d* d, bool fCanExpand)
 {
   int result = 0;
   size_t cbHeader;
   uint32_t crc;
 
-  if (d->length - d->index < 5)
+  if (fCanExpand && d->length - d->index < 5)
     d->length = d->index + 5;
+
+  ENTRY (0);
 
 	/* First read the signature and header length */
   result = d->driver->read (d, rgbHeader, 5);
@@ -147,14 +156,14 @@ int verify_apex_image (struct descriptor_d* d)
   if (cbHeader > sizeof (rgbHeader))
     ERROR_RETURN (ERROR_FAILURE, "impossible header length");
 
-  if (d->length - d->index < cbHeader - 5)
+  if (fCanExpand && d->length - d->index < cbHeader - 5)
     d->length = d->index + cbHeader - 5;
 
   result = d->driver->read (d, rgbHeader + 5, cbHeader - 5);
   if (result != cbHeader - 5)
     ERROR_RETURN (ERROR_IOFAILURE, "header read error");
 
-      crc = compute_crc32 (0, rgbHeader, cbHeader);
+  crc = compute_crc32 (0, rgbHeader, cbHeader);
   if (crc != 0)
     ERROR_RETURN (ERROR_FAILURE, "broken header CRC");
 
@@ -187,7 +196,7 @@ const char* describe_size (uint32_t cb)
     unit = 'M';
   }
   snprintf (sz, sizeof (sz), "%d bytes (%d.%02d %ciB)",
-            cb, (int) s, rem/10, unit);
+            cb, (int) s, (rem*100)/1024, unit);
   return sz;
 }
 
@@ -196,14 +205,18 @@ int report_apex_image_header (void)
   int cbHeader = rgbHeader[4]*16;
   int i;
 
-  for (i = 0; i < cbHeader; ) {
+  ENTRY (0);
+
+  for (i = 5; i < cbHeader - 4; ) {
     int cbTag;
     int cbData;
     uint32_t v = 0;
     char* sz = NULL;
 
-    if (tag_lengths (rgbHeader + i, &cbTag, &cbData))
+    if (!tag_lengths (rgbHeader + i, &cbTag, &cbData)) {
+      DBG (1, "header parse error %d/%d 0x%x\n", i, cbHeader, rgbHeader[i]);
       ERROR_RETURN (ERROR_FAILURE, "invalid header tag");
+    }
 
     switch (rgbHeader[i] & 3) {
     case sizeZero:
@@ -232,7 +245,7 @@ int report_apex_image_header (void)
         char sz[32];
         asctime_r (gmtime_r (&t, &tm), sz);
         sz[24] = 0;             /* Knock out the newline */
-        printf ("Image Creation Date:     %s (0x%x %d)", sz, v, v);
+        printf ("Image Creation Date:     %s UTC (0x%x %d)\n", sz, v, v);
       }
       break;
     case fieldPayloadLength:
@@ -260,6 +273,7 @@ int report_apex_image_header (void)
     default:
       break;                    // It's OK to skip unknown tags
     }
+    i += cbTag + cbData;
   }
   return 0;
 }
@@ -276,7 +290,7 @@ int report_apex_image_header (void)
     an image has no load address, the payload will be loaded to the
     default address built into APEX. */
 
-int load_apex_image (struct descriptor_d* d)
+int load_apex_image (struct descriptor_d* d, bool fCanExpand)
 {
   int result = 0;
   int cbHeader = rgbHeader[4]*16;
@@ -287,14 +301,16 @@ int load_apex_image (struct descriptor_d* d)
   const char* szPayload = NULL;
   int i;
 
-  for (i = 0; i < cbHeader; ) {
+  for (i = 5; i < cbHeader - 4; ) {
     int cbTag;
     int cbData;
     uint32_t v = 0;
     char* sz = NULL;
 
-    if (tag_lengths (rgbHeader + i, &cbTag, &cbData))
+    if (!tag_lengths (rgbHeader + i, &cbTag, &cbData)) {
+      DBG (1, "header parse error %d/%d 0x%x\n", i, cbHeader, rgbHeader[i]);
       ERROR_RETURN (ERROR_FAILURE, "invalid header tag");
+    }
 
     switch (rgbHeader[i] & 3) {
     case sizeZero:
@@ -333,18 +349,27 @@ int load_apex_image (struct descriptor_d* d)
         unsigned long crc;
         unsigned long crc_calc;
         ssize_t cbPadding = 16 - ((v + sizeof (crc)) & 0xf);
+
+        if (fCanExpand && d->length - d->index < v + 4 + cbPadding)
+          d->length = d->index + v + 4 + cbPadding;
+
         parse_descriptor_simple ("memory", addrLoad, v, &dout);
         result = region_copy (&dout, d, regionCopySpinner);
-        if (result)
+        if (result < 0)
           return result;
         parse_descriptor_simple ("memory", addrLoad, v, &dout);
         result = region_checksum (&dout,
                                   regionChecksumSpinner | regionChecksumLength,
                                   &crc_calc);
+        if (result < 0)
+          return result;
         if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
           ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
-        if (~crc != crc)
+        crc = swabl (crc);
+        if (crc != ~crc_calc) {
+          DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, ~crc_calc);
           ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
+        }
         while (cbPadding--) {
           if (d->driver->read (d, &crc, 1) != 1)
             ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
@@ -366,7 +391,8 @@ int load_apex_image (struct descriptor_d* d)
           }
         }
 #endif
-        /* *** Set the bootaddr or initrd aliases if not already set */
+        printf ("\r%d bytes transferred [%s @ 0x%08x]\n",
+                v, describe_apex_image_type (type), addrLoad);
       }
       type = 0;
       addrLoad = ~0;
@@ -391,6 +417,7 @@ int load_apex_image (struct descriptor_d* d)
     default:
       break;                    // It's OK to skip unknown tags
     }
+    i += cbTag + cbData;
   }
 
   return result;
@@ -401,6 +428,7 @@ int cmd_image (int argc, const char** argv)
   struct descriptor_d d;
   int result = 0;
   int op = opShow;
+  bool fCanExpand = false;
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -409,10 +437,11 @@ int cmd_image (int argc, const char** argv)
 #if defined (CONFIG_CMD_IMAGE_SHOW)
     if      (PARTIAL_MATCH (argv[1], "s", "how") == 0)
       op = opShow;
+    else
 #endif
-    if (PARTIAL_MATCH (argv[1], "v", "erify") == 0)
+    if      (PARTIAL_MATCH (argv[1], "v", "erify") == 0)
       op = opVerify;
-    if (PARTIAL_MATCH (argv[1], "l", "oad") == 0)
+    else if (PARTIAL_MATCH (argv[1], "l", "oad") == 0)
       op = opLoad;
     else
       ERROR_RETURN (ERROR_PARAM, "unrecognized OP");
@@ -425,7 +454,10 @@ int cmd_image (int argc, const char** argv)
     goto fail;
   }
 
-  if ((result = verify_apex_image (&d))) {
+  fCanExpand = d.length == 0;
+
+  if ((result = verify_apex_image (&d, fCanExpand)) < 0) {
+    DBG (1, "verification failed %d\n", result);
     goto fail;
     return result;
   }
@@ -438,7 +470,7 @@ int cmd_image (int argc, const char** argv)
     result = report_apex_image_header ();
     break;
   case opLoad:
-    result = load_apex_image (&d);
+    result = load_apex_image (&d, fCanExpand);
     break;
   }
 
@@ -462,8 +494,7 @@ static __command struct command_d c_image = {
 #endif
 "    verify   - verify the integrity of the image\n"
 "  In some cases, the region length may be omitted and the command\n"
-"  will infer the\n"
-"  length from the image header.\n"
+"  will infer the length from the image header.\n"
 "  e.g.  image show 0xc0000000\n"
 "        image verify 0xc1000000\n"
 "        image load 0xc0000000\n"
