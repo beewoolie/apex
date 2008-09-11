@@ -1,5 +1,8 @@
 2008-09-11  Marc Singer  <elf@zealous.synapse.com>
 
+	* scripts/Makefile.build (modorder-target): Removed build of the
+	module.order files.
+
 	* src/apex/cmd-copy.c (cmd_copy): Fixed the return value so copy
 	doesn't stop startup.
 

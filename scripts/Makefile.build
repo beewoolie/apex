@@ -83,7 +83,7 @@ ifneq ($(strip $(obj-y) $(obj-m) $(obj-n) $(obj-) $(lib-target)),)
 builtin-target := $(obj)/built-in.o
 endif
 
-modorder-target := $(obj)/modules.order
+modorder-target := # $(obj)/modules.order
 
 # We keep a list of all modules in $(MODVERDIR)
 

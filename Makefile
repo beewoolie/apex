@@ -2,8 +2,8 @@
 #   based on Linux Kernel Makefile 2.6.26-rc8
 
 VERSION = 1
-PATCHLEVEL = 5
-SUBLEVEL = 17
+PATCHLEVEL = 6
+SUBLEVEL = 0
 #EXTRAVERSION = -$(shell date "+%j.%R:%S")
 ARCH ?= arm
 
@@ -1069,7 +1069,7 @@ ifdef CONFIG_MODULES
 
 # By default, build modules as well
 
-all: modules
+all: # modules
 
 #	Build modules
 #
