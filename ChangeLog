@@ -1,3 +1,9 @@
+2008-09-12  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/apex/cmd-image-apex.c (handle_apex_image): Factored out the
+	APEX image code so we can implement UBOOT in separate file with
+	optional compilation.
+
 2008-09-11  Marc Singer  <elf@zealous.synapse.com>
 
 	* scripts/Makefile.build (modorder-target): Removed build of the

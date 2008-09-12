@@ -233,6 +233,10 @@ int call_command (int argc, const char** argv)
 	error_description = "break"; break;
       case ERROR_NOCOMMAND:
 	error_description = "no such command"; break;
+      case ERROR_TIMEOUT:
+	error_description = "timeout"; break;
+      case ERROR_UNRECOGNIZED:
+	error_description = "unrecognized operand"; break;
       }
     }
     if (error_description)

@@ -15,6 +15,10 @@ apex.srec
 include/configfunc.h
 include/linux/config.h
 src/arch-arm/rom/apex.bin
+usr/apex-env
+usr/apex-image
+usr/*.d
+every
 
 # -- From the Kernel
 

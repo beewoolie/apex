@@ -38,6 +38,7 @@ extern const char* error_description;
 #define ERROR_CRCFAILURE	(-17)
 #define ERROR_OUTOFMEMORY	(-18)
 #define ERROR_TIMEOUT		(-19)
+#define ERROR_UNRECOGNIZED	(-20)
 
 #if defined (CONFIG_SMALL)
 # define ERROR_RETURN(v,m) return (v)

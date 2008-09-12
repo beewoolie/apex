@@ -33,6 +33,8 @@ obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
 obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
 obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 obj-$(CONFIG_CMD_IMAGE)		+= cmd-image.o
+obj-$(CONFIG_CMD_IMAGE_APEX)	+= cmd-image-apex.o
+obj-$(CONFIG_CMD_IMAGE_UBOOT)	+= cmd-image-uboot.o
 
 ifneq ($(CONFIG_THUMB),)
 # CFLAGS += -mthumb
