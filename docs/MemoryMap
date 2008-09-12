@@ -1,7 +1,7 @@
-================
-APEX Boot Loader
-README_memorymap
-================
+===========================
+     APEX Boot Loader
+        MemoryMap
+===========================
 
 It may be helpful to understand where pieces go in RAM and why.  It is
 easy for these numbers to change, so be careful about depending on

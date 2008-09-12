@@ -1,7 +1,7 @@
-================
-APEX Boot Loader
- README_region
-================
+===========================
+     APEX Boot Loader
+        Regions
+===========================
 
 APEX uses a common notation when describing regions of memory, data
 sources, and data sinks.  While similar to the way that the kernel

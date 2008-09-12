@@ -1,7 +1,7 @@
-====================
-  APEX Boot Loader
- README_environment
-====================
+===========================
+     APEX Boot Loader
+       Environment
+===========================
 
 There is support for an environment in APEX.  The environment stores
 key/value pairs as part of the configuration of the boot loader in

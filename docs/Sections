@@ -1,7 +1,7 @@
-================
-APEX Boot Loader
-README_sections
-================
+===========================
+     APEX Boot Loader
+        Sections
+===========================
 
 Much of the organization of the APEX binary image is controlled by the
 linker script and sections therein.  This has become sufficiently

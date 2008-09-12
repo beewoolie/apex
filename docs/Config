@@ -1,8 +1,7 @@
-================
-APEX Boot Loader
- README_config
-================
-
+===========================
+     APEX Boot Loader
+         Config
+===========================
 
 The descriptions in this file are superceeded by the help strings in
 the config scripts.  Configuration of APEX is now done with one of the
@@ -11,5 +10,3 @@ configuration programs, just like the Linux kernel 2.6.
 The defaults in the Kconfig files may be overriden by user selected
 values.  The safest way to create a new configuration is to remove the
 .config file and start from scratch.
-
-The 'make config' target isn't working.  It will be fixed eventually.
