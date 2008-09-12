@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Thu Sep 11 10:41:11 2008
+# Fri Sep 12 16:26:56 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -103,6 +103,7 @@ CONFIG_CMD_CLCDC_SPLASH=y
 CONFIG_CMD_CLCDC_TEST=y
 # CONFIG_CMD_ARM920_TEST is not set
 CONFIG_CMD_NAND=y
+# CONFIG_CRC32_LSB is not set
 
 #
 # Generic Drivers

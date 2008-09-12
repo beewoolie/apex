@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Thu Sep 11 10:41:01 2008
+# Fri Sep 12 16:26:23 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV5=y
@@ -96,6 +96,7 @@ CONFIG_CMD_XRECEIVE=y
 CONFIG_CMD_MEMLIMIT=y
 CONFIG_CMD_MEMSCAN=y
 CONFIG_CMD_MEMTEST=y
+# CONFIG_CRC32_LSB is not set
 
 #
 # Generic Drivers
