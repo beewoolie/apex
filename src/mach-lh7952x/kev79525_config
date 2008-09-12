@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 
-# Mon Oct 15 10:35:12 2007
+# Linux kernel version: KERNELVERSION
+# Thu Sep 11 10:41:10 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -74,6 +74,10 @@ CONFIG_CMD_COPY=y
 # CONFIG_CMD_DRVINFO is not set
 CONFIG_CMD_DUMP=y
 # CONFIG_CMD_ENV is not set
+CONFIG_CMD_IMAGE=y
+CONFIG_CMD_IMAGE_APEX=y
+# CONFIG_CMD_IMAGE_UBOOT is not set
+CONFIG_CMD_IMAGE_SHOW=y
 CONFIG_CMD_ERASE=y
 # CONFIG_CMD_FILL is not set
 CONFIG_CMD_GO=y
@@ -123,7 +127,7 @@ CONFIG_NOR_BOOT=y
 # CONFIG_COMPANION_EVT2_BOOT is not set
 
 #
-#    Default Startup
+# Default Startup
 #
 # CONFIG_AUTOBOOT is not set
 CONFIG_ENV_STARTUP_KERNEL_COPY=y
@@ -131,12 +135,12 @@ CONFIG_ENV_STARTUP_KERNEL_COPY=y
 # CONFIG_ENV_STARTUP_PREFIX_P is not set
 
 #
-#    Regions
+# Regions
 #
 CONFIG_ENV_REGION_KERNEL="nor:256k+1536k"
 
 #
-#    Overrides
+# Overrides
 #
 # CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE is not set
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
