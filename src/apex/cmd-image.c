@@ -36,6 +36,28 @@
 
 #include <debug_ll.h>
 
+#if defined (CONFIG_CMD_IMAGE_SHOW)
+
+const char* describe_size (uint32_t cb)
+{
+  static __xbss(image) char sz[60];
+
+  int s = cb/1024;
+  int rem = cb%1024;
+  char unit = 'K';
+
+  if (s > 1024) {
+    rem = s%1024;
+    s /= 1024;
+    unit = 'M';
+  }
+  snprintf (sz, sizeof (sz), "%d bytes (%d.%02d %ciB)",
+            cb, (int) s, (rem*100)/1024, unit);
+  return sz;
+}
+
+#endif
+
 int cmd_image (int argc, const char** argv)
 {
   struct descriptor_d d;
