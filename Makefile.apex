@@ -50,7 +50,7 @@ every: #distclean
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
 	 cp .config every/$$o/config ; \
 	 echo $(APEXVERSION) > every/$$o/APEXVERSION ; \
-	 cp README_every every/$$o/README ; \
+	 cp docs/Every every/$$o/README ; \
 	 (cd every ; zip -rq $$o.zip $$o ) ; \
 	done
 	@rm .config
