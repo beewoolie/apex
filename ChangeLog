@@ -1,5 +1,12 @@
 2008-09-12  Marc Singer  <elf@zealous.synapse.com>
 
+	* src/apex/cmd-image-uboot.c: Added uboot image support.  No
+	multi-images, but the rest works OK.
+
+	* src/apex/region-checksum.c (region_checksum): Added neglected
+	check for whether or not the caller wants the length added to the
+	checksum
+
 	* src/apex/cmd-image-apex.c (handle_apex_image): Factored out the
 	APEX image code so we can implement UBOOT in separate file with
 	optional compilation.

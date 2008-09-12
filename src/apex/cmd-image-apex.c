@@ -115,8 +115,8 @@ struct payload_info {
   char* szField;
 
   int type;
-  unsigned int addrLoad;
-  unsigned int addrEntry;
+  uint32_t addrLoad;
+  uint32_t addrEntry;
   size_t length;
   const char* sz;
 };

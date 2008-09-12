@@ -169,6 +169,7 @@ config CMD_IMAGE_UBOOT
        bool "Support UBOOT Images"
        default n
        depends on CMD_IMAGE
+       select CRC32_LSB
        help
          Support loading of UBOOT images.
 
@@ -317,3 +318,7 @@ config CMD_NAND
 	  Defines NAND commands for testing.
 
 endmenu
+
+config CRC32_LSB
+	bool
+	default n

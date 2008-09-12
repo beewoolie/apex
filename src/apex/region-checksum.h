@@ -25,6 +25,7 @@
 enum {
   regionChecksumSpinner	= (1<<0),
   regionChecksumLength	= (1<<1), /* Add non-zero length bytes, LSB first */
+  regionChecksumLSB     = (1<<2), /* UBOOT compatible CRC algorithm */
 };
 
 int region_checksum (size_t cbCheck, struct descriptor_d* din, unsigned flags,

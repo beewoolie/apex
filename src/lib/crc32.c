@@ -135,9 +135,8 @@ unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb)
 
 /* compute_crc32
 
-   is a working, bit oriented version of the crc computation routine
-   that does not require zero shifting and is compatible with GNU
-   cksum.
+   is a working, bit oriented, MSB order crc computation routine that
+   does not require zero shifting and is compatible with GNU cksum.
 
 */
 

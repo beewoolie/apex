@@ -15,6 +15,7 @@ lib-y += strcmp.o strnicmp.o strcspn.o
 lib-y += memcmp.o memset.o
 lib-$(CONFIG_SMALL) += memcpy.o memmove.o
 lib-y += crc32.o xmodem.o
+lib-$(CONFIG_CRC32_LSB) += crc32-lsb.o
 lib-y += spinner.o
 lib-$(CONFIG_ENV) += env.o
 lib-y += dump.o

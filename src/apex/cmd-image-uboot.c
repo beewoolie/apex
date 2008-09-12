@@ -12,7 +12,7 @@
 */
 
 #undef TALK
-#define TALK 1
+//#define TALK 2
 
 #include <config.h>
 #include <linux/types.h>
@@ -34,8 +34,8 @@
 
 #include <debug_ll.h>
 
-extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
-//extern uint32_t compute_crc32_length (uint32_t crc, size_t cb);
+extern unsigned long compute_crc32_lsb (unsigned long crc,
+                                        const void *pv, int cb);
 
 
 enum {
@@ -126,41 +126,6 @@ static inline uint32_t swabl (uint32_t v)
     | ((v & (uint32_t) (0xff << 24)) >> 24);
 }
 
-
-/** Compute CRC for UBOOT images.  UBOOT uses an LSB ordered CRC
-    computation that is incompatible with the CRC calculations used
-    throughout APEX.  Both algorithms are considered 'standard', but
-    the UBOOT version will not result in 0 when the CRC is appended to
-    the byte stream. */
-
-static uint32_t _compute_crc32 (uint32_t crc, const void* pv, int cb)
-{
-#define IPOLY		(0xedb88320)
-  unsigned char* pb = (unsigned char*) pv;
-  uint32_t poly = IPOLY;	// Hack to get a register allocated
-
-  crc = crc ^ 0xffffffff;	// Invert because we're continuing
-
-#define DO_CRC\
-  if (crc & 1) { crc >>= 1; crc ^= poly; }\
-  else	       { crc >>= 1; }
-
-  while (cb--) {
-    crc ^= *pb++;
-
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-    DO_CRC;
-  }
-
-  return crc ^ 0xffffffff;
-}
-
 int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
 {
   int result = 0;
@@ -199,7 +164,7 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
 
   crc = ((struct header*) g_rgbHeader)->header_crc;
   ((struct header*) g_rgbHeader)->header_crc = 0;
-  crc_calc = _compute_crc32 (0, g_rgbHeader, g_cbHeader);
+  crc_calc = compute_crc32_lsb (0, g_rgbHeader, g_cbHeader);
   if (swabl (crc) != crc_calc)
     ERROR_RETURN (ERROR_CRCFAILURE, "broken header CRC");
   ((struct header*) g_rgbHeader)->header_crc = crc;
@@ -209,7 +174,7 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
 
 #if defined (CONFIG_CMD_IMAGE_SHOW)
 
-const char* describe_architecture (unsigned long v)
+static const char* describe_uboot_architecture (unsigned long v)
 {
   switch (v) {
   default:
@@ -232,7 +197,7 @@ const char* describe_architecture (unsigned long v)
   }
 }
 
-const char* describe_os (unsigned long v)
+static const char* describe_uboot_os (unsigned long v)
 {
   switch (v) {
   default:
@@ -260,7 +225,7 @@ const char* describe_os (unsigned long v)
   }
 };
 
-const char* describe_image_type (unsigned long v)
+static const char* describe_uboot_image_type (unsigned long v)
 {
   switch (v) {
   default:
@@ -275,7 +240,7 @@ const char* describe_image_type (unsigned long v)
   }
 };
 
-const char* describe_compression (unsigned long v)
+const char* describe_uboot_compression (unsigned long v)
 {
   switch (v) {
   default:
@@ -306,10 +271,10 @@ int handle_report_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
 	  *header->image_name ? header->image_name : "<null>");
   printf ("Creation Date: %s UTC (0x%x %d)\n", sz, (uint32_t) t, (uint32_t) t);
   printf ("Image Type:    %s %s %s (%s)\n",
-	  describe_architecture (header->architecture),
-	  describe_os (header->os),
-	  describe_image_type (header->image_type),
-	  describe_compression (header->compression));
+	  describe_uboot_architecture (header->architecture),
+	  describe_uboot_os (header->os),
+	  describe_uboot_image_type (header->image_type),
+	  describe_uboot_compression (header->compression));
   printf ("Data Size:     %s\n",
           describe_size (swabl (header->size)));
   printf ("Load Address:  0x%08x\n", swabl (header->load_address));
@@ -317,7 +282,7 @@ int handle_report_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
 
   crc = header->header_crc;
   header->header_crc = 0;
-  crc_calc = _compute_crc32 (0, header, sizeof (*header));
+  crc_calc = compute_crc32_lsb (0, header, sizeof (*header));
   printf ("Header CRC:    0x%08x", swabl (crc));
   if (swabl (crc) == crc_calc)
     printf (" OK\n");
@@ -342,76 +307,60 @@ int handle_report_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
 int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
                              struct header* header)
 {
-#if 0
   int result = 0;
   struct descriptor_d dout;
-  unsigned long crc;
-  unsigned long crc_calc;
-  ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
+  unsigned long crc = swabl (header->crc);
+  unsigned long crc_calc = 0;
+  uint32_t addrLoad = swabl (header->load_address);
+  uint32_t addrEntry = swabl (header->entry_point);
+  size_t cb = swabl (header->size);
 
-  switch (field) {
-  case fieldImageDescription:
-    printf ("Image '%s'\n", info->szField);
-    break;
-  case fieldPayloadLength:
-    printf ("# %s mem:0x%08x+0x%08x %s\n",
-            describe_uboot_image_type (info->type), info->addrLoad,
-            info->length, info->sz ? info->sz : "");
-
-    if (info->addrLoad == ~0)
-      ERROR_RETURN (ERROR_FAILURE, "no load address for payload");
+  printf ("# %s mem:0x%08x+0x%08x %s\n",
+          describe_uboot_image_type (header->image_type), addrLoad,
+          cb, header->image_name);
 
     /* Copy image and check CRC */
-    if (fRegionCanExpand
-        && d->length - d->index < info->length + 4 + cbPadding)
-      d->length = d->index + info->length + 4 + cbPadding;
+  if (fRegionCanExpand
+      && d->length - d->index < cb)
+    d->length = d->index + cb;
 
-    parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
-    result = region_copy (&dout, d, regionCopySpinner);
-    if (result >= 0) {
-      parse_descriptor_simple ("memory", info->addrLoad, info->length, &dout);
-      result = region_checksum (0, &dout,
-                                regionChecksumSpinner | regionChecksumLength,
-                                &crc_calc);
-    }
-    printf ("\r");
-    if (result < 0)
-      return result;
-    if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
-      ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
-    crc = swabl (crc);
-    if (crc != ~crc_calc) {
-      DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, ~crc_calc);
-      ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
-    }
-    while (cbPadding--) {
-      if (d->driver->read (d, &crc, 1) != 1)
-        ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
-    }
-#if defined (CONFIG_ALIASES)
-    if (info->type == typeLinuxKernel && info->addrEntry != ~0) {
-      unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
-      if (addr != info->addrEntry)
-        alias_set_hex ("bootaddr", info->addrEntry);
-    }
-    if (info->type == typeLinuxInitrd) {
-      unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
-      if (size != info->length)
-        alias_set_hex ("ramdisksize", info->length);
-      if (info->addrLoad != ~0) {
-        unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
-        if (addr != info->addrLoad)
-          alias_set_hex ("ramdiskaddr", info->addrLoad);
-      }
-    }
-#endif
-    printf ("%d bytes transferred\n", info->length);
-    break;
-  default:
-    break;
+  parse_descriptor_simple ("memory", addrLoad, cb, &dout);
+  result = region_copy (&dout, d, regionCopySpinner);
+  if (result >= 0) {
+    parse_descriptor_simple ("memory", addrLoad, cb, &dout);
+    result = region_checksum (0, &dout,
+                              regionChecksumSpinner | regionChecksumLSB,
+                              &crc_calc);
   }
 
+  printf ("\r");
+  if (result < 0)
+    return result;
+  if (crc != crc_calc) {
+    DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, crc_calc);
+    ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
+  }
+
+#if defined (CONFIG_ALIASES)
+  if (header->image_type == typeKernel && addrEntry != ~0) {
+    unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+    if (addr != addrEntry)
+      alias_set_hex ("bootaddr", addrEntry);
+  }
+  if (header->image_type == typeRamdisk) {
+    unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+    if (size != cb)
+      alias_set_hex ("ramdisksize", cb);
+    if (addrLoad != ~0) {
+      unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+      if (addr != addrLoad)
+        alias_set_hex ("ramdiskaddr", addrLoad);
+    }
+  }
 #endif
+
+  printf ("%d bytes transferred\n", cb);
+
   return 0;
 }
 
@@ -424,57 +373,28 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
 int handle_check_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
                               struct header* header)
 {
-#if 0
   int result = 0;
-  unsigned long crc;
-  unsigned long crc_calc;
-  ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
+  unsigned long crc = swabl (header->crc);
+  unsigned long crc_calc = 0;
+  size_t cb = swabl (header->size);
 
-  switch (field) {
-  case fieldImageDescription:
-    printf ("Image '%s'\n", info->szField);
-    break;
-  case fieldPayloadLength:
-    printf ("# %s mem:0x%08x+0x%08x  %s\n",
-            describe_uboot_image_type (info->type), info->addrLoad,
-            info->length, info->sz ? info->sz : "");
+  if (fRegionCanExpand
+      && d->length - d->index < cb)
+      d->length = d->index + cb;
 
-    if (fRegionCanExpand
-        && d->length - d->index < info->length + 4 + cbPadding)
-      d->length = d->index + info->length + 4 + cbPadding;
+  result = region_checksum (cb, d, regionChecksumSpinner | regionChecksumLSB,
+                            &crc_calc);
 
-    result = region_checksum (info->length, d,
-                              regionChecksumSpinner | regionChecksumLength,
-                              &crc_calc);
-    if (result < 0)
-      return result;
-    DBG (2, " %d %lx %d %ld\n",
-         fRegionCanExpand, d->start, d->index, d->length);
-    if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
-      ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
-    crc = swabl (crc);
-    while (cbPadding--) {
-      char b;
-      if (d->driver->read (d, &b, 1) != 1)
-        ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
-    }
-    printf ("\r%d bytes checked, CRC 0x%08lx ", info->length, crc);
-    if (crc == ~crc_calc)
-      printf ("OK\n");
-    else
-      printf ("!= 0x%08lx ERR\n", ~crc_calc);
-    if (crc != ~crc_calc)
-      ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
-    break;
-  case fieldLinuxKernelArchitectureID:
-    printf ("Linux Kernel Arch ID:    %d (0x%x)\n", info->v, info->v);
-    break;
+  if (result < 0)
+    return result;
+  printf ("\r%d bytes checked, CRC 0x%08lx ", cb, crc);
+  if (crc == crc_calc)
+    printf ("OK\n");
+  else
+    printf ("!= 0x%08lx ERR\n", crc_calc);
+  if (crc != crc_calc)
+    ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
 
-  default:
-    break;
-  }
-
-#endif
   return 0;
 }
 

@@ -21,7 +21,8 @@
 
 */
 
-#define TALK 2
+#undef TALK
+//#define TALK 2
 
 #include <config.h>
 //#include <linux/types.h>

@@ -22,12 +22,13 @@
 #include <talk.h>
 
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
-//extern uint32_t compute_crc32_length (uint32_t crc, size_t cb);
+extern unsigned long compute_crc32_lsb (unsigned long crc,
+                                        const void *pv, int cb);
 
 /** Compute the CRC32 checksum for a region.  The flags includes a bit
-    to add each byte of the length, in LSB order, as is used by the
-    POSIX cksum command.  If the cbCheck parameter is non-zero, it
-    will limit the extent of the check to that number of bytes,
+    to add each byte of the length, in MSB (or LSB) order, as is used
+    by the POSIX cksum command.  If the cbCheck parameter is non-zero,
+    it will limit the extent of the check to that number of bytes,
     otherwise the whole region will be checked. */
 
 int region_checksum (size_t cbCheck, struct descriptor_d* d, unsigned flags,
@@ -54,12 +55,17 @@ int region_checksum (size_t cbCheck, struct descriptor_d* d, unsigned flags,
       return ERROR_IOFAILURE;
     if (flags & regionChecksumSpinner)
       SPINNER_STEP;
-    crc = compute_crc32 (crc, rgb, cb);
+#if defined (CONFIG_CRC32_LSB)
+    if (flags & regionChecksumLSB)
+      crc = compute_crc32_lsb (crc, rgb, cb);
+    else
+#endif
+      crc = compute_crc32 (crc, rgb, cb);
     index += cb;
   }
 
   /* Add the length to the computation */
-  {
+  if (flags & regionChecksumLength) {
     unsigned char b;
     unsigned long v;
     for (v = extent; v; v >>= 8) {
