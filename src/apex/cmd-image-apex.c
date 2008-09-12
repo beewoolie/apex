@@ -80,8 +80,6 @@
 extern unsigned long compute_crc32 (unsigned long crc, const void *pv, int cb);
 extern uint32_t compute_crc32_length (uint32_t crc, size_t cb);
 
-// --- APEX Images
-
 static const uint8_t signature[] = { 0x41, 0x69, 0x30, 0xb9 };
 static char __xbss(image) g_rgbHeader[(1<<8)*16]; /* Largest possible header */
 static size_t g_cbHeader;
