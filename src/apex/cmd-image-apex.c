@@ -167,7 +167,7 @@ int verify_apex_image (struct descriptor_d* d, bool fRegionCanExpand)
   int result = 0;
   ssize_t cbNeed;               /* Most definitely can be negative */
   size_t cbHeader;
-  uint32_t crc;
+  uint32_t crc = 0;
 
   ENTRY (0);
 
@@ -288,7 +288,7 @@ int handle_load_apex_image (int field,
   int result = 0;
   struct descriptor_d dout;
   unsigned long crc;
-  unsigned long crc_calc;
+  unsigned long crc_calc = 0;
   ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
 
   switch (field) {
@@ -368,7 +368,7 @@ int handle_check_apex_image (int field,
 {
   int result = 0;
   unsigned long crc;
-  unsigned long crc_calc;
+  unsigned long crc_calc = 0;
   ssize_t cbPadding = 16 - ((info->length + sizeof (crc)) & 0xf);
 
   switch (field) {
