@@ -31,7 +31,7 @@ int cmd_checksum (int argc, const char** argv)
 {
   struct descriptor_d d;
   int result = 0;
-  unsigned long crc;
+  unsigned long crc = 0;
   ssize_t cb;
 
   if (argc < 2)

@@ -9,6 +9,34 @@
    DESCRIPTION
    -----------
 
+   o UBOOT image format.  The UBOOT image format was originally design
+     for a single payload.  The file begins with a fixed-length
+     header, 64 bytes followed by the payload.
+
+       IMAGE
+       +--------+---------+
+       | HEADER | PAYLOAD |
+       +--------+---------+
+
+     The multi-image format modifies the basic format with an NULL
+     terminated array of payload lengths followed by all of the
+     payload data.
+
+       MULTI-IMAGE
+       +--------+--------+-----+---+---------+
+       | HEADER | LENGTH | ... | 0 | PAYLOAD |
+       +--------+--------+-----+---+---------+
+
+     In this case, the header is identical, so there is only one CRC
+     for all payloads, the data_size field of the header refers to the
+     size of all payloads, the is only one entry point, and there is
+     only one load address for all payloads.  All payload data is
+     loaded starting at the load address in the header.  When booting
+     Linux, UBOOT interprets the first two payloads of a multi-image
+     as a kernel and initrd.  The load address and length of the
+     initrd will be recorded and passed to the kernel.  APEX performs
+     the same steps.
+
 */
 
 #undef TALK
@@ -116,6 +144,8 @@ struct header {
 static const uint8_t magic[] = { 0x27, 0x05, 0x19, 0x56 };
 static char __xbss(image) g_rgbHeader[64]; /* Largest possible header */
 static size_t g_cbHeader;
+static uint32_t __xbss(image) g_rgSizes[32]; /* Multi-image payload sizes */
+static size_t g_cPayloads;
 
 static inline uint32_t swabl (uint32_t v)
 {
@@ -160,6 +190,22 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
     if (result != cbNeed)
       ERROR_RETURN (ERROR_IOFAILURE, "header read error");
     g_cbHeader += cbNeed;
+  }
+
+	/* Load length array */
+  g_cPayloads = 0;
+  if (((struct header*) g_rgbHeader)->image_type == typeMulti) {
+    uint32_t cbPayload;
+    cbNeed = sizeof (g_rgSizes);
+    if (fRegionCanExpand && d->length - d->index < cbNeed)
+      d->length = d->index + cbNeed;
+    for (; cbPayload; ++g_cPayloads) {
+      result = d->driver->read (d, &cbPayload, sizeof (cbPayload));
+      if (result != sizeof (cbPayload))
+        ERROR_RETURN (ERROR_IOFAILURE, "size array read error");
+      if ((g_rgSizes[g_cPayloads] = cbPayload) == 0)
+        break;
+    }
   }
 
   crc = ((struct header*) g_rgbHeader)->header_crc;
@@ -313,11 +359,26 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   unsigned long crc_calc = 0;
   uint32_t addrLoad = swabl (header->load_address);
   uint32_t addrEntry = swabl (header->entry_point);
-  size_t cb = swabl (header->size);
+  size_t cbCheck = swabl (header->size);
+  size_t cb = cbCheck;
 
-  printf ("# %s mem:0x%08x+0x%08x %s\n",
-          describe_uboot_image_type (header->image_type), addrLoad,
-          cb, header->image_name);
+  if (header->image_type == typeMulti)
+    cb -= (g_cPayloads + 1)*sizeof (*g_rgSizes); /* Correct data_size */
+
+  if (header->image_type == typeMulti && g_cPayloads == 2) {
+    printf ("# Kernel (%s) mem:0x%08x+0x%08x %s\n",
+            describe_uboot_image_type (header->image_type), addrLoad,
+            swabl (g_rgSizes[0]), header->image_name);
+    printf ("# Initrd (%s) mem:0x%08x+0x%08x %s\n",
+            describe_uboot_image_type (header->image_type),
+            addrLoad + swabl (g_rgSizes[0]),
+            swabl (g_rgSizes[1]), header->image_name);
+  }
+  else
+    printf ("# %s mem:0x%08x+0x%08x %s\n",
+            describe_uboot_image_type (header->image_type), addrLoad,
+            cb, header->image_name);
+
 
     /* Copy image and check CRC */
   if (fRegionCanExpand
@@ -328,7 +389,10 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   result = region_copy (&dout, d, regionCopySpinner);
   if (result >= 0) {
     parse_descriptor_simple ("memory", addrLoad, cb, &dout);
-    result = region_checksum (0, &dout,
+    if (header->image_type == typeMulti)
+      crc_calc = compute_crc32_lsb (crc_calc, g_rgSizes,
+                                    (g_cPayloads + 1)*sizeof (*g_rgSizes));
+    result = region_checksum (cb, &dout,
                               regionChecksumSpinner | regionChecksumLSB,
                               &crc_calc);
   }
@@ -348,13 +412,27 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
       alias_set_hex ("bootaddr", addrEntry);
   }
   if (header->image_type == typeRamdisk) {
-    unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+    size_t size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
     if (size != cb)
       alias_set_hex ("ramdisksize", cb);
     if (addrLoad != ~0) {
       unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
       if (addr != addrLoad)
         alias_set_hex ("ramdiskaddr", addrLoad);
+    }
+  }
+  if (header->image_type == typeMulti && addrEntry != ~0) {
+    unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+    if (addr != addrEntry)
+      alias_set_hex ("bootaddr", addrEntry);
+    if (g_cPayloads > 1) {      /* We have an initrd as well */
+      size_t   size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+      unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+      unsigned addrInitrd = addrLoad + swabl (g_rgSizes[0]);
+      if (size != swabl (g_rgSizes[1]))
+        alias_set_hex ("ramdisksize", swabl (g_rgSizes[1]));
+      if (addr != addrInitrd)
+        alias_set_hex ("ramdiskaddr", addrInitrd);
     }
   }
 #endif
@@ -376,18 +454,24 @@ int handle_check_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   int result = 0;
   unsigned long crc = swabl (header->crc);
   unsigned long crc_calc = 0;
-  size_t cb = swabl (header->size);
+  size_t cbCheck = swabl (header->size);
+  size_t cb = cbCheck;
 
   if (fRegionCanExpand
       && d->length - d->index < cb)
       d->length = d->index + cb;
 
+  if (header->image_type == typeMulti) {
+    crc_calc = compute_crc32_lsb (crc_calc, g_rgSizes,
+                                  (g_cPayloads + 1)*sizeof (*g_rgSizes));
+    cb -= (g_cPayloads + 1)*sizeof (*g_rgSizes); /* Correct data_size */
+  }
   result = region_checksum (cb, d, regionChecksumSpinner | regionChecksumLSB,
                             &crc_calc);
 
   if (result < 0)
     return result;
-  printf ("\r%d bytes checked, CRC 0x%08lx ", cb, crc);
+  printf ("\r%d bytes checked, CRC 0x%08lx ", cbCheck, crc);
   if (crc == crc_calc)
     printf ("OK\n");
   else

@@ -1,5 +1,14 @@
 2008-09-12  Marc Singer  <elf@zealous.synapse.com>
 
+	* src/apex/cmd-image-uboot.c: Documentation for UBOOT image
+	format.
+	(verify_uboot_image): Added support for multi-images.  Now loading
+	UBOOT images the same way that UBOOT does.
+
+	* src/apex/region-checksum.c (region_checksum): Fixed the checksum
+	to account for incoming CRC value as is necessary for UBOOT image
+	CRC computation.
+
 	* src/apex/cmd-image-uboot.c: Added uboot image support.  No
 	multi-images, but the rest works OK.
 

@@ -29,14 +29,15 @@ extern unsigned long compute_crc32_lsb (unsigned long crc,
     to add each byte of the length, in MSB (or LSB) order, as is used
     by the POSIX cksum command.  If the cbCheck parameter is non-zero,
     it will limit the extent of the check to that number of bytes,
-    otherwise the whole region will be checked. */
+    otherwise the whole region will be checked. Note that the crc_result
+
+*/
 
 int region_checksum (size_t cbCheck, struct descriptor_d* d, unsigned flags,
-                     unsigned long* crc_result)
+                     unsigned long* crc)
 {
   ssize_t extent = d->length - d->index;
   int index = 0;
-  unsigned long crc = 0;
 
   if (cbCheck && extent > cbCheck)
     extent = cbCheck;
@@ -57,10 +58,10 @@ int region_checksum (size_t cbCheck, struct descriptor_d* d, unsigned flags,
       SPINNER_STEP;
 #if defined (CONFIG_CRC32_LSB)
     if (flags & regionChecksumLSB)
-      crc = compute_crc32_lsb (crc, rgb, cb);
+      *crc = compute_crc32_lsb (*crc, rgb, cb);
     else
 #endif
-      crc = compute_crc32 (crc, rgb, cb);
+      *crc = compute_crc32 (*crc, rgb, cb);
     index += cb;
   }
 
@@ -70,10 +71,9 @@ int region_checksum (size_t cbCheck, struct descriptor_d* d, unsigned flags,
     unsigned long v;
     for (v = extent; v; v >>= 8) {
       b = v & 0xff;
-      crc = compute_crc32 (crc, &b, 1);
+      *crc = compute_crc32 (*crc, &b, 1);
     }
   }
 
-  *crc_result = crc;
   return 0;
 }
