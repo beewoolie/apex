@@ -1,3 +1,21 @@
+2008-09-16  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/lib/strtol.c: Adding strtol as a separate library function,
+	in case it is needed.  The memlimit command will use this function.
+
+	* src/mach-mx3/rosencrantz.h (CCM_PDR0_V): Override for the PDR0
+	so that the CSI clock scalar is non-default.
+
+	* src/mach-mx3/mx31.h (CCM_UPCTL_266_V): Fixed the UPCTL
+	initialization values.  This PLL is based on the CKIH, so it
+	doesn't need to change when the CPU clock speed changes.
+	(CCM_PDR0_V): Allowing this value to be overridden by the board
+	specific header.
+
+	* src/drivers/drv-mem.c (cmd_memlimit): Revised memlimit to permit
+	a negative offset which is then subtracted from the total system
+	memory.
+
 2008-09-12  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-image-uboot.c: Documentation for UBOOT image
