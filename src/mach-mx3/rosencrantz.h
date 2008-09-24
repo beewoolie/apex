@@ -45,4 +45,6 @@
 #define IS_ROSENCRANTZ_FF \
   GPIO_PIN_VALUE (PIN_BOARD_ID1) && GPIO_PIN_VALUE (PIN_BOARD_ID2)
 
+#define CCM_PDR0_V		(0x2c071d58) /* Custom CSI divider */
+
 #endif  /* __ROSENCRANTZ_H__ */

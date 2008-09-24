@@ -9,7 +9,7 @@
 #   Please refer to the file debian/copyright for further details.
 #
 
-lib-y := vsprintf.o ctype.o
+lib-y := vsprintf.o ctype.o strtol.o
 lib-y += strlen.o strnlen.o strchr.o strlcpy.o strcat.o strcpy.o
 lib-y += strcmp.o strnicmp.o strcspn.o
 lib-y += memcmp.o memset.o
