@@ -93,6 +93,12 @@
 000000e0: 0000 0000 0000 0000  0000 0100 0000 0006  ........ ........
 000000f0: 0004 0000 0000 0000  0000 0000 0000 0000  ........ ........
 
+   o Distinguising Compact Flash (CFA) from ATA.  The ATA standard
+     states that the first word of the IDENTIFY DEVICE record will
+     0x848a for CFA devices.  Bit 2 of word 83 will also be set
+     indicating that the CFA commands are available.
+
+
    ==============================
 
    Generic CompactFlash IO driver
@@ -211,6 +217,10 @@
 #define IDE_REG_CONTROL		0x10
 #define IDE_REG_ALTSTATUS	0x10
 
+#define IDE_STATUS_BUSY		(1<<7)
+#define IDE_STATUS_DRDY		(1<<6)
+#define IDE_STATUS_DRQ		(1<<3)
+#define IDE_STATUS_ERROR	(1<<0)
 
 #if 0
 #define IDE_SECTORCOUNT	0x02
@@ -255,6 +265,7 @@
 #define DELAY
 
 enum {
+  typeATA = 0x080000000,
   typeMultifunction = 0,
   typeMemory = 1,
   typeSerial = 2,
@@ -271,16 +282,13 @@ struct ata_info {
   int type;
   char szFirmware[9];		/* Card firmware revision */
   char szName[41];		/* Name of card */
-  int cylinders;
-  int heads;
-  int sectors_per_track;
-  int total_sectors;
+  int64_t total_sectors;
   int speed;			/* Timing value from CF info */
 
   /* *** FIXME: buffer should be in .xbss section */
   char rgb[SECTOR_SIZE];	/* Sector buffer */
   int sector;			/* Buffered sector */
-  uint16_t identity[128]        /* IDE_CMD_IDENTIFY data */
+  uint16_t identity[128];       /* IDE_CMD_IDENTIFY data */
 };
 
 static struct ata_info ata_d;
@@ -357,7 +365,7 @@ static void ready_wait (void)
     ;
 #endif
 
-  while (read16 (IDE_REG_STATUS) & (1<<7))
+  while (read16 (IDE_REG_STATUS) & IDE_STATUS_BUSY)
     ;
 }
 
@@ -487,39 +495,47 @@ static int ata_identify (void)
       ata_d.identity[i] = read16 (IDE_REG_DATA);
 //      rgs[i] = read16 (0);
 
+	/* Flush */
+//    for (i = 0; i < 128; ++i)
+    while (read16 (IDE_REG_STATUS) & IDE_STATUS_DRQ)
+      read16 (IDE_REG_DATA);
+
 #if defined (TALK)
     dump ((void*) ata_d.identity, 256, 0);
     dumpw ((void*) ata_d.identity, 256, 0, 2);
 #endif
 
-    if (ata_d.identity[0] != 0x848a) {
-      ata_d.type = -1;
-      ERROR_RETURN (ERROR_IOFAILURE, "unexpected data read from CF card");
-    }
+    if (ata_d.identity[0] == 0x848a)
+      ata_d.type = typeMemory;
+    else
+      ata_d.type = typeATA;
+//    {
+//      ata_d.type = -1;
+//      ERROR_RETURN (ERROR_IOFAILURE, "unexpected data read from CF card");
+//    }
 
-	/* Fetch organization */
+    if (ata_d.identity[83] & (1<<10)) {
+      ata_d.total_sectors
+        = (((uint64_t)ata_d.identity[102]) << 32)
+        | (           ata_d.identity[101]  << 16)
+        | (           ata_d.identity[100]  <<  0);
+    }
+    else
+      ata_d.total_sectors
+        = (ata_d.identity[ 61] << 16)
+        | (ata_d.identity[ 60] <<  0);
+
+
     if (ata_d.identity[53] & (1<<1)) {
-      ata_d.cylinders		= ata_d.identity[54];
-      ata_d.heads		= ata_d.identity[55];
-      ata_d.sectors_per_track	= ata_d.identity[56];
-      ata_d.total_sectors	= (ata_d.identity[58] << 16)
-        + ata_d.identity[57];
-    }
-    else {
-      ata_d.cylinders		= ata_d.identity[1];
-      ata_d.heads		= ata_d.identity[3];
-      ata_d.sectors_per_track	= ata_d.identity[6];
-      ata_d.total_sectors	= (ata_d.identity[7] << 16) + ata_d.identity[8];
-    }
-
-    if (ata_d.identity[53] & 1) {
       ata_d.speed = ata_d.identity[67];
     }
     else
       ata_d.speed = -1;
 
 #if defined (TALK)
-    printf ("cf: 53 %x\n", ata_d.identity[53]);
+    printf ("cf: 53 %x 80 %x\n", ata_d.identity[53], ata_d.identity[80]);
+//    printf ("");
+    printf ("    %Ld sectors\n", ata_d.total_sectors);
     printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
 	    __FUNCTION__, ata_d.identity[49], ata_d.identity[51],
             ata_d.identity[53], ata_d.identity[64]);
@@ -608,24 +624,34 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
 
 static void ata_report (void)
 {
+  int size;
+  int fraction;
+  char chSize = 'M';
+
   ENTRY (0);
 
   if (ata_identify ())
     return;
 
-  printf ("  ata:    %d.%02dMiB, %s %s",
-	  (ata_d.total_sectors/2)/1024,
-	  (((ata_d.total_sectors/2)%1024)*100)/1024,
-	  ata_d.szFirmware, ata_d.szName);
+  size = ata_d.total_sectors >> 11;     /* /2/1024 */
+  fraction = ((ata_d.total_sectors & ((1<<11) - 1))*100)>>10;
+  if (size >= 1000) {
+    fraction = ((size & ((1<<10) - 1))*100) >> 10;
+    size >>= 10;
+    chSize = 'G';
+  }
+
+
+  /* *** FIXME: there is a function in the image code to convert a
+     *** count of bytes into a human readale size string.  It could be
+     *** adapted to cope eith 48 bit LBAs by shifting by 10 on calling
+     *** the function.. */
+
+  printf ("  ata:    %d.%02d %ciB, %s %s",
+          size, fraction, chSize, ata_d.szFirmware, ata_d.szName);
   if (ata_d.speed != -1)
     printf (" (%d ns)", ata_d.speed);
   printf ("\n");
-
-#if defined (TALK)
-  printf ("          cyl %d heads %d spt %d total %d\n",
-	  ata_d.cylinders, ata_d.heads, ata_d.sectors_per_track,
-	  ata_d.total_sectors);
-#endif
 
 #if 0
   printf ("          opt 0x%x  cns 0x%x  pin 0x%x  dcr 0x%x\n",
