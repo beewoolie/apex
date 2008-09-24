@@ -60,31 +60,26 @@
 #define UART_LSR_OE	 (1<<1)
 #define UART_LSR_DR	 (1<<0)
 
+#define CLK		((uint32_t)(14.7456*1000*1000))
+
 extern struct driver_d* console_driver;
 
 static struct driver_d ixp42x_serial_driver;
 
 void ixp42x_serial_init (void)
 {
-  u32 baudrate = 115200;
-  u32 divisor_l = 0;
-  u32 divisor_h = 0;
+  static const uint32_t baudrate = 115200;
+  uint32_t divisor;
 
   _L(LED5);
 
-  switch (baudrate) {
-  case 115200:
-    divisor_l = 8; break;
-
-  default:
-    return;
-  }
+  divisor = (CLK/baudrate)>>4;
 
   _L(LED6);
 
   UART_LCR = UART_LCR_WLS_8 | UART_LCR_STB_1 | UART_LCR_DLAB;
-  UART_DLL = divisor_l;
-  UART_DLH = divisor_h;
+  UART_DLL =  divisor       & 0xff;
+  UART_DLH = (divisor >> 8) & 0xff;
   UART_LCR = UART_LCR_WLS_8 | UART_LCR_STB_1;
   UART_FCR = UART_FCR_TRFIFOE;
 

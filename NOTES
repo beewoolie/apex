@@ -5,13 +5,22 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.sep.14
+    o Zero-length region.  It may be useful to add state to the
+      descriptor_d that annotates a region that had no defined
+      length.  The image handling code passes a flag to this effect
+      and some of the commands check for zero-length regions before
+      modifying the length to ...
+
   o 2008.sep.11
     o Images are working.  There is an open issue dealing with a source
       image that overlaps the target memory region.  At the moment, we
       don't handle this case at all.  Relocating the source image is a
       substantial task and may not very general purpose considering
       that APEX doesn't attempt to grasp the overall memory map of the
-      system.
+      system.  Finally, APEX is designed to not require that images be
+      copied to RAM before being loaded.  It much more efficient to
+      load/check images as they are being read from the source.
 
   o 2008.aug.27
     o The setenv command should be able to cope with a bad flash

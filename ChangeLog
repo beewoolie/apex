@@ -1,3 +1,8 @@
+2008-09-15  Marc Singer  <elf@buici.com>
+
+	* debian/rules (binary-arch): Adding apex-image to the tools
+	installed in the debian package.
+
 2008-09-12  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-image-uboot.c: Documentation for UBOOT image
