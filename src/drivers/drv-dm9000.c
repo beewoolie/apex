@@ -66,6 +66,8 @@
 # define DM_IO_DELAY
 #endif
 
+#define DRIVER_NAME		 "eth-dm9000"
+
 struct dm9000 {
   int present;
   unsigned short vendor;
@@ -137,6 +139,39 @@ static void dm9000_read_eeprom (int dm)
 
 
 #if defined (CONFIG_CMD_ETH_DM9000)
+
+void dm9000_dump (char* rgb)
+{
+  printf ("NCR %s %s",
+          (rgb[DM9000_NCR] & NCR_FDX) ? "FDX" : "HDX",
+          (rgb[DM9000_NCR] & NCR_WAKEEN) ? "WAKE" : "!wake"
+          );
+  printf ("NSR %s %s %s %s %s %s",
+          (rgb[DM9000_NSR] & NSR_RXOV) ? "RXOV" : "!rxov",
+          (rgb[DM9000_NSR] & NSR_TX1END) ? "TX1END" : "",
+          (rgb[DM9000_NSR] & NSR_TX2END) ? "TX2END" : "",
+          (rgb[DM9000_NSR] & NSR_WAKEST) ? "WAKEST" : "",
+          (rgb[DM9000_NSR] & NSR_LINKST) ? "LINK" : "!link",
+          (rgb[DM9000_NSR] & NSR_SPEED) ? "100Mbps" : "10Mbps"
+          );
+  printf ("ISR %s %s %s %s %s %s\n",
+          (rgb[DM9000_ISR] & ISR_PRS) ? "RCV" : "!rcv",
+          (rgb[DM9000_ISR] & ISR_PTS) ? "TXC" : "!txc",
+          (rgb[DM9000_ISR] & ISR_ROS) ? "ROV" : "!rov",
+          (rgb[DM9000_ISR] & ISR_ROOS) ? "ROOC" : "!rooc",
+          (rgb[DM9000_ISR] & ISR_UDRUN) ? "TUN" : "!tun",
+          (rgb[DM9000_ISR] & ISR_LINKCHG) ? "LINK" : "!link"
+          );
+  printf ("IMR %s %s %s %s %s %s\n",
+          (rgb[DM9000_IMR] & IMR_PRM) ? "RCV" : "!rcv",
+          (rgb[DM9000_IMR] & IMR_PTM) ? "TXC" : "!txc",
+          (rgb[DM9000_IMR] & IMR_ROM) ? "ROV" : "!rov",
+          (rgb[DM9000_IMR] & IMR_ROOM) ? "ROOC" : "!rooc",
+          (rgb[DM9000_IMR] & IMR_UDRUNM) ? "TUN" : "!tun",
+          (rgb[DM9000_IMR] & IMR_LINKCHGM) ? "LINK" : "!link"
+          );
+}
+
 
   /* *** FIXME: this shouldn't be in the command conditional */
 #if defined (CONFIG_ETHERNET)
@@ -211,20 +246,19 @@ static int cmd_eth (int argc, const char** argv)
       dm9000_read_eeprom (dm);
     }
 
-    if (PARTIAL_MATCH (argv[1], "r", "ead-eeprom") == 0) {
+    if (PARTIAL_MATCH (argv[1], "rea", "d-eeprom") == 0) {
       dm9000_read_eeprom (dm);
       dump ((void*) dm9000[dm].rgs_eeprom, sizeof (dm9000[dm].rgs_eeprom), 0);
     }
 
-    if (strcmp (argv[1], "r") == 0) {
+    if (PARTIAL_MATCH (argv[1], "reg", "") == 0) {
       if (argc == 2) {
         int reg;
         char rgb[256];
-        for (reg = 0; reg < sizeof (rgb); ++reg) {
-          unsigned char value = read_reg (dm, reg);
-          rgb[reg] = value;
-        }
+        for (reg = 0; reg < sizeof (rgb); ++reg)
+          rgb[reg] = (unsigned char) read_reg (dm, reg);
         dumpw (rgb, sizeof (rgb), 0, 0);
+        dm9000_dump (rgb);
       }
       else {
         int reg = simple_strtoul (argv[2], NULL, 0);
@@ -233,7 +267,7 @@ static int cmd_eth (int argc, const char** argv)
       }
     }
 
-    if (strcmp (argv[1], "w") == 0) {
+    if (PARTIAL_MATCH (argv[1], "w", "rite") == 0) {
       int reg = simple_strtoul (argv[2], NULL, 0);
       unsigned char value = simple_strtoul (argv[3], NULL, 0);
       write_reg (dm, reg, value);
@@ -253,21 +287,23 @@ static __command struct command_d c_eth = {
 "  Commands for the Ethernet MAC and PHY devices.\n"
 "  Without a SUBCOMMAND, it displays info about the chip\n"
 "    This information is for debugging the hardware.\n"
-"  -#   - Select interface number # (0..N-1)\n"
+"  -#          - select interface number # (0..N-1)\n"
 //"  clear - reset the EMAC.\n"
 //"  anen  - restart auto negotiation.\n"
 //"  send  - send a test packet.\n"
 //"  loop  - enable loopback mode.\n"
 //"  force - force power-up and restart auto-negotiation.\n"
-"  mac    - set the MAC address to PARAMETER.\n"
+"  mac         - set the MAC address to PARAMETER.\n"
 "    PARAMETER has the form XX:XX:XX:XX:XX:XX where each X is a\n"
 "    hexadecimal digit.  Be aware that MAC addresses must be unique for\n"
 "    proper operation of the network.  This command may be added to the\n"
 "    startup commands to set the MAC address at boot-time.\n"
-"  save   - saves the MAC address to the mac: EEPROM device.\n"
+"  save        - saves the MAC address to the mac: EEPROM device.\n"
 "    A saved MAC address will be used to automatically configure the MAC\n"
 "    at startup.  For this feature to work, there must be a mac: driver.\n"
 "  read-eeprom - reads and dumps the contents of the EEPROM.\n"
+"  reg [IDX]   - show dm9000 register IDX or all registers\n"
+"  write IDX VAL - write dm9000 register IDX with value VAL\n"
 "  e.g.  eth mac 01:23:45:67:89:ab         # Never use this MAC address\n"
 "        eth save\n"
   )
@@ -382,6 +418,80 @@ static void dm9000_report (void)
 }
 #endif
 
+
+static int dm9000_open (struct descriptor_d* d)
+{
+  write_reg (g_dm9000_default, DM9000_RCR, RCR_RXEN); /* Receive enable */
+  write_reg (g_dm9000_default, DM9000_IMR, IMR_PAR);  /* Auto increemnet */
+
+  /* FIXME: Make sure we're init'd */
+
+  return 0;
+}
+
+/** Read packet from the DM9000 into system memory.  The header for
+    the packet is a 0x01, STATUS, LENGTH_LOW, LENGTH_HIGH.
+
+*/
+
+static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
+{
+  uint16_t status = read_reg (g_dm9000_default, DM9000_MRCMDX);
+  size_t length;
+  static char rgb[2048];
+  int i;
+
+  if ((status & 0xff) != 1)
+    return 0;
+
+  status        = read_reg (g_dm9000_default, DM9000_MRCMD);
+  length = read_reg (g_dm9000_default, DM9000_MRCMD);
+
+  for (i = 0; i < length; i += 2) {
+    uint16_t v = read_reg (g_dm9000_default, DM9000_MRCMD);
+    rgb[i] = v & 0xff;
+    rgb[i + 1] = (v >> 8) & 0xff;
+  }
+
+  printf ("Received %d bytes (status 0x%x)\n", length, status);
+  dumpw (rgb, length, 0, 0);
+
+  return 0;
+}
+
+static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
+{
+  uint8_t* rgb = (uint8_t*) pv;
+  int i;
+  for (i = 0; i < cb; i += 2) {
+    uint16_t v = rgb[i] | (rgb[i + 1] << 8);
+    /* *** FIXME: should have a speedier write that doesn't require
+       *** setup every time. */
+    write_reg (g_dm9000_default, DM9000_MWCMD, v);
+  }
+
+	/* Tell DM9000 the size of the packet */
+  write_reg (g_dm9000_default, DM9000_TXPLL, cb & 0xff);
+  write_reg (g_dm9000_default, DM9000_TXPLL, (cb >> 8) & 0xff);
+
+	/* Initiate transfer */
+  write_reg (g_dm9000_default, DM9000_TCR,
+             TCR_TXREQ
+             | TCR_CRC_DIS1 | TCR_CRC_DIS2
+             | TCR_PAD_DIS1 | TCR_PAD_DIS2);
+
+  return 0;
+}
+
+static __driver_4 struct driver_d dm9000_driver = {
+  .name = DRIVER_NAME,
+  .description = "Davicom DM9000 Ethernet driver",
+  .flags = DRIVER_NET,
+  .open = dm9000_open,
+  .close = close_helper,
+  .read = dm9000_read,
+  .write = dm9000_write,
+};
 
 static __service_6 struct service_d dm9000_service = {
   .init = dm9000_init,

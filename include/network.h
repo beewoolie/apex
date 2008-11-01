@@ -89,6 +89,7 @@ struct header_udp {
   u16 destination_port;
   u16 length;
   u16 checksum;
+  u8 data[];
 } __attribute__((packed));
 
 #if 0

@@ -204,7 +204,16 @@ config DRIVER_SMC91X
 	default y
 	help
 	  This driver initializes and activates the SMSC SMC91x
-	  Ethernet controller.
+	  Ethernet MAC/PHY controller.
+
+config DRIVER_DM9000
+	bool "DM9000 Integrated Ethernet"
+	depends on USES_DM9000
+	select USE_ETHERNET
+	default y
+	help
+	  This driver initializes and activates the Davicom DM9000
+	  Ethernet MAC/PHY controller.
 
 config DRIVER_IXP4XX_NPE_ETH
 	bool "IXP4xx NPE Ethernet"
