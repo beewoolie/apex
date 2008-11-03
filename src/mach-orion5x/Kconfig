@@ -7,6 +7,7 @@ choice
 config MACH_HP_MV2120
 	bool "HP MediaVault 2120"
 	select ARCH_88F5182
+	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
 	select INLINE_PLATFORM_INITIALIZATION
 

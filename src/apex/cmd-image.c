@@ -87,7 +87,8 @@ int cmd_image (int argc, const char** argv)
     ++argv;
   }
 
-  if ((result = parse_descriptor (argv[1], &d))) {
+  if ((result = parse_descriptor (argv[1], &d))
+      || (result = open_descriptor (&d))) {
     printf ("Unable to open '%s'\n", argv[1]);
     goto fail;
   }
@@ -98,8 +99,10 @@ int cmd_image (int argc, const char** argv)
     d.length = d.index + sizeof (rgb);
 
 	/* Read some bytes so we can determine the image type */
+  printf ("start %ld length %ld index %d\n", d.start, d.length, d.index);
   result = d.driver->read (&d, rgb, sizeof (rgb));
   if (result != sizeof (rgb)) {
+    printf ("result %d != %d\n", result, sizeof (rgb));
     result = ERROR_RESULT (ERROR_IOFAILURE, "image read error");
     goto fail;
   }

@@ -29,7 +29,7 @@
 
 /* ----- Prototypes */
 
-#define ATA_PHYS		(ATA0_PHYS)
+#define ATA_PHYS		(ATAX_PHYS (1))
 
 #define ATA_WIDTH		(32)
 #define ATA_ADDR_MULT		(2)

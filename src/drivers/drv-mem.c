@@ -179,7 +179,7 @@ static void memory_report (void)
     if (memory_regions[i].length) {
       if (i)
 	printf ("         ");
-      printf (" 0x%lx 0x%08x (%d MiB)\n",
+      printf (" 0x%08lx 0x%08x (%d MiB)\n",
 	      memory_regions[i].start, memory_regions[i].length,
 	      memory_regions[i].length/(1024*1024));
     }

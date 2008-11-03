@@ -20,6 +20,7 @@
 #include <apex.h>
 #include <command.h>
 #include <service.h>
+#include <asm-arm/cp15.h>
 
 #include "hardware.h"
 

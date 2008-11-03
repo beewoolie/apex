@@ -5,6 +5,75 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.nov.2
+
+    o Feroceon.  The ARM site claims that the 88F5182 is an ARMV5TE
+      which is true, sort of.  It is really an ARM926EJS and is better
+      described by that reference when attempting to locate the
+      correct CP15 instructions to use.
+
+    o Revising the CP15 commands.  It might be better to organize the
+      cp15 commands such that each ARM processor class has a header.
+      So, we'd have one each for the arm720, arm920, arm926, xscale,
+      feroceon, and so on.  There seem to be some differences at this
+      level that aren't well categorized by the armv4, armv5, and so
+      on.  The best thing would be to allow for stable implementations
+      of routines that *could* be the same, but could also change per
+      ARM implementation.  If for no other reason than the Linux
+      kernel has organized the code that way.
+
+      The primary reason to look at it this way is to define
+      functions, as Linux does, to perform specific operations instead
+      of giving macros for every CP15 operation.  In this way, we can
+      maintain the necessary balance between flexibility and accurate
+      implementation.
+
+  o 2008.nov.1
+
+    o mv2120
+
+      o Kernel wont' boot.  Need to look at the booting code in uboot
+        to see what they're doing before the pass control to the kernel.
+      o Environment.  Need to place an environment for APEX into flash
+        so that we can customize it once the system is running.  We
+        can probably get away with a simple default, but I know we'll
+        want to be able to modify it once the system is running.
+      o MMU makes the IO much faster, but the cmd-reset doesn't work
+        any more.  Not sure why since none of the peripherals would
+        work if the caching were broken...I thought.
+
+      o Timing with newly formatted ext3 partition.  The second set of
+	numbers in parenthesis comes from enabling the MMU and cache
+	in APEX.
+			uboot ext2load	apex copy	apex im lo
+	uImage		35s		4s (2s)		8s (2s)
+	uImage-big	111s		9s (3s)		22s (3s)
+
+
+    o generic ata driver. 
+
+      There are a lot of details to get right in order to let this
+      driver be sufficiently generic to be useful.  The old CF driver
+      has a lot of LH7 specific hacks to deal with the peculiar
+      interface of the Logic brand dev boards.
+
+      We'll have to let the platform customize the accessor functions
+      adequately to enable alignment of the IO and to deal with the odd
+      cases such as device select.
+
+      There needs to be an is_present() function call that will
+      identify whether or not the drive is present.  The read call may
+      need to be able to error out if the device is absent.
+
+      The region/path code needs to permit an extra indicator of the
+      channel and, god forbid, the controller.  I don't want to get
+      too crazy with this, but it could be helpful.
+
+      The driver should support an info call so that report code can
+      say something about the underlying device support.  This may be
+      too much to ask, however.
+
+
   o 2008.sep.14
     o Zero-length region.  It may be useful to add state to the
       descriptor_d that annotates a region that had no defined

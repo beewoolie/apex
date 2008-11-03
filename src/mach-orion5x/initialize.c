@@ -163,6 +163,7 @@ void __naked __section (.bootstrap.sdram.exit) bootstrap_sdram_exit (void)
 
 */
 
+#if 0
 static void target_init (void)
 {
 }
@@ -171,8 +172,9 @@ static void target_init (void)
 static void target_release (void)
 {
 }
+#endif
 
 static __service_0 struct service_d mx3x_target_service = {
-  .init    = target_init,
-  .release = target_release,
+//  .init    = target_init,
+//  .release = target_release,
 };

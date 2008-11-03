@@ -109,16 +109,10 @@
 #include <environment.h>
 #include <lookup.h>
 
-//#define TALK
+//#define TALK 1
 //#define TALK_DIR
 
-#if defined TALK
-# define PRINTF(v...)	printf (v)
-#else
-# define PRINTF(v...)	do {} while (0)
-#endif
-
-#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
+#include <talk.h>
 
 #define DRIVER_NAME	"ext2fs"
 
@@ -903,7 +897,7 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
   ssize_t cbRead = 0;
 
   //  ENTRY (0);
-  PRINTF ("%s: inode %d\n", __FUNCTION__, ext2.inode_number);
+  PRINTF ("%s: inode %d %d bytes\n", __FUNCTION__, ext2.inode_number, cb);
 
   while (cb) {
 //    size_t available = cb;
@@ -915,8 +909,10 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
     int block_index;
     int block;
 
-    if (index >= ext2.inode.i_size)
+    if (index >= ext2.inode.i_size) {
+      DBG(1,"reading beyond inode size %d >= %d\n", index, ext2.inode.i_size);
       break;
+    }
     if (available > cb)
       available = cb;
     if (available > remain)
@@ -927,16 +923,20 @@ static ssize_t ext2_read (struct descriptor_d* d, void* pv, size_t cb)
     block_index = index/ext2.block_size;
 //    PRINTF ("%s: index %d  block_index %d  offset %d  available %d\n",
 //	    __FUNCTION__, index, block_index, offset, available);
-    if (ext2_update_block_cache (block_index))
+    if (ext2_update_block_cache (block_index)) {
+      DBG(1,"failure to update block cache for block_index %d\n", block_index);
       break;
+    }
 
     block = read_block_number (block_index - ext2.blockCache);
     ext2.d.driver->seek (&ext2.d, ext2.block_size*block + offset, SEEK_SET);
 
     {
       ssize_t cbThis = ext2.d.driver->read (&ext2.d, pv, available);
-      if (cbThis <= 0)
+      if (cbThis <= 0) {
+        DBG(1,"error reading from underlying driver %d\n", cbThis);
 	break;
+      }
       d->index += cbThis;
       cb -= cbThis;
       cbRead += cbThis;

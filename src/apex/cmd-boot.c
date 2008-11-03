@@ -54,7 +54,7 @@ int cmd_boot (int argc, const char** argv)
 {
   unsigned long address
 #if defined (CONFIG_ENV)
-    = env_fetch_int ("bootaddr", 0xffffffff)
+    = lookup_alias_or_env_int ("bootaddr", 0xffffffff)
 #else
     = CONFIG_KERNEL_LMA		/* There can be, only one.  */
 #endif

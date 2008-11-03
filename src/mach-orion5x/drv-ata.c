@@ -10,6 +10,15 @@
    version 2 as published by the Free Software Foundation.
    Please refer to the file debian/copyright for further details.
 
+   o Testing
+
+     # ubootimage -c -L 0x8000 -t kernel apex.bin apex.u
+
+ dhcp ; setenv serverip 192.168.8.1 ; tftpboot 0x400000 apex.u ; bootm 0x400000
+ im load ext2://2/boot/uImage
+
+ ext2load
+
    -----------
    DESCRIPTION
    -----------
@@ -152,6 +161,7 @@
      return the same value in the high and low bytes of the 16 bit
      read.
 
+
 */
 
 #include <config.h>
@@ -164,17 +174,12 @@
 #include <error.h>
 
 #include <mach/drv-ata.h>
+#include <mach/hardware.h> /* *** FIXME: should be no need for generic ATA */
 
-#define TALK
+//#define TALK 1
 //#define TALK_ATTRIB
+#include "talk.h"
 
-#if defined TALK
-# define PRINTF(v...)	printf (v)
-#else
-# define PRINTF(v...)	do {} while (0)
-#endif
-
-#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 
 #if ATA_WIDTH == 16
 # define REG __REG16
@@ -397,10 +402,7 @@ static void select (int drive, int head)
 
 static void seek (unsigned sector)
 {
-  unsigned head;
-  unsigned cylinder;
-
-  PRINTF ("[s %d", sector);
+  DBG (1,"[s %d", sector);
 
 #if defined (USE_LBA)
   select (0, (sector >> 24) & 0xf);
@@ -409,20 +411,26 @@ static void seek (unsigned sector)
   write16 (IDE_REG_LBALOW,  (sector >>  0) & 0xff);
 
   ready_wait ();
-#else
-  head     = sector/(ata_d.cylinders*ata_d.sectors_per_track);
-  cylinder = (sector%(ata_d.cylinders*ata_d.sectors_per_track))
-    /ata_d.sectors_per_track;
-  sector  %= ata_d.sectors_per_track;
 
-  select (0, head);
-  write16 (IDE_SECTORCOUNT, 1 | (sector << 8));
-  write16 (IDE_CYLINDER, cylinder);
+#else
+  {
+    unsigned head     = sector/(ata_d.cylinders*ata_d.sectors_per_track);
+    unsigned cylinder = (sector%(ata_d.cylinders*ata_d.sectors_per_track))
+      /ata_d.sectors_per_track;
+    sector  %= ata_d.sectors_per_track;
+
+    select (0, head);
+    write16 (IDE_SECTORCOUNT, 1 | (sector << 8));
+    write16 (IDE_CYLINDER, cylinder);
+  }
 
   ready_wait ();
+
+  DBG (1," %d %d %d", head, cylinder, sector);
+
 #endif
 
-  PRINTF (" %d %d %d]\n", head, cylinder, sector);
+  DBG (1,"]\n");
 
 #if defined (TALK)
   talk_registers ();
@@ -431,7 +439,7 @@ static void seek (unsigned sector)
 
 static int ata_identify (void)
 {
-  ENTRY (0);
+  ENTRY (1);
 
 #if 0
 //  writea8 (ATTRIB_OPTION, reada8 (ATTRIB_OPTION) | ATTRIB_OPTION_LEVELREQ);
@@ -500,7 +508,7 @@ static int ata_identify (void)
     while (read16 (IDE_REG_STATUS) & IDE_STATUS_DRQ)
       read16 (IDE_REG_DATA);
 
-#if defined (TALK)
+#if defined (TALK) && TALK > 2
     dump ((void*) ata_d.identity, 256, 0);
     dumpw ((void*) ata_d.identity, 256, 0, 2);
 #endif
@@ -533,7 +541,7 @@ static int ata_identify (void)
       ata_d.speed = -1;
 
 #if defined (TALK)
-    printf ("cf: 53 %x 80 %x\n", ata_d.identity[53], ata_d.identity[80]);
+    printf ("ata: 53 %x 80 %x\n", ata_d.identity[53], ata_d.identity[80]);
 //    printf ("");
     printf ("    %Ld sectors\n", ata_d.total_sectors);
     printf ("%s: cap %x  pio_tim %x  trans %x  adv_pio %x\n",
@@ -566,7 +574,7 @@ static int ata_open (struct descriptor_d* d)
   if ((result = ata_identify ()))
     return result;
 
-  PRINTF ("%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
+  DBG (1,"%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
 
   /* perform bounds check */
 
@@ -575,13 +583,13 @@ static int ata_open (struct descriptor_d* d)
 
 static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-#if 0
+#if 1
   ssize_t cbRead = 0;
 
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  PRINTF ("%s: @ 0x%lx\n", __FUNCTION__, d->start + d->index);
+  DBG(1,"%s: @ 0x%lx\n", __FUNCTION__, d->start + d->index);
 
   while (cb) {
     unsigned long index = d->start + d->index;
@@ -596,15 +604,15 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
     if (sector != ata_d.sector) {
       int i;
 
-      PRINTF ("cf reading %d\n", sector);
+      DBG (2,"ata reading %d\n", sector);
 
       seek (sector);
-      write8 (IDE_COMMAND, IDE_CMD_READSECTOR);
+      write16 (IDE_REG_COMMAND, IDE_CMD_READSECTOR);
       ready_wait ();
       ata_d.sector = sector;
 
       for (i = 0; i < SECTOR_SIZE/2; ++i)
-	*(uint16_t*) &ata_d.rgb[i*2] = read16 (IDE_DATA);
+	*(uint16_t*) &ata_d.rgb[i*2] = read16 (IDE_REG_DATA);
     }
 
     memcpy (pv, ata_d.rgb + (index & (SECTOR_SIZE - 1)), available);
@@ -619,6 +627,42 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
 #endif
   return 0;
 }
+
+/** Initialize ATA interface for Orion5x.  This code shall be moved to
+    the machine specific modules once the driver works.
+
+*/
+
+static void ata_init (void)
+{
+  SATAHC_INT_COALESCE = 4;      /* Incident interrupts before IRQ signaled */
+  SATAHC_INT_THRESH = 0x1d4c;   /* Clocks before IRQ signaled */
+
+  SATAHC_MAIN_MASK = 0;         /* Mask all interrupts */
+  /* *** enable LEDs */
+
+/*     /\* disable Flash controller clock *\/ */
+/*     regVal = MV_REG_READ_DWORD (pAdapter->adapterIoBaseAddress, */
+/* 				MV_PCI_REGS_OFFSET + */
+/* 				MV_PCI_EXPANSION_ROM_CONTROL_REG_OFFSET); */
+/*     regVal &= ~(MV_BIT0); */
+/*     MV_REG_WRITE_DWORD (pAdapter->adapterIoBaseAddress, */
+/* 			MV_PCI_REGS_OFFSET + */
+/* 			MV_PCI_EXPANSION_ROM_CONTROL_REG_OFFSET, regVal); */
+
+//  SATAHC_MAIN_MASK = (1<<8) | (1<<2) | (1<<0);
+
+	/* Initialize the channels */
+  {
+    int channel;
+    for (channel = 0; channel < 2; ++channel) {
+      SATAI_SCONTROL(channel) = SATAI_SCONTROL_NOPWR | SATAI_SCONTROL_RQINIT;
+      udelay (1);                   /* 1ms delay *** VERIFY */
+      SATAI_SCONTROL(channel) = SATAI_SCONTROL_NOPWR;
+    }
+  }
+}
+
 
 #if !defined (CONFIG_SMALL)
 
@@ -644,7 +688,7 @@ static void ata_report (void)
 
   /* *** FIXME: there is a function in the image code to convert a
      *** count of bytes into a human readale size string.  It could be
-     *** adapted to cope eith 48 bit LBAs by shifting by 10 on calling
+     *** adapted to cope with 48 bit LBAs by shifting by 10 on calling
      *** the function.. */
 
   printf ("  ata:    %d.%02d %ciB, %s %s",
@@ -652,6 +696,33 @@ static void ata_report (void)
   if (ata_d.speed != -1)
     printf (" (%d ns)", ata_d.speed);
   printf ("\n");
+
+  /* *** FIXME: this data would have to come from a data structure to
+     *** be available in a generic fashion.  */
+  {
+    int channel;
+    for (channel = 0; channel < 2; ++channel) {
+      unsigned long v = SATAI_SSTATUS (channel);
+      printf ("          device %d ", channel);
+      if (((v >> SATAI_SSTATUS_DET_SH) & SATAI_SSTATUS_DET_MSK) != 3) {
+        printf ("absent\n");
+        continue;
+      }
+      switch ((v >> SATAI_SSTATUS_SPD_SH) & SATAI_SSTATUS_SPD_MSK) {
+      case 0:
+      default:
+        printf ("no speed");
+        break;
+      case 1:
+        printf ("Gen1 (1.5 Mbps)");
+        break;
+      case 2:
+        printf ("Gen2 (3.0 Mbps)");
+        break;
+      }
+      printf ("\n");
+    }
+  }
 
 #if 0
   printf ("          opt 0x%x  cns 0x%x  pin 0x%x  dcr 0x%x\n",
@@ -677,6 +748,7 @@ static __driver_3 struct driver_d ata_driver = {
 };
 
 static __service_6 struct service_d ata_service = {
+  .init   = ata_init,
 #if !defined (CONFIG_SMALL)
   .report = ata_report,
 #endif
