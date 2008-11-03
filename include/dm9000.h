@@ -39,7 +39,7 @@
 #define DM9000_MAR	0x16        /* Multicast address */
 
 #define DM9000_GPCR	0x1e        /* General purpose control */
-#define DM9000_GPR	0x1f        /* GEneral purpose */
+#define DM9000_GPR	0x1f        /* General purpose */
 #define DM9000_TRPAL	0x22        /* TX SRAM read addr low */
 #define DM9000_TRPAH	0x23        /* TX SRAM read addr high */
 #define DM9000_RWPAL	0x24        /* RX SRAM write addr low */
@@ -145,7 +145,7 @@
 
 #define EPCR_REEP	(1<<5)
 #define EPCR_WEP	(1<<4)
-#define EPCR_EPOS	(1<<3)
+#define EPCR_EPOS	(1<<3)  /* Select PHY when set */
 #define EPCR_ERPRR	(1<<2)
 #define EPCR_ERPRW	(1<<1)
 #define EPCR_ERRE	(1<<0)

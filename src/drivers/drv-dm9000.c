@@ -39,20 +39,10 @@
 #include <linux/kernel.h>
 
 #include <dm9000.h>
-
 #include <mach/drv-dm9000.h>
 
-//#define TALK 3
-
-#if defined (TALK)
-#define PRINTF(f...)		printf (f)
-#define ENTRY(l)		printf ("%s\n", __FUNCTION__)
-#define DBG(l,f...)		do { if (TALK >= l) printf (f); } while (0)
-#else
-#define PRINTF(f...)		do {} while (0)
-#define ENTRY(l)		do {} while (0)
-#define DBG(l,f...)		do {} while (0)
-#endif
+#define TALK 3
+#include <talk.h>
 
 #if !defined (C_DM)
 # define C_DM	(1)
@@ -67,6 +57,26 @@
 #endif
 
 #define DRIVER_NAME		 "eth-dm9000"
+
+#define PHY_CONTROL	0
+#define PHY_STATUS	1
+#define PHY_ID1		2
+#define PHY_ID2		3
+#define PHY_ANEG_ADV	4
+#define PHY_ANEG_CAP	5
+
+#define PHY_CONTROL_RESET		(1<<15)
+#define PHY_CONTROL_LOOPBACK		(1<<14)
+#define PHY_CONTROL_POWERDOWN		(1<<11)
+#define PHY_CONTROL_ANEN_ENABLE		(1<<12)
+#define PHY_CONTROL_MII_DISABLE		(1<<10)
+#define PHY_CONTROL_RESTART_ANEN	(1<<9)
+#define PHY_STATUS_ANEN_COMPLETE	(1<<5)
+#define PHY_STATUS_100FULL		(1<<14)
+#define PHY_STATUS_100HALF		(1<<13)
+#define PHY_STATUS_10FULL		(1<<12)
+#define PHY_STATUS_10HALF		(1<<11)
+#define PHY_STATUS_LINK			(1<<2)
 
 struct dm9000 {
   int present;
@@ -130,6 +140,31 @@ static void write_eeprom (int dm, int index, u16 value)
   write_reg (dm, DM9000_EPCR, 0);
 }
 
+static u16 read_phy (int dm, int index)
+{
+  u16 v;
+
+  write_reg (dm, DM9000_EPAR, index | (1<<6));
+  write_reg (dm, DM9000_EPCR, EPCR_ERPRR | EPCR_EPOS);
+  mdelay (10);	/* according to the datasheet 200us should be enough,
+		   but it doesn't work */
+  write_reg (dm, DM9000_EPCR, EPCR_EPOS);
+
+  v = read_reg (dm, DM9000_EPDRL) & 0xff;
+  v |= (read_reg (dm, DM9000_EPDRH) & 0xff) << 8;
+  return v;
+}
+
+static void write_phy (int dm, int index, u16 value)
+{
+  write_reg (dm, DM9000_EPAR, index | (1<<6));
+  write_reg (dm, DM9000_EPDRL,  value       & 0xff);
+  write_reg (dm, DM9000_EPDRH, (value >> 8) & 0xff);
+  write_reg (dm, DM9000_EPCR, EPCR_ERPRW | EPCR_EPOS);
+  mdelay (10);
+  write_reg (dm, DM9000_EPCR, EPCR_EPOS);
+}
+
 static void dm9000_read_eeprom (int dm)
 {
   int i;
@@ -142,11 +177,11 @@ static void dm9000_read_eeprom (int dm)
 
 void dm9000_dump (char* rgb)
 {
-  printf ("NCR %s %s",
+  printf ("NCR %s %s\n",
           (rgb[DM9000_NCR] & NCR_FDX) ? "FDX" : "HDX",
           (rgb[DM9000_NCR] & NCR_WAKEEN) ? "WAKE" : "!wake"
           );
-  printf ("NSR %s %s %s %s %s %s",
+  printf ("NSR %s %s %s %s %s %s\n",
           (rgb[DM9000_NSR] & NSR_RXOV) ? "RXOV" : "!rxov",
           (rgb[DM9000_NSR] & NSR_TX1END) ? "TX1END" : "",
           (rgb[DM9000_NSR] & NSR_TX2END) ? "TX2END" : "",
@@ -273,6 +308,24 @@ static int cmd_eth (int argc, const char** argv)
       write_reg (dm, reg, value);
       printf ("reg 0x%x <- 0x%x (%d)\n", reg, value, value);
     }
+
+    if (PARTIAL_MATCH (argv[1], "phy", "") == 0) {
+      if (argc == 2) {
+        int reg;
+        uint16_t rgw[20];
+        for (reg = 0; reg < sizeof (rgw); ++reg)
+          rgw[reg] = read_phy (dm, reg);
+        dumpw ((char*) rgw, sizeof (rgw), 0, 2);
+      }
+#if 0
+      else {
+        int reg = simple_strtoul (argv[2], NULL, 0);
+        unsigned char value = read_reg (dm, reg);
+        printf ("reg 0x%x -> 0x%x (%d)\n", reg, value, value);
+      }
+#endif
+    }
+
   }
 
   return result;
@@ -314,6 +367,8 @@ static __command struct command_d c_eth = {
 static void dm9000_init (void)
 {
   int dm;
+
+  ENTRY (1);
 
 #if C_DM > 1
   g_dm9000_default = -1;
@@ -381,6 +436,21 @@ static void dm9000_init (void)
       host_mac_address[5] = (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff;
     }
   }
+
+  write_reg (g_dm9000_default, DM9000_GPR, 0); /* Power-up PHY */
+  udelay (200);
+  {
+    uint16_t v = read_phy (0, PHY_CONTROL);
+    DBG (1, "phy starts out %x\n", v);
+    write_phy (0, PHY_CONTROL, 0);
+    DBG (1, "phy now at %x\n", read_phy (0, PHY_CONTROL));
+    v &= ~(PHY_CONTROL_POWERDOWN | PHY_CONTROL_MII_DISABLE);
+    v |= PHY_CONTROL_RESET
+      | PHY_CONTROL_ANEN_ENABLE | PHY_CONTROL_RESTART_ANEN;
+    write_phy (0, PHY_CONTROL, v);
+    while ((v = read_phy (0, PHY_CONTROL)) & PHY_CONTROL_RESET)
+      ;
+  }
 }
 
 
@@ -422,7 +492,7 @@ static void dm9000_report (void)
 static int dm9000_open (struct descriptor_d* d)
 {
   write_reg (g_dm9000_default, DM9000_RCR, RCR_RXEN); /* Receive enable */
-  write_reg (g_dm9000_default, DM9000_IMR, IMR_PAR);  /* Auto increemnet */
+  write_reg (g_dm9000_default, DM9000_IMR, IMR_PAR);  /* Auto increment */
 
   /* FIXME: Make sure we're init'd */
 
@@ -444,7 +514,7 @@ static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
   if ((status & 0xff) != 1)
     return 0;
 
-  status        = read_reg (g_dm9000_default, DM9000_MRCMD);
+  status = read_reg (g_dm9000_default, DM9000_MRCMD);
   length = read_reg (g_dm9000_default, DM9000_MRCMD);
 
   for (i = 0; i < length; i += 2) {
@@ -463,6 +533,9 @@ static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   uint8_t* rgb = (uint8_t*) pv;
   int i;
+
+  ENTRY (0);
+
   for (i = 0; i < cb; i += 2) {
     uint16_t v = rgb[i] | (rgb[i + 1] << 8);
     /* *** FIXME: should have a speedier write that doesn't require
@@ -472,7 +545,7 @@ static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 	/* Tell DM9000 the size of the packet */
   write_reg (g_dm9000_default, DM9000_TXPLL, cb & 0xff);
-  write_reg (g_dm9000_default, DM9000_TXPLL, (cb >> 8) & 0xff);
+  write_reg (g_dm9000_default, DM9000_TXPLH, (cb >> 8) & 0xff);
 
 	/* Initiate transfer */
   write_reg (g_dm9000_default, DM9000_TCR,
