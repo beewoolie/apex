@@ -19,6 +19,9 @@
 
  ext2load
 
+boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 serialNo=5561n01d01g72800061j0sb
+
+
    -----------
    DESCRIPTION
    -----------
@@ -160,7 +163,6 @@
      mask the value with 0xff to prevent problems on some cards that
      return the same value in the high and low bytes of the 16 bit
      read.
-
 
 */
 

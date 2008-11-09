@@ -27,7 +27,7 @@ config ATAG_PHYS
 
 config ARCH_NUMBER
 	int
-	default 9999 if MACH_HP_MV2120
+	default 526 if MACH_HP_MV2120
 
 config APEX_VMA
 	hex "APEX Runtime Address"

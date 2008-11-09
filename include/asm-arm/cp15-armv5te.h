@@ -94,7 +94,7 @@
   __asm volatile ("mcr p15, 0, %0, c9, c2, 0\n\t" :: "r" (0));
 
 #define CLEANALL_DCACHE ({\
-  __asm volatile ("0: mrc p15, 0, r15, c7, c10, 3\n\t" ::: "r15");  \
+  __asm volatile ("0: mrc p15, 0, r15, c7, c14, 3\n\t" ::: "r15");  \
   __asm volatile ("   bne 0b\n\t"); })
 
 #endif  /* __CP15_ARMV5TE_H__ */

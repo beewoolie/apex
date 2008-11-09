@@ -13,4 +13,5 @@ obj-y += cpu.o serial.o initialize.o timer.o
 obj-y += cpuinfo.o env.o
 obj-y += cmd-reset.o
 obj-y += drv-ata.o
+obj-y += atag-marvell.o
 # cmd-sleep.o

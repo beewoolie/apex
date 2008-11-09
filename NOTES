@@ -5,6 +5,17 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.nov.9
+
+    o Detecting SATA.  Absent SATA drives must not break the ATA
+      driver. 
+
+    o dump command.  The ASCII output doesn't change byte order with
+      the hex output data.  So, in the case of a little-endian dump,
+      the ASCII ordering doesn't change when displaying words.  This
+      may be incorrect.  It should be compared with other kinds of hex
+      dumps.
+
   o 2008.nov.2
 
     o Feroceon.  The ARM site claims that the 88F5182 is an ARMV5TE
