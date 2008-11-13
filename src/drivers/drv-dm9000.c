@@ -191,6 +191,7 @@ static u16 read_phy (int dm, int index)
   return v;
 }
 
+#if 0
 static void write_phy (int dm, int index, u16 value)
 {
   write_reg (dm, DM9000_EPAR, index | (1<<6));
@@ -200,6 +201,7 @@ static void write_phy (int dm, int index, u16 value)
   mdelay (10);
   write_reg (dm, DM9000_EPCR, EPCR_EPOS);
 }
+#endif
 
 static void dm9000_read_eeprom (int dm)
 {
@@ -584,7 +586,7 @@ static int dm9000_check_tx (void)
 
 static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  uint16_t isr = read_reg (g_dm9000_default, DM9000_ISR);
+//  uint16_t isr = read_reg (g_dm9000_default, DM9000_ISR);
   uint16_t status;
   size_t length;
   char* rgb = (char*) pv;
@@ -594,6 +596,7 @@ static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
 
 //  if (!(isr & ISR_PRS))
 //    return 0;
+  read_reg  (g_dm9000_default, DM9000_ISR);
   write_reg (g_dm9000_default, DM9000_ISR, ISR_PRS); /* Clear interrupt */
 
   status = read_reg (g_dm9000_default, DM9000_MRCMDX); /* Dummy read */
