@@ -59,6 +59,7 @@ binary-arch:	checkroot build
 		  debian/$(package)/boot/apex.flash
 	install -m 0755 usr/apex-env debian/$(package)/usr/sbin
 	install -m 0755 usr/flash-apex debian/$(package)/usr/sbin
+	install -m 0755 usr/apex-image debian/$(package)/usr/sbin
 	dh_strip
 	dh_installchangelogs ChangeLog
 	dh_installdocs -a

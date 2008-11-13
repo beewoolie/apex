@@ -394,6 +394,8 @@ static int tftp_open (struct descriptor_d* d)
   if ((result = open_descriptor (&tftp.d)))
     return result;
 
+  d->length = DRIVER_LENGTH_MAX; /* We don't know the length, so make it big */
+
   register_ethernet_receiver (100, tftp_receiver, &tftp);
 
   return 0;
@@ -461,7 +463,6 @@ static __driver_6 struct driver_d tftp_driver = {
   .close = tftp_close,
   .read = tftp_read,
 //  .write = tftp_write,
-//  .erase = cf_erase,
   .seek = tftp_seek,
 #if defined CONFIG_CMD_INFO
 //  .info = tftp_info,

@@ -1,0 +1,88 @@
+/* orion5x.h
+
+   written by Marc Singer
+   14 Sep 2008
+
+   Copyright (C) 2008 Marc Singer
+
+   -----------
+   DESCRIPTION
+   -----------
+
+*/
+
+#if !defined (__ORION5X_H__)
+#    define   __ORION5X_H__
+
+/* ----- Includes */
+
+#include <asm/reg.h>
+
+
+/* ----- Macros */
+
+#define INTERNAL_PHYS	(0xf1000000)
+
+#define MPP_PHYS	(INTERNAL_PHYS + 0x00010000)
+#define UART0_PHYS      (INTERNAL_PHYS + 0x00012000)
+#define UART1_PHYS      (INTERNAL_PHYS + 0x00012100)
+#define CPU_PHYS	(INTERNAL_PHYS + 0x00020100)
+#define DDR_PHYS	(INTERNAL_PHYS + 0x00000000)
+#define SATAHC_PHYS	(INTERNAL_PHYS + 0x00080000)
+#define EDMA0_PHYS	(INTERNAL_PHYS + 0x00082000)
+#define EDMA1_PHYS	(INTERNAL_PHYS + 0x00084000)
+#define ATA0_PHYS	(EDMA0_PHYS + 0x0100)
+#define ATA1_PHYS	(EDMA1_PHYS + 0x0100)
+
+#define CPU_CONFIG	__REG(CPU_PHYS + 0x0000)
+#define CPU_CTRL_STAT	__REG(CPU_PHYS + 0x0004)
+#define CPU_RSTOUTN	__REG(CPU_PHYS + 0x0008)
+#define CPU_SOFT_RESET	__REG(CPU_PHYS + 0x000c)
+#define CPU_TIMERS_CTRL	__REG(CPU_PHYS + 0x0300)
+#define CPU_TIMER0_LOAD	__REG(CPU_PHYS + 0x0310)
+#define CPU_TIMER0	__REG(CPU_PHYS + 0x0314)
+#define CPU_TIMER1_LOAD	__REG(CPU_PHYS + 0x0318)
+#define CPU_TIMER1	__REG(CPU_PHYS + 0x031c)
+#define CPU_WDOG_LOAD	__REG(CPU_PHYS + 0x0320)
+#define CPU_WDOG	__REG(CPU_PHYS + 0x0324)
+
+#define MPP_SAMPLE	__REG(MPP_PHYS + 0x0010) /* Pin samples at CPU reset */
+
+#define MPP_SAMPLE_TCLK(v) (((v)>>8)&0x3)	// 88F5182
+#define MPP_SAMPLE_MODE(v) (((v)>>4)&0xf)	// 88F5182
+
+#define MPP_SAMPLE_TCLK_133	(0)
+#define MPP_SAMPLE_TCLK_150	(1)
+#define MPP_SAMPLE_TCLK_166	(2)
+
+#define CPU_TIMERS_CTRL_0_EN	(1<<0)
+#define CPU_TIMERS_CTRL_0_AUTO	(1<<1)
+#define CPU_TIMERS_CTRL_1_EN	(1<<2)
+#define CPU_TIMERS_CTRL_1_AUTO	(1<<3)
+#define CPU_TIMERS_CTRL_WD_EN	(1<<4)
+#define CPU_TIMERS_CTRL_WD_AUTO	(1<<5)
+
+#define SDRAM_BANK0_PHYS	(0x00000000)
+#define SDRAM_BANK1_PHYS	(0x10000000)
+#define SDRAM_BANK2_PHYS	(0x20000000
+#define SDRAM_BANK3_PHYS	(0x30000000)
+#define SDRAM_BANK_SIZE		(0x10000000)
+
+#define TCLK_100		(100000000)
+#define TCLK_125		(125000000)
+#define TCLK_133		(133333333)
+#define TCLK_150		(150000000)
+#define TCLK_166		(166666667)
+#define TCLK_200		(200000000)
+
+#define SYSCLK_100		(100000000)
+#define SYSCLK_133		(133333333)
+#define SYSCLK_166		(166666667)
+#define SYSCLK_200		(200000000)
+
+#define CPUCLK_333		(333333333)
+#define CPUCLK_400		(400000000)
+#define CPUCLK_500		(500000000)
+
+
+#endif  /* __ORION5X_H__ */

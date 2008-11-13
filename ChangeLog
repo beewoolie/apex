@@ -1,3 +1,9 @@
+2008-11-13  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-dm9000.c (dm9000_read): Implementation of
+	dm9000_{read,write} to round out support for dm9000 as a complete
+	Ethernet MAC/PHY driver.
+
 2008-09-16  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/lib/strtol.c: Adding strtol as a separate library function,
@@ -15,6 +21,11 @@
 	* src/drivers/drv-mem.c (cmd_memlimit): Revised memlimit to permit
 	a negative offset which is then subtracted from the total system
 	memory.
+
+2008-09-15  Marc Singer  <elf@buici.com>
+
+	* debian/rules (binary-arch): Adding apex-image to the tools
+	installed in the debian package.
 
 2008-09-12  Marc Singer  <elf@zealous.synapse.com>
 

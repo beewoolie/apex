@@ -62,7 +62,7 @@ struct descriptor_d {
 #define DRIVER_PRESENT	(1<<8)
 //#define DRIVER_DESCRIP_REGION	(1<<9)		/* Uses region descriptors */
 #define DRIVER_DESCRIP_FS	(1<<10)		/* Uses filesystem descript. */
-#define DRIVER_DESCRIP_STREAM	(1<<11)		/* Uses stresam descriptors */
+#define DRIVER_DESCRIP_STREAM	(1<<11)		/* Uses stream descriptors */
 #define DRIVER_DESCRIP_NET	(1<<12)		/* Uses network descriptors */
 #define DRIVER_DESCRIP_SIMPLEPATH (1<<13)	/* Uses unparsed paths */
 #define DRIVER_WRITEPROGRESS_MASK (0xf)

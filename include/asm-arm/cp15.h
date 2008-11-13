@@ -76,6 +76,10 @@
 # include <asm/cp15-xscale.h>
 #endif
 
+#if defined (CONFIG_CPU_ARMV5TE)
+# include <asm/cp15-armv5te.h>
+#endif
+
 #if defined (CONFIG_CPU_ARMV6)
 # include <asm/cp15-armv6.h>
 #endif
