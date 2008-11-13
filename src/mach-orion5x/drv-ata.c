@@ -230,16 +230,6 @@ boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 seri
 #define IDE_STATUS_ERROR	(1<<0)
 
 #if 0
-#define IDE_SECTORCOUNT	0x02
-#define IDE_CYLINDER	0x04
-#define IDE_SELECT	0x06    /* Device? */
-#define IDE_COMMAND	0x07
-#define IDE_STATUS	0x07
-#define IDE_DATA	0x08
-#define IDE_CONTROL	0x0e
-#endif
-
-#if 0
 #define ATTRIB_OPTION		0x00
 #define ATTRIB_OPTION_LEVELREQ	(1<<6)
 #define ATTRIB_CONFIGSTATUS	0x02
