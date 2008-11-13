@@ -26,6 +26,41 @@
      a probe failed and show the data read from the dm9000 when the
      chip isn't recognized.  Presently, this requires a recompile.
 
+   o RX packet errors.  (1<<8) FIFO error; (1<<9) CRC error;
+     (1<<15) length error.
+
+   o Reading ISR in read() function.  It seems to be necessary that we
+     read the ISR register in the read() function or we won't be able
+     to receive anything.  Not sure why.
+
+        / *I/O mode * /
+        db->io_mode = ior(db, DM9000_ISR) >> 6; / *ISR bit7:6 keeps I/O mode * /
+
+        / *GPIO0 on pre-activate PHY * /
+        iow(db, DM9000_GPR, 0); / *REG_1F bit0 activate phyxcer * /
+        iow(db, DM9000_GPCR, GPCR_GEP_CNTL);    / *Let GPIO0 output * /
+        iow(db, DM9000_GPR, 0); / *Enable PHY * /
+
+        / *Program operating register * /
+        iow(db, DM9000_TCR, 0);         / *TX Polling clear * /
+        iow(db, DM9000_BPTR, 0x3f);     / *Less 3Kb, 200us * /
+        iow(db, DM9000_FCR, 0xff);      / *Flow Control * /
+        iow(db, DM9000_SMCR, 0);        / *Special Mode * /
+        / *clear TX status * /
+        iow(db, DM9000_NSR, NSR_WAKEST | NSR_TX2END | NSR_TX1END);
+        iow(db, DM9000_ISR, ISR_CLR_STATUS); / *Clear interrupt status * /
+
+        / *Set address filter table * /
+        dm9000_hash_table(dev);
+
+        / *Activate DM9000 * /
+        iow(db, DM9000_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN);
+        / * Enable TX/RX interrupt mask * /
+        iow(db, DM9000_IMR, IMR_PAR | IMR_PTM | IMR_PRM);
+
+
+
+
 */
 
 #include <apex.h>
@@ -41,7 +76,7 @@
 #include <dm9000.h>
 #include <mach/drv-dm9000.h>
 
-#define TALK 3
+//#define TALK 1
 #include <talk.h>
 
 #if !defined (C_DM)
@@ -87,6 +122,7 @@ struct dm9000 {
   volatile u16* index;
   volatile u16* data;
   const char* name;
+  volatile int tx_count;
 };
 
 static struct dm9000 dm9000[C_DM];
@@ -438,6 +474,7 @@ static void dm9000_init (void)
   }
 
   write_reg (g_dm9000_default, DM9000_GPR, 0); /* Power-up PHY */
+#if 0
   udelay (200);
   {
     uint16_t v = read_phy (0, PHY_CONTROL);
@@ -451,6 +488,21 @@ static void dm9000_init (void)
     while ((v = read_phy (0, PHY_CONTROL)) & PHY_CONTROL_RESET)
       ;
   }
+#endif
+
+  /* *** FIXME: None of these seem to be necessary */
+  write_reg (g_dm9000_default, DM9000_TCR, 0);
+  write_reg (g_dm9000_default, DM9000_BPTR, 0x3f);
+  write_reg (g_dm9000_default, DM9000_FCR, 0xff);
+  write_reg (g_dm9000_default, DM9000_SMCR, 0);
+  write_reg (g_dm9000_default,
+             DM9000_NSR, NSR_WAKEST | NSR_TX2END | NSR_TX1END);
+  write_reg (g_dm9000_default, DM9000_ISR, ISR_CLR_STATUS);
+
+  write_reg (g_dm9000_default, DM9000_RCR,
+             RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN);
+
+  dm9000[g_dm9000_default].tx_count = 0; /* Clear count of pending transmits */
 }
 
 
@@ -483,6 +535,8 @@ static void dm9000_report (void)
 	      (dm9000[dm].rgs_eeprom[2] >> 8) & 0xff,
 	      dm9000[dm].vendor, dm9000[dm].product, dm9000[dm].chip,
 	      dm9000[dm].name ? dm9000[dm].name : "");
+      printf ("          %d bit\n",
+              (read_reg (dm, DM9000_ISR) & (1<<6)) ? 8 : 16);
     }
   }
 }
@@ -499,6 +553,30 @@ static int dm9000_open (struct descriptor_d* d)
   return 0;
 }
 
+/** Check for transmit completion and decrement the tx_count
+    accordingly.  The return value is zero if a packet can be loaded
+    into a transmit buffer. */
+static int dm9000_check_tx (void)
+{
+  uint16_t status;
+  if (dm9000[g_dm9000_default].tx_count == 0)
+    return 0;
+
+  status = read_reg (g_dm9000_default, DM9000_NSR);
+  status &= (1<<3)|(1<<2);
+  if (status) {
+    write_reg (g_dm9000_default, DM9000_NSR, status);
+
+    if (status & (1<<2))
+      --dm9000[g_dm9000_default].tx_count;
+    if (status & (1<<3))
+      --dm9000[g_dm9000_default].tx_count;
+  }
+
+  return dm9000[g_dm9000_default].tx_count < 2 ? 0 : 1;
+}
+
+
 /** Read packet from the DM9000 into system memory.  The header for
     the packet is a 0x01, STATUS, LENGTH_LOW, LENGTH_HIGH.
 
@@ -506,41 +584,71 @@ static int dm9000_open (struct descriptor_d* d)
 
 static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-  uint16_t status = read_reg (g_dm9000_default, DM9000_MRCMDX);
+  uint16_t isr = read_reg (g_dm9000_default, DM9000_ISR);
+  uint16_t status;
   size_t length;
-  static char rgb[2048];
+  char* rgb = (char*) pv;
   int i;
 
-  if ((status & 0xff) != 1)
+  dm9000_check_tx ();           /* Just because we can */
+
+//  if (!(isr & ISR_PRS))
+//    return 0;
+  write_reg (g_dm9000_default, DM9000_ISR, ISR_PRS); /* Clear interrupt */
+
+  status = read_reg (g_dm9000_default, DM9000_MRCMDX); /* Dummy read */
+  status = read_reg (g_dm9000_default, DM9000_MRCMDX);
+  PRINTF ("packet received, status 0x%x\n", status);
+
+  if ((status & 0xff) != 1) {     /* Return if the receive buffer not ready */
+//    printf ("early termination on receive\n");
     return 0;
+  }
 
   status = read_reg (g_dm9000_default, DM9000_MRCMD);
   length = read_reg (g_dm9000_default, DM9000_MRCMD);
 
   for (i = 0; i < length; i += 2) {
     uint16_t v = read_reg (g_dm9000_default, DM9000_MRCMD);
+    if (i + 2 > cb)
+      continue;
     rgb[i] = v & 0xff;
     rgb[i + 1] = (v >> 8) & 0xff;
   }
 
-  printf ("Received %d bytes (status 0x%x)\n", length, status);
+  PRINTF ("Received %d bytes (status 0x%x)\n", length, status);
+#if defined (TALK) && TALK > 1
   dumpw (rgb, length, 0, 0);
+#endif
 
-  return 0;
+  return length;
 }
 
 static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   uint8_t* rgb = (uint8_t*) pv;
   int i;
+//  int check = dm9000_check_tx ();
 
   ENTRY (0);
 
+//  if (check)
+//    printf ("packet transmit blocked\n");
+  while (dm9000_check_tx ())
+    ;
+//  if (check)
+//    printf ("packet transmit complete\n");
+  read_reg (g_dm9000_default, DM9000_ISR);           /* Dummy read */
+  write_reg (g_dm9000_default, DM9000_ISR, ISR_PTS); /* Clear interrupt */
+
+  ++dm9000[g_dm9000_default].tx_count;
+
+  *dm9000[g_dm9000_default].index = DM9000_MWCMD;
+  DM_IO_DELAY;
   for (i = 0; i < cb; i += 2) {
     uint16_t v = rgb[i] | (rgb[i + 1] << 8);
-    /* *** FIXME: should have a speedier write that doesn't require
-       *** setup every time. */
-    write_reg (g_dm9000_default, DM9000_MWCMD, v);
+    *dm9000[g_dm9000_default].data = v;
+    DM_IO_DELAY;
   }
 
 	/* Tell DM9000 the size of the packet */
@@ -548,10 +656,7 @@ static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
   write_reg (g_dm9000_default, DM9000_TXPLH, (cb >> 8) & 0xff);
 
 	/* Initiate transfer */
-  write_reg (g_dm9000_default, DM9000_TCR,
-             TCR_TXREQ
-             | TCR_CRC_DIS1 | TCR_CRC_DIS2
-             | TCR_PAD_DIS1 | TCR_PAD_DIS2);
+  write_reg (g_dm9000_default, DM9000_TCR, TCR_TXREQ);
 
   return 0;
 }
