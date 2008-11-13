@@ -1,5 +1,8 @@
 2008-11-13  Marc Singer  <elf@buici.com>
 
+	* Makefile (SUBLEVEL): Version 1.6.3 for dm9000.  The initial
+          orion patches are in as well, but not yet supported.
+
 	* src/drivers/drv-dm9000.c (dm9000_read): Implementation of
 	dm9000_{read,write} to round out support for dm9000 as a complete
 	Ethernet MAC/PHY driver.
