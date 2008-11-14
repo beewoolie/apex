@@ -103,7 +103,7 @@ config SMALL
 config THUMB
 	bool "Use Thumb instructions"
 	default n
-	depends on SMALL=y && EXPERIMENTAL=y
+	depends on EXPERIMENTAL=y # && SMALL=y
 	help
 	  This option builds some portions of the loader with thumb
 	  instructions, a 16 bit instruction format available in some

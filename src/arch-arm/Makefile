@@ -35,8 +35,8 @@ tune-$(CONFIG_CPU_ARMV6)   :=$(call cc-option,-mtune=arm1136j-s,-mtune=strongarm
 KBUILD_CFLAGS+= $(arch-y) $(tune-y) -Wall
 
 ifneq ($(CONFIG_THUMB),)
-CFLAGS+= -mthumb-interwork
-AFLAGS+= -mthumb-interwork
+#EXTRA_CFLAGS+= -mthumb-interwork
+#EXTRA_AFLAGS+= -mthumb-interwork
 endif
 
 init-y += src/arch-arm/entry/
