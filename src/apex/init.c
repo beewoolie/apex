@@ -39,13 +39,17 @@ void init (void)
     extern char APEX_VMA_COPY_START;
     extern char APEX_VMA_COPY_END;
     char sz[60];
+    PUTC_LL ('A');
     snprintf (sz, sizeof (sz), "mem:0x%p+0x%lx",
 	     (void*) &APEX_VMA_COPY_START,
 	     (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+    PUTC_LL ('1');
     alias_set ("apex", sz);
 # if defined (CONFIG_ENV_REGION)
+    PUTC_LL ('2');
     alias_set ("env", CONFIG_ENV_REGION);
 # endif
+    PUTC_LL ('a');
   }
 #endif
 

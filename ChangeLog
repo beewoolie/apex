@@ -1,3 +1,8 @@
+2008-11-18  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/net/tftp.c (tftp_receiver): Reporting on TFTP errors
+	s.t. we properly detect file-not-found problems.
+
 2008-11-13  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): Version 1.6.3 for dm9000.  The initial

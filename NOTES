@@ -5,6 +5,14 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.nov.18
+
+    o Thumb and GCC4.3.  Support for thumb has been added back into
+      the build, but it doesn't appear to work.  The failure has been
+      traced to the snprintf code being compiled for ARM.  It may be
+      the first code executed in THUMB, so perhaps this is simply
+      something wrong with the thumb code in general.
+
   o 2008.sep.14
     o Zero-length region.  It may be useful to add state to the
       descriptor_d that annotates a region that had no defined

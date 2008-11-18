@@ -16,6 +16,6 @@ obj-$(CONFIG_CMD_ARP)		+= arp.o
 obj-$(CONFIG_CMD_TFTP)		+= tftp.o
 
 ifneq ($(CONFIG_THUMB),)
-  EXTRA_CFLAGS += -mthumb
+#  EXTRA_CFLAGS += -mthumb
 endif
 

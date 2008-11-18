@@ -37,7 +37,7 @@ obj-$(CONFIG_CMD_IMAGE_APEX)	+= cmd-image-apex.o
 obj-$(CONFIG_CMD_IMAGE_UBOOT)	+= cmd-image-uboot.o
 
 ifneq ($(CONFIG_THUMB),)
-  EXTRA_CFLAGS += -mthumb
+#  EXTRA_CFLAGS += -mthumb
 endif
 
 CFLAGS_cmd-version.o += -DAPEXVERSION=\"$(APEXVERSION)\"
