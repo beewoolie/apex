@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Nov 14 14:43:37 2008
+# Tue Nov 18 10:36:39 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV6=y
@@ -15,7 +15,7 @@ CONFIG_ARCH_MX3=y
 # CONFIG_ARCH_ORION5X is not set
 CONFIG_EXPERIMENTAL=y
 # CONFIG_SMALL is not set
-CONFIG_THUMB=y
+# CONFIG_THUMB is not set
 
 #
 # General Setup
@@ -131,7 +131,7 @@ CONFIG_CMD_IPCONFIG_RARP=y
 # CONFIG_CMD_IPCONFIG_BOOTP is not set
 # CONFIG_CMD_IPCONFIG_DHCP is not set
 CONFIG_PROTO_ICMP_ECHO=y
-# CONFIG_CMD_PING is not set
+CONFIG_CMD_PING=y
 # CONFIG_CMD_ARP is not set
 CONFIG_CMD_TFTP=y
 CONFIG_USE_ETHERNET=y
