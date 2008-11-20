@@ -13,6 +13,15 @@ SECTIONS
 	.entry : {		/* First code to execute */
 		*(.entry)
 	}
+		/* The placement of exception vectors here, in the
+		   boot loader image, isn't necessarily helpful.  It
+		   is only worthwhile if these vectors jump to code
+		   within the loader that we can see.  It may be the
+		   case that the only way to define useful exception
+		   vectors is to enable the MMU. */
+	.rom.exceptions : {	/* Exception vector code for ROM vectors */
+		*(.rom.exceptions)
+	}
 	.envlink : {		/* Link to $env for user-land */
 		*(.envlink)
 	}

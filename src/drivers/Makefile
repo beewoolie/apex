@@ -30,14 +30,14 @@ obj-$(CONFIG_RELOCATE_ONENAND)		+= relocate-onenand.o
 obj-$(CONFIG_IXP4XX_NPE)		+= ixp4xx-npe/
 
 ifneq ($(CONFIG_THUMB),)
-# CFLAGS_drv-fat.o	+= -mthumb
-# CFLAGS_drv-ext2.o	+= -mthumb
-# CFLAGS_drv-jffs2.o	+= -mthumb
-# CFLAGS_drv-nor_cfi.o	+= -mthumb
-# CFLAGS_drv-cf.o		+= -mthumb
-# CFLAGS_drv-smc91x.o	+= -mthumb
-# CFLAGS_drv-dm9000.o	+= -mthumb
-# CFLAGS_drv-fis.o	+= -mthumb
-# CFLAGS_drv-nand.o	+= -mthumb
-# CFLAGS_drv-onenand.o	+= -mthumb
+ CFLAGS_drv-fat.o	+= -mthumb
+ CFLAGS_drv-ext2.o	+= -mthumb
+ CFLAGS_drv-jffs2.o	+= -mthumb
+ CFLAGS_drv-nor_cfi.o	+= -mthumb
+ CFLAGS_drv-cf.o	+= -mthumb
+ CFLAGS_drv-smc91x.o	+= -mthumb
+ CFLAGS_drv-dm9000.o	+= -mthumb
+ CFLAGS_drv-fis.o	+= -mthumb
+ CFLAGS_drv-nand.o	+= -mthumb
+ CFLAGS_drv-onenand.o	+= -mthumb
 endif

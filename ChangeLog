@@ -1,3 +1,14 @@
+2008-11-19  Marc Singer  <elf@zealous.synapse.com>
+
+	* Makefile: Thumb support restored, required a little work to the
+	src/arch-arm/lib code to guarantee interwork compatibility.
+
+	* src/mach-mx3/exception_vectors.c: Implementation of exception
+	vectors on MX31, primarily in support of debugging THUMB.
+
+	* src/arch-arm/lib/div64.S: Slight recoding of platform
+	implementations of basic functions to be interwork compatible.
+
 2008-11-18  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/net/tftp.c (tftp_receiver): Reporting on TFTP errors

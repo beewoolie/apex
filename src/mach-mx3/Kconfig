@@ -140,6 +140,16 @@ config MX31ADS_UARTA
 
 endchoice
 
+config EXCEPTIONS
+       bool "Enable exception vectors"
+       depends on MMU
+       default y
+       help
+         Intalls exception vector handlers.  This option is required
+         for interrupts as well, though interrupts are not implemented
+         for this platform.  Set this option to Y to receive reports
+         on undefined instructions and data/instruction fetch aborts. 
+
 config IPU_TEST
 	bool "Enable IPU test commands"
 	depends on USES_IPU_TEST

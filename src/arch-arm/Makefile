@@ -36,7 +36,7 @@ KBUILD_CFLAGS+= $(arch-y) $(tune-y) -Wall
 
 ifneq ($(CONFIG_THUMB),)
  KBUILD_CFLAGS += -mthumb-interwork
- EXTRA_AFLAGS+= -mthumb-interwork
+ KBUILD_AFLAGS += -mthumb-interwork
 endif
 
 init-y += src/arch-arm/entry/

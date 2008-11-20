@@ -95,7 +95,8 @@ ENTRY(__do_div64)
 	mov	yl, #0
 	cmpeq	xl, r4
 	movlo	xh, xl
-	movlo	pc, lr
+	bxlo    lr
+@	movlo	pc, lr
 
 	@ The division loop for lower bit positions.
 	@ Here we shift remainer bits leftwards rather than moving the
@@ -109,14 +110,16 @@ ENTRY(__do_div64)
 	subcs	xh, xh, r4
 	movs	ip, ip, lsr #1
 	bne	4b
-	mov	pc, lr
+	bx	lr
+@	mov	pc, lr
 
 	@ The top part of remainder became zero.  If carry is set
 	@ (the 33th bit) this is a false positive so resume the loop.
 	@ Otherwise, if lower part is also null then we are done.
 6:	bcs	5b
 	cmp	xl, #0
-	moveq	pc, lr
+	bxeq	lr
+@	moveq	pc, lr
 
 	@ We still have remainer bits in the low part.  Bring them up.
 
@@ -142,7 +145,8 @@ ENTRY(__do_div64)
 	movs	ip, ip, lsr #1
 	mov	xh, #1
 	bne	4b
-	mov	pc, lr
+	bx	lr
+@	mov	pc, lr
 
 8:	@ Division by a power of 2: determine what that divisor order is
 	@ then simply shift values around
@@ -180,13 +184,15 @@ ENTRY(__do_div64)
 	orr	yl, yl, xh, lsl ip
 	mov	xh, xl, lsl ip
 	mov	xh, xh, lsr ip
-	mov	pc, lr
+	bx	lr
+@	mov	pc, lr
 
 	@ eq -> division by 1: obvious enough...
 9:	moveq	yl, xl
 	moveq	yh, xh
 	moveq	xh, #0
-	moveq	pc, lr
+	bxeq	lr
+@	moveq	pc, lr
 
 	@ Division by 0:
 	str	lr, [sp, #-4]!

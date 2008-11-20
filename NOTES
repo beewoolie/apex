@@ -13,6 +13,15 @@ TODO:
       the first code executed in THUMB, so perhaps this is simply
       something wrong with the thumb code in general.
 
+    o Exception vectors.  It would be helpful to enable exception
+      vectors on the platform so that we can debug some conditions
+      that trap.  This may require that we put those vectors into the
+      first portion of the APEX image and use the MMU to map them into
+      the proper place in RAM.  Alternatively, we could put the
+      exception vectors (aligned) anywhere in the APEX image and map
+      those.  The advantage of the first is that we *can* have
+      exception vectors without the MMU if NOR flash maps to 0. 
+
   o 2008.sep.14
     o Zero-length region.  It may be useful to add state to the
       descriptor_d that annotates a region that had no defined
