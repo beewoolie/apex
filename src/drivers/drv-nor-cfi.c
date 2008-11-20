@@ -1080,6 +1080,8 @@ static void nor_release (void)
 static void nor_report (void)
 {
   int i;
+  int size;
+  char size_multiplier;
 
 #if defined (USE_DETECT_ENDIAN_MISMATCH)
   if (endian_error) {
@@ -1091,7 +1093,14 @@ static void nor_report (void)
   if (!chip)
     return;
 
-  printf ("  nor:    %ldMiB total  %dB write buffer"
+  size = chip->total_size/1024;
+  size_multiplier = 'K';
+  if (size > 1024) {
+    size /= 1024;
+    size_multiplier = 'M';
+  }
+
+  printf ("  nor:    0x%-8lx 0x%08lx (%3d %ciB) %dB write buffer"
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
 	  " (Intel)"
 #endif
@@ -1099,7 +1108,9 @@ static void nor_report (void)
 	  " (Spansion)"
 #endif
 	  "\n",
-	  chip->total_size/(1024*1024), chip->writebuffer_size
+          chip->region[0].start, chip->total_size,
+          size, size_multiplier,
+          chip->writebuffer_size
 	  );
   for (i = 0; i < chip->regions; ++i)
     printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",

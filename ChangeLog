@@ -1,3 +1,9 @@
+2008-11-20  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/drivers/drv-nor-cfi.c (nor_report): Cleanup of the nor flash
+	driver report.  Added start address and length that match the mem
+	driver.
+
 2008-11-19  Marc Singer  <elf@zealous.synapse.com>
 
 	* Makefile: Thumb support restored, required a little work to the
