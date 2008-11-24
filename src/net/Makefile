@@ -14,3 +14,8 @@ obj-$(CONFIG_CMD_IPCONFIG)	+= ipconfig.o
 obj-$(CONFIG_CMD_PING)		+= ping.o
 obj-$(CONFIG_CMD_ARP)		+= arp.o
 obj-$(CONFIG_CMD_TFTP)		+= tftp.o
+
+ifneq ($(CONFIG_THUMB),)
+ EXTRA_CFLAGS += -mthumb
+endif
+

@@ -27,7 +27,7 @@
 #if defined (CONFIG_MX31_UART1)
 #include <mach/uart.h>
 # define PUTC(c)\
-  ({ __REG (UART + UART_TXD) = c;\
+  ({ __REG (UART + UART_TXD) = c; \
      while (!(__REG (UART + UART_SR2) & UART_SR2_TXDC)) ; })
 #endif
 

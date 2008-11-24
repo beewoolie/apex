@@ -80,12 +80,7 @@
 #include <ethernet.h>
 
 //#define TALK 2
-
-#if defined (TALK) && TALK > 0
-# define DBG(l,f...)		if (l <= TALK) printf (f);
-#else
-# define DBG(l,f...)		do {} while (0)
-#endif
+#include <talk.h>
 
 #define DRIVER_NAME	"tftp"
 
@@ -196,6 +191,23 @@ static int tftp_receiver (struct descriptor_d* d,
     DBG (1,"received %d of %d bytes  block %d (%d)\n",
 	 cb, info->cbRec, info->blockRec, info->state);
     break;
+
+  case TFTP_ERROR:
+    {
+#if !defined (CONFIG_SMALL)
+      int cb = frame->cb - (sizeof (struct header_ethernet)
+                            + sizeof (struct header_ipv4)
+                            + sizeof (struct header_udp)
+                            + sizeof (struct message_tftp))
+        - sizeof (u16);
+      printf ("tftp error: (%d) %-*.*s\n",
+              htons (*(u16*) TFTP_F (frame)->data),
+              cb, cb, TFTP_F (frame)->data + 2);
+#endif
+      tftp.state = stateError;
+    }
+    break;
+
   default:
     DBG (1,"tftp response opcode %d\n", opcode);
     break;
@@ -213,7 +225,7 @@ static int tftp_receiver (struct descriptor_d* d,
 
 */
 
-static int ping_terminate (void* pv)
+static int tftp_terminate (void* pv)
 {
   struct ethernet_timeout_context* context
     = (struct ethernet_timeout_context*) pv;
@@ -272,7 +284,7 @@ static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 	memset (&timeout, 0, sizeof (timeout));
 	timeout.time_start = 0;
 	timeout.ms_timeout = MS_TIMEOUT;
-	result = ethernet_service (&tftp.d, ping_terminate, &timeout);
+	result = ethernet_service (&tftp.d, tftp_terminate, &timeout);
 
 	/* *** need to check that we received a block, otherwise, the
 	   connection cannot be initiated */
@@ -394,6 +406,8 @@ static int tftp_open (struct descriptor_d* d)
   if ((result = open_descriptor (&tftp.d)))
     return result;
 
+  d->length = DRIVER_LENGTH_MAX; /* We don't know the length, so make it big */
+
   register_ethernet_receiver (100, tftp_receiver, &tftp);
 
   return 0;
@@ -461,7 +475,6 @@ static __driver_6 struct driver_d tftp_driver = {
   .close = tftp_close,
   .read = tftp_read,
 //  .write = tftp_write,
-//  .erase = cf_erase,
   .seek = tftp_seek,
 #if defined CONFIG_CMD_INFO
 //  .info = tftp_info,

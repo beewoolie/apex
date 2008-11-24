@@ -5,6 +5,23 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.nov.18
+
+    o Thumb and GCC4.3.  Support for thumb has been added back into
+      the build, but it doesn't appear to work.  The failure has been
+      traced to the snprintf code being compiled for ARM.  It may be
+      the first code executed in THUMB, so perhaps this is simply
+      something wrong with the thumb code in general.
+
+    o Exception vectors.  It would be helpful to enable exception
+      vectors on the platform so that we can debug some conditions
+      that trap.  This may require that we put those vectors into the
+      first portion of the APEX image and use the MMU to map them into
+      the proper place in RAM.  Alternatively, we could put the
+      exception vectors (aligned) anywhere in the APEX image and map
+      those.  The advantage of the first is that we *can* have
+      exception vectors without the MMU if NOR flash maps to 0. 
+
   o 2008.nov.9
 
     o Detecting SATA.  Absent SATA drives must not break the ATA
@@ -83,7 +100,6 @@ TODO:
       The driver should support an info call so that report code can
       say something about the underlying device support.  This may be
       too much to ask, however.
-
 
   o 2008.sep.14
     o Zero-length region.  It may be useful to add state to the

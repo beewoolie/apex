@@ -172,6 +172,26 @@ void mmu_protsegment (void* pv, int cacheable, int bufferable)
 }
 
 
+void mmu_map_segment (void* physical, void* virtual,
+                      int cacheable, int bufferable)
+{
+	/* Convert address to table index/segment # */
+  int virt = (unsigned long) (virtual) >> 20;
+  int phys = (unsigned long) (physical) >> 20;
+
+  ttbl[virt] = (phys<<20)
+    | (3<<10)			/* AP(R/W) */
+    | (0<<5)			/* domain(0) */
+    | (bufferable ? Btt : 0)
+    | (cacheable  ? Ctt : 0)
+    | (2<<0);			/* type(section) */
+
+  INVALIDATE_DTLB_VA (virtual);
+  INVALIDATE_ITLB_VA (virtual);
+  CP15_WAIT;
+}
+
+
 /* mmu_release
 
    performs the work to switch the MMU off before transferring to

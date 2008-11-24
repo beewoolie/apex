@@ -179,7 +179,7 @@ static void memory_report (void)
     if (memory_regions[i].length) {
       if (i)
 	printf ("         ");
-      printf (" 0x%08lx 0x%08x (%d MiB)\n",
+      printf (" 0x%-8lx 0x%08x (%3d MiB)\n",
 	      memory_regions[i].start, memory_regions[i].length,
 	      memory_regions[i].length/(1024*1024));
     }
@@ -330,7 +330,7 @@ static __service_4 struct service_d memory_service = {
 static int cmd_memlimit (int argc, const char** argv)
 {
   char* pchEnd;
-  unsigned long l;
+  long l;
 
   if (argc == 1) {
     printf ("memlimit is %d.%03d MiB, %d (0x%x) bytes\n",
@@ -342,7 +342,7 @@ static int cmd_memlimit (int argc, const char** argv)
   if (argc != 2)
     return ERROR_PARAM;
 
-  l = simple_strtoul (argv[1], &pchEnd, 0);
+  l = simple_strtol (argv[1], &pchEnd, 0);
   if (*pchEnd == 'k' || *pchEnd == 'K')
     l *= 1024;
   if (*pchEnd == 'm' || *pchEnd == 'm')
@@ -350,7 +350,19 @@ static int cmd_memlimit (int argc, const char** argv)
 
   l += 4*1024 - 1;
   l &= ~(4*1024 - 1);
-  memlimit = l;
+
+  if (l >= 0)
+    memlimit = l;
+  else {                        /* Negative value is offset from total */
+    unsigned long length = 0;
+    int i;
+    for (i = 0; i < sizeof (memory_regions)/sizeof (*memory_regions); ++i) {
+      if (!memory_regions[i].length)
+        break;
+      length += memory_regions[i].length;
+    }
+    memlimit = length + l;
+  }
 
   return 0;
 }
@@ -363,11 +375,14 @@ static __command struct command_d c_memlimit = {
 "memlimit"
 " [SIZE]\n"
 "  Limit amount of memory passed to the Linux kernel.\n"
-"  SIZE is a count of bytes and my be suffixed with 'm' or megabytes.\n"
+"  SIZE is a count of bytes and may be suffixed with 'm' or 'k' for\n"
+"  megabytes or kilobytes.  The value may be negative in which case the\n"
+"  limit is subtracted from the total memory available."
 "  Pass a SIZE of zero to clear the limit.  If there is no parameter,\n"
 "  the command will display the current limit.  The limit is always rounded\n"
 "  to an even number of 4KiB pages.\n\n"
 "  e.g.  memlimit 8m\n"
+"        memlimit -2m\n"
   )
 };
 

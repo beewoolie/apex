@@ -8,10 +8,12 @@
 #   version 2 as published by the Free Software Foundation.
 #   Please refer to the file debian/copyright for further details.
 #
+# Part of the reason for dropping these assembler coded
+# implementations is to avoid interwork problems. 
 
 lib-y := div64.o memchr.o memzero.o
 #lib-y += memcpy2.o
-lib-y += memcpy.o
+#lib-y += memcpy.o
 #lib-y += relocate.o
 #lib-y += entry.o
 lib-y += lib1funcs.o

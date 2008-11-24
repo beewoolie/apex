@@ -446,12 +446,16 @@ void udp_setup (struct ethernet_frame* frame,
 		u16 source_port, size_t cb)
 {
   const char* addr = arp_cache_lookup (destination_ip);
+  size_t cbFrame;
 //  if (!addr)
 //    addr = arp_cache_lookup (gw_ip_address);
   if (!addr)			/* *** FIXME: shouldn't be possible */
     return;
 
-  cb = (cb + 1) & ~1;
+//  cb = (cb + 1) & ~1;
+  cbFrame = (cb + 1) & ~1;
+  if (cbFrame != cb)
+    *(UDP_F (frame)->data + cb) = 0; /* zero extra byte */
 
   memset (IPV4_F (frame), 0,
 	  sizeof (struct header_ipv4) + sizeof (struct header_udp));
@@ -465,7 +469,7 @@ void udp_setup (struct ethernet_frame* frame,
   ETH_F (frame)->protocol = HTONS (ETH_PROTO_IP);
 
   /* IPv4 header */
-  IPV4_F (frame)->version_ihl = 4<<4 | 5;
+  IPV4_F (frame)->version_ihl = 4<<4 | 5; /* Version 4; Header Length 5 */
   IPV4_F (frame)->length
     = htons (sizeof (struct header_ipv4) + sizeof (struct header_udp) + cb);
   IPV4_F (frame)->ttl = 64;
@@ -502,7 +506,8 @@ void udp_setup (struct ethernet_frame* frame,
 
   frame->cb = sizeof (struct header_ethernet)
     + sizeof (struct header_ipv4)
-    + sizeof (struct header_udp) + cb;
+    + sizeof (struct header_udp)
+    + cbFrame;
 }
 
 

@@ -1,3 +1,52 @@
+2008-11-20  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/drivers/drv-nor-cfi.c (nor_report): Cleanup of the nor flash
+	driver report.  Added start address and length that match the mem
+	driver.
+
+2008-11-19  Marc Singer  <elf@zealous.synapse.com>
+
+	* Makefile: Thumb support restored, required a little work to the
+	src/arch-arm/lib code to guarantee interwork compatibility.
+
+	* src/mach-mx3/exception_vectors.c: Implementation of exception
+	vectors on MX31, primarily in support of debugging THUMB.
+
+	* src/arch-arm/lib/div64.S: Slight recoding of platform
+	implementations of basic functions to be interwork compatible.
+
+2008-11-18  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/net/tftp.c (tftp_receiver): Reporting on TFTP errors
+	s.t. we properly detect file-not-found problems.
+
+2008-11-13  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): Version 1.6.3 for dm9000.  The initial
+          orion patches are in as well, but not yet supported.
+
+	* src/drivers/drv-dm9000.c (dm9000_read): Implementation of
+	dm9000_{read,write} to round out support for dm9000 as a complete
+	Ethernet MAC/PHY driver.
+
+2008-09-16  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/lib/strtol.c: Adding strtol as a separate library function,
+	in case it is needed.  The memlimit command will use this function.
+
+	* src/mach-mx3/rosencrantz.h (CCM_PDR0_V): Override for the PDR0
+	so that the CSI clock scalar is non-default.
+
+	* src/mach-mx3/mx31.h (CCM_UPCTL_266_V): Fixed the UPCTL
+	initialization values.  This PLL is based on the CKIH, so it
+	doesn't need to change when the CPU clock speed changes.
+	(CCM_PDR0_V): Allowing this value to be overridden by the board
+	specific header.
+
+	* src/drivers/drv-mem.c (cmd_memlimit): Revised memlimit to permit
+	a negative offset which is then subtracted from the total system
+	memory.
+
 2008-09-15  Marc Singer  <elf@buici.com>
 
 	* debian/rules (binary-arch): Adding apex-image to the tools

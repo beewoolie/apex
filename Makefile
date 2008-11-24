@@ -3,7 +3,7 @@
 
 VERSION = 1
 PATCHLEVEL = 6
-SUBLEVEL = 2
+SUBLEVEL = 3
 #EXTRAVERSION = -$(shell date "+%j.%R:%S")
 ARCH ?= arm
 
@@ -557,10 +557,10 @@ else
 KBUILD_CFLAGS	+= -fomit-frame-pointer
 endif
 
-ifdef CONFIG_DEBUG_INFO
+#ifdef CONFIG_DEBUG_INFO
 KBUILD_CFLAGS	+= -g
 KBUILD_AFLAGS	+= -gdwarf-2
-endif
+#endif
 
 # We trigger additional mismatches with less inlining
 ifdef CONFIG_DEBUG_SECTION_MISMATCH

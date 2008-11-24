@@ -160,7 +160,7 @@
 #define ADDR_CHECK_1	(0x80000800)
 
 //#define ESDCTL_CFG_V	(0x0075e73a)
-#define ESDCTL_CFG_V	(0x00096728)	/* 1Gib   MT46H32M32LF-6 */
+#define ESDCTL_CFG_V	(0x0029672e)	/* 1Gib   MT46H32M32LF-6 */
 //#define ESDCTL_CFG_V	(0x0069e728)	/* 512Mib MT46H16M32LF-6 */
 
 #define BA0(r,c,w)	((r) + (c) + (w)/16)

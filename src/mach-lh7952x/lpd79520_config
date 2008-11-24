@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Sep 12 16:26:46 2008
+# Thu Nov 13 10:17:26 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -12,6 +12,7 @@ CONFIG_ARCH_LH7952X=y
 # CONFIG_ARCH_IXP42X is not set
 # CONFIG_ARCH_S3C2410 is not set
 # CONFIG_ARCH_MX3 is not set
+# CONFIG_ARCH_ORION5X is not set
 # CONFIG_EXPERIMENTAL is not set
 # CONFIG_SMALL is not set
 
