@@ -88,11 +88,19 @@ int cmd_image (int argc, const char** argv)
   }
 
   if ((result = parse_descriptor (argv[1], &d))) {
-    printf ("Unable to open '%s'\n", argv[1]);
+    printf ("Unable to parse '%s'\n", argv[1]);
     goto fail;
   }
 
   fRegionCanExpand = d.length == 0;
+
+  /* *** Originally, this call wasn't made.  Trouble is that we cannot
+     *** use a tftp descriptor without it.  So, now we check for zero
+     *** length before opening and then we open.  */
+  if ((result = open_descriptor (&d))) {
+    printf ("Unable to open '%s'\n", argv[1]);
+    goto fail;
+  }
 
   if (fRegionCanExpand && d.length - d.index < sizeof (rgb))
     d.length = d.index + sizeof (rgb);

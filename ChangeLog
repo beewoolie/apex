@@ -1,3 +1,8 @@
+2008-11-25  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/apex/cmd-image.c (cmd_image): Adding descriptor_open() call
+	to image load so that we can read from tftp.
+
 2008-11-20  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/drivers/drv-nor-cfi.c (nor_report): Cleanup of the nor flash

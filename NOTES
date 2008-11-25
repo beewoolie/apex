@@ -5,6 +5,17 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.nov.25
+    o Alias/environment variable references.  Presently, variable
+      substitutions only traverse a single level.  It is necessary to
+      support indefinite recursion.  If kernelsrc refers to another
+      variable and it is used in the startup variable, we should be
+      able to dereference it.
+    o Startup that doesn't use copy.  Originally, we only supported a
+      copy when loading data into memory.  With aImages, there could
+      be an "im load" instead.  How should this be integrated into
+      APEX? 
+
   o 2008.nov.18
 
     o Thumb and GCC4.3.  Support for thumb has been added back into
