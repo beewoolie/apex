@@ -1108,7 +1108,7 @@ static void nor_report (void)
 	  " (Spansion)"
 #endif
 	  "\n",
-          chip->region[0].start, chip->total_size,
+          phys_from_index (chip->region[0].start), chip->total_size,
           size, size_multiplier,
           chip->writebuffer_size
 	  );

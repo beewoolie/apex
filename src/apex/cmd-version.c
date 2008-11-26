@@ -31,7 +31,7 @@ int cmd_version (int argc, const char** argv)
 {
   printf (
 "\n\nAPEX Boot Loader " APEXVERSION
-" -- Copyright (c) 2004,2005,2006,2007 Marc Singer\n"
+" -- Copyright (c) 2004-2008 Marc Singer\n"
 #if defined (CONFIG_TARGET_DESCRIPTION) && !defined (CONFIG_SMALL)
 "  compiled for " CONFIG_TARGET_DESCRIPTION " on " BUILDDATE "\n"
 #endif
