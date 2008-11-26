@@ -4,30 +4,33 @@
 ===========================
 
 This README explains some of the features and implementation details
-of handling boot image formats.  APEX works with raw binary data file
-as well as U-BOOT images and APEX images.
+of handling boot image formats.  From the start, APEX has worked with
+raw, binary data for kernels and ramdisk images.  Around the 1.6.x
+versions, support for U-BOOT and an APEX image format were added to
+improve interoperability and error detection.
 
 
 Image Formats and APEX Commands
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All image formats are handled uniformly.  Whether it is a U-BOOT image
-or an APEX image, the command will process either compatibly.  There
-is one new command, load, that will interpret the contents of an image
-and prepare the system to boot with it.  Other commands are modified
-to support analogous functions on images that they perform on regions.
+The supported image formats are handled uniformly.  Whether it is a
+U-BOOT image or an APEX image, the NEW 'image' command will
+transparently process either format.  The standard copy and checksum
+commands will operate on the raw data of the image without attempting
+to comprehend the image format iteslf.  The new image command performs
+operations on images that interpret the header.
 
-  load     - load all or part of an image into memory as specified by
-             the header
-  checksum - verify the checksums in an image
-  info     - display information about an image
+  load     - load the data of an imate into memory to the addresses
+             specified in the image header
+  checksum - verify header and data checksums
+  show     - display information about an image
 
 
 APEX Image Format
------------------
+~~~~~~~~~~~~~~~~~
 
-This is a tagged image format designed to be easy to load, even when
-processed as a stream of bytes.  An image has the following form:
+This is a tagged image format designed to be easy to load, extensible,
+and compatible with stream IO.  APEX images have the following form:
 
   IMAGE
   +--------+-----+---------+-----+---------+---------+-----+-----+
@@ -36,8 +39,9 @@ processed as a stream of bytes.  An image has the following form:
 
 The HEADER, and the first CRC are required.  The PAYLOADs are optional
 and there may be more than one.  The header must specify the length of
-each PAYLOAD.  The first CRC protects whole header including the
-SIGNATURE.  Each PAYLOAD is protected by the CRC that follows it.
+each PAYLOAD.  The CRC immediately following the header protects whole
+header including the SIGNATURE.  Each PAYLOAD is protected by the CRC
+that follows it.
 
 The CRC polynomial is the same for the header and the PAYLOADs, but
 the computation of the CRC values is slightly different between them.
@@ -47,20 +51,19 @@ every byte in the header including the CRC will yield a zero.
 
 The CRC computation for each PAYLOAD is compatible with the POSIX
 cksum program.  It is the CRC over the data bytes in the PAYLOAD
-followed by the non-zero bytes of the binary integer for the PAYLOAD
-length in LSB order.  The result is inverted.  The recorded PAYLOAD
-CRC will match the value returned by cksum over the source data for
-the PAYLOAD.  The image file is padded between the PAYLOAD CRC and the
-next payload to force the next PAYLOAD to begin on an even 16 byte
-boundary.
+followed by the significant bytes of the binary integer for the
+PAYLOAD length in LSB order.  The CRC is the one's complement of this
+result which will match the CRC value returned by the cksum command
+over the PAYLOAD data.  The image file is padded between the PAYLOAD
+CRC to force the next PAYLOAD to begin on an even 16 byte boundary.
 
 The header begins with a four byte SIGNATURE and a single byte
-HEADER_SIZE that specifies the multiple of 16 bytes occupied by the
-HEADER including the SIGNATURE, HEADER_SIZE and the CRC.  A value of
-zero is reserved and invalid.  The rest of the header is a sequence of
-tagged fields followed by the CRC32 checksum in the last four bytes.
-The HEADER is padded between the last FIELD and the CRC32 to round the
-HEADER to an even multiple of 16 bytes.
+HEADER_SIZE that, when multiplied by 16, specifies the size of the
+HEADER including the SIGNATURE, HEADER_SIZE and the CRC.  A
+HEADER_SIZE value of zero is reserved and invalid.  The rest of the
+header is a sequence of tagged fields followed by the CRC32 checksum
+in the last four bytes.  The HEADER is padded between the last FIELD
+and the CRC32 to round the HEADER to an even multiple of 16 bytes.
 
 
   HEADER
@@ -112,11 +115,11 @@ data, but are empty in a particular cases.
 
 FIELD_ID's have a range from 0x0 to 0xfc where the lowest two bits are
 set to zero.  IDs 0x00 - 0x0c and 0xe0 - 0xf8 are reserved.  ID 0xfc
-is a NOP field and a TAG of 0xff should be used as padding in the
+is a NOP field and a TAG of 0xff must be used as padding in the
 header.
 
   Field IDs
-  ---------
+  ~~~~~~~~~
 
   0x10 | 0 - Image description (V)
   0x14 | 1 - Image creation date (4B)
@@ -134,6 +137,74 @@ header.
 As a matter of practical implementation, there shall be only one size
 encoding for each TAG.  This is both a convention, to make the
 generation and parsing of FIELDs easier, and a standardization of the
-header data format.  For example, even though a payload description
-may require just four bytes, the TAG is defined as 0x00 such that it
-always carries a length byte.
+header data format.  For example, even though a succinct payload
+description field, e.g. "One", would require just four bytes, the TAG
+is defined as 0x00 such that it always bears a length byte.
+
+
+U-BOOT Image Format
+~~~~~~~~~~~~~~~~~~~
+
+The UBOOT image format was originally designed to carry a single payload.
+The file begins with a fixed-length header, 64 bytes followed by the
+payload.
+
+  IMAGE
+  +--------+---------+
+  | HEADER | PAYLOAD |
+  +--------+---------+
+
+There is a multi-image format that modifies the basic format with an
+NULL terminated array of payload lengths immediately after the header
+and followed by the payload data.
+
+  MULTI-IMAGE
+  +--------+--------+-----+---+---------+
+  | HEADER | LENGTH | ... | 0 | PAYLOAD |
+  +--------+--------+-----+---+---------+
+
+In this case, the header is identical, so there is only one CRC for
+all payloads, the data_size field of the header refers to the size of
+all payloads, there is only one entry point, and there is only one
+load address for all payloads.  All payload data is loaded starting at
+the load address in the header.  When booting Linux, UBOOT interprets
+the first two payloads of a multi-image as a kernel and initrd.  The
+load address and length of the initrd will be recorded and passed to
+the kernel.  APEX performs the same steps.
+
+The U-BOOT header is a fixed size record with several enumerated
+fields.  For the most part, these fields are ignored and are
+unimportant when this format is being used to load Linux kernels and
+initial ramdisk images. 
+
+  struct header {
+    uint32_t magic;			// 0x27 0x05 0x19 0x56
+    uint32_t header_crc;
+    uint32_t time;
+    uint32_t size;
+    uint32_t load_address;
+    uint32_t entry_point;
+    uint32_t crc;			// CRC for all payloads
+    uint8_t  os;
+    uint8_t  architecture;
+    uint8_t  image_type;
+    uint8_t  compression;
+    char     image_name[32];
+  };
+
+Part of the design of the APEX image format is aimed to address some
+of the awkward design choices present in the U-BOOT design.
+
+  o The U-BOOT header checksum field is in the middle of the header.
+    It must be zeroed when computing the header CRC.
+  o The U-BOOT CRC is LSB ordered which makes it incompatible with
+    cksum.  It also does not compute to zero when the CRC is appended
+    to the end of the calculation.
+  o The header is fixed size which illicited the multi-image hack used
+    to load the kernel and initrd from a single image.
+  o There are several fields in the header that don't pertain to
+    loading images for Linux.  These fields cannot be removed.
+  o Even with a multi-image format, there is no way to change the load
+    address of successive payloads.  All payloads are loaded
+    sequentially and  the loader must assume that the first payload is
+    the kernel and the second is an initrd.
