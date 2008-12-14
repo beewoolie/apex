@@ -1,3 +1,10 @@
+2008-12-13  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Fixed the erase
+	region detection code to cope with Spansion flash that sets high
+	bits for these values.
+	(ReadArray): Changed the ReadArray command for Spansion to 0xf0.
+
 2008-11-25  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-image.c (cmd_image): Adding descriptor_open() call

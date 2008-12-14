@@ -111,6 +111,27 @@
      because the cache still has resident rows for the flash memory
      and the status reads fail as well as the ID reads.
 
+     An optimization for NOR flash that would permit flash to remain
+     cached would be to use a different memory region for the cached
+     accesses.  In this case, the MMU bits wouldn't be toggled.
+     Instead, the driver would make sure to invaldate NOR flash on
+     writes, but let the rest of it operate normally.
+
+   o ReadArray command.  Almost all flash we've seen responds to
+     ReadArray as the command 0xff, even Spansion or so I thought.
+     The Spansion flash in the MV2120 requires 0xf0.  So, we've
+     changed the command to be 0xf0 for Spansion, but it remains to be
+     seen whether or not all type 2 flash will accept it.  This is the
+     same behavior as we see in the Linux kernel driver.
+
+   o Detecting erase regions.  While probing the chip, we would
+     normally read the erase region size and count and assume that the
+     read values were eight bits wide.  There is a Spansion chip where
+     this is not the case.  The high byte of the region size has high
+     bits set.  There was no documentation we could find that explains
+     this encoding, so we do the simple thing of masking off those
+     bits.
+
 */
 
 #include <driver.h>
@@ -135,7 +156,7 @@
 #define USE_DETECT_ENDIAN_MISMATCH
 
 //#define TALK
-//#define NOISY
+//#define NOISY                   /* Use when CFI not detecting properly */
 
 #if defined TALK
 # define PRINTF(v...)	printf (v)
@@ -199,11 +220,12 @@
 
 #define WIDTH_SHIFT	(NOR_WIDTH>>4)	/* Bit shift for device width */
 
+#define ReadQuery	0x98
+
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
 	/* CFI compliant parameters */
 #define ReadArray	0xff
 #define ReadID		0x90
-#define ReadQuery	0x98
 #define ReadStatus	0x70
 #define ClearStatus	0x50
 #define Erase		0x20
@@ -223,9 +245,8 @@
 
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
 
-#define ReadArray	0xff
+#define ReadArray	0xf0
 #define ReadID		0x90
-#define ReadQuery	0x98
 #define ReadStatus	0x70
 #define ClearStatus	0x50
 #define EraseSetup	0x80
@@ -280,6 +301,7 @@ struct nor_region {
 
 struct nor_chip {
   unsigned long total_size;
+  int command_set;         	/* Command set identifier, [0x13] */
   int writebuffer_size;		/* Size (bytes) of buffered write buffer */
   int regions;
   struct nor_region region[C_REGIONS_MAX];
@@ -516,14 +538,15 @@ void copy_from (void* _dst, const void* _src, size_t cb)
 # define copy_from memcpy
 #endif
 
-static void nor_init_chip (unsigned long phys)
+static void nor_probe_chip (unsigned long phys)
 {
   int iRegionFirst = chip_probed.regions;
   int i;
   unsigned long start;
 
-  PRINTF ("%s: probing %lx (%d %d)\n", __FUNCTION__, phys,
-	  NOR_WIDTH, NOR_CHIP_MULTIPLIER);
+  PRINTF ("%s: probing %lx (%d %d); [%x+%x]<-%x\n", __FUNCTION__, phys,
+	  NOR_WIDTH, NOR_CHIP_MULTIPLIER, phys, (0x55 << WIDTH_SHIFT),
+          CMD(ReadQuery));
 
   REGA (phys) = CMD (ReadArray);
   REGA (phys + (0x55 << WIDTH_SHIFT)) = CMD (ReadQuery);
@@ -562,7 +585,8 @@ static void nor_init_chip (unsigned long phys)
   start = chip_probed.total_size;
   i = chip_probed.regions;
 
-  chip_probed.regions += REGC (phys + (0x2c << WIDTH_SHIFT));
+  chip_probed.command_set  = REGC (phys + (0x13 << WIDTH_SHIFT));
+  chip_probed.regions     += REGC (phys + (0x2c << WIDTH_SHIFT));
   chip_probed.total_size
     += (1<<REGC (phys + (0x27 << WIDTH_SHIFT)))*NOR_CHIP_MULTIPLIER;
 
@@ -577,13 +601,20 @@ static void nor_init_chip (unsigned long phys)
   for (; i < chip_probed.regions; ++i) {
     int offset = (i - iRegionFirst)*4;
     PRINTF ("  ");
+    PRINTF (" %02x %02x %02x %02x ",
+            REGC (phys + ((0x2d + offset) << WIDTH_SHIFT)),
+            REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)),
+            REGC (phys + ((0x2f + offset) << WIDTH_SHIFT)),
+            REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)));
+
     chip_probed.region[i].size
-      = 256*(   REGC (phys + ((0x2f + offset) << WIDTH_SHIFT))
-	     | (REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) << 8))
+      = 256*(   (REGC (phys + ((0x2f + offset) << WIDTH_SHIFT)) & 0xff)
+             | ((REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) & 0xff) << 8))
       *NOR_CHIP_MULTIPLIER;
     chip_probed.region[i].count
-      = 1 + (   REGC (phys + ((0x2d + offset) << WIDTH_SHIFT))
-	     | (REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) << 8));
+      = 1 + (   (REGC (phys + ((0x2d + offset) << WIDTH_SHIFT)) & 0xff)
+             | ((REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) & 0xff) << 8));
+
     PRINTF ("  region %d %d %d\n", i,
 	    chip_probed.region[i].size, chip_probed.region[i].count);
     chip_probed.region[i].start = start;
@@ -601,9 +632,9 @@ static void nor_init (void)
   chip_probed.total_size = 0;	/* Should be redundant */
   chip_probed.regions = 0;	/* Should be redundant */
 
-  nor_init_chip (NOR_0_PHYS);
+  nor_probe_chip (NOR_0_PHYS);
 #if defined (NOR_1_PHYS)
-  nor_init_chip (NOR_1_PHYS);
+  nor_probe_chip (NOR_1_PHYS);
 #endif
 
   if (!chip_probed.total_size)
@@ -611,25 +642,13 @@ static void nor_init (void)
 
   chip = &chip_probed;
 
-#if 0
-  printf ("\nNOR flash ");
-
-  if (chip) {
-    printf (" %ldMiB total",
-	    chip->total_size/(1024*1024));
-    printf (", %dB write buffer",
-	    chip->writebuffer_size);
-    printf ("\n");
-  }
-#endif
-
 #if defined (NOISY)
 
   PRINTF ("\nNOR flash ");
 
   if (chip) {
-    PRINTF (" %ldMiB total",
-	    chip->total_size/(1024*1024));
+    PRINTF (" %ld.%02ld MiB total",
+	    chip->total_size/(1024*1024), ((chip->total_size/1024)%1024)/10);
     PRINTF (", %dB write buffer",
 	    chip->writebuffer_size);
     PRINTF ("\n");
@@ -650,21 +669,21 @@ static void nor_init (void)
 
     typical = REGC (NOR_0_PHYS + (0x1f << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x23 << WIDTH_SHIFT));
-    PRINTF ("single word write %d us (%d us)\n",
+    PRINTF ("single word write %d us (max %d us)\n",
 	    1<<typical, (1<<typical)*max);
     typical = REGC (NOR_0_PHYS + (0x20 << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x24 << WIDTH_SHIFT));
-    PRINTF ("write-buffer write %d us (%d us)\n",
+    PRINTF ("write-buffer write %d us (max %d us)\n",
 	    1<<typical, (1<<typical)*max);
     typical = REGC (NOR_0_PHYS + (0x21 << WIDTH_SHIFT));
     max	    = REGC (NOR_0_PHYS + (0x25 << WIDTH_SHIFT));
-    PRINTF ("block erase %d ms (%d ms)\n",
+    PRINTF ("block erase %d ms (max %d ms)\n",
 	    1<<typical, (1<<typical)*max);
 
     typical = REGC (NOR_0_PHYS + (0x22 << WIDTH_SHIFT));
     max     = REGC (NOR_0_PHYS + (0x26 << WIDTH_SHIFT));
     if (typical)
-      PRINTF ("chip erase %d us (%d us)\n",
+      PRINTF ("chip erase %d us (max %d us)\n",
 	      1<<typical, (1<<typical)*max);
   }
 
@@ -1082,6 +1101,7 @@ static void nor_report (void)
   int i;
   int size;
   char size_multiplier;
+  int mismatched = false;
 
 #if defined (USE_DETECT_ENDIAN_MISMATCH)
   if (endian_error) {
@@ -1100,17 +1120,28 @@ static void nor_report (void)
     size_multiplier = 'M';
   }
 
-  printf ("  nor:    0x%-8lx 0x%08lx (%3d %ciB) %dB write buffer"
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
-	  " (Intel)"
+  if (chip->command_set != 1 && chip->command_set != 3)
+    mismatched = true;
 #endif
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
-	  " (Spansion)"
+  if (chip->command_set != 2 && chip->command_set != 4)
+    mismatched = true;
+#endif
+
+
+  printf ("  nor:    0x%-8lx 0x%08lx (%3d %ciB) %dB write buffer"
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
+	  " (Intel %d%s)"
+#endif
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+	  " (Spansion %d%s)"
 #endif
 	  "\n",
           phys_from_index (chip->region[0].start), chip->total_size,
           size, size_multiplier,
-          chip->writebuffer_size
+          chip->writebuffer_size,
+          chip->command_set, mismatched ? " ERR" : ""
 	  );
   for (i = 0; i < chip->regions; ++i)
     printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",
