@@ -1,9 +1,18 @@
+2008-12-14  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Support for broken
+	AMD/Spansion NOR flash that does not properly report top-boot
+	vs. bottom-boot.
+	* src/drivers/drv-nor-cfi.c: In order to support the Micronix
+	(Spansion compatible) NOR flash in the HP MediaVault 2120, we
+	needed to completely fill out the Spansion support.  There is
+	support for a single byte wide bus and a 16 bit internal logic as
+	is the case on the MV2120.
+
 2008-12-13  Marc Singer  <elf@buici.com>
 
-	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Fixed the erase
-	region detection code to cope with Spansion flash that sets high
-	bits for these values.
-	(ReadArray): Changed the ReadArray command for Spansion to 0xf0.
+	* src/drivers/drv-nor-cfi.c (ReadArray): Changed the ReadArray
+	command for Spansion to 0xf0.
 
 2008-11-25  Marc Singer  <elf@zealous.synapse.com>
 

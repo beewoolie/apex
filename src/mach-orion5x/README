@@ -14,27 +14,26 @@ UART1.
 Default Memory Map
 ------------------
 
-  Interface		Address Range
-  ---------------------------------------------
-  DDR SDRAM CS0		0x00000000 0x0fffffff
-  DDR SDRAM CS1		0x10000000 0x1fffffff
-  DDR SDRAM CS2		0x20000000 0x2fffffff
-  DDR SDRAM CS3		0x30000000 0x3fffffff
-  PCI Express Memory	0x80000000 0x9fffffff
-  PCI Memory		0xa0000000 0xbfffffff
-  PCI Express I/O	0xc0000000 0xc000ffff
-  PCI I/O		0xc8000000 0xc800ffff
-  Security Accel. SRAM	0xc8010000 0xc801ffff
+  Interface		Address Range		Target ID	Attribute
+  -----------------------------------------------------------------------
+  DDR SDRAM CS0		0x00000000 0x0fffffff	0x0		0x0e
+  DDR SDRAM CS1		0x10000000 0x1fffffff	0x0		0x0d
+  DDR SDRAM CS2		0x20000000 0x2fffffff	0x0		0x0b
+  DDR SDRAM CS3		0x30000000 0x3fffffff	0x0		0x07
+  PCI Express Memory	0x80000000 0x9fffffff	0x4		0x59
+  PCI Memory		0xa0000000 0xbfffffff	0x3		0x59
+  PCI Express I/O	0xc0000000 0xc000ffff	0x4		0x51
+  PCI I/O		0xc8000000 0xc800ffff	0x3		0x51
+  Security Accel. SRAM	0xc8010000 0xc801ffff	0x9		0x00
   Internal Addresses	0xd0000000 0xd00fffff
-  Device CS0		0xe0000000 0xe7ffffff
-  Device CS1		0xe8000000 0xefffffff
-  Device CS2		0xf0000000 0xf7ffffff
-  Flash Boot CS		0xf8000000 0xffffffff
+  Device CS0		0xe0000000 0xe7ffffff	0x1		0x1e
+  Device CS1		0xe8000000 0xefffffff	0x1		0x1d
+  Device CS2		0xf0000000 0xf7ffffff	0x1		0x1b
+  Flash Boot CS		0xf8000000 0xffffffff	0x1		0x0f
 
 The Linux kernel expects the map to look like this:
 
   Internal Addresses	0xf1000000 0xf10fffff
-
 
 0x20000     1  enable
 	  7:4  target
@@ -48,18 +47,18 @@ Window 0:      Enabled, Target 4, Attr 0x59, Size 0x7ff (128MiB),
 Window 1:      Enabled, Target 3, Attr 0x59, Size 0x7ff (128MiB),
        	       Base 0x98000000, Remap 0x98000000
 Window 2:      Enabled, Target 4, Attr 0x51, Size 0xf (1MiB),
-       	       Base 0xf0000000, Remap 0x0
+       	       Base 0xf0000000
 Window 3:      Enabled, Target 3, Attr 0x51, Size 0xf (1MiB),
-       	       Base 0xf0100000, Remap 0x0
-Window 4:      Enabled, Target 1, Attr 0x0f, Size 0x7 (512KiB),
-       	       Base 0xfff80000,	Remap 0x0
+       	       Base 0xf0100000
+Window 4:      Enabled, Target 1, Attr 0x0f, Size 0x7 (512KiB),	    # NOR flash
+       	       Base 0xfff80000
 Window 5:      Enabled, Target 1, Attr 0x1e, Size 0x1f (2MiB),
-       	       Base 0xfa000000, Remap 0x0
+       	       Base 0xfa000000
 Window 6:      Enabled, Target 1, Attr 0x1d, Size 0x1ff (32MiB),
-       	       Base 0xf8000000, Remap 0x0
+       	       Base 0xf8000000
 Window 7:      Enabled, Target 1, Attr 0x1b, Size 0xf (1MiB),
-       	       Base 0xfa800000, Remap 0x0
-Window 8:      Base 0xf1000000
+       	       Base 0xfa800000
+Internal Map:  Base 0xf1000000
 
 
 Marvell>> md 0xf1020000
@@ -81,7 +80,7 @@ f10200e0: 00000000 00000000 00000000 00000000    ................
 f10200f0: 00000000 00000000 00000000 00000000    ................
 
 
-Target	  	   	ID	Attr	Size
+Target	  	   	ID	Attr	Max Size
 -----------------------------------------------
 PCI Express Memory	4	0x59	512 MiB
 PCI Memory  		3	0x59	512 MiB
@@ -107,3 +106,4 @@ is the CPU core clock.  It defaults to 500MHz.
 
 The clock values are determined by pull-ups/downs on CPU pins.  TCLK
 is determined separately from the other clocks.
+

@@ -285,6 +285,8 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
       & ((masks >> (cb & 7)) & 3))
     goto nonaligned;
 
+  //  printf ("%s: %lx %x %x\n", __FUNCTION__, d->start, d->index, cb);
+
   switch (cb) {
   case 1:
     *(char*)           (d->start + d->index) = *(char*)           pv;

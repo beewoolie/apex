@@ -3,7 +3,7 @@
    written by Marc Singer
    13 Nov 2004
 
-   Copyright (C) 2004 Marc Singer
+   Copyright (C) 2004-2008 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -35,13 +35,14 @@
      a cost and, at this point, I am not willing to pay the full cost.
      The driver can handle two chips, but not two completely different
      chips.  Esentially, it can handle a pair of identical chips or
-     one chip with two banks.  It linearizes multiple banks for the
-     convenience of writing large, contiguous blocks of data.
-     Improved flexbility would come from always translating from the
-     region structure.  What probably needs to happen is the region
-     structure needs to include the physical offset of the region.
-     Handling disparate chips, however, will probably never be done as
-     the chips may require different control constants.  Phooey.
+     one chip with two banks.  It linearizes multiple banks, in
+     phys_from_index(), for the convenience of writing large,
+     contiguous blocks of data.  Improved flexbility would come from
+     always translating from the region structure.  What probably
+     needs to happen is the region structure needs to include the
+     physical offset of the region.  Handling disparate chips,
+     however, will probably never be done as the chips may require
+     different control constants.  Phooey.
 
    o REGA, copy_from, and endianness
 
@@ -84,7 +85,7 @@
      changed for the Intel path since adding support for Spansion.
 
      Unlock support may be unnecessary for the MirrorBit parts because
-     the devices power-on with the block unlocked.
+     the devices power-on with blocks unlocked.
 
      This work is based, in part, on information gleaned from the
      S29GLxxxN MirrorBitTM Flash Family data sheet.
@@ -124,13 +125,13 @@
      seen whether or not all type 2 flash will accept it.  This is the
      same behavior as we see in the Linux kernel driver.
 
-   o Detecting erase regions.  While probing the chip, we would
-     normally read the erase region size and count and assume that the
-     read values were eight bits wide.  There is a Spansion chip where
-     this is not the case.  The high byte of the region size has high
-     bits set.  There was no documentation we could find that explains
-     this encoding, so we do the simple thing of masking off those
-     bits.
+   o TopBoot/BottomBoot. Based on the Linux kernel driver, AMD PRI
+     v1.0 doesn't report the location of the boot blocks.  This is
+     important because the order of the reported erase regions does
+     not reflect the order in the chip.  We need to know which it is.
+     So, we check the PRI version and the device ID.  If we determine
+     that this is a top boot AMD/Spansion device then we swap the
+     erase regions to properly reflect the order in the chip.  Yikes!
 
 */
 
@@ -168,6 +169,14 @@
 
 //#define NO_WRITE		/* Disable writes, for debugging */
 
+#if !defined (NOR_BUS_WIDTH)
+# define NOR_BUS_WIDTH NOR_WIDTH
+#endif
+
+#if !defined (NOR_CHIP_MULTIPLIER)
+# define NOR_CHIP_MULTIPLIER	(1)	/* Number of chips at REGA */
+#endif
+
 #if NOR_WIDTH == 32
 # define _REGA		__REG		/* Array I/O macro */
 # if NOR_CHIP_MULTIPLIER == 1
@@ -177,9 +186,15 @@
 # endif
 # define nor_t		u32
 #elif NOR_WIDTH == 16
-# define _REGA		__REG16		/* Array I/O macro */
-# define _REGC		__REG16		/* Single chip I/O macro */
-# define nor_t		u16
+# if NOR_BUS_WIDTH == 16
+#  define _REGA		__REG16		/* Array I/O macro, full width */
+#  define _REGC		__REG16		/* Single chip I/O macro, full width */
+#  define nor_t		u16
+# else
+#  define _REGA		__REG8		/* Array I/O macro, byte wide */
+#  define _REGC		__REG8		/* Single chip I/O macro, byte wide */
+#  define nor_t		u8
+# endif
 #endif
 
 #if defined (NOR_BIGENDIAN) && defined (CONFIG_LITTLEENDIAN)
@@ -190,7 +205,7 @@
 #  define SWAP_ONE(v) (  ((v & 0xff)<<24)    | ((v & 0xff00)<<8)\
 		       | ((v & 0xff0000)>>8) | ((v & 0xff000000)>>24))
 # else
-#  define SWAP_ONE(v) (((v & 0xff)<<8)    | ((v & 0xff00)>>8))
+#  define SWAP_ONE(v) (  ((v & 0xff)<<8)     | ((v & 0xff00)>>8))
 # endif
 #else
 # define REGA(a) _REGA(a)
@@ -199,6 +214,7 @@
 #endif
 
 #if NOR_CHIP_MULTIPLIER == 2
+/* *** FIXME, this may not work for anything except a pair of 16 bit parts */
 # define CMD(v)		((v) | ((v)<<16))
 # define STAT(v)	((v) | ((v)<<16))
 # define QRY(v)		((v) | ((v)<<16))
@@ -218,9 +234,9 @@
 # endif
 #endif
 
-#define WIDTH_SHIFT	(NOR_WIDTH>>4)	/* Bit shift for device width */
+#define WIDTH_SHIFT	(NOR_WIDTH>>4)	/* Bit shift for addresses */
 
-#define ReadQuery	0x98
+#define ReadQuery	0x98    /* CFI query is standardized */
 
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
 	/* CFI compliant parameters */
@@ -245,7 +261,10 @@
 
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
 
-#define ReadArray	0xf0
+#define ADR_UN1		0x555
+#define ADR_UN2		0x2aa
+
+#define ReadArray	0xf0    /* aka Reset */
 #define ReadID		0x90
 #define ReadStatus	0x70
 #define ClearStatus	0x50
@@ -297,11 +316,13 @@ struct nor_region {
   unsigned long next;		/*   this region and the start of the next */
 };
 
-#define C_REGIONS_MAX	16  /* Reasonable storage for erase region info */
+#define C_REGIONS_MAX	16 	/* Reasonable storage for erase region info */
 
 struct nor_chip {
   unsigned long total_size;
   int command_set;         	/* Command set identifier, [0x13] */
+  int manufacturer_id;
+  int device_id;
   int writebuffer_size;		/* Size (bytes) of buffered write buffer */
   int regions;
   struct nor_region region[C_REGIONS_MAX];
@@ -348,9 +369,10 @@ static unsigned long nor_read_one (unsigned long index)
 }
 #define READ_ONE(i) nor_read_one (i)
 
-static void nor_write_one (unsigned long index, unsigned long v)
+static void nor_write_one (unsigned long phys, unsigned long v)
 {
-  REGA (index) = v;
+//  PRINTF ("%s: [%lx]<-%x\n", __FUNCTION__, phys, (nor_t) v);
+  REGA (phys) = (nor_t) v;
 }
 #define WRITE_ONE(i,v) nor_write_one ((i), (v))
 
@@ -448,12 +470,14 @@ static unsigned long nor_status (unsigned long index)
 {
   nor_t dqPrev;
   nor_t dq;
+  int count = 0;
 
 //  usleep (4);			/* Required delay before reading status */
 
   dqPrev = READ_ONE (index);
 
   while (((dq = READ_ONE (index)) ^ dqPrev) & STAT (DQ6)) {
+    ++count;
     if (dq & STAT (DQ5)) {
       dqPrev = READ_ONE (index);
       dq = READ_ONE (index);
@@ -466,30 +490,35 @@ static unsigned long nor_status (unsigned long index)
     dqPrev = dq;
   }
 
+  PRINTF ("%s: status 0x%x 0x%x, toggled %d times\n",
+          __FUNCTION__, dq, dqPrev, count);
+
   return STAT (Ready);
 }
 
-static inline void nor_write_perform (unsigned long index, unsigned long data)
+static inline void nor_write_perform (unsigned long phys, unsigned long data)
 {
-  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
-  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
-  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (Program));
-  WRITE_ONE (index, data);
+  PRINTF ("%s: [%lx]<-%x\n", __FUNCTION__, phys, (nor_t) data);
+  WRITE_ONE (phys_from_index (ADR_UN1 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (ADR_UN2 << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (phys_from_index (ADR_UN1 << WIDTH_SHIFT), CMD (Program));
+  WRITE_ONE (phys, data);
 }
 
-static inline void nor_erase_perform (unsigned long index)
+static inline void nor_erase_perform (unsigned long phys)
 {
-  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
-  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
-  WRITE_ONE (phys_from_index (0x5555 << WIDTH_SHIFT), CMD (EraseSetup));
-  WRITE_ONE (phys_from_index( 0x5555 << WIDTH_SHIFT), CMD (UnlockData1));
-  WRITE_ONE (phys_from_index (0x2aaa << WIDTH_SHIFT), CMD (UnlockData2));
-  WRITE_ONE (index, CMD (Erase));
+  WRITE_ONE (phys_from_index (ADR_UN1 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (ADR_UN2 << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (phys_from_index (ADR_UN1 << WIDTH_SHIFT), CMD (EraseSetup));
+  WRITE_ONE (phys_from_index (ADR_UN1 << WIDTH_SHIFT), CMD (UnlockData1));
+  WRITE_ONE (phys_from_index (ADR_UN2 << WIDTH_SHIFT), CMD (UnlockData2));
+  WRITE_ONE (phys, CMD (Erase));
 }
 
 /* spansion:nor_unlock_page
 
-   is a NULL operation for the time being.
+   is a NULL operation for the time being.  This may be required in
+   the future, we just don't have any hardware that needs this.
 
 */
 
@@ -543,8 +572,11 @@ static void nor_probe_chip (unsigned long phys)
   int iRegionFirst = chip_probed.regions;
   int i;
   unsigned long start;
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+  int reverse_regions = false;
+#endif
 
-  PRINTF ("%s: probing %lx (%d %d); [%x+%x]<-%x\n", __FUNCTION__, phys,
+  PRINTF ("%s: probing %lx (%d %d); [%lx+%x]<-%x\n", __FUNCTION__, phys,
 	  NOR_WIDTH, NOR_CHIP_MULTIPLIER, phys, (0x55 << WIDTH_SHIFT),
           CMD(ReadQuery));
 
@@ -582,6 +614,60 @@ static void nor_probe_chip (unsigned long phys)
   dump ((void*) phys, 256, 0);
 #endif
 
+#if defined (ADR_UN1)
+	/* Read manufacturer ID probe */
+  WRITE_ONE (phys, CMD (ReadArray));
+  REGC (phys_from_index (ADR_UN1 << WIDTH_SHIFT)) = CMD (UnlockData1);
+  REGC (phys_from_index (ADR_UN2 << WIDTH_SHIFT)) = CMD (UnlockData2);
+  REGC (phys_from_index (ADR_UN1 << WIDTH_SHIFT)) = CMD (ReadID);
+
+  chip_probed.manufacturer_id
+    = REGC (phys_from_index (0x00 << WIDTH_SHIFT));
+  chip_probed.device_id
+    = REGC (phys_from_index (0x01 << WIDTH_SHIFT));
+
+	/* Return to Query */
+  REGA (phys + (0x55 << WIDTH_SHIFT)) = CMD (ReadQuery);
+#endif
+
+
+#if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+	  /* Fixup the erase regions for top-boot devices since the
+             CFI table is upside-down.  Moreover, older devices don't
+             make it easy to detect whether or not th device is
+             top-boot, so we do our best to divine this
+             information. */
+  {
+    unsigned long pri = REGC (phys_from_index (0x15 << WIDTH_SHIFT))
+      | (REGC (phys_from_index (0x16 << WIDTH_SHIFT)) << 8);
+    unsigned version = REGC (phys_from_index ((pri + 3) << WIDTH_SHIFT)) << 8
+      | REGC (phys_from_index ((pri + 4) << WIDTH_SHIFT));
+    int top_bottom = REGC (phys_from_index ((pri + 0xf) << WIDTH_SHIFT));
+    if (version < 0x3131) {     /* top_bottom isn't trustworthy */
+      switch (chip_probed.device_id) {
+      case 0x89:
+                /* Macronix MX29LV400CT */
+                /* Spansion ... */
+        top_bottom = 3;
+        break;
+      case 0x8a:
+                /* Macronix MX29LV400CB */
+                /* Spansion ... */
+        top_bottom = 2;
+        break;
+      default:
+        /* The Linux kernel just makes this simple mask test, but it
+           isn't valid for the Macronix part. */
+        top_bottom = (chip_probed.device_id & 0x80) ? 3 : 2;
+        break;
+      }
+    }
+    if (top_bottom == 3)
+      reverse_regions = true;
+  }
+#endif
+
+
   start = chip_probed.total_size;
   i = chip_probed.regions;
 
@@ -597,9 +683,15 @@ static void nor_probe_chip (unsigned long phys)
 
 	/* Discover erase regions.  Unfortunately, this has to be done
 	   so that the erase and unlock IO is reasonably efficient. */
-
   for (; i < chip_probed.regions; ++i) {
-    int offset = (i - iRegionFirst)*4;
+    int offset
+#if !defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
+      = (i - iRegionFirst)*4;
+#else
+	    /* If we've got a top-boot Spansion part, we need to
+               reverse the order of the erase regions. */
+      = (reverse_regions ? chip_probed.regions - 1 - i : (i - iRegionFirst))*4;
+#endif
     PRINTF ("  ");
     PRINTF (" %02x %02x %02x %02x ",
             REGC (phys + ((0x2d + offset) << WIDTH_SHIFT)),
@@ -608,12 +700,12 @@ static void nor_probe_chip (unsigned long phys)
             REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)));
 
     chip_probed.region[i].size
-      = 256*(   (REGC (phys + ((0x2f + offset) << WIDTH_SHIFT)) & 0xff)
-             | ((REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) & 0xff) << 8))
+      = 256*(   REGC (phys + ((0x2f + offset) << WIDTH_SHIFT))
+             | (REGC (phys + ((0x30 + offset) << WIDTH_SHIFT)) << 8))
       *NOR_CHIP_MULTIPLIER;
     chip_probed.region[i].count
-      = 1 + (   (REGC (phys + ((0x2d + offset) << WIDTH_SHIFT)) & 0xff)
-             | ((REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) & 0xff) << 8));
+      = 1 + (   REGC (phys + ((0x2d + offset) << WIDTH_SHIFT))
+             | (REGC (phys + ((0x2e + offset) << WIDTH_SHIFT)) << 8));
 
     PRINTF ("  region %d %d %d\n", i,
 	    chip_probed.region[i].size, chip_probed.region[i].count);
@@ -821,16 +913,16 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 #if defined (NO_WRITE)
     printf ("  available %d  cb %d\n", available, cb);
-    printf ("0x%lx <= 0x%x\n", index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
+    printf ("0x%lx <= 0x%x\n", index & ~(NOR_BUS_WIDTH/8 - 1), ProgramBuffered);
 #else
-    WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), ProgramBuffered);
+    WRITE_ONE (index & ~(NOR_BUS_WIDTH/8 - 1), ProgramBuffered);
 #endif
 
 #if !defined (NO_WRITE)
-    status = nor_status (index & ~(NOR_WIDTH/8 - 1));
+    status = nor_status (index & ~(NOR_BUS_WIDTH/8 - 1));
     if (!(status & Ready)) {
       PRINTF ("nor_write failed program start 0x%lx (0x%x)\n",
-	      index & ~(NOR_WIDTH/8 - 1), status);
+	      index & ~(NOR_BUS_WIDTH/8 - 1), status);
       goto fail;
     }
 #endif
@@ -839,13 +931,13 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 	   don't really know why) if we don't need to write a whole
 	   full buffer. */
     {
-      int av = available + (index & (NOR_WIDTH/8 - 1));
+      int av = available + (index & (NOR_BUS_WIDTH/8 - 1));
 #if defined (NO_WRITE)
-      printf ("0x%lx <= 0x%02x\n", index & ~(NOR_WIDTH/8 - 1),
+      printf ("0x%lx <= 0x%02x\n", index & ~(NOR_BUS_WIDTH/8 - 1),
 	      /* *** FIXME for 32 bit  */
 	      av - av/2 - 1);
 #else
-      WRITE_ONE (index & ~(NOR_WIDTH/8 - 1),
+      WRITE_ONE (index & ~(NOR_BUS_WIDTH/8 - 1),
 	      /* *** FIXME for 32 bit  */
 		 av - av/2 - 1);
 #endif
@@ -857,11 +949,12 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
     if (available == chip->writebuffer_size && ((unsigned long) pv & 1) == 0) {
       int i;
-      for (i = 0; i < available; i += NOR_WIDTH/8) {
+      for (i = 0; i < available; i += NOR_BUS_WIDTH/8) {
 #if defined (NO_WRITE)
-	printf ("0x%lx := 0x%04x\n", index + i, ((nor_t*)pv)[i/(NOR_WIDTH/8)]);
+	printf ("0x%lx := 0x%04x\n", index + i,
+                ((nor_t*)pv)[i/(NOR_BUS_WIDTH/8)]);
 #else
-	nor_t v = SWAP_ONE (((nor_t*)pv)[i/(NOR_WIDTH/8)]);
+	nor_t v = SWAP_ONE (((nor_t*)pv)[i/(NOR_BUS_WIDTH/8)]);
 	WRITE_ONE (index + i, v);
 #endif
       }
@@ -874,23 +967,23 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 //      rgb[0] = 0xff;						/* First */
 //      rgb[((available + (index & 1) + 1)&~1) - 1] = 0xff;	/* Last */
 //      printf ("  last %ld\n", ((available + (index & 1) + 1)&~1) - 1);
-      memcpy (rgb + (index & (NOR_WIDTH/8 - 1)), pv, available);
-      for (i = 0; i < available + (index & 1); i += NOR_WIDTH/8) {
+      memcpy (rgb + (index & (NOR_BUS_WIDTH/8 - 1)), pv, available);
+      for (i = 0; i < available + (index & 1); i += NOR_BUS_WIDTH/8) {
 #if defined (NO_WRITE)
 	printf ("0x%lx #= 0x%04x\n",
-		(index & ~(NOR_WIDTH/8 - 1)) + i,
-		((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
+		(index & ~(NOR_BUS_WIDTH/8 - 1)) + i,
+		((nor_t*)rgb)[i/(NOR_BUS_WIDTH/8)]);
 #else
-	nor_t v = SWAP_ONE (((nor_t*)rgb)[i/(NOR_WIDTH/8)]);
-	WRITE_ONE ((index & ~(NOR_WIDTH/8 - 1)) + i, v);
+	nor_t v = SWAP_ONE (((nor_t*)rgb)[i/(NOR_BUS_WIDTH/8)]);
+	WRITE_ONE ((index & ~(NOR_BUS_WIDTH/8 - 1)) + i, v);
 #endif
       }
     }
 
 #if defined (NO_WRITE)
-    printf ("0x%lx <= 0x%x\n", index & ~(NOR_WIDTH/8 - 1), ProgramConfirm);
+    printf ("0x%lx <= 0x%x\n", index & ~(NOR_BUS_WIDTH/8 - 1), ProgramConfirm);
 #else
-    WRITE_ONE (index & ~(NOR_WIDTH/8 - 1), ProgramConfirm);
+    WRITE_ONE (index & ~(NOR_BUS_WIDTH/8 - 1), ProgramConfirm);
 #endif
     SPINNER_STEP;
     status = nor_status (index);
@@ -944,17 +1037,17 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     unsigned long page = index & ~ (nor_region (index)->size - 1);
     unsigned long data = 0;
     unsigned long status;
-    int step = NOR_WIDTH/8;
+    int step = NOR_BUS_WIDTH/8;
 
     index = phys_from_index (index);
 
-    if ((index & (NOR_WIDTH/8 - 1)) || cb < step) {
-      step = (NOR_WIDTH/8) - (index & (NOR_WIDTH/8 - 1)); /* Max at index */
+    if ((index & (NOR_BUS_WIDTH/8 - 1)) || cb < step) {
+      step = (NOR_BUS_WIDTH/8) - (index & (NOR_BUS_WIDTH/8 - 1)); /* Max at index */
       if (step > cb)
 	step = cb;
       data = ~0;
-      memcpy ((unsigned char*) &data + (index & (NOR_WIDTH/8 - 1)), pv, step);
-      index &= ~(NOR_WIDTH/8 - 1);
+      memcpy ((unsigned char*) &data + (index & (NOR_BUS_WIDTH/8 - 1)), pv, step);
+      index &= ~(NOR_BUS_WIDTH/8 - 1);
     }
     else
       memcpy (&data, pv, step);
@@ -970,8 +1063,8 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
     }
 
 #if defined (NO_WRITE)
-    printf ("nor_write 0x%0*lx index 0x%lx  page 0x%lx  step %d  cb 0x%x\n",
-	    NOR_WIDTH/4, data, index, page, step, cb);
+    printf ("nor_write [0x%lx]<-0x%0*lx  page 0x%lx  step %d  cb 0x%x\n",
+	    index, NOR_BUS_WIDTH/4, (nor_t) data, page, step, cb);
     status = STAT (Ready);
 #else
     nor_write_perform (index, data);
@@ -1135,7 +1228,7 @@ static void nor_report (void)
 	  " (Intel %d%s)"
 #endif
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
-	  " (Spansion %d%s)"
+	  " (Spansion/AMD %d%s)"
 #endif
 	  "\n",
           phys_from_index (chip->region[0].start), chip->total_size,
@@ -1143,6 +1236,10 @@ static void nor_report (void)
           chip->writebuffer_size,
           chip->command_set, mismatched ? " ERR" : ""
 	  );
+
+  printf ("          manufacturer 0x%02x device 0x%02x\n",
+          chip->manufacturer_id, chip->device_id);
+
   for (i = 0; i < chip->regions; ++i)
     printf ("          region %d: %3d block%c of %6d (0x%05x) bytes\n",
 	    i,
