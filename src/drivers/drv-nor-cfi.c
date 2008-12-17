@@ -644,15 +644,13 @@ static void nor_probe_chip (unsigned long phys)
       | REGC (phys_from_index ((pri + 4) << WIDTH_SHIFT));
     int top_bottom = REGC (phys_from_index ((pri + 0xf) << WIDTH_SHIFT));
     if (version < 0x3131) {     /* top_bottom isn't trustworthy */
-      switch (chip_probed.device_id) {
-      case 0x89:
-                /* Macronix MX29LV400CT */
-                /* Spansion ... */
+      switch (chip_probed.manufacturer_id << 16 | chip_probed.device_id) {
+      case (0xc2 << 16) | 0x0089:                /* Macronix MX29LV400CT */
+      case (0xc2 << 16) | 0x2289:
         top_bottom = 3;
         break;
-      case 0x8a:
-                /* Macronix MX29LV400CB */
-                /* Spansion ... */
+      case (0xc2 << 16) | 0x008a:                /* Macronix MX29LV400CB */
+      case (0xc2 << 16) | 0x228a:
         top_bottom = 2;
         break;
       default:

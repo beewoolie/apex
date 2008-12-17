@@ -292,7 +292,6 @@ void exec_monitor (void)
     read_command ("\r" "apex> ", &argc, &argv);
     TIMECMD_START;
     call_command (argc, argv);
-//    printf ("%08lx %08lx\n", time, timer_read ());
     TIMECMD_REPORT;
 
   } while (1);

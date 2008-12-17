@@ -106,7 +106,7 @@ void __naked __section (.bootstrap.early.exit) bootstrap_early_exit (void)
 
 void __section (.bootstrap.sdram.func) usleep (unsigned long us)
 {
-  CPU_TIMERS_CTRL &= (CPU_TIMERS_CTRL_1_EN | CPU_TIMERS_CTRL_1_AUTO);
+  CPU_TIMERS_CTRL &= ~(CPU_TIMERS_CTRL_1_EN | CPU_TIMERS_CTRL_1_AUTO);
   CPU_TIMER1_LOAD = us*(tclk/(1000*1000));
   CPU_TIMERS_CTRL |= CPU_TIMERS_CTRL_1_EN;
 
