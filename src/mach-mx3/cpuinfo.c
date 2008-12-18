@@ -37,7 +37,7 @@ static void cpuinfo_report (void)
   unsigned long domain;
 //  unsigned long csc = (CSC_PWRSR>>CSC_PWRSR_CHIPID_SHIFT);
   unsigned long test;
-  char* sz = "mx31";
+  char* sz = "iMX31";
 
 //  switch (csc & 0xf0) {
 //  default  : sz = "lh?";     break;
@@ -52,13 +52,14 @@ static void cpuinfo_report (void)
   __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
   __asm volatile ("mrc p15, 0, %0, c15, c0, 0" : "=r" (test));
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
-  printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx (%s)   cpsr 0x%08lx\n"
-	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n"
-	  "          chipid %s\n"
+  printf ("  cpu:      id 0x%08lx   cache 0x%08lx    cpsr 0x%08lx\n"
+	  "          ttbl 0x%08lx  domain 0x%08lx  chipid %s\n"
+          "          ctrl 0x%08lx (%s)\n"
 	  "          cp15test 0x%04lx\n",
-	  id, ctrl, cp15_ctrl (ctrl), cpsr,
-	  ttbl, domain, cache, sz,
-	  test & 0xffff);
+	  id, cache, cpsr,
+	  ttbl, domain, sz,
+          ctrl, cp15_ctrl (ctrl),
+          test & 0xffff);
 
 #if defined (CPLD_VERSION)
   {

@@ -1,3 +1,9 @@
+2008-12-11  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/arch-arm/lib/cp15.c (cp15_ctrl): Enhanced the cp15 report on
+	the control register to be more readable and to show more
+	bits (ARMv6).
+
 2008-11-25  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/apex/cmd-image.c (cmd_image): Adding descriptor_open() call

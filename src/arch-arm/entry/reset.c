@@ -48,7 +48,6 @@ extern void setup_c (void);
 extern void init (void);
 extern void reset_finish (void);
 
-
 /* entry
 
    the first code executed in APEX.  We may or may not have an
