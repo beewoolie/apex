@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Nov 14 15:03:08 2008
+# Thu Dec 18 09:32:22 2008
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV4=y
@@ -21,7 +21,7 @@ CONFIG_THUMB=y
 # General Setup
 #
 CONFIG_TARGET_DESCRIPTION="Panasonic Karma"
-CONFIG_CROSS_COMPILE="/usr/arm-linux/gcc3/arm-linux-"
+CONFIG_CROSS_COMPILE="/opt/arm-2008q3/bin/arm-none-eabi-"
 CONFIG_AEABI=y
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set

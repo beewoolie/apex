@@ -1,3 +1,7 @@
+2008-12-18  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): Rolling revision for PSJL implementation. 1.6.4.
+
 2008-12-11  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/arch-arm/lib/cp15.c (cp15_ctrl): Enhanced the cp15 report on
