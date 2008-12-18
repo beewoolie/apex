@@ -5,6 +5,13 @@ APEX Boot Loader
 
 TODO:
 
+  o 2008.dec.16
+
+    o The drv-ata driver needs to support multiple drives and the
+      absence of either or both.  The orion5x controller ought to be
+      able to determine when a drive is present, so we should not have
+      to depend on a ready_wait timeout.
+
   o 2008.nov.25
     o Alias/environment variable references.  Presently, variable
       substitutions only traverse a single level.  It is necessary to
