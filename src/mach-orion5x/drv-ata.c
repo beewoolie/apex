@@ -238,6 +238,8 @@ boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 seri
 #endif
 
 
+#define MS_READY_WAIT_TIMEOUT	(1*1000)
+
   /* IO_BARRIER_READ necessary on some platforms where the chip select
      lines don't transition sufficiently.  It is necessary on reads as
      well as writes, however without a cache the code herein works
@@ -355,14 +357,12 @@ static void write16 (int reg, uint16_t value)
 
 static void ready_wait (void)
 {
-  /* *** FIXME: need a timeout */
+  unsigned long time = timer_read ();
 
-#if 0
-  while ((reada8 (ATTRIB_PIN) & ATTRIB_PIN_READY) == 0)
-    ;
-#endif
+  ENTRY (0);
 
-  while (read16 (IDE_REG_STATUS) & IDE_STATUS_BUSY)
+  while (read16 (IDE_REG_STATUS) & IDE_STATUS_BUSY
+         && timer_delta (time, timer_read ()) < MS_READY_WAIT_TIMEOUT)
     ;
 }
 
@@ -381,6 +381,8 @@ static void talk_registers (void)
 
 static void select (int drive, int head)
 {
+  ENTRY (0);
+
   drive_select = IDE_SELECT_BITS
 #if defined USE_LBA
     | (1<<6)		/* Enable LBA mode */
@@ -480,25 +482,36 @@ static int ata_identify (void)
 
 #endif
 
+//  DBG (1, "selecting\n");
   select (0, 0);
+//  DBG (1, "wait\n");
   ready_wait ();
 
 //  write8 (IDE_COMMAND, IDE_IDENTIFY);
 //  write16 (IDE_SELECT, (IDE_IDENTIFY << 8) | drive_select);
+//  DBG (1, "identify command\n");
   write16 (IDE_REG_COMMAND, IDE_CMD_IDENTIFY);
+//  DBG (1, "wait\n");
   ready_wait ();
 
+//  DBG (1, "reading data\n");
   {
     int i;
     memset (ata_d.identity, 0, sizeof (ata_d.identity));
+    DBG (1, "reading identity data\n");
     for (i = 0; i < 128; ++i)
       ata_d.identity[i] = read16 (IDE_REG_DATA);
 //      rgs[i] = read16 (0);
 
+//    DBG (1, "flush\n");
 	/* Flush */
 //    for (i = 0; i < 128; ++i)
-    while (read16 (IDE_REG_STATUS) & IDE_STATUS_DRQ)
-      read16 (IDE_REG_DATA);
+    {
+      int count = 128;
+      for (count = 128; count && (read16 (IDE_REG_STATUS) & IDE_STATUS_DRQ);
+           --count)
+        read16 (IDE_REG_DATA);
+    }
 
 #if defined (TALK) && TALK > 2
     dump ((void*) ata_d.identity, 256, 0);
