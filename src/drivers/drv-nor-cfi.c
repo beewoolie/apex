@@ -632,11 +632,10 @@ static void nor_probe_chip (unsigned long phys)
 
 
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_SPANSION)
-	  /* Fixup the erase regions for top-boot devices since the
-             CFI table is upside-down.  Moreover, older devices don't
-             make it easy to detect whether or not th device is
-             top-boot, so we do our best to divine this
-             information. */
+	  /* Fixup the erase regions for top-boot, AMD devices since
+             the CFI table is upside-down.  Moreover, older devices
+             don't make it easy to detect whether or not the device is
+             top-boot, so we do our best to divine this fact. */
   {
     unsigned long pri = REGC (phys_from_index (0x15 << WIDTH_SHIFT))
       | (REGC (phys_from_index (0x16 << WIDTH_SHIFT)) << 8);
@@ -655,7 +654,8 @@ static void nor_probe_chip (unsigned long phys)
         break;
       default:
         /* The Linux kernel just makes this simple mask test, but it
-           isn't valid for the Macronix part. */
+           may not be valid for all Macronix parts.  It's probably OK
+           for AMD since they don't make NOR flash anymore. */
         top_bottom = (chip_probed.device_id & 0x80) ? 3 : 2;
         break;
       }
