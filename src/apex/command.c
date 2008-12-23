@@ -213,6 +213,8 @@ int call_command (int argc, const char** argv)
 #if !defined (CONFIG_SMALL)
     if (error_description == NULL) {
       switch (result) {
+      case ERROR_FAILURE:
+	error_description = "command failure"; break;
       case ERROR_PARAM:
 	error_description = "parameter error"; break;
       case ERROR_OPEN:

@@ -161,6 +161,25 @@ config IPU_TEST
 	  testing and debugging IPU problems.  This code depends on
 	  some platform specific hardware.
 
+config MX31_I2C_DRIVER
+       bool "Enable I2C driver"
+       default n
+       help
+         This I2C driver is for debugging.
+
+config CMD_WM8955
+       bool "Define WM8955L command"
+       default n
+       depends on MX31_I2C_DRIVER 
+
+config DRIVER_WM8955_I2C_DRIVER
+	string "Underlying I2C driver"
+	depends on CMD_WM8955
+	default "i2c:/0x1a"
+	help
+	  The I2C driver region used to communicate with the WM8955L
+	  codec.
+	
 config EXTENDED_CPUINFO
 	bool "Extended CPU into"
 	depends on n

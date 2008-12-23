@@ -1,3 +1,11 @@
+2008-12-22  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/mach-mx3/drv-i2c.c: New I2C driver for MX3x.  Not complete,
+	but working for writes to the I2C#1 controller.
+
+	* src/mach-mx3/cmd-wm8955.c: New command for sending control
+	messages to the WM8955L on the PSJL Karma.
+
 2008-12-18  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): Rolling revision for PSJL implementation. 1.6.4.
