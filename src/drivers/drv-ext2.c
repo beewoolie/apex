@@ -110,7 +110,7 @@
 #include <lookup.h>
 
 //#define TALK 1
-//#define TALK_DIR
+#define TALK_DIR
 
 #include <talk.h>
 
@@ -313,7 +313,8 @@ struct directory {
 struct ext2_info {
   struct descriptor_d d;	/* Descriptor for underlying driver */
 
-  int fOK;
+  int fOK;			/* True when the block device recognizable */
+  u32 region_crc;               /* CRC of region for detecting changes */
   struct partition partition[4];
   struct superblock superblock;
   int block_size;
@@ -339,9 +340,25 @@ static __env struct env_d e_ext2_drv = {
 };
 #endif
 
+/* block_driver
+
+   returns the prefix for the base block device s.t. a starting
+   address and extent may be appended.
+
+ */
+
 static inline const char* block_driver (void)
 {
   return lookup_alias_or_env ("ext2-drv", CONFIG_DRIVER_EXT2_BLOCKDEVICE);
+}
+
+static void clear_ok_by_crc (void)
+{
+  extern unsigned long compute_crc32 (unsigned long, const void*, size_t);
+  const char* sz = block_driver ();
+  u32 crc = compute_crc32 (0, sz, strlen (sz));
+  if (ext2.region_crc != crc)
+    ext2.fOK = false;
 }
 
 inline int block_groups (struct ext2_info* ext2)
@@ -572,7 +589,7 @@ static int ext2_identify (void)
   char sz[128];
   struct descriptor_d d;
 
-  snprintf (sz, sizeof (sz), "%s:+1s", block_driver ());
+  snprintf (sz, sizeof (sz), "%s%%+1s", block_driver ());
   if (   (result = parse_descriptor (sz, &d))
       || (result = open_descriptor (&d))) {
     PRINTF ("%s: unable to open block driver '%s'\n", __FUNCTION__, sz);
@@ -796,7 +813,7 @@ static int ext2_open (struct descriptor_d* d)
       flush_cache ();
     }
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+    snprintf (sz, sizeof (sz), "%s%%@%lds+%lds",
 	      block_driver (),
 	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
@@ -984,7 +1001,7 @@ static int ext2_info (struct descriptor_d* d)
       flush_cache ();
     }
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+    snprintf (sz, sizeof (sz), "%s%%@%lds+%lds",
 	      block_driver (),
 	      ext2.partition[partition].start,
 	      ext2.partition[partition].length);
@@ -1055,6 +1072,7 @@ static void ext2_report (void)
 {
   int i;
 
+  clear_ok_by_crc ();
   if (!ext2.fOK) {
     if (ext2_identify ())
       return;

@@ -171,6 +171,7 @@ boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 seri
 #include <driver.h>
 #include <service.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
 #include <spinner.h>
 #include <asm/reg.h>
 #include <error.h>
@@ -189,6 +190,10 @@ boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 seri
 # define REG __REG
 #else
 # error Unable to build ATA driver with specified ATA_WIDTH
+#endif
+
+#if !defined (ATA_DEVICE_MAX)
+#define ATA_DEVICE_MAX	(1)
 #endif
 
 #if !defined (ATA_REG)
@@ -293,34 +298,34 @@ struct ata_info {
 static struct ata_info ata_d;
 u8 drive_select;
 
-static uint8_t read8 (int reg)
+static uint8_t read8 (unsigned long phys, int reg)
 {
   uint16_t v;
 //  IOBARRIER_READ;
-  v = REG (ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
+  v = REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
   IOBARRIER_READ;
   return (reg & 1) ? (v >> 8) : (v & 0xff);
 }
 
-static uint8_t reada8 (int reg)
+static uint8_t reada8 (unsigned long phys, int reg)
 {
   uint16_t v;
-  v = REG (ATA_PHYS | ATA_ATTRIB | (reg & ~1)*ATA_ADDR_MULT);
+  v = REG (phys | ATA_ATTRIB | (reg & ~1)*ATA_ADDR_MULT);
   IOBARRIER_READ;
   return (reg & 1) ? (v >> 8) : (v & 0xff);
 }
 
-static void write8 (int reg, uint8_t value)
+static void write8 (unsigned long phys, int reg, uint8_t value)
 {
   uint16_t v;
-  v = REG (ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
+  v = REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
 //  printf ("write8 0x%x -> 0x%x  ",
 //	  ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT, v);
   IOBARRIER_READ;
   v = (reg & 1) ? ((v & 0x00ff) | (value << 8)) : ((v & 0xff00) | value);
 //  printf (" 0x%x\n", v);
   DELAY;
-  REG (ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT) = v;
+  REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT) = v;
   IOBARRIER_READ;
 }
 
@@ -337,31 +342,31 @@ static void writea8 (int reg, uint8_t value)
 }
 #endif
 
-static uint16_t read16 (int reg)
+static uint16_t read16 (unsigned long phys, int reg)
 {
   uint16_t value;
-  value = REG (ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
+  value = REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT);
   IOBARRIER_READ;
   return value;
 }
 
-static void write16 (int reg, uint16_t value)
+static void write16 (unsigned long phys, int reg, uint16_t value)
 {
 //  IOBARRIER_READ;
 //  printf ("write16: 0x%x <- 0x%x\n",
 //	  ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT, value);
-  REG (ATA_PHYS | ATA_REG | (reg & ~1)*ATA_ADDR_MULT) = value;
+  REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT) = value;
   IOBARRIER_READ;
 }
 
 
-static void ready_wait (void)
+static void ready_wait (unsigned long phys)
 {
   unsigned long time = timer_read ();
 
   ENTRY (0);
 
-  while (read16 (IDE_REG_STATUS) & IDE_STATUS_BUSY
+  while (read16 (phys, IDE_REG_STATUS) & IDE_STATUS_BUSY
          && timer_delta (time, timer_read ()) < MS_READY_WAIT_TIMEOUT)
     ;
 }
@@ -379,7 +384,7 @@ static void talk_registers (void)
 }
 #endif
 
-static void select (int drive, int head)
+static void select (unsigned long phys, int drive, int head)
 {
   ENTRY (0);
 
@@ -389,22 +394,22 @@ static void select (int drive, int head)
 #endif
     | (drive ? (1<<4) : 0);
 
-  write16 (IDE_REG_DEVICE, drive_select); // | (IDE_IDLE << 8));
+  write16 (phys, IDE_REG_DEVICE, drive_select); // | (IDE_IDLE << 8));
 
-  ready_wait ();
+  ready_wait (phys);
 }
 
-static void seek (unsigned sector)
+static void seek (unsigned long phys, unsigned sector)
 {
   DBG (1,"[s %d", sector);
 
 #if defined (USE_LBA)
-  select (0, (sector >> 24) & 0xf);
-  write16 (IDE_REG_LBAHIGH, (sector >> 16) & 0xff);
-  write16 (IDE_REG_LBAMID,  (sector >>  8) & 0xff);
-  write16 (IDE_REG_LBALOW,  (sector >>  0) & 0xff);
+  select (phys, 0, (sector >> 24) & 0xf);
+  write16 (phys, IDE_REG_LBAHIGH, (sector >> 16) & 0xff);
+  write16 (phys, IDE_REG_LBAMID,  (sector >>  8) & 0xff);
+  write16 (phys, IDE_REG_LBALOW,  (sector >>  0) & 0xff);
 
-  ready_wait ();
+  ready_wait (phys);
 
 #else
   {
@@ -413,12 +418,12 @@ static void seek (unsigned sector)
       /ata_d.sectors_per_track;
     sector  %= ata_d.sectors_per_track;
 
-    select (0, head);
-    write16 (IDE_SECTORCOUNT, 1 | (sector << 8));
-    write16 (IDE_CYLINDER, cylinder);
+    select (phys, 0, head);
+    write16 (phys, IDE_SECTORCOUNT, 1 | (sector << 8));
+    write16 (phys, IDE_CYLINDER, cylinder);
   }
 
-  ready_wait ();
+  ready_wait (phys);
 
   DBG (1," %d %d %d", head, cylinder, sector);
 
@@ -431,68 +436,22 @@ static void seek (unsigned sector)
 #endif
 }
 
-static int ata_identify (void)
+static int ata_identify (unsigned long phys)
 {
   ENTRY (1);
 
-#if 0
-//  writea8 (ATTRIB_OPTION, reada8 (ATTRIB_OPTION) | ATTRIB_OPTION_LEVELREQ);
-
-  drive_select = 0xe0;
-
-  ata_d.type = REG (ATA_PHYS) & 0xff;
-  IOBARRIER_READ;
-
-  //  printf ("ata_d.type %d (0x%x)\n", ata_d.type, ata_d.type);
-
-#if defined (TALK_ATTRIB)
-  {
-    int index = 0;
-    while (index < 512) {
-      uint16_t s = REG (ATA_PHYS + index);
-      IOBARRIER_READ;
-      if (s == 0xff || s == 0xffff)
-	break;
-      PRINTF ("%03x: 0x%x", index, s);
-      index += 2*ATA_ADDR_MULT;
-      s = REG (ATA_PHYS + index) & 0xff;
-      IOBARRIER_READ;
-      PRINTF (" 0x%x (%d)\n", s, s);
-      index += 2*ATA_ADDR_MULT;
-      {
-	int i;
-	char __aligned rgb[128];
-	for (i = 0; i < s; ++i) {
-	  rgb[i] = REG (ATA_PHYS + index + i*2*ATA_ADDR_MULT);
-	  IOBARRIER_READ;
-	}
-	dump (rgb, s, 0);
-      }
-      index += s*2*ATA_ADDR_MULT;
-    }
-  }
-#endif
-
-  if (ata_d.type != typeMemory)
-    ERROR_RETURN (ERROR_UNSUPPORTED, "unsupported CF device");
-
-#if defined (TALK)
-  talk_registers ();
-#endif
-
-#endif
 
 //  DBG (1, "selecting\n");
-  select (0, 0);
+  select (phys, 0, 0);
 //  DBG (1, "wait\n");
-  ready_wait ();
+  ready_wait (phys);
 
 //  write8 (IDE_COMMAND, IDE_IDENTIFY);
 //  write16 (IDE_SELECT, (IDE_IDENTIFY << 8) | drive_select);
 //  DBG (1, "identify command\n");
-  write16 (IDE_REG_COMMAND, IDE_CMD_IDENTIFY);
+  write16 (phys, IDE_REG_COMMAND, IDE_CMD_IDENTIFY);
 //  DBG (1, "wait\n");
-  ready_wait ();
+  ready_wait (phys);
 
 //  DBG (1, "reading data\n");
   {
@@ -500,21 +459,22 @@ static int ata_identify (void)
     memset (ata_d.identity, 0, sizeof (ata_d.identity));
     DBG (1, "reading identity data\n");
     for (i = 0; i < 128; ++i)
-      ata_d.identity[i] = read16 (IDE_REG_DATA);
+      ata_d.identity[i] = read16 (phys, IDE_REG_DATA);
 //      rgs[i] = read16 (0);
 
 //    DBG (1, "flush\n");
 	/* Flush */
 //    for (i = 0; i < 128; ++i)
     {
-      int count = 128;
-      for (count = 128; count && (read16 (IDE_REG_STATUS) & IDE_STATUS_DRQ);
+      int count;
+      for (count = 128; count
+             && (read16 (phys, IDE_REG_STATUS) & IDE_STATUS_DRQ);
            --count)
-        read16 (IDE_REG_DATA);
+        read16 (phys, IDE_REG_DATA);
     }
 
 #if defined (TALK) && TALK > 2
-    dump ((void*) ata_d.identity, 256, 0);
+//    dump ((void*) ata_d.identity, 256, 0);
     dumpw ((void*) ata_d.identity, 256, 0, 2);
 #endif
 
@@ -538,6 +498,9 @@ static int ata_identify (void)
         = (ata_d.identity[ 61] << 16)
         | (ata_d.identity[ 60] <<  0);
 
+
+    if (ata_d.total_sectors == 0) /* No device present */
+      return -1;
 
     if (ata_d.identity[53] & (1<<1)) {
       ata_d.speed = ata_d.identity[67];
@@ -574,21 +537,33 @@ static int ata_identify (void)
 static int ata_open (struct descriptor_d* d)
 {
   int result;
+  int device = 0;
+  unsigned long phys;
   ENTRY (0);
 
-  if ((result = ata_identify ()))
+  /* Select the base address based on the disk number */
+  if (d->iRoot)
+    device = simple_strtoul (d->pb[0], NULL, 10);
+
+  if (device < 0 || device >= ATA_DEVICE_MAX)
+    device = 0;
+
+  phys = ATA_PHYS (device);
+
+  if ((result = ata_identify (phys)))
     return result;
 
-  DBG (1,"%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
+  d->private = phys;
 
-  /* perform bounds check */
+  DBG (1,"%s: opened #%d @%ld +%ld\n",
+       __FUNCTION__, device, d->start, d->length);
 
   return 0;
 }
 
 static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
 {
-#if 1
+  unsigned long phys = d->private;
   ssize_t cbRead = 0;
 
   if (d->index + cb > d->length)
@@ -611,13 +586,13 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
 
       DBG (2,"ata reading %d\n", sector);
 
-      seek (sector);
-      write16 (IDE_REG_COMMAND, IDE_CMD_READSECTOR);
-      ready_wait ();
+      seek (phys, sector);
+      write16 (phys, IDE_REG_COMMAND, IDE_CMD_READSECTOR);
+      ready_wait (phys);
       ata_d.sector = sector;
 
       for (i = 0; i < SECTOR_SIZE/2; ++i)
-	*(uint16_t*) &ata_d.rgb[i*2] = read16 (IDE_REG_DATA);
+	*(uint16_t*) &ata_d.rgb[i*2] = read16 (phys, IDE_REG_DATA);
     }
 
     memcpy (pv, ata_d.rgb + (index & (SECTOR_SIZE - 1)), available);
@@ -629,8 +604,6 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
   }
 
   return cbRead;
-#endif
-  return 0;
 }
 
 /** Initialize ATA interface for Orion5x.  This code shall be moved to
@@ -673,69 +646,60 @@ static void ata_init (void)
 
 static void ata_report (void)
 {
-  int size;
-  int fraction;
-  char chSize = 'M';
+  int channel;
 
   ENTRY (0);
 
-  if (ata_identify ())
-    return;
+  for (channel = 0; channel < ATA_DEVICE_MAX; ++channel) {
+    unsigned long status = SATAI_SSTATUS (channel);
+    bool present = (((status >> SATAI_SSTATUS_DET_SH)
+                     & SATAI_SSTATUS_DET_MSK) == 3);
+    const char* speed;
+    int size = 0;
+    int fraction = 0;
+    char chSize = 'M';
 
-  size = ata_d.total_sectors >> 11;     /* /2/1024 */
-  fraction = ((ata_d.total_sectors & ((1<<11) - 1))*100)>>10;
-  if (size >= 1000) {
-    fraction = ((size & ((1<<10) - 1))*100) >> 10;
-    size >>= 10;
-    chSize = 'G';
-  }
+    if (present) {
+      ata_identify (ATA_PHYS (channel));
 
+      size = ata_d.total_sectors >> 11;     /* /2/1024 */
+      fraction = ((ata_d.total_sectors & ((1<<11) - 1))*100)>>10;
+      if (size >= 1000) {
+        fraction = ((size & ((1<<10) - 1))*100) >> 10;
+        size >>= 10;
+        chSize = 'G';
+      }
+    }
+
+    switch ((status >> SATAI_SSTATUS_SPD_SH) & SATAI_SSTATUS_SPD_MSK) {
+    case 0:
+    default:
+      speed = "(speed?)";
+      break;
+    case 1:
+      speed = "Gen1 (1.5 Mbps)";
+      break;
+    case 2:
+      speed = "Gen2 (3.0 Mbps)";
+      break;
+    }
 
   /* *** FIXME: there is a function in the image code to convert a
      *** count of bytes into a human readale size string.  It could be
      *** adapted to cope with 48 bit LBAs by shifting by 10 on calling
      *** the function.. */
 
-  printf ("  ata:    %d.%02d %ciB, %s %s",
-          size, fraction, chSize, ata_d.szFirmware, ata_d.szName);
-  if (ata_d.speed != -1)
-    printf (" (%d ns)", ata_d.speed);
-  printf ("\n");
-
-  /* *** FIXME: this data would have to come from a data structure to
-     *** be available in a generic fashion.  */
-  {
-    int channel;
-    for (channel = 0; channel < 2; ++channel) {
-      unsigned long v = SATAI_SSTATUS (channel);
-      printf ("          device %d ", channel);
-      if (((v >> SATAI_SSTATUS_DET_SH) & SATAI_SSTATUS_DET_MSK) != 3) {
-        printf ("absent\n");
-        continue;
-      }
-      switch ((v >> SATAI_SSTATUS_SPD_SH) & SATAI_SSTATUS_SPD_MSK) {
-      case 0:
-      default:
-        printf ("no speed");
-        break;
-      case 1:
-        printf ("Gen1 (1.5 Mbps)");
-        break;
-      case 2:
-        printf ("Gen2 (3.0 Mbps)");
-        break;
-      }
-      printf ("\n");
+    printf ("  %s    #%d ", channel ? "    " : "ata:", channel);
+    if (present) {
+      printf ("%d.%02d %ciB %s",
+              size, fraction, chSize, speed);
+      if (ata_d.speed != -1)
+        printf (" (%d ns)", ata_d.speed);
+      printf ("\n%*s%s %s\n", 20, "", ata_d.szFirmware, ata_d.szName);
     }
+    else
+      printf ("absent\n");
   }
-
-#if 0
-  printf ("          opt 0x%x  cns 0x%x  pin 0x%x  dcr 0x%x\n",
-	  reada8 (ATTRIB_OPTION),
-	  reada8 (ATTRIB_CONFIGSTATUS),
-	  reada8 (ATTRIB_PIN),
-	  read8 (IDE_CONTROL));
-#endif
 }
 
 #endif
@@ -743,7 +707,7 @@ static void ata_report (void)
 static __driver_3 struct driver_d ata_driver = {
   .name = DRIVER_NAME,
   .description = "ATA driver",
-  .flags = DRIVER_WRITEPROGRESS(6),
+  .flags = DRIVER_WRITEPROGRESS(6) | DRIVER_DESCRIP_FS,
   .open = ata_open,
   .close = close_helper,
   .read = ata_read,

@@ -31,6 +31,7 @@ lib-y += lookup.o
 lib-y += memtest.o
 lib-y += strimatch.o
 lib-y += gmtime.o
+lib-y += describe-size.o
 
 ifneq ($(CONFIG_THUMB),)
   EXTRA_CFLAGS += -mthumb

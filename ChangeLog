@@ -1,3 +1,30 @@
+2008-12-30  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-fat.c (fat_open):  Adding greater specificity
+	to the region construction from the block_driver().
+
+	* src/drivers/drv-ext2.c (ext2_open): Adding greater specificity
+	to the region construction from the block_driver().
+
+	* src/drivers/driver.c (parse_descriptor): Fix to disambiguate
+	regions that could have path elements.  The parser would not
+	interpret driver:10k as having a start address of 10k when the
+	driver could accept a path.  Now, parser will interpret driver:bin
+	as having a path of 'bin', but driver:10k as having a starting
+	offset as 10k.  The region can be unambiguously constructed using
+	'@' and '/' appropriately.
+ 
+2008-12-21  Marc Singer  <elf@buici.com>
+
+	* src/drivers/driver.c (parse_descriptor): Fix for the parsing of
+	FS descriptors such that the start address and length parameters
+	may be set.
+	(parse_descriptor): Added the '%' special character for combining
+	one or more descriptors.  This is used by the drivers that have a
+	basis driver defined in an environment variable, s.t. the driver
+	can specify a starting address and/or length without knowing the
+	exact form specified by the 
+
 2008-12-14  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Support for broken
