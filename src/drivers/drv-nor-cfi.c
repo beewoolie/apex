@@ -393,7 +393,6 @@ static const struct nor_region* nor_region (unsigned long index)
   return &chip->region[0];		/* A very serious error */
 }
 
-
 #if defined (CONFIG_DRIVER_NOR_CFI_TYPE_INTEL)
 
 /* intel:nor_status

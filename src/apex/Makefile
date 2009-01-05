@@ -36,6 +36,7 @@ obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 obj-$(CONFIG_CMD_IMAGE)		+= cmd-image.o
 obj-$(CONFIG_CMD_IMAGE_APEX)	+= cmd-image-apex.o
 obj-$(CONFIG_CMD_IMAGE_UBOOT)	+= cmd-image-uboot.o
+obj-$(CONFIG_CMD_FLASHUSAGE)	+= cmd-flashusage.o
 
 ifneq ($(CONFIG_THUMB),)
  EXTRA_CFLAGS += -mthumb

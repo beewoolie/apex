@@ -1,5 +1,13 @@
 2009-01-04  Marc Singer  <elf@buici.com>
 
+	* src/apex/cmd-flashusage.c (cmd_flashusage): New command to scan
+	eraseblocks of a flash device for the presence of data.
+
+	* src/mach-lh7952x/memory.h (RAM_BANK0_LENGTH): Fixed the
+	declarations of the extents for the memory regions in the
+	LH7952x.  The macros were correct for the LH79524 but not the
+	LH79520.  This is now fixed.
+
 	* src/drivers/drv-ext2.c (ext2_identify): Revised EXT2 driver to
 	look for extended partitions and to cope with 64 bit IO.
 

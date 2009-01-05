@@ -232,6 +232,12 @@ config CMD_PAUSE
 	bool "Define Pause Command"
 	default n
 
+config CMD_FLASHUSAGE
+	bool "Define Flash Usage Command"
+	default n
+	help
+	  Show the usage of erase blocks within a NOR flash device.
+
 config CMD_WAIT
 	bool "Define Wait Command"
 	default y

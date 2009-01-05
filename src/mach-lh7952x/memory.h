@@ -31,12 +31,12 @@
 
 #if defined (CONFIG_SDRAM_BANK0)
 # define RAM_BANK0_START	SDRAM_BANK0_PHYS
-# define RAM_BANK0_LENGTH	0x10000000
+# define RAM_BANK0_LENGTH	SDRAM_BANK_SIZE
 #endif
 
 #if defined (CONFIG_SDRAM_BANK1)
 # define RAM_BANK1_START	SDRAM_BANK1_PHYS
-# define RAM_BANK1_LENGTH	0x10000000
+# define RAM_BANK1_LENGTH	SDRAM_BANK_SIZE
 #endif
 
 	/* MMU macro for assigning segment protection bits. */
