@@ -182,7 +182,8 @@ struct directory {
 struct fat_info {
   struct descriptor_d d;	/* Descriptor for underlying driver */
 
-  int fOK;			/* True when the block device recognizabled */
+  int fOK;			/* True when the block device recognizable */
+  u32 region_crc;               /* CRC of region for detecting changes */
   struct partition partition[4];
   struct parameter parameter;	/* Parameter info for the partition */
   size_t index_cluster_2;	/* Partition index of first cluster */
@@ -234,6 +235,15 @@ static const char* block_driver (void)
   return lookup_alias_or_env ("fat-drv", CONFIG_DRIVER_FAT_BLOCKDEVICE);
 }
 
+static void clear_ok_by_crc (void)
+{
+  extern unsigned long compute_crc32 (unsigned long, const void*, size_t);
+  const char* sz = block_driver ();
+  u32 crc = compute_crc32 (0, sz, strlen (sz));
+  if (fat.region_crc != crc)
+    fat.fOK = false;
+}
+
 #if 0
 static void fat_init (void)
 {
@@ -257,7 +267,7 @@ static int fat_identify (void)
   char sz[128];
   struct descriptor_d d;
 
-  snprintf (sz, sizeof (sz), "%s:+1s", block_driver ());
+  snprintf (sz, sizeof (sz), "%s%%+1s", block_driver ());
   if (   (result = parse_descriptor (sz, &d))
       || (result = open_descriptor (&d)))
     return result;
@@ -424,7 +434,7 @@ static int fat_open (struct descriptor_d* d)
 
 		/* Read just the partition table */
   if (d->c == 0) {
-    snprintf (sz, sizeof (sz), "%s:%d+%d",
+    snprintf (sz, sizeof (sz), "%s%%@%d+%d",
 	      block_driver (),
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
@@ -436,7 +446,7 @@ static int fat_open (struct descriptor_d* d)
     if (partition < 0 || partition > 3 || fat.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+    snprintf (sz, sizeof (sz), "%s%%@%lds+%lds",
 	      block_driver (),
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
@@ -587,7 +597,7 @@ static int fat_info (struct descriptor_d* d)
 
 		/* Read just the partition table */
   if (d->c == 0) {
-    snprintf (sz, sizeof (sz), "%s:%d+%d",
+    snprintf (sz, sizeof (sz), "%s%%@%d+%d",
 	      block_driver (),
 	      SECTOR_SIZE - 66, 16*4);
     d->length = 16*4;
@@ -599,7 +609,7 @@ static int fat_info (struct descriptor_d* d)
     if (partition < 0 || partition > 3 || fat.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
-    snprintf (sz, sizeof (sz), "%s:%lds+%lds",
+    snprintf (sz, sizeof (sz), "%s%%@%lds+%lds",
 	      block_driver (),
 	      fat.partition[partition].start, fat.partition[partition].length);
   }
@@ -656,6 +666,7 @@ static void fat_report (void)
 {
   int i;
 
+  clear_ok_by_crc ();
   if (!fat.fOK) {
     if (fat_identify ())
       return;
@@ -670,7 +681,8 @@ static void fat_report (void)
     if (fat.partition[i].type || i == 0) {
       if (i != 0)
 	printf ("      ");
-      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n", i,
+      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n",
+              i + 1,
 	      fat.partition[i].boot ? '*' : ' ',
 	      fat.partition[i].type,
 	      fat.partition[i].start,

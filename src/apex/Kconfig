@@ -221,9 +221,22 @@ config CMD_INFO
 	  Show information about a region descriptor.  Use this command
 	  to list the contents of a filesystem directory.
 
+config CMD_PARSE
+	bool "Define Parse Command"
+	default n
+	help
+	  Parse REGION strings and show the result. 
+	  This is used primarily for debugging.
+
 config CMD_PAUSE
 	bool "Define Pause Command"
 	default n
+
+config CMD_FLASHUSAGE
+	bool "Define Flash Usage Command"
+	default n
+	help
+	  Show the usage of erase blocks within a NOR flash device.
 
 config CMD_WAIT
 	bool "Define Wait Command"
@@ -277,7 +290,7 @@ config CMD_MEMSCAN
 	default n
 	help
 	  This command scans memory as APEX does when initializing.
-	  It is used primarily for debugging.
+	  This is used primarily for debugging.
 
 config CMD_MEMTEST
 	bool "Define Memtest Command"

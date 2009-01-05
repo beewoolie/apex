@@ -28,19 +28,29 @@
 
 struct driver_d;
 
+#if defined CONFIG_DRIVER_LONG_LONG_SIZE
+ typedef int64_t  driver_off_t;
+ typedef uint64_t driver_size_t;
+ typedef int64_t  driver_ssize_t;
+#else
+ typedef int32_t  driver_off_t;
+ typedef uint32_t driver_size_t;
+ typedef int32_t  driver_ssize_t;
+#endif
+
 struct descriptor_d {
   struct driver_d* driver;
   char driver_name[32];		/* *** FIXME: should be removed */
-  unsigned long start;
-  unsigned long length;
-  size_t index;                 /* From zero to length */
-  size_t width;                 /* Request for witdh of access */
+  driver_size_t start;
+  driver_size_t length;
+  driver_size_t index;		/* From zero to length */
+  int width;                    /* Request for witdh of access */
 
 				/* Paths */
   char rgb[256];	   	/* *** FIXME: contributes to stack bloat */
   char* pb[32];
   int c;                        /* Total elements in path */
-  int iRoot;                    /* Index of root element */
+  int iRoot;                    /* Index of root path element */
 
   unsigned long private;	/* Available to driver */
 };
@@ -102,7 +112,8 @@ struct driver_d {
   ssize_t	(*write) (struct descriptor_d*, const void* pv, size_t cb);
   ssize_t	(*poll)  (struct descriptor_d*, size_t cb);
   void		(*erase) (struct descriptor_d*, size_t cb);
-  size_t	(*seek)  (struct descriptor_d*, ssize_t cb, int whence);
+//  size_t	(*seek)  (struct descriptor_d*, driver_off_t cb, int whence);
+  driver_off_t	(*seek)  (struct descriptor_d*, driver_off_t cb, int whence);
   int		(*info)  (struct descriptor_d*);
   int		(*query) (struct descriptor_d*, int, void*);
   void		(*flush) (struct descriptor_d*);
@@ -129,6 +140,8 @@ extern int    parse_descriptor (const char* sz, struct descriptor_d* d);
 extern int    parse_descriptor_simple (const char* sz, unsigned long start,
 				       unsigned long length,
 				       struct descriptor_d* d);
-extern size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence);
+//extern size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence);
+extern driver_off_t seek_helper (struct descriptor_d* d, driver_off_t ib,
+                                 int whence);
 
 #endif  /* __DRIVER_H__ */

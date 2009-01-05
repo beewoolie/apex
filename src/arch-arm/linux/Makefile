@@ -11,3 +11,7 @@
 
 obj-$(CONFIG_ATAG) += atag.o
 obj-$(CONFIG_USE_RAMDISK) += atag-initrd.o
+
+ifneq ($(CONFIG_THUMB),)
+ EXTRA_CFLAGS += -mthumb
+endif

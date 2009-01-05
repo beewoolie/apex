@@ -120,6 +120,8 @@
 #define ATTRIB_PIN_READY	(1<<1)
 
 
+#define MS_READY_WAIT_TIMEOUT	(1*1000)
+
   /* IO_BARRIER_READ necessary on some platforms where the chip select
      lines don't transition sufficiently.  It is necessary on reads as
      well as writes, however without a cache the code herein works
@@ -239,9 +241,10 @@ static void write16 (int reg, unsigned short value)
 
 static void ready_wait (void)
 {
-  /* *** FIXME: need a timeout */
+  unsigned long time = timer_read ();
 
-  while ((reada8 (ATTRIB_PIN) & ATTRIB_PIN_READY) == 0)
+  while ((reada8 (ATTRIB_PIN) & ATTRIB_PIN_READY) == 0
+         && timer_delta (time, timer_read ()) < MS_READY_WAIT_TIMEOUT)
     ;
 
 //  while (read8 (IDE_STATUS) & (1<<7))

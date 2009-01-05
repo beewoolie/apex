@@ -1,3 +1,63 @@
+2009-01-05  Marc Singer  <elf@buici.com>
+
+	* src/mach-orion5x/mv2120_config: Moving to the CodeSourcery
+	compiler for thumb support.
+
+	* src/arch-arm/lib/cp15-invalidate-dcache-va.c
+	(invalidate_dcache_va): Conditionally compiling the
+	invalidate-dcache-va function based on the presence of the macro
+	and, therefore, the CP15 feature.
+
+	* Makefile (SUBLEVEL): 1.6.5 for orion5x merge.
+
+2009-01-04  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-flashusage.c (cmd_flashusage): New command to scan
+	eraseblocks of a flash device for the presence of data.
+
+	* src/mach-lh7952x/memory.h (RAM_BANK0_LENGTH): Fixed the
+	declarations of the extents for the memory regions in the
+	LH7952x.  The macros were correct for the LH79524 but not the
+	LH79520.  This is now fixed.
+
+	* src/drivers/drv-ext2.c (ext2_identify): Revised EXT2 driver to
+	look for extended partitions and to cope with 64 bit IO.
+
+	* include/driver.h: Support for 64 bit IO sizes.  This is only
+	necessary for large devices like those accessible via ATA/SATA.
+	It is optional and somewhat expensive.  Even the EXT2 driver will
+	function without it, but it won't be able to see partitions past
+	2GiB.  This change trickled into lots of areas of APEX because of
+	the change of types in the descriptor structure.  However, there
+	should be no size or performance impact when the system is
+	compiled without CONFIG_DRIVER_LONG_LONG_SIZE.
+
+	* src/arch-arm/lib/muldi3.S: Inclusion of another kernel function
+	for handling aeabi entry points.  This was required by drv-ata
+	when we compiled it with THUMB.
+
+	* src/arch-arm/lib/cp15-wait.c: This and other cp15 functions so
+	that cp15 operations can be invoked from THUMB code without THUMB2
+	support and without specialized code to detect the operation
+	mode.  These functions allow all code that lacks __asm's to be
+	compiled with THUMB.
+	
+2008-12-30  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-fat.c (fat_open):  Adding greater specificity
+	to the region construction from the block_driver().
+
+	* src/drivers/drv-ext2.c (ext2_open): Adding greater specificity
+	to the region construction from the block_driver().
+
+	* src/drivers/driver.c (parse_descriptor): Fix to disambiguate
+	regions that could have path elements.  The parser would not
+	interpret driver:10k as having a start address of 10k when the
+	driver could accept a path.  Now, parser will interpret driver:bin
+	as having a path of 'bin', but driver:10k as having a starting
+	offset as 10k.  The region can be unambiguously constructed using
+	'@' and '/' appropriately.
+ 
 2008-12-22  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/mach-mx3/drv-i2c.c: New I2C driver for MX3x.  Not complete,
@@ -6,10 +66,36 @@
 	* src/mach-mx3/cmd-wm8955.c: New command for sending control
 	messages to the WM8955L on the PSJL Karma.
 
+2008-12-21  Marc Singer  <elf@buici.com>
+
+	* src/drivers/driver.c (parse_descriptor): Fix for the parsing of
+	FS descriptors such that the start address and length parameters
+	may be set.
+	(parse_descriptor): Added the '%' special character for combining
+	one or more descriptors.  This is used by the drivers that have a
+	basis driver defined in an environment variable, s.t. the driver
+	can specify a starting address and/or length without knowing the
+	exact form specified by the 
+
 2008-12-18  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): Rolling revision for PSJL implementation. 1.6.4.
 
+2008-12-14  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Support for broken
+	AMD/Spansion NOR flash that does not properly report top-boot
+	vs. bottom-boot.
+	* src/drivers/drv-nor-cfi.c: In order to support the Micronix
+	(Spansion compatible) NOR flash in the HP MediaVault 2120, we
+	needed to completely fill out the Spansion support.  There is
+	support for a single byte wide bus and a 16 bit internal logic as
+	is the case on the MV2120.
+
+2008-12-13  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-nor-cfi.c (ReadArray): Changed the ReadArray
+	command for Spansion to 0xf0.
 2008-12-11  Marc Singer  <elf@zealous.synapse.com>
 
 	* src/arch-arm/lib/cp15.c (cp15_ctrl): Enhanced the cp15 report on

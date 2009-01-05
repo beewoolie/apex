@@ -95,8 +95,7 @@ ssize_t lh7a40x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t lh7a40x_serial_write (struct descriptor_d* d,
-			      const void* pv, size_t cb)
+ssize_t lh7a40x_serial_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;
   const unsigned char* pb = pv;

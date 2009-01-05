@@ -584,7 +584,7 @@ static int dm9000_check_tx (void)
 
 */
 
-static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
+static ssize_t dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
 {
 //  uint16_t isr = read_reg (g_dm9000_default, DM9000_ISR);
   uint16_t status;
@@ -627,7 +627,7 @@ static int dm9000_read (struct descriptor_d* d, void* pv, size_t cb)
   return length;
 }
 
-static int dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
+static ssize_t dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   uint8_t* rgb = (uint8_t*) pv;
   int i;

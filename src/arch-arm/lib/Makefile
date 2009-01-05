@@ -18,4 +18,6 @@ lib-y := div64.o memchr.o memzero.o
 #lib-y += entry.o
 lib-y += lib1funcs.o
 lib-y += cp15.o
+lib-y += cp15-invalidate-dcache-va.o cp15-wait.o cp15-cleanall-dcache.o
 lib-y += memmove.o
+lib-y += muldi3.o

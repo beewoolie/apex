@@ -29,7 +29,5 @@ typedef int (*pfn_handle_image) (int, struct descriptor_d*, bool);
 pfn_handle_image is_apex_image (const char*, size_t);
 pfn_handle_image is_uboot_image (const char*, size_t);
 
-const char* describe_size (uint32_t cb);
-
 
 #endif  /* __CMD_IMAGE_H__ */

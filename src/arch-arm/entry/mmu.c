@@ -197,6 +197,12 @@ void mmu_map_segment (void* physical, void* virtual,
    performs the work to switch the MMU off before transferring to
    another piece of code, Linux kernel, alternative boot loader.
 
+   *** FIXME: most of the ARM architectures do the release this way.
+   *** According to the Linux kernel, xscale does things quite
+   *** differently.  Now, it might be OK to leave this this way, but
+   *** we suspect that this may be one place where the CPU type may
+   *** require customization.
+
 */
 
 void mmu_release (void)
@@ -211,16 +217,21 @@ void mmu_release (void)
     __asm volatile ("mrc p15, 0, %0, c1, c0, 0\n\t"
 		    /* D-cache, Write buffer, MMU disable */
 		    "bic %0, %0, #("
-#if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITHROUGH_DCACHE)
-		    "(1<<3)|"
-#endif
-		    "(1<<2)|(1<<0))\n\t"		/* D-cache, MMU-EN */
-		    "bic %0, %0, #1<<12\n\t"		/* I-cache */
+                    /* *** FIXME: it may be that we've broken xscale
+                       *** here.  The code used to clear only 2,0, and
+                       *** 3 only when BCR is set.  */
+//#if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITHROUGH_DCACHE)
+//		    ""
+//#endif
+		    "(1<<3)|(1<<2)|(1<<0)"	       /* .... .... .... wc.m */
+                    ")\n\t"
+		    "bic %0, %0, #("
+                    "(1<<12)|(1<<8)"		       /* ...i ...s .... .... */
+                    ")\n\t"
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
 
-  INVALIDATE_ICACHE;
-  INVALIDATE_DCACHE;
+  INVALIDATE_CACHE;
   INVALIDATE_TLB;
   CP15_WAIT;
 

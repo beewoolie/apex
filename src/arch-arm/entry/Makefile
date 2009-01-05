@@ -31,3 +31,7 @@ CPPFLAGS_apex.lds += -DCONFIG_RELOCATE_COMPANION_EVT1
 endif
 
 extra-y=apex.lds
+
+ifneq ($(CONFIG_THUMB),)
+ CFLAGS_sdramboot.o	+= -mthumb
+endif

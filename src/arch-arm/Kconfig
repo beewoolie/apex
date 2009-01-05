@@ -150,6 +150,16 @@ config AEABI
 	  It is safe to leave this disabled until you see the error
 	  message.
 
+config DRIVER_LONG_LONG_SIZE
+	bool "Enable 64 bit driver I/O"
+	default n
+	help
+	  Without this option, the boot loader cannot access any
+          driver data beyond 4 GiB.  This option makes the extent of
+          driver indices and lengths 64 bits instead of 32 bits.  This
+	  option comes at a substantial increase in size for the boot
+	  loader.
+
 choice
 	prompt "Compiler Optimization"
 	default CC_OPTIMIZE_FOR_SIZE

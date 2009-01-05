@@ -29,10 +29,12 @@
 
 /* ----- Prototypes */
 
-#define ATA_PHYS		(ATA0_PHYS)
+#define ATA_PHYS(i)		(ATAX_PHYS (i))
 
 #define ATA_WIDTH		(32)
 #define ATA_ADDR_MULT		(2)
+#define ATA_DEVICE_MAX		(2)
+
 //#define ATA_REG			(1<<12)	/* REG line for register access */
 //#define ATA_ALT			(1<<10)	/* A10 line for data read */
 //#define ATA_ATTRIB		(1<<9) /* A9 line for attribute access */

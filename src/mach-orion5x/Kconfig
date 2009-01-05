@@ -7,6 +7,7 @@ choice
 config MACH_HP_MV2120
 	bool "HP MediaVault 2120"
 	select ARCH_88F5182
+	select USES_NOR_CFI
 	select USES_NOR_BOOTFLASH
 	select INLINE_PLATFORM_INITIALIZATION
 
@@ -26,7 +27,7 @@ config ATAG_PHYS
 
 config ARCH_NUMBER
 	int
-	default 9999 if MACH_HP_MV2120
+	default 526 if MACH_HP_MV2120
 
 config APEX_VMA
 	hex "APEX Runtime Address"

@@ -21,6 +21,8 @@
 
 */
 
+//#define TALK 1
+
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <driver.h>
@@ -28,6 +30,7 @@
 #include <error.h>
 #include <apex.h>
 #include <config.h>
+#include <talk.h>
 
 #define TOLOWER(c)
 
@@ -106,18 +109,24 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 
   memzero (d, sizeof (*d));
 
-  ib = cb = strcspn (sz, ":");
-  if (sz[ib] == ':') {
-    cb = ++ib;
+ restart:
+  ib = cb = strcspn (sz, ":/%@+");
+  if (ib && !isdigit (*sz)) {
+    PRINTF ("for driver '%s' ib %d\n", sz, ib);
+    cb = ib + 1;
+    if (sz[ib] == ':')
+      ++ib;
     if (cb > sizeof (d->driver_name))
       cb = sizeof (d->driver_name);
     strlcpy (d->driver_name, sz, cb);
   }
   else {
-    strcpy (d->driver_name, "memory");
+    if (!d->driver_name[0])
+      strcpy (d->driver_name, "memory");
     ib = 0;
   }
 
+  PRINTF ("driver is '%s'  ib %d  cb %d\n", d->driver_name, ib, cb);
   result = find_driver (d);
   if (result)
     return result;
@@ -125,31 +134,42 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 #if defined (CONFIG_USES_PATHNAME_PARSER)
   if (d->driver->flags & DRIVER_DESCRIP_FS) {
     int state = 0;
-    strlcpy (d->rgb, sz + ib, sizeof (d->rgb));
-//    printf (" descript (%s)\n", d->rgb);
+
+    if (sz[ib] == '@' || sz[ib] == '+' || sz[ib] == '%')
+      goto region_parse;
+
+    sz += ib;
     d->c = 0;
     d->iRoot = 0;
+    strlcpy (d->rgb, sz, sizeof (d->rgb));
+    PRINTF (" descript (%s)\n", d->rgb);
     for (ib = 0; d->rgb[ib]; ++ib) {
+      PRINTF ("state %d  ib %d  d->rgb[ib] '%c' c %d\n", state, ib, d->rgb[ib],
+              d->c);
       switch (state) {
-      case 0:
-	if (d->rgb[ib] == '/')
+      case 0:                   /* Initial state */
+	if (d->rgb[ib] == '/') {
 	  ++state;
-	else if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
-	  d->rgb[ib] = 0;
-	  goto region_parse;
-	}
+        }
 	else {
+          /* We make a heuristic here to disambiguate between DRV:PATH
+             and DRV:START.  If the field PATH or START begins with a
+             number, we assume that the region is the latter form with
+             a START.  Otherwise it is a PATH.  Consider ext2:1k
+             versus ext2:bin. */
+          if (isdigit (d->rgb[ib]))
+            goto region_parse;
 	  TOLOWER (d->rgb[ib]);
 	  d->pb[d->c++] = &d->rgb[ib];
 	  state = 9;
 	}
 	break;
-      case 1:
+      case 1:                   /* One '/' */
 	if (d->rgb[ib] == '/') {
 	  ++d->iRoot;
 	  ++state;
 	}
-	else if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
+	else if (d->rgb[ib] == '@' || d->rgb[ib] == '+' || d->rgb[ib] == '%') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -159,10 +179,10 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	  state = 9;
 	}
 	break;
-      case 2:
+      case 2:                   /* Two '/' */
 	if (d->rgb[ib] == '/')
 	  return ERROR_FAILURE;
-	if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
+	if (d->rgb[ib] == '@' || d->rgb[ib] == '+' || d->rgb[ib] == '%') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -171,7 +191,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
 	state = 9;
 	break;
       case 9:
-	if (d->rgb[ib] == '@' || d->rgb[ib] == '+') {
+	if (d->rgb[ib] == '@' || d->rgb[ib] == '+' || d->rgb[ib] == '%') {
 	  d->rgb[ib] = 0;
 	  goto region_parse;
 	}
@@ -186,15 +206,21 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
       }
     }
   }
-  else
+//  else
   region_parse:
+  PRINTF ("region_parse '%s'\n", sz + ib);
 #endif
   {			/* Region descriptor parse */
     while (sz[ib]) {
       char* pchEnd;
-      unsigned long* pl = 0;
+      driver_size_t* pl = 0;
 
+      PRINTF ("ib %d  sz[ib] '%c'\n", ib, sz[ib]);
       switch (sz[ib]) {
+      case '%':                 /* Restart parse */
+        sz += ib + 1;
+        goto restart;
+        break;
       case '@':
 	++ib;
       case '0'...'9':
@@ -243,9 +269,9 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   return 0;
 }
 
-size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
+driver_off_t seek_helper (struct descriptor_d* d, driver_off_t ib, int whence)
 {
-  //  printf ("seek_helper %d", ib);
+//  printf ("seek_helper %d", ib);
 
   switch (whence) {
   case SEEK_SET:
@@ -267,7 +293,7 @@ size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
 
   d->index = ib;
 
-  //  printf (", %d\n", ib);
+//  printf (", %d\n", ib);
 
-  return (size_t) ib;
+  return ib;
 }

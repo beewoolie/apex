@@ -21,32 +21,31 @@
 #include <service.h>
 #include <arch-arm.h>
 #include "hardware.h"
+#include <asm/cp15.h>
 
 #if !defined (CONFIG_SMALL)
 
 static void cpuinfo_report (void)
 {
-  unsigned long id;
-  unsigned long cache;
-  unsigned long ctrl;
-  unsigned long cpsr;
-  unsigned long ttbl;
-  unsigned long domain;
-  unsigned long test;
+  unsigned long id	= CP15_ID;
+  unsigned long cache	= CP15_CACHE_TYPE;
+  unsigned long ctrl	= CP15_CTRL;
+  unsigned long cpsr	= CPSR;
+  unsigned long ttbl	= LOAD_TTB;
+  unsigned long domain	= LOAD_DOMAIN;
+  unsigned long test	= CP15_TEST;
+//  unsigned long tcm	= CP15_TCM_TYPE;
+//  unsigned long tlb	= CP15_TLB_TYPE;
+//  unsigned long mpu	= CP15_MPU_TYPE;
   const char* sz = "orion5x";
 
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (id));
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
-  __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (ctrl));
-  __asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbl));
-  __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
-  __asm volatile ("mrc p15, 0, %0, c15, c0, 0" : "=r" (test));
-  __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
-  printf ("  cpu:      id 0x%08lx    ctrl 0x%08lx (%s)   cpsr 0x%08lx\n"
+  printf ("  cpu:      id 0x%08lx    cpsr 0x%08lx   ctrl 0x%08lx (%s)\n"
+//          "           tcm 0x%08lx     tlb 0x%08lx    mpu 0x%08lx\n"
 	  "          ttbl 0x%08lx  domain 0x%08lx  cache 0x%08lx\n"
 	  "          chipid %s\n"
 	  "          cp15test 0x%04lx\n",
-	  id, ctrl, cp15_ctrl (ctrl), cpsr,
+	  id, ctrl, cpsr, cp15_ctrl (ctrl),
+//          tcm, tlb, mpu,
 	  ttbl, domain, cache, sz,
 	  test & 0xffff);
   printf ("          tclk %d  fclk %d\n", get_tclk (), get_cpu_clk ());

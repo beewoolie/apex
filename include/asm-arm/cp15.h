@@ -31,22 +31,33 @@
 
 #include <linux/types.h>
 
-#define LOAD_CP15_ID(id)\
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (id))
-#define LOAD_CP15_CACHE(id)\
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache))
-#define LOAD_CP15_CTRL(id)\
-  __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (ctrl))
+#define CP15_ID\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (l)); l; })
+#define CP15_CACHE_TYPE\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (l)); l; })
+#define CP15_CTRL\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (l)); l; })
+#define CP15_TEST\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c15, c0, 0" : "=r" (l)); l; })
+#define CPSR\
+  ({ unsigned long l;\
+     __asm volatile ("mrs %0, cpsr" : "=r" (l)); l; })
 
 #define STORE_TTB(a)\
   __asm volatile ("mcr p15, 0, %0, c2, c0, 0\n\t" :: "r" (a))
-#define LOAD_TTB(a)\
-  __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" :  "=r" (a))
+#define LOAD_TTB\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" :  "=r" (l)); l; })
 
 #define STORE_DOMAIN(a)\
   __asm volatile ("mcr p15, 0, %0, c3, c0, 0\n\t" :: "r" (a))
-#define LOAD_DOMAIN(a)\
-  __asm volatile ("mrc p15, 0, %0, c3, c0, 0\n\t" :  "=r" (a))
+#define LOAD_DOMAIN\
+  ({ unsigned long l;\
+     __asm volatile ("mrc p15, 0, %0, c3, c0, 0\n\t" :  "=r" (l)); l; })
 
 #define MMU_DISABLE\
   ({ unsigned long l;\
@@ -87,5 +98,9 @@
 #if !defined (CP15_WAIT)
 # define CP15_WAIT
 #endif
+
+extern void cleanall_dcache (void);
+extern void cp15_wait (void);
+extern void invalidate_dcache_va (uint32_t);
 
 #endif  /* __CP15_H__ */

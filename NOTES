@@ -5,6 +5,62 @@ APEX Boot Loader
 
 TODO:
 
+  o 2009.jan.4
+
+    o Handling extended partitions and large drivers.  The problems of
+      a couple of days ago are no longer present.  Upgraded the
+      compiler and now there is no sign that the 64 bit support is
+      broken.
+
+    o THUMB.  There is better support for thumb in that there are
+      functions to handle some of the cp15 calls that were always
+      inlined.  For code tha must inline, the macros are still
+      present.
+
+    o NOR flash scanner.  It would be helpful to have a function to
+      scan nor flash and determine which blocks are in use.  Also, it
+      would be handy to have a notation for flash that allows
+      specification of erase blocks or pages (NAND only). For example,
+      "nor:/N" where N is the block number, even when the blocks are
+      of differing sizes.
+
+  o 2009.jan.2
+
+    o Handling extended partitions and large drivers.  The extended
+      partition scanning code (in drv-ext2) properly reads each of the
+      extended partition descriptors.  For the MV2120 platform, this
+      requires the CONFIG_DRIVER_LONG_LONG_SIZE option because the
+      seek function cannot otherwise distinguish between a large
+      positive offset or a negative one.  However, there is a catch in
+      that the 64 bit length option appears to be unstable is some
+      cases.  The program doesn't crash, but it does perform
+      improperly.  A "du ata:0s+1s" doesn't end with a single sector.
+      The ext2_identify() function won't read any partitions.
+
+      One of the catches is that the starting offset for an extended
+      partition is the accumulation of the starting offsets for the
+      extended partition records plus the starting LBA for the
+      partition.  This can be seen in the way that the sector_start is
+      adjusted for each extended partition record.
+
+  o 2008.dec.30
+
+    o Handling extended partitions.  While adding features for the
+      MV2120 we found support for extended partitions in of itself is
+      reasonably simple to implement.  However, the extended partition
+      is past a 2GiB offset.  This offset is manageable, but we really
+      need to be able to handle extended partitions beyond 4GiBs.  The
+      internals of the descriptor need to be extended to 48 or 64 bits
+      in order to handle this.  Ay, carumba.  I never thought that the
+      boot loader would have to be 64 bit filesystem compliant.
+
+  o 2008.dec.16
+
+    o The drv-ata driver needs to support multiple drives and the
+      absence of either or both.  The orion5x controller ought to be
+      able to determine when a drive is present, so we should not have
+      to depend on a ready_wait timeout.
+
   o 2008.nov.25
     o Alias/environment variable references.  Presently, variable
       substitutions only traverse a single level.  It is necessary to
@@ -32,6 +88,85 @@ TODO:
       exception vectors (aligned) anywhere in the APEX image and map
       those.  The advantage of the first is that we *can* have
       exception vectors without the MMU if NOR flash maps to 0. 
+
+  o 2008.nov.9
+
+    o Detecting SATA.  Absent SATA drives must not break the ATA
+      driver. 
+
+    o dump command.  The ASCII output doesn't change byte order with
+      the hex output data.  So, in the case of a little-endian dump,
+      the ASCII ordering doesn't change when displaying words.  This
+      may be incorrect.  It should be compared with other kinds of hex
+      dumps.
+
+  o 2008.nov.2
+
+    o Feroceon.  The ARM site claims that the 88F5182 is an ARMV5TE
+      which is true, sort of.  It is really an ARM926EJS and is better
+      described by that reference when attempting to locate the
+      correct CP15 instructions to use.
+
+    o Revising the CP15 commands.  It might be better to organize the
+      cp15 commands such that each ARM processor class has a header.
+      So, we'd have one each for the arm720, arm920, arm926, xscale,
+      feroceon, and so on.  There seem to be some differences at this
+      level that aren't well categorized by the armv4, armv5, and so
+      on.  The best thing would be to allow for stable implementations
+      of routines that *could* be the same, but could also change per
+      ARM implementation.  If for no other reason than the Linux
+      kernel has organized the code that way.
+
+      The primary reason to look at it this way is to define
+      functions, as Linux does, to perform specific operations instead
+      of giving macros for every CP15 operation.  In this way, we can
+      maintain the necessary balance between flexibility and accurate
+      implementation.
+
+  o 2008.nov.1
+
+    o mv2120
+
+      o Kernel wont' boot.  Need to look at the booting code in uboot
+        to see what they're doing before the pass control to the kernel.
+      o Environment.  Need to place an environment for APEX into flash
+        so that we can customize it once the system is running.  We
+        can probably get away with a simple default, but I know we'll
+        want to be able to modify it once the system is running.
+      o MMU makes the IO much faster, but the cmd-reset doesn't work
+        any more.  Not sure why since none of the peripherals would
+        work if the caching were broken...I thought.
+
+      o Timing with newly formatted ext3 partition.  The second set of
+	numbers in parenthesis comes from enabling the MMU and cache
+	in APEX.
+			uboot ext2load	apex copy	apex im lo
+	uImage		35s		4s (2s)		8s (2s)
+	uImage-big	111s		9s (3s)		22s (3s)
+
+
+    o generic ata driver. 
+
+      There are a lot of details to get right in order to let this
+      driver be sufficiently generic to be useful.  The old CF driver
+      has a lot of LH7 specific hacks to deal with the peculiar
+      interface of the Logic brand dev boards.
+
+      We'll have to let the platform customize the accessor functions
+      adequately to enable alignment of the IO and to deal with the odd
+      cases such as device select.
+
+      There needs to be an is_present() function call that will
+      identify whether or not the drive is present.  The read call may
+      need to be able to error out if the device is absent.
+
+      The region/path code needs to permit an extra indicator of the
+      channel and, god forbid, the controller.  I don't want to get
+      too crazy with this, but it could be helpful.
+
+      The driver should support an info call so that report code can
+      say something about the underlying device support.  This may be
+      too much to ask, however.
 
   o 2008.sep.14
     o Zero-length region.  It may be useful to add state to the

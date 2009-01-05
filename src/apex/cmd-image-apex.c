@@ -74,6 +74,7 @@
 #include <simple-time.h>
 #include "cmd-image.h"
 #include <talk.h>
+#include <describe.h>
 
 #include <debug_ll.h>
 
