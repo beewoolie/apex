@@ -57,6 +57,10 @@
 	can specify a starting address and/or length without knowing the
 	exact form specified by the 
 
+2008-12-18  Marc Singer  <elf@buici.com>
+
+	* Makefile (SUBLEVEL): Rolling revision for PSJL implementation. 1.6.4.
+
 2008-12-14  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-nor-cfi.c (nor_probe_chip): Support for broken
@@ -72,6 +76,11 @@
 
 	* src/drivers/drv-nor-cfi.c (ReadArray): Changed the ReadArray
 	command for Spansion to 0xf0.
+2008-12-11  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/arch-arm/lib/cp15.c (cp15_ctrl): Enhanced the cp15 report on
+	the control register to be more readable and to show more
+	bits (ARMv6).
 
 2008-11-25  Marc Singer  <elf@zealous.synapse.com>
 

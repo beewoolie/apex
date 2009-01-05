@@ -21,15 +21,22 @@
 
 const char* cp15_ctrl (unsigned long ctrl)
 {
-  static const char bits[] = "vizfrsbldpwcam";
+#if defined (CONFIG_CPU_ARMV6)
+  static const char bits[] = "at ..ev xuf. .... ..vi zfrs bldp wcam";
+#else
+  static const char bits[] =                     "vi zfrs bldp wcam";
+#endif
   const int cbits = sizeof (bits) - 1;
   static char sz[sizeof (bits)];
   int i;
 
   strcpy (sz, bits);
 
-  for (i = 0; i < cbits; ++i)
-    if (ctrl & (1<<(cbits - i - 1)))
+  for (i = 0; i < cbits; ++i) {
+    if (sz[i] == '.' || sz[i] == ' ')
+      continue;
+    if (ctrl & (1<<(cbits - i - 1 - ((cbits - i)/5))))
       sz[i] += 'A' - 'a';
+  }
   return sz;
 }
