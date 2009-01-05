@@ -835,8 +835,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
     //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
     WRITE_ONE (index, CMD (ReadArray));
 #if defined (USE_CACHE)
-    INVALIDATE_DCACHE_VA (index);
-    CP15_WAIT;
+    invalidate_dcache_va (index);
+    cp15_wait ();
 #endif
     copy_from (pv, (void*) index, available);
 
@@ -849,8 +849,8 @@ static ssize_t nor_read (struct descriptor_d* d, void* pv, size_t cb)
   cb = (cbRead + 31) & ~0x1f;
   base = base & ~0x1f;
   for (; cb; base += 32, cb -= 32)
-    INVALIDATE_DCACHE_VA (base);
-  CP15_WAIT;
+    invalidate_dcache_va (base);
+  cp15_wait ();
 #endif
 
   return cbRead;
@@ -1027,7 +1027,7 @@ static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 static ssize_t nor_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
-  int cbWrote = 0;
+  size_t cbWrote = 0;
   unsigned long pageLast = ~0;
 
   while (cb) {

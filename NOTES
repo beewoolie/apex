@@ -5,6 +5,55 @@ APEX Boot Loader
 
 TODO:
 
+  o 2009.jan.4
+
+    o Handling extended partitions and large drivers.  The problems of
+      a couple of days ago are no longer present.  Upgraded the
+      compiler and now there is no sign that the 64 bit support is
+      broken.
+
+    o THUMB.  There is better support for thumb in that there are
+      functions to handle some of the cp15 calls that were always
+      inlined.  For code tha must inline, the macros are still
+      present.
+
+    o NOR flash scanner.  It would be helpful to have a function to
+      scan nor flash and determine which blocks are in use.  Also, it
+      would be handy to have a notation for flash that allows
+      specification of erase blocks or pages (NAND only). For example,
+      "nor:/N" where N is the block number, even when the blocks are
+      of differing sizes.
+
+  o 2009.jan.2
+
+    o Handling extended partitions and large drivers.  The extended
+      partition scanning code (in drv-ext2) properly reads each of the
+      extended partition descriptors.  For the MV2120 platform, this
+      requires the CONFIG_DRIVER_LONG_LONG_SIZE option because the
+      seek function cannot otherwise distinguish between a large
+      positive offset or a negative one.  However, there is a catch in
+      that the 64 bit length option appears to be unstable is some
+      cases.  The program doesn't crash, but it does perform
+      improperly.  A "du ata:0s+1s" doesn't end with a single sector.
+      The ext2_identify() function won't read any partitions.
+
+      One of the catches is that the starting offset for an extended
+      partition is the accumulation of the starting offsets for the
+      extended partition records plus the starting LBA for the
+      partition.  This can be seen in the way that the sector_start is
+      adjusted for each extended partition record.
+
+  o 2008.dec.30
+
+    o Handling extended partitions.  While adding features for the
+      MV2120 we found support for extended partitions in of itself is
+      reasonably simple to implement.  However, the extended partition
+      is past a 2GiB offset.  This offset is manageable, but we really
+      need to be able to handle extended partitions beyond 4GiBs.  The
+      internals of the descriptor need to be extended to 48 or 64 bits
+      in order to handle this.  Ay, carumba.  I never thought that the
+      boot loader would have to be 64 bit filesystem compliant.
+
   o 2008.dec.16
 
     o The drv-ata driver needs to support multiple drives and the

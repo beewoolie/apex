@@ -15,3 +15,9 @@ obj-y += cmd-reset.o
 obj-y += drv-ata.o
 obj-y += atag-marvell.o
 # cmd-sleep.o
+
+ifneq ($(CONFIG_THUMB),)
+ CFLAGS_drv-ata.o	+= -mthumb
+ CFLAGS_serial.o	+= -mthumb
+ CFLAGS_timer.o		+= -mthumb
+endif

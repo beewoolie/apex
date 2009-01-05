@@ -101,7 +101,7 @@ int memory_scan (struct mem_region* regions, int c,
   PRINTF ("  identifying\n");
 
 #if defined (CONFIG_MMU)
-  CLEANALL_DCACHE;
+  cleanall_dcache ();
 #endif
 
 	/* Identify */
@@ -223,7 +223,7 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
      chip select must toggle for every access.  This is a lowest
      common denominator, and will tend to be pretty slow. */
     {
-      unsigned char* pbSrc = (unsigned char*) (d->start + d->index);
+      unsigned char* pbSrc = (unsigned char*) (unsigned) (d->start + d->index);
       int i = cb;
       while (i--)
 	*(unsigned char*) pv = *pbSrc++, ++pv;
@@ -234,16 +234,16 @@ static ssize_t memory_read (struct descriptor_d* d, void* pv, size_t cb)
   case 2:
 //  case 4:
     /* memcpy performs an optimal copy, probably at machine word width */
-    memcpy (pv, (void*) (d->start + d->index), cb);
+    memcpy (pv, (void*) (unsigned) (d->start + d->index), cb);
     break;
 
   case 4:
     if (((d->start + d->index) & 3)
 	|| ((unsigned long) pv & 3)
 	|| (cb & 3))
-      memcpy (pv, (void*) (d->start + d->index), cb);
+      memcpy (pv, (void*) (unsigned) (d->start + d->index), cb);
     else {
-      unsigned long* plSrc = (unsigned long*) (d->start + d->index);
+      unsigned long* plSrc = (unsigned long*) (unsigned) (d->start + d->index);
       int i = cb/4;
       while (i--)
 	*(unsigned long*) pv = *plSrc++, pv += 4;
@@ -289,17 +289,17 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 
   switch (cb) {
   case 1:
-    *(char*)           (d->start + d->index) = *(char*)           pv;
+    *(char*)           (unsigned) (d->start + d->index) = *(char*)           pv;
     break;
   case 2:
-    *(unsigned short*) (d->start + d->index) = *(unsigned short*) pv;
+    *(unsigned short*) (unsigned) (d->start + d->index) = *(unsigned short*) pv;
     break;
   case 4:
-    *(unsigned long*)  (d->start + d->index) = *(unsigned long*)  pv;
+    *(unsigned long*)  (unsigned) (d->start + d->index) = *(unsigned long*)  pv;
     break;
   default:
   nonaligned:
-    memcpy ((void*) (d->start + d->index), pv, cb);
+    memcpy ((void*) (unsigned) (d->start + d->index), pv, cb);
     break;
   }
 
@@ -441,7 +441,7 @@ static int cmd_memscan (int argc, const char** argv)
 	      regions[i].length/(1024*1024));
 
 #if defined (CONFIG_MMU)
-  CLEANALL_DCACHE;		/* Actually, a secondary feature */
+  cleanall_dcache ();		/* Actually, a secondary feature */
 #endif
 
   if (update) {

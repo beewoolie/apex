@@ -80,8 +80,8 @@ ssize_t orion5x_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t orion5x_serial_write (struct descriptor_d* d,
-			      const void* pv, size_t cb)
+ssize_t orion5x_serial_write (struct descriptor_d* d, const void* pv,
+                              size_t cb)
 {
   ssize_t cWrote = 0;
   const unsigned char* pb = pv;
@@ -103,12 +103,12 @@ ssize_t orion5x_serial_write (struct descriptor_d* d,
 }
 
 static __driver_0 struct driver_d orion5x_serial_driver = {
-  .name = "serial-orion5x",
+  .name  = "serial-orion5x",
   .description = "orion5x serial driver",
   .flags = DRIVER_SERIAL | DRIVER_CONSOLE,
-  .read = orion5x_serial_read,
+  .read  = orion5x_serial_read,
   .write = orion5x_serial_write,
-  .poll = orion5x_serial_poll,
+  .poll  = orion5x_serial_poll,
 };
 
 static __service_3 struct service_d orion5x_serial_service = {

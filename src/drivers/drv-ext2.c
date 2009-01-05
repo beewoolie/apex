@@ -110,7 +110,7 @@
 #include <lookup.h>
 
 //#define TALK 1
-#define TALK_DIR
+//#define TALK_DIR
 
 #include <talk.h>
 
@@ -127,6 +127,10 @@
 #define EXT2_DYNAMIC_REV		1
 #define EXT2_GOOD_OLD_INODE_SIZE	128
 
+#define MAX_PARTITIONS			8 /* Could be as large as 26 */
+
+#define PARTITION_TOO_FAR(s)\
+	(sizeof (driver_size_t) == 4 && ((s) + 1) >= (1<<22))
 
 #if 0
 /* Defined in kernel headers */
@@ -315,7 +319,7 @@ struct ext2_info {
 
   int fOK;			/* True when the block device recognizable */
   u32 region_crc;               /* CRC of region for detecting changes */
-  struct partition partition[4];
+  struct partition partition[MAX_PARTITIONS + 1]; /* *** FIXME, drop +1 */
   struct superblock superblock;
   int block_size;
   int first_data_block;		/* Computed offset to first data block */
@@ -389,6 +393,20 @@ static inline unsigned long read_block_number (int i)
        + (((unsigned long) pb[2]) << 16)
        + (((unsigned long) pb[3]) << 24);
 }
+
+#if 0
+const char* describe_chs (const char* rgb)
+{
+  static char sz[64];
+  int c = rgb[2] | ((rgb[1] << 2) & 0x300);
+  int h = rgb[0];
+  int s = rgb[1] & 0x3f;
+  snprintf (sz, sizeof (sz), "{%4d %3d %2d %08x}", c, h, s,
+            c*(63*255) + h*63 + (s - 1));
+
+  return sz;
+}
+#endif
 
 static int ext2_block_read (int block, void* pv, size_t cb)
 {
@@ -576,10 +594,10 @@ int ext2_find_inode (int inode)
 }
 
 
-/* ext2_identify
-
-   performs an initial read on the device to get partition
-   information.
+/** reads the primary and extended partition table.  This function is
+    sensitive to overflow when looking for the extended partition
+    table, the source device returns an LBA that exceeds 4GiB *and*
+    APEX isn't compiled to cope with it.
 
 */
 
@@ -588,6 +606,8 @@ static int ext2_identify (void)
   int result;
   char sz[128];
   struct descriptor_d d;
+  int partition_count = 0;
+  size_t sectorStart = 0;
 
   snprintf (sz, sizeof (sz), "%s%%+1s", block_driver ());
   if (   (result = parse_descriptor (sz, &d))
@@ -596,22 +616,53 @@ static int ext2_identify (void)
     return result;
   }
 
-	/* Check for signature */
-  {
+  do {
     unsigned char rgb[2];
 
-    d.driver->seek (&d, SECTOR_SIZE - 2, SEEK_SET);
+    d.driver->seek (&d, sectorStart*SECTOR_SIZE, SEEK_SET);
+//    printf ("index after seek 0x%lx, 0x%x (0x%xs)\n",
+//            d.start, d.index, sectorStart);
+
+	/* Check for signature */
+    d.driver->seek (&d, SECTOR_SIZE - 2, SEEK_CUR);
+//    printf ("index for signature 0x%lx, 0x%x\n", d.start, d.index);
     if (d.driver->read (&d, &rgb, 2) != 2
 	|| rgb[0] != 0x55
 	|| rgb[1] != 0xaa) {
       PRINTF ("sig is %x %x\n", rgb[0], rgb[1]);
       close_descriptor (&d);
-      return -1;
+      break;
     }
-  }
 
-  d.driver->seek (&d, SECTOR_SIZE - 66, SEEK_SET);
-  d.driver->read (&d, ext2.partition, 16*4);
+//    printf ("reading into %d\n", partition_count);
+    d.driver->seek (&d, -66, SEEK_CUR);
+//    printf ("index before read 0x%x, 0x%x (0x%x)\n",
+//            (size_t) d.start, (size_t) d.index, sectorStart);
+    d.driver->read (&d, &ext2.partition[partition_count],
+                    16*(partition_count ? 2 : 4));
+//    dumpw ((void*) &ext2.partition[partition_count],
+//           sizeof (struct partition)*(partition_count ? 2 : 4), 0, 0);
+
+    {
+      int i;
+      for (i = partition_count; i < MAX_PARTITIONS; ++i) {
+        if (partition_count && i == partition_count)
+          ext2.partition[i].start += sectorStart;
+        else if (ext2.partition[i].type == 5) {
+//          printf ("extended partition #%d\n", i + 1);
+          sectorStart += ext2.partition[i].start;
+          if (PARTITION_TOO_FAR (sectorStart))
+            continue;           /* Skip when we cannot handle it */
+          d.length = (sectorStart + 1)*SECTOR_SIZE;
+//          printf ("start is now 0x%xs @%d\n", sectorStart, i);
+          break;
+        }
+      }
+      partition_count += (partition_count ? 1 : 4);
+      if (i == MAX_PARTITIONS)
+        break;
+    }
+  } while (partition_count < MAX_PARTITIONS);
 
   close_descriptor (&d);
 
@@ -804,7 +855,7 @@ static int ext2_open (struct descriptor_d* d)
     int partition = 0;
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
-    if (partition < 0 || partition > 3
+    if (partition < 0 || partition >= MAX_PARTITIONS
 		      || ext2.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
@@ -992,7 +1043,7 @@ static int ext2_info (struct descriptor_d* d)
     int partition = 0;
     if (d->iRoot > 0 && d->c)
       partition = simple_strtoul (d->pb[0], NULL, 10) - 1;
-    if (partition < 0 || partition > 3
+    if (partition < 0 || partition >= MAX_PARTITIONS
 		      || ext2.partition[partition].length == 0)
       ERROR_RETURN (ERROR_BADPARTITION, "invalid partition");
 
@@ -1080,15 +1131,21 @@ static void ext2_report (void)
   }
 
   printf ("  ext2:");
-  for (i = 0; i < 4; ++i)
+  for (i = 0; i < MAX_PARTITIONS; ++i)
     if (ext2.partition[i].type || i == 0) {
       if (i != 0)
 	printf ("       ");
-      printf ("   partition %d: %c %02x 0x%08lx 0x%08lx\n", i,
+      printf ("   partition %d: %c %02x 0x%08lx 0x%08lx%s",
+              i + 1,
 	      ext2.partition[i].boot ? '*' : ' ',
 	      ext2.partition[i].type,
 	      ext2.partition[i].start,
-	      ext2.partition[i].length);
+	      ext2.partition[i].length,
+              PARTITION_TOO_FAR(ext2.partition[i].start)
+              ? " (skipped >2GiB)" : "");
+//      printf (" %s", describe_chs (ext2.partition[i].begin_chs));
+//      printf (" %s", describe_chs (ext2.partition[i].end_chs));
+      printf ("\n");
     }
   if (ext2.block_size) {
     printf ("          total (i/b) %d/%d  free %d/%d  group %d/%d\n",

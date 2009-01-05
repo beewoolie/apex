@@ -1,3 +1,27 @@
+2009-01-04  Marc Singer  <elf@buici.com>
+
+	* src/drivers/drv-ext2.c (ext2_identify): Revised EXT2 driver to
+	look for extended partitions and to cope with 64 bit IO.
+
+	* include/driver.h: Support for 64 bit IO sizes.  This is only
+	necessary for large devices like those accessible via ATA/SATA.
+	It is optional and somewhat expensive.  Even the EXT2 driver will
+	function without it, but it won't be able to see partitions past
+	2GiB.  This change trickled into lots of areas of APEX because of
+	the change of types in the descriptor structure.  However, there
+	should be no size or performance impact when the system is
+	compiled without CONFIG_DRIVER_LONG_LONG_SIZE.
+
+	* src/arch-arm/lib/muldi3.S: Inclusion of another kernel function
+	for handling aeabi entry points.  This was required by drv-ata
+	when we compiled it with THUMB.
+
+	* src/arch-arm/lib/cp15-wait.c: This and other cp15 functions so
+	that cp15 operations can be invoked from THUMB code without THUMB2
+	support and without specialized code to detect the operation
+	mode.  These functions allow all code that lacks __asm's to be
+	compiled with THUMB.
+	
 2008-12-30  Marc Singer  <elf@buici.com>
 
 	* src/drivers/drv-fat.c (fat_open):  Adding greater specificity

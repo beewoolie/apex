@@ -35,11 +35,7 @@
 
 //#define TALK 2
 
-#if TALK > 0
-# define DBG(l,f...)		if (l <= TALK) printf (f);
-#else
-# define DBG(l,f...)		do {} while (0)
-#endif
+#include <talk.h>
 
 #define TRIES_MAX	(4)
 #define MS_TIMEOUT	(1*1000)

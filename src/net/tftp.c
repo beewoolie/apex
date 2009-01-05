@@ -247,7 +247,7 @@ static int tftp_terminate (void* pv)
 static ssize_t tftp_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   int result;
-  ssize_t cbRead = 0;
+  size_t cbRead = 0;
 
   while (cb) {
     int available = tftp.cbRec - (d->start + d->index);
@@ -434,7 +434,8 @@ static void tftp_close (struct descriptor_d* d)
 
 */
 
-static size_t tftp_seek (struct descriptor_d* d, ssize_t cb, int whence)
+static driver_off_t tftp_seek (struct descriptor_d* d,
+                               driver_off_t cb, int whence)
 {
   if (cb < 0 || whence != SEEK_CUR)
     return 0;			/* *** FIXME */

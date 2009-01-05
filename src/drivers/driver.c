@@ -213,7 +213,7 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   {			/* Region descriptor parse */
     while (sz[ib]) {
       char* pchEnd;
-      unsigned long* pl = 0;
+      driver_size_t* pl = 0;
 
       PRINTF ("ib %d  sz[ib] '%c'\n", ib, sz[ib]);
       switch (sz[ib]) {
@@ -269,9 +269,9 @@ int parse_descriptor (const char* sz, struct descriptor_d* d)
   return 0;
 }
 
-size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
+driver_off_t seek_helper (struct descriptor_d* d, driver_off_t ib, int whence)
 {
-  //  printf ("seek_helper %d", ib);
+//  printf ("seek_helper %d", ib);
 
   switch (whence) {
   case SEEK_SET:
@@ -293,7 +293,7 @@ size_t seek_helper (struct descriptor_d* d, ssize_t ib, int whence)
 
   d->index = ib;
 
-  //  printf (", %d\n", ib);
+//  printf (", %d\n", ib);
 
-  return (size_t) ib;
+  return ib;
 }

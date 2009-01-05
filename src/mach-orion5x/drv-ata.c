@@ -298,6 +298,7 @@ struct ata_info {
 static struct ata_info ata_d;
 u8 drive_select;
 
+#if 0
 static uint8_t read8 (unsigned long phys, int reg)
 {
   uint16_t v;
@@ -328,6 +329,7 @@ static void write8 (unsigned long phys, int reg, uint8_t value)
   REG (phys | ATA_REG | (reg & ~1)*ATA_ADDR_MULT) = v;
   IOBARRIER_READ;
 }
+#endif
 
 #if 0
 static void writea8 (int reg, uint8_t value)

@@ -681,7 +681,8 @@ static void fat_report (void)
     if (fat.partition[i].type || i == 0) {
       if (i != 0)
 	printf ("      ");
-      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n", i,
+      printf ("    partition %d: %c %02x 0x%08lx 0x%08lx\n",
+              i + 1,
 	      fat.partition[i].boot ? '*' : ' ',
 	      fat.partition[i].type,
 	      fat.partition[i].start,
