@@ -1,3 +1,15 @@
+2009-01-05  Marc Singer  <elf@buici.com>
+
+	* src/mach-orion5x/mv2120_config: Moving to the CodeSourcery
+	compiler for thumb support.
+
+	* src/arch-arm/lib/cp15-invalidate-dcache-va.c
+	(invalidate_dcache_va): Conditionally compiling the
+	invalidate-dcache-va function based on the presence of the macro
+	and, therefore, the CP15 feature.
+
+	* Makefile (SUBLEVEL): 1.6.5 for orion5x merge.
+
 2009-01-04  Marc Singer  <elf@buici.com>
 
 	* src/apex/cmd-flashusage.c (cmd_flashusage): New command to scan

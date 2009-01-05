@@ -19,7 +19,11 @@
 #include <config.h>
 #include <asm/cp15.h>
 
+#if defined (INVALIDATE_DCACHE_VA)
+
 void invalidate_dcache_va (uint32_t va)
 {
   INVALIDATE_DCACHE_VA (va);
 }
+
+#endif

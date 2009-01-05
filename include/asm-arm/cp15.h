@@ -99,8 +99,8 @@
 # define CP15_WAIT
 #endif
 
-extern void invalidate_dcache_va (uint32_t);
-extern void cp15_wait (void);
 extern void cleanall_dcache (void);
+extern void cp15_wait (void);
+extern void invalidate_dcache_va (uint32_t);
 
 #endif  /* __CP15_H__ */
