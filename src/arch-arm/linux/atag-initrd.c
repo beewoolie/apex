@@ -39,6 +39,11 @@ struct tag* atag_initrd (struct tag* p)
 	p->u.initrd.size  = lookup_alias_or_env_unsigned ("ramdisksize",
                                                           CONFIG_RAMDISK_SIZE);
 
+        if (p->u.initrd.size == 0) {
+                memset (p, 0, sizeof (*p));
+                return 0;
+        }
+
 # if !defined (CONFIG_SMALL)
 	printf ("ATAG_INITRD2: start 0x%08x  size 0x%08x\n",
 		p->u.initrd.start, p->u.initrd.size);
