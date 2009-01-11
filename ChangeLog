@@ -1,3 +1,9 @@
+2009-01-11  Marc Singer  <elf@buici.com>
+
+	* src/apex/cmd-image.c (cmd_image): Added an option to relocate
+	the ramdisk image s.t. the uBoot image format can be loaded with
+	"image load" and then used to boot the system.
+
 2009-01-05  Marc Singer  <elf@buici.com>
 
 	* src/mach-orion5x/mv2120_config: Moving to the CodeSourcery

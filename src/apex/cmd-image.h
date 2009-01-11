@@ -20,7 +20,12 @@
 
 /* ----- Types */
 
-typedef int (*pfn_handle_image) (int, struct descriptor_d*, bool);
+struct image_info {
+  bool fRegionCanExpand;
+  uint32_t initrd_relocation;
+};
+
+typedef int (*pfn_handle_image) (int, struct descriptor_d*, struct image_info*);
 
 /* ----- Globals */
 

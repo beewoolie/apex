@@ -29,6 +29,7 @@
 #include <command.h>
 #include <error.h>
 #include <driver.h>
+#include <linux/kernel.h>
 #include "cmd-image.h"
 #include <talk.h>
 
@@ -39,14 +40,34 @@ int cmd_image (int argc, const char** argv)
   struct descriptor_d d;
   int result = 0;
   int op = 's';
-  bool fRegionCanExpand = false;
+  struct image_info info;
   char rgb[16];                 /* Storage for bytes to determine image type */
   pfn_handle_image pfn = NULL;
+
+
+  memset (&info, 0, sizeof (info));
+  info.initrd_relocation = ~0;
 
   if (argc < 2)
     return ERROR_PARAM;
 
-  if (argc > 2) {
+  while (argc > 2) {
+
+    if (argv[1][0] == '-') {
+      switch (argv[1][1]) {
+      case 'r':
+        if (argc < 3)
+          return ERROR_PARAM;
+        info.initrd_relocation = simple_strtoul (argv[2], NULL, 0);
+        argc -= 2;
+        argv += 2;
+        break;
+      default:
+        return ERROR_PARAM;
+      }
+      continue;
+    }
+
 #if defined (CONFIG_CMD_IMAGE_SHOW)
     if      (PARTIAL_MATCH (argv[1], "s", "how") == 0)
       op = 's';
@@ -67,7 +88,7 @@ int cmd_image (int argc, const char** argv)
     goto fail;
   }
 
-  fRegionCanExpand = d.length == 0;
+  info.fRegionCanExpand = d.length == 0;
 
   /* *** Originally, this call wasn't made.  Trouble is that we cannot
      *** use a tftp descriptor without it.  So, now we check for zero
@@ -77,7 +98,7 @@ int cmd_image (int argc, const char** argv)
     goto fail;
   }
 
-  if (fRegionCanExpand && d.length - d.index < sizeof (rgb))
+  if (info.fRegionCanExpand && d.length - d.index < sizeof (rgb))
     d.length = d.index + sizeof (rgb);
 
 	/* Read some bytes so we can determine the image type */
@@ -100,7 +121,7 @@ int cmd_image (int argc, const char** argv)
 #endif
 
   if (pfn)
-    result = pfn (op, &d, fRegionCanExpand);
+    result = pfn (op, &d, &info);
   else
     result = ERROR_RESULT (ERROR_UNRECOGNIZED, "unrecognized image");
 
@@ -114,15 +135,17 @@ static __command struct command_d c_image = {
   .func = cmd_image,
   COMMAND_DESCRIPTION ("image handling")
   COMMAND_HELP(
-"image [OP] REGION\n"
+"image [OP|OPTIONS] REGION\n"
 "  Operation on an image.\n"
 "  Without an OP, the image command verifies the integrity of the image.\n"
-"  Choices for OP are\n"
+"  One and only one OP may be specified:\n"
 "    load     - load image payload or payloads into memory\n"
 #if defined (CONFIG_CMD_IMAGE_SHOW)
 "    show     - show the image metadata\n"
 #endif
 "    check    - check the integrity of the image including payload CRCs\n"
+"  Options:\n"
+"    -r ADDR  - Relocate ramdisk to ADDR on load.  Important for uImages.\n"
 "  In some cases, the region length may be omitted and the command\n"
 "  will infer the length from the image header.\n"
 "  e.g.  image check 0xc1000000\n"
