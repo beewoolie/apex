@@ -105,15 +105,17 @@ config THUMB
 	default n
 	depends on EXPERIMENTAL=y # && SMALL=y
 	help
-	  This option builds some portions of the loader with thumb
+	  This option builds some portions of APEX with THUMB
 	  instructions, a 16 bit instruction format available in some
-	  ARM cores.  This feature is intended to produce a smaller
+	  ARM cores.  This feature is intended to produce a smaller 
 	  executable for the sake of squeezing more features into a
 	  smaller space.
 	  
-	  This feature is experimental and, frankly unlikely to
-	  work.  It's best to leave it disabled unless you are
-	  prepared for the worst.
+	  While this feature appers to work on some architectures, it does
+	  not seem to compile properly for the ARM920T.  In fact, as
+	  an experimental feature you should expect that it will fail.
+	  It's best to leave it disabled unless you are prepared for
+	  some debugging. 
 
 menu "General Setup"
 
@@ -546,7 +548,7 @@ config COMPANION_EVT2_BOOT
 	depends on USES_COMPANION_EVT2_BOOT && DRIVER_LH_MMC
 	bool "Companion EVT2 NAND Boot"
 	select RELOCATE_COMPANION_EVT2
-	select RELOCATE_SIMPLE
+	select RELOCATE_NAND
 	help
 	  This enables early relocation of APEX from NAND flash to
 	  SRAM so that the system can get on it's feet.  The EVT2 NAND
@@ -559,7 +561,7 @@ config COMPANION_EVT2_BOOT
 endchoice
 
 config NAND_BOOT_BASE
-	depends on NAND_BOOT
+	depends on RELOCATE_NAND
 	hex "NAND Flash Boot Execution Address"
 	default 0x00000000
 	help
@@ -568,6 +570,15 @@ config NAND_BOOT_BASE
 	  used to determine whether or not we're executing from this
 	  address and, therefore, whether or not we need to perform
 	  the relocation.
+
+config NAND_BOOT_PAGE_SIZE
+	depends on RELOCATE_NAND
+	int "NAND Flash Page Size for APEX Relocation"
+	default 2048
+	help
+	  This option sets the NAND flash page size used during the
+	  bootstrap relocation.  Most modern NAND flash uses 2KiB pages.
+	  Older devices have 512B pages.  
 
 comment "Default Startup"
 

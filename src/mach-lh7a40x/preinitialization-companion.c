@@ -46,7 +46,8 @@ static void __naked __section (.rlocate.early.func) wait_on_busy (void)
 {
   while (NAND_ISBUSY)
     ;
-  __asm volatile ("mov pc, lr");
+//  __asm volatile ("mov pc, lr");
+  __asm volatile ("bx lr");
 }
 
 void __naked __section (.rlocate.early) relocate_early (void)
@@ -57,15 +58,22 @@ void __naked __section (.rlocate.early) relocate_early (void)
 
 	/* Also, only perform this special relocation when we're
 	   running from the base of SRAM.  */
-  if ((pc >> 12) != (0xb0000000>>12))
+  if ((pc >> 12) != (CONFIG_NAND_BOOT_BASE>>12))
     __asm volatile ("b relocate_early_exit");
 
   PUTC ('N');
 
-	/* Relocate the whole loader from NAND to SRAM */
+	/* Relocate one page of the loader from NAND to SRAM.  This
+           routine is necessary because the CPU ROM will load only
+           512B, one page, of flash into SRAM before starting
+           execution.  We could load a lot more than 4KiB, but we want
+           to always relocate directly from NAND into SDRAM so that
+           the loader isn't size limited.  The 4KiB limit is a policy
+           choice as there is no performance impact.  Also note that
+           we don't write over the page we're executing. */
   {
-    int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
-    void* pv = (void*) (0xb0000000 + 512);
+    int cPages = 4096/CONFIG_NAND_BOOT_PAGE_SIZE - 1;
+    void* pv = (void*) (CONFIG_NAND_BOOT_BASE + CONFIG_NAND_BOOT_PAGE_SIZE);
     int cAddr = NAM_DECODE (BOOT_PBC);
     int iPage;
 
@@ -91,7 +99,7 @@ void __naked __section (.rlocate.early) relocate_early (void)
 
       {
 	int cb;
-	for (cb = 512; cb--; )
+	for (cb = CONFIG_NAND_BOOT_PAGE_SIZE; cb--; )
 	  *((char*) pv++) = NAND_DATA;
       }
 

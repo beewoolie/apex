@@ -381,7 +381,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		  "strhi r0, [%2]\n\t"
 #endif
 		  "movhi r0, #0\n\t"
-		  "movhi pc, %0\n\t"
+//		  "movhi pc, %0\n\t"
+		  "bxhi %0\n\t"
 		  "1:" :: "r" (lr), "I" (SDRAM_BANK0_PHYS)
 #if defined (CONFIG_SDRAMBOOT_REPORT)
 		  , "r" (&fSDRAMBoot)
@@ -419,7 +420,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 #endif
 
   __asm volatile ("mov r0, #-1\t\n"
-		  "mov pc, %0" : : "r" (lr));
+		  "bx %0" : : "r" (lr));
+//		  "mov pc, %0" : : "r" (lr));
 }
 
 

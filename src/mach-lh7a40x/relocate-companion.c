@@ -149,7 +149,8 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 	/* Read loader from SD/MMC only if we could be starting from I2C. */
   else if ((pc >> 12) == (0xb0000000>>12) && relocate_apex_mmc ()) {
     PUTC ('@');			/* Let 'em know we're jumping */
-    __asm volatile ("mov pc, %0" :: "r" (MMC_BOOTLOADER_LOAD_ADDR));
+//    __asm volatile ("mov pc, %0" :: "r" (MMC_BOOTLOADER_LOAD_ADDR));
+    __asm volatile ("bx %0" :: "r" (MMC_BOOTLOADER_LOAD_ADDR));
   }
 
 #endif
@@ -208,7 +209,8 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" : : "r" (&relocate_apex_exit));
 }
 
 int __section (.rlocate.func) relocate_apex_mmc (void)

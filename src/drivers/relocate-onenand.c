@@ -187,7 +187,8 @@ void __naked __section (.rlocate)
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" :: "r" (&relocate_apex_exit));
 }
 
 
@@ -262,7 +263,8 @@ void __naked __section (.rlocate.func) relocate_apex_onenand (void)
 
   PUTC_LL('!');
 
-  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" :: "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" :: "r" (&relocate_apex_exit));
 }
 
 void __naked __section (.rlocate.exit) relocate_apex_exit (void)

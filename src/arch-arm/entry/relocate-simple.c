@@ -159,7 +159,8 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
   PUTC_LL ('j');
 
 				/* Return via SDRAM */
-  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" : : "r" (&relocate_apex_exit));
 }
 
 void __naked __section (.rlocate.exit) relocate_apex_exit (void)

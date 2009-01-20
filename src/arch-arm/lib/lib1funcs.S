@@ -8,15 +8,31 @@
 
 /* Copyright 1995, 1996, 1998, 1999, 2000, 2003 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License
-   version 2 as published by the Free Software Foundation.
-   Please refer to the file debian/copyright for further details.
+This file is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2, or (at your option) any
+later version.
 
-*/
+In addition to the permissions in the GNU General Public License, the
+Free Software Foundation gives you unlimited permission to link the
+compiled version of this file into combinations with other programs,
+and to distribute those combinations without any restriction coming
+from the use of this file.  (The General Public License restrictions
+do apply in other respects; for example, they cover modification of
+the file, and distribution when not linked into a combine
+executable.)
+
+This file is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, write to
+the Free Software Foundation, 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
-#include <config.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 
@@ -194,7 +210,7 @@ ENTRY(__aeabi_uidiv)
 
 	subs	r2, r1, #1
 @	moveq	pc, lr
-	bxeq    lr
+	bxeq	lr
 	bcc	Ldiv0
 	cmp	r0, r1
 	bls	11f
@@ -205,7 +221,7 @@ ENTRY(__aeabi_uidiv)
 
 	mov	r0, r2
 @	mov	pc, lr
-	bx      lr
+	bx	lr
 
 11:	moveq	r0, #1
 	movne	r0, #0
@@ -218,6 +234,8 @@ ENTRY(__aeabi_uidiv)
 @	mov	pc, lr
 	bx	lr
 
+ENDPROC(__udivsi3)
+ENDPROC(__aeabi_uidiv)
 
 ENTRY(__umodsi3)
 
@@ -235,6 +253,7 @@ ENTRY(__umodsi3)
 @	mov	pc, lr
 	bx	lr
 
+ENDPROC(__umodsi3)
 
 ENTRY(__divsi3)
 ENTRY(__aeabi_idiv)
@@ -278,6 +297,8 @@ ENTRY(__aeabi_idiv)
 @	mov	pc, lr
 	bx	lr
 
+ENDPROC(__divsi3)
+ENDPROC(__aeabi_idiv)
 
 ENTRY(__modsi3)
 
@@ -298,7 +319,9 @@ ENTRY(__modsi3)
 10:	cmp	ip, #0
 	rsbmi	r0, r0, #0
 @	mov	pc, lr
-	bx	lr
+	bx	lr	
+
+ENDPROC(__modsi3)
 
 #ifdef CONFIG_AEABI
 
@@ -312,6 +335,8 @@ ENTRY(__aeabi_uidivmod)
 @	mov	pc, lr
 	bx	lr
 
+ENDPROC(__aeabi_uidivmod)
+
 ENTRY(__aeabi_idivmod)
 
 	stmfd	sp!, {r0, r1, ip, lr}
@@ -322,6 +347,8 @@ ENTRY(__aeabi_idivmod)
 @	mov	pc, lr
 	bx	lr
 
+ENDPROC(__aeabi_idivmod)
+
 #endif
 
 Ldiv0:
@@ -329,6 +356,8 @@ Ldiv0:
 	str	lr, [sp, #-8]!
 	bl	__div0
 	mov	r0, #0			@ About as wrong as it could be.
-	ldr	pc, [sp], #8
+@	ldr	pc, [sp], #8
+	ldr	lr, [sp], #8
+	bx	lr
 
 

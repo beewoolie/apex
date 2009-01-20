@@ -562,7 +562,7 @@ static void clcdc_init (void)
 #endif
 #endif
 
-  printf ("lcd setup\n");
+//  printf ("lcd setup\n");
   DRV_CLCDC_SETUP;
 
   CLCDC_TIMING0 = HBP (HORZ_BP) | HFP (HORZ_FP) | HSW (HSYNC_WIDTH)

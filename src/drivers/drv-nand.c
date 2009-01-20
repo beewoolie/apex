@@ -59,7 +59,7 @@
 #include <drv-nand-base.h>
 #include "mach/drv-nand.h"
 
-#define TALK
+//#define TALK
 
 static void wait_on_busy (void);
 
@@ -204,7 +204,7 @@ struct nand_chip {
 const static struct nand_chip chips[] = {
   {        (1<<1),
     { 0x98, 0x75 },		/* Toshiba - 256 MiB*/
-    32*1024*1024, 16*1024, 512 }, /* Addr 3? */
+    32*1024*1024,   16*1024,  512 }, /* Addr 3? */
   {  (1<<0) | (1<<1) | (1<<2) | (1<<3),
     { 0x20,    0xf1,    0x80,    0x15},	/* ST - 1 GiB (NAND01GW3B2AN6) */
     128*1024*1024, 128*1024, 2048 }, /* Addr 4 */

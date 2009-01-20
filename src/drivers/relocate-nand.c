@@ -46,7 +46,8 @@ static void __naked __section (.rlocate.func) wait_on_busy (void)
 {
   while (NAND_ISBUSY)
     ;
-  __asm volatile ("mov pc, lr");
+//  __asm volatile ("mov pc, lr");
+  __asm volatile ("bx lr");
 }
 
 void relocate_apex_exit (void);
@@ -55,11 +56,11 @@ void relocate_apex_exit (void);
 
    performs a copy of the loader, but it first checks to see if we are
    running from RAM already.  The system hardware (LH7) copies 4K of
-   the loader from NAND flash to SRAM at 0xb0000000.  If we are
-   executing from there, we assume that we need to perform the NAND
-   flash relocation.  Otherwise, we perform a straightforward copy
-   from our present location to SDRAM because we've been loaded via
-   JTAG.
+   the loader from NAND flash to SRAM at CONFIG_NAND_BOOT_BASE.  If we
+   are executing from there, we assume that we need to perform the
+   NAND flash relocation.  Otherwise, we perform a straightforward
+   copy from our present location to SDRAM because we've been loaded
+   via JTAG.
 
 */
 
@@ -82,7 +83,7 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 //  __asm volatile ("mov sp, %0" :: "r" (&APEX_VMA_BOOTSTRAP_STACK_START));
 
   __asm volatile ("mov %0, pc" : "=r" (pc));
-  PUTHEX (pc);
+  PUTHEX_LL (pc);
   PUTC ('>');
 
   PUTC ('c');
@@ -93,7 +94,13 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 
 #if defined (USE_NAND)
 
-	/* Jump to NAND loader only if we could be starting from NAND. */
+	/* Jump to NAND loader only if we could be starting from
+           NAND. To be most clear, we will only relocate if we're
+           executing from the first 4K of the memory described by
+           CONFIG_NAND_BOOT_BASE.  This is a reasonable assumption
+           given that this relocation is the first thing we do after
+           setup of RAM.  If that takes more than 4K, we've got an
+           extrordinary situation. */
   else if ((pc >> 12) == (CONFIG_NAND_BOOT_BASE>>12)) {
     PUTC ('N');
     /* Note that we don't care about offset since relocate_apex_nand
@@ -156,7 +163,8 @@ void __naked __section (.rlocate) relocate_apex (unsigned long offset)
 
 				/* Return to SDRAM */
   PUTC ('@');			/* Let 'em know we're jumping */
-  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" : : "r" (&relocate_apex_exit));
 }
 
 void __naked __section (.rlocate.exit) relocate_apex_exit (void)
@@ -179,14 +187,48 @@ void __naked __section (.rlocate.exit) relocate_apex_exit (void)
 
 void __naked __section (.rlocate.func) relocate_apex_nand (void)
 {
-  int cPages = (&APEX_VMA_COPY_END - &APEX_VMA_COPY_START + 511)/512;
+  int cPages = (&APEX_VMA_COPY_END
+                - &APEX_VMA_COPY_START
+                + CONFIG_NAND_BOOT_PAGE_SIZE - 1)
+    /CONFIG_NAND_BOOT_PAGE_SIZE;
   void* pv = &APEX_VMA_ENTRY;
   int cAddr = NAM_DECODE (BOOT_PBC);
+  int iPage;
 
   PUTC ('>');
 
-  PUTC_LL('0' + cAddr);
+  PUTC_LL ('0' + cAddr);
 
+  NAND_CS_ENABLE;
+
+  for (iPage = 0; iPage < cPages; ++iPage) {
+    NAND_CLE = NAND_Reset;
+    wait_on_busy ();
+
+    NAND_CLE = NAND_Read1;
+    NAND_ALE = 0;
+    {
+      int page = iPage;
+      int i;
+      for (i = cAddr - 1; i--; ) {
+        NAND_ALE = page & 0xff;
+        page >>= 8;
+      }
+    }
+    wait_on_busy ();
+
+    NAND_CLE = NAND_Read1;
+
+    {
+      int cb;
+      for (cb = CONFIG_NAND_BOOT_PAGE_SIZE; cb--; )
+        *((char*) pv++) = NAND_DATA;
+    }
+  }
+
+  NAND_CS_DISABLE;
+
+#if 0
   NAND_CLE = NAND_Reset;
   wait_on_busy ();
 
@@ -199,12 +241,14 @@ void __naked __section (.rlocate.func) relocate_apex_nand (void)
     int cb;
 
     NAND_CLE = NAND_Read1;
-    for (cb = 512; cb--; )
+    for (cb = CONFIG_NAND_BOOT_PAGE_SIZE; cb--; )
       *((char*) pv++) = NAND_DATA;
     for (cb = 16; cb--; )
       NAND_DATA;
     wait_on_busy ();
   }
+#endif
 
-  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+//  __asm volatile ("mov pc, %0" : : "r" (&relocate_apex_exit));
+  __asm volatile ("bx %0" : : "r" (&relocate_apex_exit));
 }

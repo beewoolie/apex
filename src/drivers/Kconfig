@@ -153,6 +153,17 @@ config DRIVER_NAND_TYPE_ST
 
 endchoice	
 
+config DRIVER_NAND_ADDRESS_BYTES
+	int "Address bytes of underlying NAND device"
+	depends on DRIVER_NAND
+	default 2
+	help
+	  NAND chips vary in the number of address bytes each accepts.
+	  While we can detect the size of the NAND chip and the mach-
+	  customization can account for some platform specific access
+	  methods, this configuration option is neither detectable nor
+	  is it optional.
+
 config DRIVER_ONENAND
 	bool "OneNAND Flash"
 	default n
@@ -177,17 +188,6 @@ config DRIVER_ONENAND_MULTIPLIER
 	  This is the multiplier for the addresses used by the flash
 	  device.  Typical implementations use a multipler of 2
 	  because the data bus is 16 bits wide.
-
-config DRIVER_NAND_ADDRESS_BYTES
-	int "Address bytes of underlying NAND device"
-	depends on DRIVER_NAND
-	default 2
-	help
-	  NAND chips vary in the number of address bytes each accepts.
-	  While we can detect the size of the NAND chip and the mach-
-	  customization can account for some platform specific access
-	  methods, this configuration option is neither detectable nor
-	  is it optional.
 
 config DRIVER_COMPACTFLASH
 	bool "CompactFlash"

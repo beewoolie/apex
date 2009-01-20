@@ -52,11 +52,11 @@ int cmd_version (int argc, const char** argv)
     snprintf (sz, sizeof (sz), "mem:0x%p+0x%lx",
 	      (void*) &APEX_VMA_COPY_START,
 	      (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
-    printf ("  apex => %-21.21s   (%ld bytes)\n",
+    printf ("  apex => %-23.23s (%ld bytes)\n",
 	    sz, (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
   }
 #if defined (CONFIG_CMD_SETENV)
-  printf ("  env  => %-21.21s   (", CONFIG_ENV_REGION);
+  printf ("  env  => %-23.23s (", CONFIG_ENV_REGION);
   switch (env_check_magic (1)) {
   case 0:
     printf ("in-use");
