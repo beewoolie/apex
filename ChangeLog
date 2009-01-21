@@ -1,3 +1,10 @@
+2009-01-21  Marc Singer  <elf@zealous.synapse.com>
+
+	* Makefile (SUBLEVEL): v1.6.7 for push of new features.
+
+	* src/drivers-lh/drv-mmc.c (mmc_report): Revised reporting to make
+	it easier to troubleshoot cards.
+
 2009-01-20  Marc Singer  <elf@zealous.synapse.com>
 
 	* include/mmc.h (mmc_card_acquired): Revised the card acquisition
