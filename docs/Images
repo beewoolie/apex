@@ -207,4 +207,7 @@ of the awkward design choices present in the U-BOOT design.
   o Even with a multi-image format, there is no way to change the load
     address of successive payloads.  All payloads are loaded
     sequentially and  the loader must assume that the first payload is
-    the kernel and the second is an initrd.
+    the kernel and the second is an initrd.  There is an option to the
+    image command that will relocate the initrd of a uBoot image which
+    *must* not follow the kernel where the kernel is loaded for
+    execution.

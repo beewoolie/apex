@@ -157,7 +157,7 @@ static inline uint32_t swabl (uint32_t v)
     | ((v & (uint32_t) (0xff << 24)) >> 24);
 }
 
-int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
+int verify_uboot_image (struct descriptor_d* d, struct image_info* info)
 {
   int result = 0;
   ssize_t cbNeed;               /* Most definitely can be negative */
@@ -169,7 +169,7 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
 
   cbNeed = 4 - g_cbHeader;
   if (cbNeed > 0) {
-    if (fRegionCanExpand && d->length - d->index < cbNeed)
+    if (info->fRegionCanExpand && d->length - d->index < cbNeed)
       d->length = d->index + cbNeed;
 	/* Read the signature and header length if not already present */
     result = d->driver->read (d, g_rgbHeader + g_cbHeader, cbNeed);
@@ -185,7 +185,7 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
 
   cbNeed = cbHeader - g_cbHeader;
   if (cbNeed > 0) {
-    if (fRegionCanExpand && d->length - d->index < cbNeed)
+    if (info->fRegionCanExpand && d->length - d->index < cbNeed)
       d->length = d->index + cbNeed;
     result = d->driver->read (d, g_rgbHeader + g_cbHeader, cbNeed);
     if (result != cbNeed)
@@ -198,7 +198,7 @@ int verify_uboot_image (struct descriptor_d* d, bool fRegionCanExpand)
   if (((struct header*) g_rgbHeader)->image_type == typeMulti) {
     uint32_t cbPayload;
     cbNeed = sizeof (g_rgSizes);
-    if (fRegionCanExpand && d->length - d->index < cbNeed)
+    if (info->fRegionCanExpand && d->length - d->index < cbNeed)
       d->length = d->index + cbNeed;
     for (; cbPayload; ++g_cPayloads) {
       result = d->driver->read (d, &cbPayload, sizeof (cbPayload));
@@ -300,7 +300,7 @@ const char* describe_uboot_compression (unsigned long v)
 
 /** Handle reporting on UBOOT image and payloads. */
 
-int handle_report_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
+int handle_report_uboot_image (struct descriptor_d* d, struct image_info* info,
                                struct header* header)
 {
   time_t t = swabl (header->time);
@@ -351,7 +351,7 @@ int handle_report_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
     an image has no load address, the payload will be loaded to the
     default address built into APEX. */
 
-int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
+int handle_load_uboot_image (struct descriptor_d* d, struct image_info* info,
                              struct header* header)
 {
   int result = 0;
@@ -360,6 +360,7 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   unsigned long crc_calc = 0;
   uint32_t addrLoad = swabl (header->load_address);
   uint32_t addrEntry = swabl (header->entry_point);
+  uint32_t addrLoadInitrd = ~0;
   size_t cbCheck = swabl (header->size);
   size_t cb = cbCheck;
 
@@ -370,10 +371,10 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
     printf ("# Kernel (%s) mem:0x%08x+0x%08x %s\n",
             describe_uboot_image_type (header->image_type), addrLoad,
             swabl (g_rgSizes[0]), header->image_name);
+    addrLoadInitrd = addrLoad + swabl (g_rgSizes[0]);
     printf ("# Initrd (%s) mem:0x%08x+0x%08x %s\n",
             describe_uboot_image_type (header->image_type),
-            addrLoad + swabl (g_rgSizes[0]),
-            swabl (g_rgSizes[1]), header->image_name);
+            addrLoadInitrd, swabl (g_rgSizes[1]), header->image_name);
   }
   else
     printf ("# %s mem:0x%08x+0x%08x %s\n",
@@ -382,7 +383,7 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
 
 
     /* Copy image and check CRC */
-  if (fRegionCanExpand
+  if (info->fRegionCanExpand
       && d->length - d->index < cb)
     d->length = d->index + cb;
 
@@ -404,6 +405,15 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   if (crc != crc_calc) {
     DBG (1, "crc 0x%08lx  crc_calc 0x%08lx\n", crc, crc_calc);
     ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
+  }
+
+  if (addrLoadInitrd != ~0 && info->initrd_relocation != ~0) {
+    printf ("# Initrd (%s) mem:0x%08x+0x%08x [relocation]\n",
+            describe_uboot_image_type (header->image_type),
+            info->initrd_relocation, swabl (g_rgSizes[1]));
+    memcpy ((void*) info->initrd_relocation, (void*) addrLoadInitrd,
+            swabl (g_rgSizes[1]));
+    addrLoadInitrd = info->initrd_relocation;
   }
 
 #if defined (CONFIG_ALIASES)
@@ -429,11 +439,10 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
     if (g_cPayloads > 1) {      /* We have an initrd as well */
       size_t   size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
       unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
-      unsigned addrInitrd = addrLoad + swabl (g_rgSizes[0]);
       if (size != swabl (g_rgSizes[1]))
         alias_set_hex ("ramdisksize", swabl (g_rgSizes[1]));
-      if (addr != addrInitrd)
-        alias_set_hex ("ramdiskaddr", addrInitrd);
+      if (addr != addrLoadInitrd)
+        alias_set_hex ("ramdiskaddr", addrLoadInitrd);
     }
   }
 #endif
@@ -449,7 +458,7 @@ int handle_load_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
     the first byte of the first payload.  The payload CRCs will be
     checked without copying the data to the memory. */
 
-int handle_check_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
+int handle_check_uboot_image (struct descriptor_d* d, struct image_info* info,
                               struct header* header)
 {
   int result = 0;
@@ -458,7 +467,7 @@ int handle_check_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
   size_t cbCheck = swabl (header->size);
   size_t cb = cbCheck;
 
-  if (fRegionCanExpand
+  if (info->fRegionCanExpand
       && d->length - d->index < cb)
       d->length = d->index + cb;
 
@@ -493,8 +502,9 @@ int handle_check_uboot_image (struct descriptor_d* d, bool fRegionCanExpand,
     structure so that the handler function doesn't need to do this
     common task. */
 
-int uboot_image (int (*pfn) (struct descriptor_d*, bool, struct header*),
-                struct descriptor_d* d, bool fRegionCanExpand)
+int uboot_image (int (*pfn) (struct descriptor_d*, struct image_info*,
+                             struct header*),
+                struct descriptor_d* d, struct image_info* info)
 {
   int result = 0;
   struct header* header = (struct header*) g_rgbHeader;
@@ -502,18 +512,18 @@ int uboot_image (int (*pfn) (struct descriptor_d*, bool, struct header*),
   ENTRY (1);
   DBG (1, "pfn %p\n", pfn);
 
-  result = pfn (d, fRegionCanExpand, header);
+  result = pfn (d, info, header);
   if (result < 0)
     return result;
 
   return 0;
 }
 
-int handle_uboot_image (int op, struct descriptor_d* d, bool fRegionCanExpand)
+int handle_uboot_image (int op, struct descriptor_d* d, struct image_info* info)
 {
   int result;
 
-  if ((result = verify_uboot_image (d, fRegionCanExpand)) < 0) {
+  if ((result = verify_uboot_image (d, info)) < 0) {
     DBG (1, "header verification failed %d\n", result);
     return result;
   }
@@ -522,15 +532,15 @@ int handle_uboot_image (int op, struct descriptor_d* d, bool fRegionCanExpand)
 
   switch (op) {
   case 'c':
-    result = uboot_image (handle_check_uboot_image, d, fRegionCanExpand);
+    result = uboot_image (handle_check_uboot_image, d, info);
     break;
 #if defined (CONFIG_CMD_IMAGE_SHOW)
   case 's':
-    result = uboot_image (handle_report_uboot_image, d, fRegionCanExpand);
+    result = uboot_image (handle_report_uboot_image, d, info);
     break;
 #endif
   case 'l':
-    result = uboot_image (handle_load_uboot_image, d, fRegionCanExpand);
+    result = uboot_image (handle_load_uboot_image, d, info);
     break;
   }
   return result;

@@ -163,7 +163,7 @@ bool tag_lengths (uint8_t* pb, int* pcbTag, int* pcbData)
   return true;
 }
 
-int verify_apex_image (struct descriptor_d* d, bool fRegionCanExpand)
+int verify_apex_image (struct descriptor_d* d, struct image_info* im_info)
 {
   int result = 0;
   ssize_t cbNeed;               /* Most definitely can be negative */
@@ -174,7 +174,7 @@ int verify_apex_image (struct descriptor_d* d, bool fRegionCanExpand)
 
   cbNeed = 5 - g_cbHeader;
   if (cbNeed > 0) {
-    if (fRegionCanExpand && d->length - d->index < cbNeed)
+    if (im_info->fRegionCanExpand && d->length - d->index < cbNeed)
       d->length = d->index + cbNeed;
 	/* Read the signature and header length if not already present */
     result = d->driver->read (d, g_rgbHeader + g_cbHeader, cbNeed);
@@ -193,7 +193,7 @@ int verify_apex_image (struct descriptor_d* d, bool fRegionCanExpand)
 
   cbNeed = cbHeader - g_cbHeader;
   if (cbNeed > 0) {
-    if (fRegionCanExpand && d->length - d->index < cbNeed)
+    if (im_info->fRegionCanExpand && d->length - d->index < cbNeed)
       d->length = d->index + cbNeed;
     result = d->driver->read (d, g_rgbHeader + g_cbHeader, cbNeed);
     if (result != cbNeed)
@@ -223,7 +223,8 @@ const char* describe_apex_image_type (unsigned long v)
 /** Handle reporting on APEX image and payloads. */
 
 int handle_report_apex_image (int field,
-                              struct descriptor_d* d, bool fRegionCanExpand,
+                              struct descriptor_d* d,
+                              struct image_info* im_info,
                               struct payload_info* info)
 {
   switch (field) {
@@ -283,7 +284,7 @@ int handle_report_apex_image (int field,
     default address built into APEX. */
 
 int handle_load_apex_image (int field,
-                            struct descriptor_d* d, bool fRegionCanExpand,
+                            struct descriptor_d* d, struct image_info* im_info,
                             struct payload_info* info)
 {
   int result = 0;
@@ -305,7 +306,7 @@ int handle_load_apex_image (int field,
       ERROR_RETURN (ERROR_FAILURE, "no load address for payload");
 
     /* Copy image and check CRC */
-    if (fRegionCanExpand
+    if (im_info->fRegionCanExpand
         && d->length - d->index < info->length + 4 + cbPadding)
       d->length = d->index + info->length + 4 + cbPadding;
 
@@ -364,7 +365,7 @@ int handle_load_apex_image (int field,
     checked without copying the data to the memory. */
 
 int handle_check_apex_image (int field,
-                             struct descriptor_d* d, bool fRegionCanExpand,
+                             struct descriptor_d* d, struct image_info* im_info,
                              struct payload_info* info)
 {
   int result = 0;
@@ -381,7 +382,7 @@ int handle_check_apex_image (int field,
             describe_apex_image_type (info->type), info->addrLoad,
             info->length, info->sz ? info->sz : "");
 
-    if (fRegionCanExpand
+    if (im_info->fRegionCanExpand
         && d->length - d->index < info->length + 4 + cbPadding)
       d->length = d->index + info->length + 4 + cbPadding;
 
@@ -391,7 +392,7 @@ int handle_check_apex_image (int field,
     if (result < 0)
       return result;
     DBG (2, " %d %lx %d %ld\n",
-         fRegionCanExpand, d->start, d->index, d->length);
+         im_info->fRegionCanExpand, d->start, d->index, d->length);
     if (d->driver->read (d, &crc, sizeof (crc)) != sizeof (crc))
       ERROR_RETURN (ERROR_IOFAILURE, "payload CRC missing");
     crc = swabl (crc);
@@ -430,8 +431,8 @@ int handle_check_apex_image (int field,
     common task. */
 
 int apex_image (int (*pfn) (int, struct descriptor_d*,
-                            bool, struct payload_info*),
-                struct descriptor_d* d, bool fRegionCanExpand)
+                            struct image_info*, struct payload_info*),
+                struct descriptor_d* d, struct image_info* im_info)
 {
   int result = 0;
   int cbHeader = g_rgbHeader[4]*16;
@@ -493,7 +494,7 @@ int apex_image (int (*pfn) (int, struct descriptor_d*,
       break;                    // It's OK to skip unknown tags
     }
 
-    result = pfn (g_rgbHeader[i], d, fRegionCanExpand, &info);
+    result = pfn (g_rgbHeader[i], d, im_info, &info);
     if (result < 0)
       return result;
 
@@ -506,26 +507,27 @@ int apex_image (int (*pfn) (int, struct descriptor_d*,
   return 0;
 }
 
-int handle_apex_image (int op, struct descriptor_d* d, bool fRegionCanExpand)
+int handle_apex_image (int op, struct descriptor_d* d,
+                       struct image_info* im_info)
 {
   int result;
 
-  if ((result = verify_apex_image (d, fRegionCanExpand)) < 0) {
+  if ((result = verify_apex_image (d, im_info)) < 0) {
     DBG (1, "header verification failed %d\n", result);
     return result;
   }
 
   switch (op) {
   case 'c':
-    result = apex_image (handle_check_apex_image, d, fRegionCanExpand);
+    result = apex_image (handle_check_apex_image, d, im_info);
     break;
 #if defined (CONFIG_CMD_IMAGE_SHOW)
   case 's':
-    result = apex_image (handle_report_apex_image, d, fRegionCanExpand);
+    result = apex_image (handle_report_apex_image, d, im_info);
     break;
 #endif
   case 'l':
-    result = apex_image (handle_load_apex_image, d, fRegionCanExpand);
+    result = apex_image (handle_load_apex_image, d, im_info);
     break;
   }
   return result;
