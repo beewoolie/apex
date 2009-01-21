@@ -13,9 +13,9 @@
    NOTES
    -----
 
-   o Detection shoulw be continuous.
+   o Detection should be continuous.
      o If the card doesn't respond to the known address, we can
-       perform acqurire again.
+       perform acquire again.
      o This can be done when the report is generated as well.
      o Perhaps we acquire every time?
      o The only way to know we have the right card is to randomize the
@@ -79,7 +79,7 @@
    ----------------
 
    The present state of the card acqusition logic is weak.  We acquire
-   a card with the system initializes.  If the card goes offline, we
+   a card when the system initializes.  If the card goes offline, we
    have no way to detect and correct it.  What should happen is the
    read code ought to detect that the card has changed, probably
    because the select fails, and perform the acquire at that time.
@@ -125,6 +125,27 @@
        to be set, to ensure the Busy is finished.
 
 
+   o Some data.
+
+     2GiB
+     cid
+     00000000: 02 54 4d 53 44 30 32 47  38 a6 7d 54 8e 00 86 3f  .TMSD02G 8.}T...?
+     csd
+     00000000: 00 2e 00 32 5b 5a 83 a9  ff ff ff 80 16 80 00 3f  ...2[Z.. .......?
+
+     Eye-fi (2GiB)
+     cid
+     00000000: 00 11 22 45 59 45 46 49  00 00 00 00 00 33 44 3f  .."EYEFI .....3D?
+     csd
+     00000000: 00 36 00 32 53 5a 83 bd  f6 db ff 87 16 80 00 3f  .6.2SZ.. .......?
+
+     1GiB
+     cid
+     00000000: 03 53 44 53 55 30 31 47  80 01 c4 46 f7 00 7a 3f  .SDSU01G ...F..z?
+     csd
+     00000000: 00 26 00 32 5f 59 83 c8  be fb cf ff 92 40 40 3f  .&.2_Y.. .....@@?
+
+
 */
 
 #include <config.h>
@@ -140,6 +161,14 @@
 #include <debug_ll.h>
 
 #include <mmc.h>
+
+//#define TALK 3
+
+#if defined (USE_MMC_BOOTSTRAP)
+# undef TALK
+#endif
+
+#include <talk.h>
 
 //#define USE_BIGENDIAN_RESPONSE /* Old hardware */
 #define USE_SD			/* Allow SD cards */
@@ -177,22 +206,6 @@
 
 
 extern char* strcat (char*, const char*);
-
-//#define TALK 3
-
-#if defined (USE_MMC_BOOTSTRAP)
-# undef TALK
-#endif
-
-#if defined (TALK)
-#define PRINTF(f...)		printf (f)
-#define ENTRY(l)		printf ("%s\n", __FUNCTION__)
-#define DBG(l,f...)		do { if (TALK >= l) printf (f); } while (0)
-#else
-#define PRINTF(f...)		do {} while (0)
-#define ENTRY(l)		do {} while (0)
-#define DBG(l,f...)		do {} while (0)
-#endif
 
 #if defined (USE_MULTIBLOCK_READ)
 # define CB_CACHE	(2*MMC_SECTOR_SIZE)
@@ -496,14 +509,14 @@ static unsigned long SECTION wait_for_completion (short bits)
 }
 
 #if defined (TALK) && ! defined (USE_MMC_BOOTSTRAP)
-static void report_command (void)
+static void talk_command (void)
 {
   DBG (2, "cmd 0x%02lx (%03ld) arg 0x%08lx  cmdcon 0x%04lx"
-       "  rate 0x%02lx/%04ld\n",
+       "  rate 0x%02lx/%04ld",
        MMC_CMD, MMC_CMD, MMC_ARGUMENT, MMC_CMDCON, MMC_PREDIV, MMC_RATE);
 }
 #else
-# define report_command(v)
+# define talk_command(v)
 #endif
 
 static int SECTION execute_command (unsigned long cmd,
@@ -560,7 +573,7 @@ static int SECTION execute_command (unsigned long cmd,
   }
 
   clear_all ();
-  report_command ();
+  talk_command ();
   start_clock ();
   status = wait_for_completion (wait_status);
 
@@ -623,12 +636,14 @@ void SECTION mmc_acquire (void)
        converting it to a table.  However, the absolute PCs in the
        table make that impossible when we use this code in the
        bootstrap.  So, we're left with a cascading sequence of if's.
+       *** FIXME: can we use -fpic?
     */
 
 //    switch (state) {
 
 //    case 0:			/* Setup for SD */
     if (state == 0) {
+      mmc.acquired = 0;
       command = CMD_SD_OP_COND;
       tries = 10;		/* *** We're not sure we need to wait
 				   for the READY bit to be clear, but
@@ -732,6 +747,7 @@ void SECTION mmc_acquire (void)
 //    case 17:
       status = execute_command (CMD_SEND_CSD, mmc.rca << 16, 0);
       memcpy (mmc.csd, mmc.response + 1, 16);
+      mmc.acquired = 1;
       state = 100;
 //      break;
     }
@@ -751,6 +767,13 @@ void SECTION mmc_acquire (void)
     else
       break;
   }
+
+#if defined (TALK)
+  printf ("cid\n");
+  dump (mmc.cid, 16, 0);
+  printf ("csd\n");
+  dump (mmc.csd, 16, 0);
+#endif
 
   if (mmc_card_acquired ()) {
     PUTC_LL ('A');
@@ -813,7 +836,7 @@ static void mmc_report (void)
 
 static int mmc_open (struct descriptor_d* d)
 {
-  DBG (2,"%s: opened %ld %ld\n", __FUNCTION__, d->start, d->length);
+  DBG (2,"%s: opened %d %d\n", __FUNCTION__, d->start, d->length);
 
   if (!mmc_card_acquired ())
     ERROR_RETURN (ERROR_IOFAILURE, "no card");

@@ -304,6 +304,7 @@ struct mmc_info {
   int acquire_time;		/* Count of delays to acquire card */
   int cmdcon_sd;		/* cmdcon bits for data IO */
   int rca;			/* Relative address assigned to card */
+  int acquired;                 /* Boolean for marking that card has been acquired */
 
   int c_size;
   int c_size_mult;
@@ -326,7 +327,7 @@ extern struct mmc_info mmc;	/* Single, global context structure */
 /* ----- Prototypes */
 
 static inline int mmc_card_acquired (void) {
-  return mmc.cid[0] != 0; }
+  return mmc.acquired != 0; }
 
 void mmc_init (void);
 void mmc_acquire (void);

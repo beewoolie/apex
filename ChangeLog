@@ -1,5 +1,12 @@
 2009-01-20  Marc Singer  <elf@zealous.synapse.com>
 
+	* include/mmc.h (mmc_card_acquired): Revised the card acquisition
+	code so that we don't assume that the first byte of the CID
+	register is non-zero.  IMHO, our assumption was correct based on
+	the SD association's documentation, but we found that the Eye-FI
+	card has a bogus looking card ID (CID) register and we have to be
+	lenient to see it.
+
 	* Makefile (SUBLEVEL): v1.6.6 for Companion fixes so it can use a
 	1.6.x version of APEX.
 
