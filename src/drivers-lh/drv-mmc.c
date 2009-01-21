@@ -162,7 +162,7 @@
 
 #include <mmc.h>
 
-//#define TALK 3
+//#define TALK 1
 
 #if defined (USE_MMC_BOOTSTRAP)
 # undef TALK
@@ -203,6 +203,14 @@
 # define SECTION
 # define SECTIOND
 #endif
+
+#define C_SIZE		csd_short(62, 12)
+#define C_SIZE_MULT	csd_byte(47, 3)
+#define NSAC		csd_byte(104, 8)
+#define READ_BL_LEN	csd_byte(80, 4)
+#define SECTOR_SIZE	csd_byte(39, 7)
+#define TAAC		csd_byte(112, 8)
+#define TRAN_SPEED	csd_byte(96, 8)
 
 
 extern char* strcat (char*, const char*);
@@ -250,14 +258,22 @@ static inline unsigned long response_ocr (void) {
     | (((unsigned long) mmc.response[4]) << 0);
 }
 
-static inline unsigned long csd_c_size (void) {
-  int v = (mmc.csd[6]<<16) | (mmc.csd[7]<<8) | mmc.csd[8];
-  return (v>>6) & 0xfff;
+/** return eight or fewer bits from the CSD register where the bits
+    are present in one or two bytes read from the register. */
+
+static uint8_t csd_byte (int bit, int length)
+{
+  uint16_t v = (   (mmc.csd[15 - bit/8    ]
+                 | (mmc.csd[15 - bit/8 - 1] <<  8)) >> (bit%8)) & ((1<<length) - 1);
+  return v;
 }
 
-static inline unsigned long csd_c_size_mult (void) {
-  int v = (mmc.csd[9]<<8) | mmc.csd[10];
-  return (v>>7) & 0x7;
+static uint16_t csd_short (int bit, int length)
+{
+  uint32_t v = (   (mmc.csd[15 - bit/8    ]
+                 | (mmc.csd[15 - bit/8 - 1] <<  8)
+                 | (mmc.csd[15 - bit/8 - 2] << 16)) >> (bit%8)) & ((1<<length) - 1);
+  return v;
 }
 
 #if defined (TALK)
@@ -777,9 +793,9 @@ void SECTION mmc_acquire (void)
 
   if (mmc_card_acquired ()) {
     PUTC_LL ('A');
-    mmc.c_size = csd_c_size ();
-    mmc.c_size_mult = csd_c_size_mult ();
-    mmc.read_bl_len = mmc.csd[5] & 0xf;
+    mmc.c_size      = C_SIZE;
+    mmc.c_size_mult = C_SIZE_MULT;
+    mmc.read_bl_len = READ_BL_LEN;
     mmc.mult = 1<<(mmc.c_size_mult + 2);
     mmc.block_len = 1<<mmc.read_bl_len;
     mmc.blocknr = (mmc.c_size + 1)*mmc.mult;
@@ -826,6 +842,11 @@ static void mmc_report (void)
     printf (", %ld.%02ld MiB\n",
 	    mmc.device_size/(1024*1024),
 	    (((mmc.device_size/1024)%1024)*100)/1024);
+    printf ("          %d B sectors, %d sectors/block, C_SIZE %d, C_SIZE_MULT %d\n",
+            1<<READ_BL_LEN, SECTOR_SIZE + 1,
+            mmc.c_size, mmc.c_size_mult);
+    printf ("          TAAC 0x%x  NSAC %d  TRAN_SPEED 0x%x\n",
+            TAAC, NSAC, TRAN_SPEED);
 //    dump (mmc.cid, 16, 0);
 //    dump (mmc.csd, 16, 0);
 //    printf ("\n");
