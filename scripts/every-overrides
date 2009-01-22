@@ -24,3 +24,4 @@ slugos-nslu2-16mb-arm_config		/usr/arm-linux/gcc3/arm-linux-
 slugos-nslu2-16mb-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
 slugos-nslu2-arm_config			/usr/arm-linux/gcc3/arm-linux-
 slugos-nslu2-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
+mv2120_config				/opt/arm-2008q3/bin/arm-none-eabi-
