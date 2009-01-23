@@ -1,3 +1,8 @@
+2009-01-23  Marc Singer  <elf@zealous.synapse.com>
+
+	* src/mach-lh7a40x/initialize.c (target_init): Added code to the
+	target initialization for Companion that initializes the modem.
+
 2009-01-21  Marc Singer  <elf@zealous.synapse.com>
 
 	* Makefile (SUBLEVEL): v1.6.7 for push of new features.

@@ -461,6 +461,19 @@ static void target_init (void)
   GPIO_PCD |= (1<<2);		/* Light overhead light */
 #endif
 
+#if defined (CONFIG_MACH_COMPANION)
+  /* Power-on the modem early to shorten the time taken for the system
+     to be ready to run. */
+
+  GPIO_PCD &= ~(1<<7);          /* Enable reset pin */
+  GPIO_PGD &= ~(1<<0);          /* Hold modem in reset */
+  GPIO_PGD |=  (1<<0);          /* Enable power to modem */
+
+  usleep (50000);               /* Delay while power stabilizes  */
+
+  GPIO_PCD |=  (1<<7);          /* Release modem from reset */
+#endif
+
   determine_arch_number ();
 }
 
