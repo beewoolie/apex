@@ -14,6 +14,41 @@
    DESCRIPTION
    -----------
 
+   Expand Variables
+   ----------------
+
+   In order to expand variables recursively, the expand_variables()
+   function must be recursive.  There is the further issue that we
+   don't know how much space is necessary to expand a given buffer.
+   We should be able to fix this if we
+
+     1) Allocate a very large buffer for expansion.  RAM is, after
+        all, free at this point in the boot.
+     2) Use a stack of buffers for expansion that starts with the next
+        unused byte in the buffer.  Previous invocations preceed recursed
+        ones.  This buffer will be forfeit when the call returns thus
+        allowing parent invocations room to continue expansion.
+     3) On return, the result is memmove'd to the end of the buffer where
+        the result is preserved until all expand_variables() calls return.
+        Each such result is pushed to the end of the buffer, thus stacking
+        results in reverse order.
+
+    *4) I think that this is easier that I originally expected.  When
+        we encounter a variable reference that should be expanded, we
+        make a recursive call that puts the result after the last byte
+        of the current expansion.  This result is then moved to
+        replace the variable that was just expanded.  In this way, our
+        final result appears at the start of our buffer and we don't
+        have to do any sleight-of-hand to make it safe.  Moreover, the
+        limit of expansion is simply when the buffer is exhausted.
+        Note that this requires that we perform the expansion as we
+        copy from the source.  This can be done if we revise expand
+        function to make the recursive call instead of copying.
+
+   This scheme should give reasonably deep expansions without an
+   explicit expansion depth given a sufficiently large call stack.
+
+
 */
 
 //#define TALK 1
@@ -46,19 +81,20 @@ const char* error_description;
 # define USE_EXPAND_VARIABLES
 #endif
 
+
+
 #if defined (USE_EXPAND_VARIABLES)
 
-static char* expand_variables (const char* rgbSrc)
+static char* _expand_variables (const char* rgbSrc,
+                                char* rgbExpand, size_t cbExpand)
 {
   const char* pchSrc;
-  static char __xbss(command) rgb[CB_COMMAND_MAX];
-  char* pch = rgb;
+  char* pch = rgbExpand;        /* Destination pointer, this step */
   char* pchKey = NULL;
   int state = 0;
-  const char* value;
   int fChanged = 0;
 
-  for (pchSrc = rgbSrc; pch < rgb + sizeof (rgb) - 1; ++pchSrc) {
+  for (pchSrc = rgbSrc; pch < rgbExpand + cbExpand - 1; ++pchSrc) {
     switch (state) {
     case 0:			/* Beginning of word */
       if (*pchSrc == '"')
@@ -78,18 +114,31 @@ static char* expand_variables (const char* rgbSrc)
       break;
 
     case 2:			/* Scanning variable key */
-      if (isalpha (*pchSrc) || *pchSrc == '_' || *pchSrc == '-')
+      if (isalpha (*pchSrc)
+          || *pchSrc == '_' || *pchSrc == '-')        /* key ::= [A-Za-z_-]+ */
 	break;
-      *pch = 0;
-      value = lookup_alias_or_env (pchKey + 1, 0);
-      if (value) {
-	if (pch + strlen (value) + 1 >= rgb + sizeof (rgb) - 1)
-	  return 0;		/* Simple failure on overflow */
-	strcpy (pchKey, value);
-	pch = pchKey + strlen (value);
-	fChanged = 1;
-	state = 0;
+      *pch = 0;                 /* Terminate string so lookup can succeed */
+      {
+        const char* value = lookup_alias_or_env (pchKey + 1, 0);
+        const char* value_expanded;
+        if (value) {
+          if (pchKey + strlen (value) >= rgbExpand + cbExpand - 1)
+            return 0;           /* Simple overflow */
+          value_expanded = _expand_variables (value, pch + 1,
+                                              rgbExpand + cbExpand - 1
+                                              - (pch + 1));
+          if (!value_expanded)
+            value = value_expanded;
+          if (value) {
+                                /* Successful expansion, so replace
+                                   variable with substitution */
+            memmove (pchKey, value, strlen (value) + 1);
+            pch = pchKey + strlen (pchKey);
+            fChanged = 1;
+          }
+        }
       }
+      state = 0;                /* In any case, return to normal parsing */
       break;
 
     case 11:			/* Quoting */
@@ -107,8 +156,15 @@ static char* expand_variables (const char* rgbSrc)
     if (!*pchSrc)
       break;
   }
-  return fChanged && state == 0 ? rgb : NULL;
+  return fChanged && state == 0 ? rgbExpand : NULL;
 }
+
+static char* expand_variables (const char* rgbSrc)
+{
+  static char __xbss(command) rgbExpand[8*1024];
+  return _expand_variables (rgbSrc, rgbExpand, sizeof (rgbExpand));
+}
+
 #endif
 
 
