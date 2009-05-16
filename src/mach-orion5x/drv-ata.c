@@ -10,6 +10,12 @@
    version 2 as published by the Free Software Foundation.
    Please refer to the file debian/copyright for further details.
 
+
+   o U-Boot
+
+     ext2load ide 0:1 400000 /boot/uImage
+
+
    o Testing
 
      # ubootimage -c -L 0x8000 -t kernel apex.bin apex.u
@@ -179,7 +185,7 @@ boot console=ttyS0,115200 root=/dev/md1 ro BOOT_MODE=normal runintime=14400 seri
 #include <mach/drv-ata.h>
 #include <mach/hardware.h> /* *** FIXME: should be no need for generic ATA */
 
-//#define TALK 1
+#define TALK 3
 //#define TALK_ATTRIB
 #include "talk.h"
 
@@ -443,7 +449,7 @@ static int ata_identify (unsigned long phys)
   ENTRY (1);
 
 
-//  DBG (1, "selecting\n");
+  DBG (1, "selecting 0x%lx\n", phys);
   select (phys, 0, 0);
 //  DBG (1, "wait\n");
   ready_wait (phys);
@@ -494,6 +500,10 @@ static int ata_identify (unsigned long phys)
         = (((uint64_t)ata_d.identity[102]) << 32)
         | (           ata_d.identity[101]  << 16)
         | (           ata_d.identity[100]  <<  0);
+//      DBG(2,"%Ld\n", ata_d.total_sectors);
+//      DBG(2,"48 bit sector count %x %x %x -> %Ld\n",
+//          ata_d.identity[100], ata_d.identity[101], ata_d.identity[102],
+//          ata_d.total_sectors);
     }
     else
       ata_d.total_sectors
@@ -558,7 +568,8 @@ static int ata_open (struct descriptor_d* d)
   d->private = phys;
 
   DBG (1,"%s: opened #%d @%ld +%ld\n",
-       __FUNCTION__, device, d->start, d->length);
+       __FUNCTION__, device,
+       (unsigned long) d->start, (unsigned long) d->length);
 
   return 0;
 }
@@ -571,7 +582,7 @@ static ssize_t ata_read (struct descriptor_d* d, void* pv, size_t cb)
   if (d->index + cb > d->length)
     cb = d->length - d->index;
 
-  DBG(1,"%s: @ 0x%lx\n", __FUNCTION__, d->start + d->index);
+  DBG(1,"%s: @ 0x%lx\n", __FUNCTION__, (unsigned long)( d->start + d->index));
 
   while (cb) {
     unsigned long index = d->start + d->index;
