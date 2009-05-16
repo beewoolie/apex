@@ -14,40 +14,18 @@
    DESCRIPTION
    -----------
 
-   Expand Variables
+   expand_variables
    ----------------
 
    In order to expand variables recursively, the expand_variables()
-   function must be recursive.  There is the further issue that we
-   don't know how much space is necessary to expand a given buffer.
-   We should be able to fix this if we
+   function is recursive.  It copies the characters from one string to
+   another, expanding variables as they are found.  When a variable is
+   detected, it is looked-up and then expanded using the buffer space
+   following the current point in the expansion buffer.
 
-     1) Allocate a very large buffer for expansion.  RAM is, after
-        all, free at this point in the boot.
-     2) Use a stack of buffers for expansion that starts with the next
-        unused byte in the buffer.  Previous invocations preceed recursed
-        ones.  This buffer will be forfeit when the call returns thus
-        allowing parent invocations room to continue expansion.
-     3) On return, the result is memmove'd to the end of the buffer where
-        the result is preserved until all expand_variables() calls return.
-        Each such result is pushed to the end of the buffer, thus stacking
-        results in reverse order.
-
-    *4) I think that this is easier that I originally expected.  When
-        we encounter a variable reference that should be expanded, we
-        make a recursive call that puts the result after the last byte
-        of the current expansion.  This result is then moved to
-        replace the variable that was just expanded.  In this way, our
-        final result appears at the start of our buffer and we don't
-        have to do any sleight-of-hand to make it safe.  Moreover, the
-        limit of expansion is simply when the buffer is exhausted.
-        Note that this requires that we perform the expansion as we
-        copy from the source.  This can be done if we revise expand
-        function to make the recursive call instead of copying.
-
-   This scheme should give reasonably deep expansions without an
-   explicit expansion depth given a sufficiently large call stack.
-
+   The only hazard is that the function will silently fail if an
+   expansion would overflow the buffer.  In this case, the user will
+   see an unexpanded variable in the output.
 
 */
 
@@ -127,7 +105,7 @@ static char* _expand_variables (const char* rgbSrc,
           value_expanded = _expand_variables (value, pch + 1,
                                               rgbExpand + cbExpand - 1
                                               - (pch + 1));
-          if (!value_expanded)
+          if (value_expanded)
             value = value_expanded;
           if (value) {
                                 /* Successful expansion, so replace
@@ -161,7 +139,7 @@ static char* _expand_variables (const char* rgbSrc,
 
 static char* expand_variables (const char* rgbSrc)
 {
-  static char __xbss(command) rgbExpand[8*1024];
+  static char __xbss(command) rgbExpand[2*1024]; /* Ridiculously large */
   return _expand_variables (rgbSrc, rgbExpand, sizeof (rgbExpand));
 }
 

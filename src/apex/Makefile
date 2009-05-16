@@ -23,6 +23,7 @@ obj-$(CONFIG_CMD_COMPARE)	+= cmd-compare.o
 obj-$(CONFIG_CMD_COPY)		+= cmd-copy.o
 obj-$(CONFIG_CMD_DRVINFO)	+= cmd-drvinfo.o
 obj-$(CONFIG_CMD_DUMP)		+= cmd-dump.o
+obj-$(CONFIG_CMD_ECHO)		+= cmd-echo.o
 obj-$(CONFIG_CMD_ENV)		+= cmd-env.o
 obj-$(CONFIG_CMD_ERASE)		+= cmd-erase.o
 obj-$(CONFIG_CMD_FILL)		+= cmd-fill.o

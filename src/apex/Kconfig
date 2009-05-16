@@ -134,6 +134,12 @@ config CMD_DUMP
 	help
 	  Shows the contents of a region on the console.
 
+config CMD_ECHO
+	bool "Define Echo Command"
+	default n
+	help
+	  Print a message on the on the console.
+
 config CMD_ENV
 	bool "Define Environment Commands"
 	depends on ENV
