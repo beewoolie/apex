@@ -158,7 +158,7 @@ CONFIG_ENV_REGION_KERNEL="fis://kernel"
 # Overrides
 #
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
-CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock2 rootfstype=jffs2 console=ttyS0,115200"
+CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock2 rootfstype=jffs2 console=ttyS0,115200 init=/linuxrc"
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 CONFIG_USES_NOR_BOOTFLASH=y
 CONFIG_RELOCATE_SIMPLE=y

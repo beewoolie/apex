@@ -161,9 +161,9 @@ CONFIG_ENV_REGION_KERNEL_ALT="fis://kern2"
 # Overrides
 #
 CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
-CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/sda1 rootdelay=10 console=ttyS0,115200"
+CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/sda1 rootdelay=10 console=ttyS0,115200 init=/linuxrc"
 CONFIG_ENV_DEFAULT_CMDLINE_ALT_P=y
-CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/sda2 rootdelay=10 console=ttyS0,115200"
+CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/sda2 rootdelay=10 console=ttyS0,115200 init=/linuxrc"
 # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 # CONFIG_ENV_DEFAULT_STARTUP_ALT_P is not set
 CONFIG_USES_NOR_BOOTFLASH=y
