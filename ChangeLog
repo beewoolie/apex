@@ -1,5 +1,9 @@
 2009-05-17  Marc Singer  <elf@buici.com>
 
+	* src/drivers/driver.c (open_helper): New open helper used by the
+	serial drivers and the memory driver.  It's an always-success
+	impementation for drivers that have nothing to do on open.
+
 	* src/mach-orion5x/serial.c (orion5x_serial_init): Removed old
 	console initialization as this is now done as a service.
 

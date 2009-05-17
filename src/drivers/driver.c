@@ -34,9 +34,20 @@
 
 #define TOLOWER(c)
 
+/** simple close() implementation for drivers that need no special
+    action on closing a descriptor. */
+
 void close_helper (struct descriptor_d* d)
 {
   d->length = 0;
+}
+
+/** simple open() implementation for drivers that need no special
+    action on opening a descriptor.  This open() always succeeds. */
+
+int open_helper (struct descriptor_d* d)
+{
+  return 0;
 }
 
 void close_descriptor (struct descriptor_d* d)

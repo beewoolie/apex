@@ -194,11 +194,6 @@ static void memory_report (void)
 }
 #endif
 
-static int memory_open (struct descriptor_d* d)
-{
-  /* Should do a bounds check */
-  return 0;			/* OK */
-}
 
 /** Read from a memory region into a buffer. */
 
@@ -312,7 +307,7 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 static __driver_1 struct driver_d memory_driver = {
   .name = "memory",
   .description = "generic RAM driver",
-  .open = memory_open,
+  .open = open_helper,          /* Always succeed */
   .close = close_helper,
   .read = memory_read,
   .write = memory_write,

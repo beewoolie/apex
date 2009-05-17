@@ -133,6 +133,7 @@ struct driver_d {
 
 /* ----- Prototypes */
 
+extern int    open_helper (struct descriptor_d* d);
 extern void   close_helper (struct descriptor_d* d);
 extern void   close_descriptor (struct descriptor_d* d);
 extern int    is_descriptor_open (struct descriptor_d* d);
