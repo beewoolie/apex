@@ -7,14 +7,14 @@ TODO:
 
   o 2009.jan.4
 
-    o Handling extended partitions and large drivers.  The problems of
+    o Handling extended partitions and large drives.  The problems of
       a couple of days ago are no longer present.  Upgraded the
       compiler and now there is no sign that the 64 bit support is
       broken.
 
     o THUMB.  There is better support for thumb in that there are
       functions to handle some of the cp15 calls that were always
-      inlined.  For code tha must inline, the macros are still
+      inlined.  For code that must inline, the macros are still
       present.
 
     o NOR flash scanner.  It would be helpful to have a function to
@@ -26,7 +26,7 @@ TODO:
 
   o 2009.jan.2
 
-    o Handling extended partitions and large drivers.  The extended
+    o Handling extended partitions and large drives.  The extended
       partition scanning code (in drv-ext2) properly reads each of the
       extended partition descriptors.  For the MV2120 platform, this
       requires the CONFIG_DRIVER_LONG_LONG_SIZE option because the

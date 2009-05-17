@@ -1,3 +1,13 @@
+2009-05-16  Marc Singer  <elf@buici.com>
+
+	* src/mach-ixp42x/pci.c (pci_init): Commented out broken PCI
+	interrupt type macros.  Should be fixed.
+
+	* src/apex/command.c (expand_variables): Revised expand_variables
+	code to expand references within expanded references.  This change
+	permits us to define the kernel location, for example, as
+	depending on the $serverip.
+ 
 2009-01-23  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): v1.6.8
