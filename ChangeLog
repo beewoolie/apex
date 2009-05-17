@@ -1,5 +1,11 @@
 2009-05-17  Marc Singer  <elf@buici.com>
 
+	* Makefile (SUBLEVEL): v1.6.9
+
+	* Closed debian bugs by fixing configuration files.
+
+	* Applied http://svn.nslu2-linux.org/svnroot/kernel/trunk/patches/apex
+
 	* src/drivers/driver.c (open_helper): New open helper used by the
 	serial drivers and the memory driver.  It's an always-success
 	impementation for drivers that have nothing to do on open.

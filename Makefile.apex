@@ -44,7 +44,7 @@ every: #distclean
 	 $(MAKE) clean                       >> makelog 2>&1 || exit 1 ; \
 	 $(MAKE) $$i                         >> makelog 2>&1 || exit 1 ; \
 	 $(MAKE) oldconfig       < /dev/null >> makelog 2>&1 || exit 1 ; \
-	 $(MAKE) `scripts/overrides $$i` \
+	 $(MAKE) -j4 `scripts/overrides $$i` \
 	   apex.srec apex.elf apex.bin       >> makelog 2>&1 || exit 1 ; \
 	 mkdir every/$$o ; \
 	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \

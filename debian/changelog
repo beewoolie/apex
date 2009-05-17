@@ -1,3 +1,18 @@
+apex (1.6.9) unstable; urgency=low
+
+  * Including some entries from previous changlog to make sure bugs get
+    closed.
+  * Added CONFIG_AEABI=y to armel (and all configurations). (closes: #481848)
+  * Added shlib dependencies for the sake of apex-env. (closes: #481846)
+  * Revised copyright messages, again, to remove all references to the FSF
+    address.
+  * Removed FSF info from every file and point to debian/copyright file
+    instead. (closes: #481843) (closes: #481736)
+  * Removed rtc-x1205.probe=0,0x6f and rtc-pcf8563.probe=0,0x51 from
+    kernel command lines. (closes: #471476) 
+
+ -- Marc Singer <elf@buici.com>  Sun, 17 May 2009 16:44:39 -0700
+
 apex (1.5.14) unstable; urgency=low
 
   * Added CONFIG_AEABI=y to armel. (closes: #481848)
