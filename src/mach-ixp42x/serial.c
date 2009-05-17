@@ -62,10 +62,6 @@
 
 #define CLK		((uint32_t)(14.7456*1000*1000))
 
-extern struct driver_d* console_driver;
-
-static struct driver_d ixp42x_serial_driver;
-
 void ixp42x_serial_init (void)
 {
   static const uint32_t baudrate = 115200;
@@ -90,10 +86,6 @@ void ixp42x_serial_init (void)
 
   _L(LED7);
 
-  if (console_driver == 0)
-    console_driver = &ixp42x_serial_driver;
-
-//  console_driver->write (0, "Console initialized\r\n", 21);
   _L(LED8);
 
 #if !defined (DISABLE_SECOND_UART_INIT)

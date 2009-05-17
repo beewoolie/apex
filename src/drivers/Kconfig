@@ -1,5 +1,18 @@
 menu "Generic Drivers"
 
+config DRIVER_CONSOLE_DEVICE
+	string "Console serial device"
+	default "serial"
+	help
+	  The default console serial device, "serial", is correct for
+	  most cases.  There is usually only one serial device
+	  implemented on a given target and that is the one used as
+	  the console.  If this is option changed to the name of a
+	  driver that isn't available, no console will be available.
+	  
+	  Setting this option to a driver that does exist, "nul" for
+	  example, disables the console.
+
 config DRIVER_FAT
 	bool "FAT Filesystem"
 	select USES_PATHNAME_PARSER

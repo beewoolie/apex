@@ -1,3 +1,34 @@
+2009-05-17  Marc Singer  <elf@buici.com>
+
+	* src/mach-orion5x/serial.c (orion5x_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/mach-s3c2410/serial.c (s3c2410_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/mach-lh7952x/serial.c (lh7952x_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/mach-lh7a40x/serial.c (lh7a40x_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/mach-mx3/serial-sc16c652.c (sc16c652_serial_init): Removed
+	old console initialization as this is now done as a service.
+
+	* src/mach-mx3/serial-mx31.c (mx31_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/mach-ixp42x/serial.c (ixp42x_serial_init): Removed old
+	console initialization as this is now done as a service.
+
+	* src/apex/console.c (console_init): Console initialize as a
+	service and configurable in the environment.
+
+	* include/service.h (__service_4): Annotation that console is
+	initialized in service 8.
+
+	* include/driver.h (DRIVER_CONSOLE): Cleanup of macros.
+
 2009-05-16  Marc Singer  <elf@buici.com>
 
 	* src/mach-ixp42x/pci.c (pci_init): Commented out broken PCI

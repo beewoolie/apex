@@ -32,10 +32,6 @@
 
 //#include <debug_ll.h>
 
-extern struct driver_d* console_driver;
-
-static struct driver_d lh7a40x_serial_driver;
-
 void lh7a40x_serial_init (void)
 {
   u32 baudrate = 115200;
@@ -53,12 +49,6 @@ void lh7a40x_serial_init (void)
   UART_FCON = UART_FCON_FEN | UART_FCON_WLEN8;
   UART_INTEN = 0x00; /* Mask interrupts */
   UART_CON = UART_CON_ENABLE;
-
-  if (console_driver == 0)
-    console_driver = &lh7a40x_serial_driver;
-
-//  lh7a40x_serial_driver.write (NULL, "serial console initialized\r\n", 28);
-//  printf ("Really, it is\n");
 }
 
 void lh7a40x_serial_release (void)

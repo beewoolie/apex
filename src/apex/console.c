@@ -14,6 +14,42 @@
    DESCRIPTION
    -----------
 
+   NOTES
+   -----
+
+   o Initializaton of console driver
+
+     The console used to be setup by which ever serial driver defined
+     in the build.  We made the small change that the driver can be
+     setup by an environment variable *and* the initialization is done
+     after all drivers have init'd.  The default is "serial" which
+     translates to the only serial device is nearly all cases.
+
+     The console initialization service number is 8 because we want to
+     make sure that all of the drivers are available before attempting
+     to lookup the console device name in the environment.
+
+   o Delayed initializaton
+
+     The change in how the console is initialized, from the driver
+     name string, and the fact that this is done after the service has
+     been initialized means that console output is suppressed until
+     all services are up.  We could, like the Linux kernel, queue
+     console output until the console starts.  This would allow
+     drivers and services to report startup messages using the console
+     output commands, but wouldn't require any a complex startup
+     regime *before* the services are all initialized.
+
+   o console vs. console_device_driver
+
+     There are two devices that define the console.  The global
+     console object is the device used for I/O with the console.  It
+     is a static global that printf and other console I/O calls may
+     use.  There is a console_device_driver that points to the
+     underlying device and is initialized at runtime.  The console
+     driver is always present and may be invoked even if there is no
+     supporting device driver.
+
 */
 
 #include <config.h>
@@ -24,7 +60,10 @@
 
 #include <apex.h>
 #include <command.h>
-#include <console.h>
+#include "service.h"
+#include "console.h"
+#include "lookup.h"
+#include "environment.h"
 
 #include <debug_ll.h>
 
@@ -34,7 +73,16 @@
 # define EDITING(a)
 #endif
 
-struct driver_d* console_driver;
+static struct driver_d* console_device_driver; /**< Serial device for console */
+
+#if defined (CONFIG_ENV)
+static __env struct env_d e_console_drv = {
+  .key = "console-drv",
+  .default_value = CONFIG_DRIVER_CONSOLE_DEVICE,
+  .description = "Serial device for console driver",
+};
+#endif
+
 
 /* Ring buffer for polled bytes */
 static char __xbss(console) rgbBuffer[128];
@@ -45,7 +93,7 @@ ssize_t console_read (struct descriptor_d* d, void* pv, size_t cb)
   int available;
   ssize_t cbRead = 0;
 
-  if (console_driver == 0)
+  if (console_device_driver == 0)
     return 0;
 
   available = cbBuffer;
@@ -63,7 +111,7 @@ ssize_t console_read (struct descriptor_d* d, void* pv, size_t cb)
   /* *** FIXME: do we need to be concerned about the read function
      *** returning a negative number? */
   if (cb)
-    return cbRead + console_driver->read (d, pv, cb);
+    return cbRead + console_device_driver->read (d, pv, cb);
   return cbRead;
 }
 
@@ -71,14 +119,14 @@ ssize_t console_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
 //  PUTC_LL ('#');
 
-  if (console_driver == 0)
+  if (console_device_driver == 0)
     return 0;
-  return console_driver->write (d, pv, cb);
+  return console_device_driver->write (d, pv, cb);
 }
 
 ssize_t console_poll (struct descriptor_d* d, size_t cb)
 {
-  if (console_driver == 0)
+  if (console_device_driver == 0)
     return 0;
 
   if (cb && cbBuffer) {
@@ -90,9 +138,9 @@ ssize_t console_poll (struct descriptor_d* d, size_t cb)
 	/* Special break character polling */
   if (cb == 0) {
     while (cbBuffer < sizeof rgbBuffer
-	   && console_driver->poll (d, 1)) {
+	   && console_device_driver->poll (d, 1)) {
       char ch;
-      console_driver->read (d, &ch, 1);
+      console_device_driver->read (d, &ch, 1);
       if (ch == 0x3)		/* *** FIXME: ^C check */
 	return 1;
       rgbBuffer[cbBuffer++] = ch;
@@ -100,7 +148,7 @@ ssize_t console_poll (struct descriptor_d* d, size_t cb)
     return 0;
   }
 
-  return console_driver->poll (d, cb);
+  return console_device_driver->poll (d, cb);
 }
 
 static __driver_0 struct driver_d _console = {
@@ -112,7 +160,28 @@ static __driver_0 struct driver_d _console = {
   .poll = console_poll,
 };
 
-struct driver_d* __rodata console = &_console;
+
+/** setup the console_device_driver to point to a serial driver. */
+
+void console_init (void)
+{
+  int result;
+  struct descriptor_d d;
+  const char* sz = lookup_alias_or_env ("console-drv", "serial");
+  result =  parse_descriptor (sz, &d);
+  if (result)
+    return;
+  if (!(d.driver->flags & DRIVER_CONSOLE)) /* Must be a CONSOLE capable */
+    return;
+
+  console_device_driver = d.driver;
+}
+
+static __service_8 struct service_d console_service = {
+  .init = console_init,
+};
+
+struct driver_d* __rodata console = &_console; /**< Global console device */
 
 int puts (const char* fmt)
 {

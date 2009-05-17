@@ -53,9 +53,6 @@
 #define UART_LCR_FEN		(1<<4)
 #define UART_DR_DATAMASK	(0xff)
 
-extern struct driver_d* console_driver;
-
-static struct driver_d lh7952x_serial_driver;
 
 void lh7952x_serial_init (void)
 {
@@ -69,7 +66,7 @@ void lh7952x_serial_init (void)
 
 #if defined (CONFIG_ARCH_LH79520)
 
-  /* Enable ALL uarts since we don't know which we're using */
+  /* Enable ALL UARTs since we don't know which we're using */
   IOCON_UARTMUX = 0xf;
   RCPC_CTRL |= RCPC_CTRL_UNLOCK;
   RCPC_PERIPHCLKCTRL &=
@@ -118,9 +115,6 @@ void lh7952x_serial_init (void)
   UART_ICR  = 0xff; /* Clear interrupts */
 
   UART_CR = UART_CR_EN | UART_CR_TXE | UART_CR_RXE;
-
-  if (console_driver == 0)
-    console_driver = &lh7952x_serial_driver;
 }
 
 void lh7952x_serial_release (void)

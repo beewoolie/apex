@@ -61,15 +61,16 @@ struct descriptor_d {
 #define SEEK_CUR	1
 #define SEEK_END	2
 
-#define QUERY_START	1	/* Physical address of device */
-#define QUERY_SIZE	2	/* Total size of device */
-#define QUERY_ERASEBLOCKSIZE 3	/* Erase block size at given index */
+#define QUERY_INITIALIZED	1
+#define QUERY_START             2	/* Physical address of device */
+#define QUERY_SIZE              3	/* Total size of device */
+#define QUERY_ERASEBLOCKSIZE    4	/* Erase block size at given index */
 
-#define DRIVER_SERIAL	(1<<1)
-#define DRIVER_CONSOLE	(1<<2)
-#define DRIVER_MEMORY	(1<<3)
-#define DRIVER_NET	(1<<4)			/* May receive packets */
-#define DRIVER_PRESENT	(1<<8)
+#define DRIVER_SERIAL           (1<<1)		/* Serial, UART, device */
+#define DRIVER_CONSOLE          (1<<2)          /* May be used as console */
+#define DRIVER_MEMORY           (1<<3)
+#define DRIVER_NET              (1<<4)		/* May receive packets */
+#define DRIVER_PRESENT          (1<<8)
 //#define DRIVER_DESCRIP_REGION	(1<<9)		/* Uses region descriptors */
 #define DRIVER_DESCRIP_FS	(1<<10)		/* Uses filesystem descript. */
 #define DRIVER_DESCRIP_STREAM	(1<<11)		/* Uses stream descriptors */

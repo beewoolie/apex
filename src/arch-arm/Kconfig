@@ -140,7 +140,7 @@ config CROSS_COMPILE
 
 config AEABI
 	bool "Enable the ARM EABI"
-	default n
+	default y
 	help
 	  The change introduced by this option is of limited benefit.
 	  As a standalone, boot loader APEX communicates with other

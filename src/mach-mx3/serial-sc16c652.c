@@ -28,9 +28,6 @@
 
 //#include <debug_ll.h>
 
-extern struct driver_d* console_driver;
-
-static struct driver_d sc16c652_serial_driver;
 
 void sc16c652_serial_init (void)
 {
@@ -47,12 +44,6 @@ void sc16c652_serial_init (void)
   SC_UART_IER = 0;			/* Mask all interrupts */
   SC_UART_FCR = SC_UART_FCR_FEN | SC_UART_FCR_RX_RESET | SC_UART_FCR_TX_RESET;
   SC_UART_LSR = 0;
-
-  if (console_driver == 0)
-    console_driver = &sc16c652_serial_driver;
-
-//  sc16c652_serial_driver.write (NULL, "serial console initialized\r\n", 28);
-//  printf ("Really, it is\n");
 }
 
 void sc16c652_serial_release (void)

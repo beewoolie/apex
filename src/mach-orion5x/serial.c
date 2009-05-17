@@ -30,8 +30,6 @@
 #include <service.h>
 #include "uart.h"
 
-extern struct driver_d* console_driver;
-
 static struct driver_d orion5x_serial_driver;
 
 void orion5x_serial_init (void)
@@ -48,11 +46,6 @@ void orion5x_serial_init (void)
   UART_FCR = UART_FCR_FIFOEN;
 
   UART_MCR = UART_MCR_RTS;	/* Assert RTS in case someone uses it */
-
-  if (console_driver == 0)
-    console_driver = &orion5x_serial_driver;
-
-//  console_driver->write (0, "Console initialized\r\n", 21);
 }
 
 ssize_t orion5x_serial_poll (struct descriptor_d* d, size_t cb)

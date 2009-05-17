@@ -43,8 +43,6 @@
 #define UART0_OUTRSTAT_RXREADY	(1<<0)
 
 
-extern struct driver_d *console_driver;
-
 static struct driver_d s3c2410_serial_driver;
 
 void s3c2410_serial_init(void)
@@ -64,9 +62,6 @@ void s3c2410_serial_init(void)
 	nop_count = 0;
 	while (nop_count < 100)
 		nop_count++;
-
-	if (console_driver == 0)
-		console_driver = &s3c2410_serial_driver;
 }
 
 ssize_t s3c2410_serial_poll(struct descriptor_d *d, size_t cb)

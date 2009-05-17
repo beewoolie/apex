@@ -26,9 +26,6 @@
 
 #include "uart.h"
 
-extern struct driver_d* console_driver;
-
-static struct driver_d mx31_serial_driver;
 
 void mx31_serial_init (void)
 {
@@ -49,9 +46,6 @@ void mx31_serial_init (void)
 
   INITIALIZE_UARTB;
 #endif
-
-  if (console_driver == 0)
-    console_driver = &mx31_serial_driver;
 }
 
 void mx31_serial_release (void)

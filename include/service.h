@@ -41,7 +41,7 @@ struct service_d {
 #define __service_5 __used __section(.service.5)
 #define __service_6 __used __section(.service.6) /* drv-*, ethernet */
 #define __service_7 __used __section(.service.7) /* env */
-#define __service_8 __used __section(.service.8)
+#define __service_8 __used __section(.service.8) /* console */
 #define __service_9 __used __section(.service.9) /* variation */
 
 /* ----- Globals */
