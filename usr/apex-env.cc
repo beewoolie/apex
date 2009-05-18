@@ -74,7 +74,7 @@ static error_t arg_parser (int key, char* arg, struct argp_state* state)
     args.verbose = true;
     break;
   case ARGP_KEY_ARG:
-    if (args.argc >= sizeof (args.argv)/sizeof (*args.argv))
+    if (size_t (args.argc) >= sizeof (args.argv)/sizeof (*args.argv))
       argp_usage (state);
     args.argv[args.argc++] = arg;
     break;
@@ -236,7 +236,7 @@ int main (int argc, char** argv)
     }
 
     struct command* command_match = NULL;
-    for (int i = 0; i < sizeof (commands)/sizeof (*commands); ++i)
+    for (size_t i = 0; i < sizeof (commands)/sizeof (*commands); ++i)
       if (strncasecmp (args.argv[0], commands[i].sz,
 		       strlen (args.argv[0])) == 0) {
 	if (command_match)

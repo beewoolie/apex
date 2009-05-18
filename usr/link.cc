@@ -173,7 +173,7 @@ void dumpw (const void* pv, int cb, unsigned long index, int width)
 	  ++i;
 	  break;
 	case 4:
-	  printf ("%08x ", *((u32*)&rgb[i]));
+	  printf ("%08lx ", *((u32*)&rgb[i]));
 	  i += 3;
 	  break;
 	}
@@ -234,8 +234,8 @@ static struct descriptor parse_region (const char* sz)
 
   char* pch;
   if ((pch = index (sz, ':'))) {
-    int c = pch - sz;
-    if (c > sizeof (d.driver) - 1)
+    ssize_t c = pch - sz;
+    if (c > ssize_t (sizeof (d.driver) - 1))
       c = sizeof (d.driver) - 1;
     memcpy (d.driver, sz, c);
     d.driver[c] = 0;
@@ -287,7 +287,7 @@ bool Link::contains_apex (const MTDPartition& mtd) const
 
   {
     unsigned long* rgl = (unsigned long*) pv;
-    for (int i = 0;
+    for (size_t i = 0;
 	 i < CB_LINK_SCAN/sizeof (unsigned long)
 	   - sizeof (env_link)/sizeof (unsigned long);
 	 ++i) {
@@ -493,7 +493,7 @@ bool Link::open_apex (const MTDPartition& mtd)
 
   {
     unsigned long* rgl = (unsigned long*) pv;
-    for (int i = 0;
+    for (size_t i = 0;
 	 i < CB_LINK_SCAN/sizeof (unsigned long)
 	   - sizeof (env_link)/sizeof (unsigned long);
 	 ++i) {
@@ -726,7 +726,7 @@ void Link::eraseenv (bool force)
   memset (rgb, 0xff, sizeof (rgb));
 
   if (   ::lseek (fhEnvBlock, ibEnv, SEEK_SET) != ibEnv
-      || ::write (fhEnvBlock, rgb, cbEnv) != cbEnv)
+      || ::write (fhEnvBlock, rgb, cbEnv)      != off_t (cbEnv))
       throw "failed to write environment";
 }
 
@@ -845,18 +845,18 @@ void Link::setenv (const char* key, const char* value)
   }
 
   if (it != entries->end ()) {
-    int cb = strlen (value);
+    size_t cb = strlen (value);
     if (cbEnv - cbEnvUsed < cb + 2)
       throw "insufficient free space in environment";
     *pb++ = 0x80 + (*it).first;
     memcpy (pb, value, cb + 1);
     pb += cb + 1;
-    if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+    if (   ::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != off_t (ibEnv + cbEnvUsed)
 	|| ::write (fhEnvChar, rgb, pb - rgb) != pb - rgb)
       throw "failed to write environment";
   }
   else {
-    int cbKey = strlen (key);
+    size_t cbKey = strlen (key);
     int cbValue = strlen (value);
     if (cbEnv - cbEnvUsed < cbKey + cbValue + 3)
       throw "insufficient free space in environment";
@@ -865,7 +865,8 @@ void Link::setenv (const char* key, const char* value)
     pb += cbKey + 1;
     memcpy (pb, value, cbValue + 1);
     pb += cbValue + 1;
-    if (::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET) != ibEnv + cbEnvUsed
+    if (   ::lseek (fhEnvChar, ibEnv + cbEnvUsed, SEEK_SET)
+             != off_t (ibEnv + cbEnvUsed)
 	|| ::write (fhEnvChar, rgb, pb - rgb)
 	!= pb - rgb)
       throw "failed to write environment";

@@ -85,7 +85,7 @@ protected:
 
   int fhEnvChar;		// File handle for NOR-wise writes
   int fhEnvBlock;		// File handle for erasing
-  int ibEnv;			// Index of environment data in file handles
+  ssize_t ibEnv;                // Index of environment data in file handles
 
   EntryMap* entries;		// Entries found in flash
   int idNext;			// Next available ID for flash environment

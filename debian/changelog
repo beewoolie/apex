@@ -10,8 +10,11 @@ apex (1.6.9) unstable; urgency=low
     instead. (closes: #481843) (closes: #481736)
   * Removed rtc-x1205.probe=0,0x6f and rtc-pcf8563.probe=0,0x51 from
     kernel command lines. (closes: #471476) 
+  * Removed warnings is usr/ tools build.
+  * The --force option to apex-env was fixed in a previous release.
+    (closes: #417757)
 
- -- Marc Singer <elf@buici.com>  Sun, 17 May 2009 16:44:39 -0700
+ -- Marc Singer <elf@buici.com>  Sun, 17 May 2009 18:10:37 -0700
 
 apex (1.5.14) unstable; urgency=low
 

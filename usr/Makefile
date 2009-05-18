@@ -19,7 +19,7 @@ CXX=$(CROSS_COMPILE)g++
 LD=$(CROSS_COMPILE)ld
 STRIP=$(CROSS_COMPILE)strip
 
-CFLAGS+= -Os -g -c
+CFLAGS+= -Wall -Os -g -c
 CFLAGS_LINK+= -g
 
 TARGETS:=apex-env apex-image

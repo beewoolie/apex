@@ -436,16 +436,16 @@ struct Payload : public File {
 
   bool modified (void) {
     return type
-      || load_address != ~0
-      || entry_point != ~0
+      || load_address != ~0U
+      || entry_point != ~0U
       || description
       //      || compressed
       ; }
   size_t header_size (void) {
     return 5                    // Mandatory length
       + (type ? 2 : 0)
-      + (load_address != ~0 ? 5 : 0)
-      + (entry_point != ~0 ? 5 : 0)
+      + (load_address != ~0U ? 5 : 0)
+      + (entry_point != ~0U ? 5 : 0)
       + (description ? 1 + 1 + strlen (description) + 1 : 0)
       + (compressed ? 1 : 0); }
 
@@ -459,7 +459,7 @@ struct Payload : public File {
       rope.append (tag);
       rope.append (_type);
     }
-    if (load_address != ~0) {
+    if (load_address != ~0U) {
       tag = fieldPayloadLoadAddress;
       uint32_t _load_address = swabl (load_address);
       crc = compute_crc32 (crc, &tag, 1);
@@ -467,7 +467,7 @@ struct Payload : public File {
       rope.append (tag);
       rope.append ((char*) &_load_address, sizeof (_load_address));
     }
-    if (entry_point != ~0) {
+    if (entry_point != ~0U) {
       tag = fieldPayloadEntryPoint;
       uint32_t _entry_point = swabl (entry_point);
       crc = compute_crc32 (crc, &tag, 1);
@@ -519,13 +519,15 @@ struct Payload : public File {
     }
     if (!type)
       type = payload.type;
-    if (load_address == ~0)
+    if (load_address == ~0U)
       load_address = payload.load_address;
-    if (entry_point == ~0)
+    if (entry_point == ~0U)
       entry_point = payload.entry_point;
     if (!description)
       description = payload.description;
     crc_loaded = 0;             // Clear the old value if it was loaded
+
+    return *this;
   }
 
 };
@@ -753,7 +755,8 @@ public:
     Iterator& operator++ () {
       if (m_pv >= m_pvEnd)
         throw Exception ("attempt to increment metdata iterator beyond end");
-      m_pv = (char*) m_pv + field_length (); };
+      m_pv = (char*) m_pv + field_length ();
+      return *this; };
 
     bool operator!= (const Iterator& it) {
       return m_pv != it.m_pv; }
@@ -1102,12 +1105,12 @@ void Image::merge_payload (int index, Payload* payload)
 {
   if (index < 0)
     throw Exception ("index less than zero");
-  if (index >= size ())
+  if (size_t (index) >= size ())
     throw Exception ("index too large");
 
 //  printf ("index %d size %d\n", index, size ());
 
-  if (index < size () - 1) {        // Bonafide merge
+  if (size_t (index) < size () - 1) {        // Bonafide merge
     iterator it = begin ();
     for (; index; --index)
       ++it;
@@ -1169,8 +1172,7 @@ void Image::describe (struct arguments& args)
     struct Payload& payload = **it;
 
     if (payload.description) {
-      printf ("%sDescription:  '%s'\n", sz, payload.description,
-              strlen (payload.description) + 1);
+      printf ("%sDescription:  '%s'\n", sz, payload.description);
       if (multi_payload)
         strcpy (sz, "           ");
     }
@@ -1180,13 +1182,13 @@ void Image::describe (struct arguments& args)
       if (multi_payload)
         strcpy (sz, "           ");
     }
-    if (payload.load_address != ~0) {
-      printf ("%sLoad Address: 0x%08lx\n", sz, payload.load_address);
+    if (payload.load_address != ~0U) {
+      printf ("%sLoad Address: 0x%08x\n", sz, payload.load_address);
       if (multi_payload)
         strcpy (sz, "           ");
     }
-    if (payload.entry_point != ~0) {
-      printf ("%sEntry Point:  0x%08lx\n", sz, payload.entry_point);
+    if (payload.entry_point != ~0U) {
+      printf ("%sEntry Point:  0x%08x\n", sz, payload.entry_point);
       if (multi_payload)
         strcpy (sz, "           ");
     }
