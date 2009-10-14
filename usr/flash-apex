@@ -70,7 +70,7 @@ case "$machine" in
 		pad=$(expr $mtdblocksize - $lsize - 16)
 		# Store non-default APEX configuration
 		tmp=$(tempfile)
-		(apex-env printenv | egrep -v '\*=') > $tmp
+		(apex-env printenv | egrep -v '\*=') > $tmp || true
 		printf "Flashing loader: " >&2
 		(
 			sercomm_header $(expr $lsize + 16)

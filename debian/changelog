@@ -1,3 +1,9 @@
+apex (1.6.10) unstable; urgency=critical
+
+  * Change to usr/flash-apex to work-around change in shell that could cause script to fail. (Closes: #548236).
+
+ -- Marc Singer <elf@debian.org>  Tue, 06 Oct 2009 18:45:07 -0700
+
 apex (1.6.9) unstable; urgency=low
 
   * Including some entries from previous changlog to make sure bugs get

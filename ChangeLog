@@ -1,3 +1,11 @@
+2009-10-06    <elf@scarlet.buici.com>
+
+	* Makefile (SUBLEVEL): v1.6.10
+
+	* usr/flash-apex (machine): Added || true to a command that
+	returns the list of user-modified environment variables.  This is
+	a fix for a change in the shell. 
+
 2009-05-17  Marc Singer  <elf@buici.com>
 
 	* Makefile (SUBLEVEL): v1.6.9

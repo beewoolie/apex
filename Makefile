@@ -3,7 +3,7 @@
 
 VERSION = 1
 PATCHLEVEL = 6
-SUBLEVEL = 9
+SUBLEVEL = 10
 #EXTRAVERSION = -$(shell date "+%j.%R:%S")
 ARCH ?= arm
 
