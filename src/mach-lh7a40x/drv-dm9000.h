@@ -49,6 +49,19 @@
 #if defined (CONFIG_MACH_KARMA)
 
 # define DM_WIDTH	16
+# define DM_IO_DELAY	udelay(1)	// Not sure that this is needed
+
+# define DM_PHYS	(0x10000000)
+# define DM_PHYS_INDEX	(DM_PHYS + 0)
+# define DM_PHYS_DATA	(DM_PHYS + 4)
+# define DM_NAME	"dev"
+
+#endif
+
+#if defined (CONFIG_MACH_NIKITA)
+
+# define DM_WIDTH	16
+# define DM_IO_DELAY	udelay(1)	// Not sure that this is needed
 
 # define DM_PHYS	(0x10000000)
 # define DM_PHYS_INDEX	(DM_PHYS + 0)

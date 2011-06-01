@@ -64,6 +64,18 @@ config MACH_KARMA
 	select USES_DM9000
 	select USES_NOR_BOOTFLASH
 
+config MACH_NIKITA
+	bool "Tetracore Nikita"
+	select ARCH_LH7A404
+	select USES_NOR_CFI
+	select DRIVERS_LH
+	select HAS_LH_ADC
+	select HAS_LH_CLCDC
+	select HAS_LH_MMC
+	select HAS_LH_I2C
+	select USES_DM9000
+	select USES_NOR_BOOTFLASH
+
 endchoice
 
 config MACH_LPD7A404_80000258
