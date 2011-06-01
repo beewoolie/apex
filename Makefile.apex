@@ -82,7 +82,7 @@ tgz.pkg tgz:
 ifneq "$(wildcard $(PKGBASE))" ""
 	-rm -rf $(PKGBASE)
 endif
-	@git-clone -l ./ $(PKGBASE)
+	@git clone -l ./ $(PKGBASE)
 	find $(PKGBASE) -depth -type d -name '_intel' -exec rm -rf \{\} \;
 	rm -rf $(PKGBASE)/include/splash
 	tar zc\
@@ -96,6 +96,6 @@ endif
 PHONY += complete-release
 complete-release: tgz release-every FORCE
 	cp apex-$(APEXVERSION).tar.gz ~ftp/pub/apex
-	git-tag -a $(APEXVERSION) -m "Release $(APEXVERSION)"
+	git tag -a $(APEXVERSION) -m "Release $(APEXVERSION)"
 	-(cd ~ftp/pub/apex ; rm LATEST_IS* ; touch LATEST_IS_$(APEXVERSION) )
 

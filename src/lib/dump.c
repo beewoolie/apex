@@ -23,8 +23,10 @@
 #include <driver.h>
 #include <error.h>
 
-void dumpw (const char* rgb, int cb, unsigned long index, int width)
+void dumpw (const void* pv, size_t cb, unsigned long index, int width)
 {
+  const char* rgb = (const char*) pv;
+
   int i;
 
   if (   (width == 2 && ((unsigned long) rgb & 1))
