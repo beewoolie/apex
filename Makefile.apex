@@ -45,9 +45,10 @@ every: #distclean
 	 $(MAKE) $$i                         >> makelog 2>&1 || exit 1 ; \
 	 $(MAKE) oldconfig       < /dev/null >> makelog 2>&1 || exit 1 ; \
 	 $(MAKE) -j4 `scripts/overrides $$i` \
-	   apex.srec apex.elf apex.bin       >> makelog 2>&1 || exit 1 ; \
+	   apex.srec apex.elf apex.bin       >> makelog 2>&1 || true ; \
+	 echo "built" ; \
 	 mkdir every/$$o ; \
-	 mv src/arch-arm/rom/apex.{elf,bin,srec} makelog every/$$o ; \
+	 mv src/arch-arm/rom/apex.* makelog every/$$o ; \
 	 cp .config every/$$o/config ; \
 	 echo $(APEXVERSION) > every/$$o/APEXVERSION ; \
 	 cp docs/Every every/$$o/README ; \

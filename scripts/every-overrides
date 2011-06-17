@@ -2,26 +2,29 @@
 #
 # CROSS_COMPILE overrides for 'every' make target.
 #
+# elf-2011.06.17: Set all overrides to the same compiler to verify
+#                 builds.  Need to find a new big-endian arm compiler
+#                 to cross build for armv5b.
 
-debian-dsmg600-arm_config		/usr/arm-linux/gcc3/arm-linux-
-debian-dsmg600-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-debian-fsg3-arm_config			/usr/arm-linux/gcc3/arm-linux-
-debian-fsg3-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-debian-nas100d-arm_config		/usr/arm-linux/gcc3/arm-linux-
-debian-nas100d-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-debian-nslu2-16mb-arm_config		/usr/arm-linux/gcc3/arm-linux-
-debian-nslu2-16mb-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-debian-nslu2-arm_config			/usr/arm-linux/gcc3/arm-linux-
-debian-nslu2-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-debian-nslu2-armel_config		/usr/arm-linux/gcc3/arm-linux-
-slugos-dsmg600-arm_config		/usr/arm-linux/gcc3/arm-linux-
-slugos-dsmg600-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-slugos-fsg3-arm_config			/usr/arm-linux/gcc3/arm-linux-
-slugos-fsg3-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-slugos-nas100d-arm_config		/usr/arm-linux/gcc3/arm-linux-
-slugos-nas100d-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-slugos-nslu2-16mb-arm_config		/usr/arm-linux/gcc3/arm-linux-
-slugos-nslu2-16mb-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-slugos-nslu2-arm_config			/usr/arm-linux/gcc3/arm-linux-
-slugos-nslu2-armeb_config		/usr/armv5b-softfloat-linux/gcc3/armv5b-softfloat-linux-
-mv2120_config				/opt/arm-2008q3/bin/arm-none-eabi-
+debian-dsmg600-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-dsmg600-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-fsg3-arm_config			/opt/arm-2011.03/bin/arm-none-eabi-
+debian-fsg3-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nas100d-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nas100d-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nslu2-16mb-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nslu2-16mb-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nslu2-arm_config			/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nslu2-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+debian-nslu2-armel_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-dsmg600-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-dsmg600-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-fsg3-arm_config			/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-fsg3-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nas100d-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nas100d-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nslu2-16mb-arm_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nslu2-16mb-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nslu2-arm_config			/opt/arm-2011.03/bin/arm-none-eabi-
+slugos-nslu2-armeb_config		/opt/arm-2011.03/bin/arm-none-eabi-
+mv2120_config				/opt/arm-2011.03/bin/arm-none-eabi-
