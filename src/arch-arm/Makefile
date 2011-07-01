@@ -23,6 +23,7 @@ CONFIG_MACH:= $(subst $(quote),,$(CONFIG_MACH))
 arch-$(CONFIG_CPU_ARMV4)   :=-D__LINUX_ARM_ARCH__=4 -march=armv4t
 arch-$(CONFIG_CPU_ARMV5)   :=-D__LINUX_ARM_ARCH__=5 $(call cc-option,-march=armv5te,-march=armv4)
 arch-$(CONFIG_CPU_ARMV6)   :=-D__LINUX_ARM_ARCH__=6 $(call cc-option,-march=armv6,-march=armv5t -Wa$(comma)-march=armv6)
+arch-$(CONFIG_CPU_ARMV7)   :=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7-a,-march=armv5t -Wa$(comma)-march=armv7-a)
 
 tune-$(CONFIG_CPU_ARM720T) :=-mtune=arm7tdmi
 tune-$(CONFIG_CPU_ARM920T) :=-mtune=arm9tdmi
@@ -31,6 +32,7 @@ tune-$(CONFIG_CPU_ARM925T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_ARM926T) :=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_XSCALE)  :=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
 tune-$(CONFIG_CPU_ARMV6)   :=$(call cc-option,-mtune=arm1136j-s,-mtune=strongarm)
+
 
 KBUILD_CFLAGS+= $(arch-y) $(tune-y) -Wall
 

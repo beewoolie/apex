@@ -44,7 +44,7 @@ config APEX_VMA
 	hex "APEX Runtime Address"
 	default "0x90200000"
 
-config APEX_DCD_OFFSET
+config DCD_OFFSET
 	hex "Loader DCD Offset"
 	default "0x400"
 	help
@@ -136,7 +136,7 @@ endmenu
 
 config MACH
 	string
-	default "mx51"
+	default "mx5"
 
 config ARCH_MX51
 	bool
