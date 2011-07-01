@@ -1,4 +1,4 @@
-if ARCH_MX51
+if ARCH_MX5
 
 choice
 	prompt "Freescale MX51x Implementations"
@@ -43,6 +43,16 @@ config ARCH_NUMBER
 config APEX_VMA
 	hex "APEX Runtime Address"
 	default "0x90200000"
+
+config APEX_DCD_OFFSET
+	hex "Loader DCD Offset"
+	default "0x400"
+	help
+	  The boot image used by the iMX51 has a header that must be
+	  0x400 (1KiB) bytes offset from the beginning of the image.
+	  This header is called a DCD.  This offset is the number of
+	  bytes from the beginning of the image to the DCD.  It
+	  probably doesn't need to be changed. 
 
 config KERNEL_LMA
 	hex "Kernel Load Address"

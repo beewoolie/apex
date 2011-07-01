@@ -11,6 +11,12 @@ SECTIONS
 	APEX_VMA_START = .;
 	APEX_VMA_COPY_START = .;
 	.entry : {		/* First code to execute */
+		*(.header.enty)	/* Optional loader header, e.g. iMX51 */
+#if defined (APEX_HEADER_VMA)
+		. = APEX_HEADER_OFFSET - (. - APEX_VMA_START);
+#endif
+		*(.header)
+		*(.header.exit)
 		*(.entry)
 	}
 		/* The placement of exception vectors here, in the

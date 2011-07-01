@@ -60,6 +60,7 @@
 #include <debug_ll.h>
 
 
+#if 0
 //#define NO_INIT
 
 #define ESDCTL_CTL0_SDE		(1<<31)	/* Enable */
@@ -525,5 +526,7 @@ static __service_0 struct service_d mx3x_target_service = {
 +        cmp r1, r2
 +    .endm
 
+
+#endif
 
 #endif

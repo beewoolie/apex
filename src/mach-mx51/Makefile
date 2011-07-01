@@ -10,6 +10,7 @@
 #
 
 obj-y += initialize.o # timer.o env.o cpuinfo.o cmd-reset.o cmd-sleep.o
+obj-y += header.o
 #obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o
 #obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 #obj-$(CONFIG_IPU_TEST)		+= ipu.o

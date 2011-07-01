@@ -29,6 +29,9 @@ endif
 ifeq ('$(CONFIG_RELOCATE_COMPANION_EVT1)','y')
 CPPFLAGS_apex.lds += -DCONFIG_RELOCATE_COMPANION_EVT1
 endif
+ifneq ('$(CONFIG_APEX_DCD_OFFSET)','')
+CPPFLAGS_apex.lds += -DCONFIG_APEX_HEADER_OFFSET=$(CONFIG_APEX_DCD_OFFSET)
+endif
 
 extra-y=apex.lds
 
