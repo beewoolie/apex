@@ -353,7 +353,7 @@ source src/mach-ixp42x/Kconfig
 source src/mach-s3c2410/Kconfig
 source src/mach-mx3/Kconfig
 source src/mach-orion5x/Kconfig
-source src/mach-mx51/Kconfig
+source src/mach-mx5/Kconfig
 
 source src/apex/Kconfig
 
