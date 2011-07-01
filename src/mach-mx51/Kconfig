@@ -1,0 +1,136 @@
+if ARCH_MX51
+
+choice
+	prompt "Freescale MX51x Implementations"
+	default MACH_GENESI_EFIKA
+
+config MACH_GENESI_EFIKA
+	bool "Genesi Efika Smarttop"
+	select ARCH_MX51
+	select USES_NOR_CFI
+	select USES_NOR_BOOTFLASH
+	select INLINE_PLATFORM_INITIALIZATION
+
+endchoice
+
+menu "Platform Setup"
+
+choice
+	prompt "CPU/Peripheral Clock"
+	default FREQ_800_133
+
+config FREQ_800
+	bool "CPU 800 MHz - AHB 133 MHz"
+	help
+	  This setting configures the CPU frequency to 800 MHz.
+
+endchoice
+
+config ATAG_PHYS
+	hex "Physical address for ATAGs list"
+	default "0x90000100"
+	depends on ATAG
+	help
+	  This is the address where APEX will construct the ATAG list
+	  before starting the Linux kernel.  This address should be
+	  within the first 16KiB of physical RAM.  Don't change this
+	  value unless you know what you are doing. 
+
+config ARCH_NUMBER
+	int
+	default 2336 if MACH_GENESI_EFIKA
+
+config APEX_VMA
+	hex "APEX Runtime Address"
+	default "0x90200000"
+
+config KERNEL_LMA
+	hex "Kernel Load Address"
+	default "0x90008000"
+
+config USE_RAMDISK
+	bool "Enable ramdisk options"
+	default n
+	help
+	  This option doesn't enable the ramdisk, per se.  It enables
+	  other configuration options that help setup a default
+	  ramdisk.  The kernel command line and the APEX startup
+	  commands may be overridden to perform the same steps.
+
+	  There is a separate option in the Environment section that
+	  controls whether or not APEX copies the ramdisk from flash
+	  into RAM at startup.  That is where the ramdisk region is
+	  defined.
+
+config RAMDISK_LMA
+	hex "Ramdisk load address"
+	default "0x94000000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the physical load address for an initial
+	  ramdisk (a.k.a initrd).
+
+config RAMDISK_SIZE
+	hex "Ramdisk compressed size"
+	default "0x00300000"
+	depends on USE_RAMDISK
+	help
+	  This option sets the size, in bytes, of the initial ramdisk
+	  (a.k.a. initrd).  This is the size of the compressed initrd
+	  image.
+
+config SDRAM_BANK0
+	bool "Enable SDRAM Bank 0"
+	default y
+
+config SDRAM_BANK1
+	bool "Enable SDRAM Bank 1"
+	depends on SDRAM_BANK0
+	default n 
+
+choice
+	prompt "Console UART"
+	default MX51_UART1
+
+config MX51_UART1
+	bool "MX51 internal UART1"
+
+endchoice
+
+config EXCEPTIONS
+       bool "Enable exception vectors"
+       depends on MMU
+       default y
+       help
+         Intalls exception vector handlers.  This option is required
+         for interrupts as well, though interrupts are not implemented
+         for this platform.  Set this option to Y to receive reports
+         on undefined instructions and data/instruction fetch aborts. 
+
+config EXTENDED_CPUINFO
+	bool "Extended CPU into"
+	depends on n
+	default n
+	help
+	  For most targets, CPU info is a simple report of the
+	  ARM CPU registers available on most cores.  This option
+	  enables a report on many other registers.
+
+	  *** Currently unimplemented.
+
+endmenu
+
+menu "Platform Drivers"
+
+endmenu
+
+config MACH
+	string
+	default "mx51"
+
+config ARCH_MX51
+	bool
+	select CPU_ARMV7
+	select CPU_CORTEX_A8
+
+endif

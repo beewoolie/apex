@@ -78,7 +78,7 @@ SECTIONS
 		   target off it's back and onto it's feet.  In the
 		   case of a NOR boot, it doesn't really matter how
 		   much code this is.  In the case of NAND, I2C, and
-		   MMC booting, there may be significant constrants on
+		   MMC booting, there may be significant constraints on
 		   the amount of the boot loader that is available for
 		   execution.  The early sections are meant to be very
 		   small and critical for getting enough of the loader
@@ -91,8 +91,8 @@ SECTIONS
 		   everything in .bootstrap (or whatever preceeds
 		   .text).  The relocate_apex() function that makes
 		   sure *all* of APEX is in memory must be able to
-		   execute to bring all of the loader into 
-
+		   execute to bring all of the loader into  ...
+		   *** FIXME: finish the comment */
 
 		/* Everything up to this point must fit in the first
 		   4K (determined by the CPU boot rom) of NAND flash

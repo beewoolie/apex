@@ -29,6 +29,9 @@ config CPU_ARMV5TE
 config CPU_ARMV6
 	bool
 
+config CPU_ARMV7
+	bool
+
 config CPU_XSCALE
 	bool
 
@@ -59,6 +62,8 @@ config CPU_ARM11
 config CPU_ARM1136
 	bool
 
+config CPU_ARM_CORTEX_A8
+	bool
 
 choice
 	prompt "ARM Platform"
@@ -81,6 +86,9 @@ config ARCH_MX3
 
 config ARCH_ORION5X
 	bool "Marvell Orion5x (Feroceon)"
+
+config ARCH_IMX51
+	bool "Freescale iMX51"
 
 endchoice
 
@@ -131,7 +139,9 @@ config CROSS_COMPILE
 	string "Cross compiler prefix"
 	default "/usr/arm-linux/gcc3/arm-linux-" if ARCH_LH7952X
 	default "/usr/arm-linux/gcc3/arm-linux-" if ARCH_LH7A40X
-	default "/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-softfloat-linux-" if ARCH_IXP42X
+	default "/usr/armv5b-softfloat-linux/gcc-3.4.2-glibc-2.3.3/bin/armv5b-s
+oftfloat-linux-" if ARCH_IXP42X
+        default "/opt/arm-2011.03/bin/arm-none-eabi-"
 	help
 	  This option defines a compiler prefix for the building APEX
 	  with a cross compiler.  This prefix may also be set with the
@@ -344,6 +354,7 @@ source src/mach-ixp42x/Kconfig
 source src/mach-s3c2410/Kconfig
 source src/mach-mx3/Kconfig
 source src/mach-orion5x/Kconfig
+source src/mach-mx51/Kconfig
 
 source src/apex/Kconfig
 
