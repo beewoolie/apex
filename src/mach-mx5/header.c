@@ -9,10 +9,10 @@
    DESCRIPTION
    -----------
 
-   The DCD header is necessary to coax the mx5x boot ROM to recognize
-   the image and execute it.  (*** FIXME: is this really true?  Can we
-   use vanilla images if we want to?)  The layout is defined as
-   follows
+   The DCD is necessary to coax the mx5x boot ROM to recognize the
+   image and execute it.  (*** FIXME: is this really true?  Can we use
+   vanilla images if we want to?)  The layout for the whole of Apex is
+   as follows
 
      Loader Image
    +-----------------+

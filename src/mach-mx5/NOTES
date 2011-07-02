@@ -1,0 +1,163 @@
+NOTES
+=====
+
+o 2011.jul.02
+  o B3.12 CP15 registers for VMSA implementation, p B3-64 p1337 (really), p1339
+
+  o Questions unanswered
+    o What is the encoding for cp15 c9 wrt. Level 2 cache?
+    o What is the PLATFORM block?  It's used to initialize some clock
+      dividers.  There is a field called ICGC to set the dividers and
+      it is set to 0x725 on our Efika and 0x124 on the EVK.
+
+
+o 2011.jul.01
+
+  o watchdog should be a peripheral.  I suppose we could be paranoid
+    and want to get it enabled really early, but what is the point?
+    We're going to have more obvious problems if something in the very
+    early setup fails.  Putting watchdog in a peripheral/service makes
+    for nice modularity.
+
+
+ /* High Level Configuration Options */
+#define CONFIG_ARMV7            1               /* This is armv7 Cortex-A8 CPU core */
+#define CONFIG_SYS_APCS_GNU
+
+#define CONFIG_MXC                                      1
+#define CONFIG_MX51                                     1
+#define CONFIG_EFIKAMX                                  1
+
+#define CONFIG_SKIP_RELOCATE_UBOOT
+
+#define CONFIG_MX51_HCLK_FREQ           24000000        /* RedBoot says 26MHz */
+#define CONFIG_MX51_CLK32                       32768
+
+#define CONFIG_ARCH_CPU_INIT
+#define CONFIG_ARCH_MMU
+
+/*
+ * PATA
+ */
+#define CONFIG_MX51_PATA                        1
+#define CONFIG_LIBATA
+#undef  CONFIG_LIBATA
+#define CONFIG_CMD_IDE
+#define CONFIG_SYS_IDE_MAXBUS           1
+#define CONFIG_SYS_IDE_MAXDEVICE        1
+#define CONFIG_SYS_ATA_REG_OFFSET       0xA0
+#define CONFIG_SYS_ATA_DATA_OFFSET      0xA0
+#define CONFIG_SYS_ATA_BASE_ADDR        0x83FE0000
+#define CONFIG_IDE_PREINIT
+#define CONFIG_SYS_ATA_STRIDE           4
+
+/*
+ * I2C driver
+*/
+#define CONFIG_I2C_MXC                  1
+#define BOARD_LATE_INIT
+#define CONFIG_CMDLINE_TAG                      1       /* enable passing of ATA
+Gs */
+
+/*
+ * Hardware drivers
+ */
+#define CONFIG_MX51_UART        1
+#define CONFIG_MX51_UART1       1
+
+/*
+ * SPI Configs
+ * */
+#define CONFIG_FSL_SF                   1
+#define CONFIG_CMD_SPI
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_IMX_SST
+#define CONFIG_SPI_FLASH_CS             1
+#define CONFIG_IMX_ECSPI
+#define IMX_CSPI_VER_2_3
+#define CONFIG_IMX_SPI_PMIC
+#define CONFIG_IMX_SPI_PMIC_CS  0
+
+#define MAX_SPI_BYTES           (64 * 4)
+
+/*
+ * MMC Configs
+ * */
+#define CONFIG_IMX_MMC          1
+
+#define CONFIG_MMC              1
+#define CONFIG_GENERIC_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_DOS_PARTITION    1
+#define CONFIG_CMD_FAT                  1
+#define CONFIG_CMD_EXT2         1
+#define CONFIG_CMD_CLOCK                1
+/* allow to overwrite serial and ethaddr */
+#define CONFIG_ENV_OVERWRITE
+#define CONFIG_CONS_INDEX               1
+#define CONFIG_BAUDRATE                 115200
+#define CONFIG_SYS_BAUDRATE_TABLE       {9600, 19200, 38400, 57600, 115200}
+#define CONFIG_MMC_BASE                 0x0
+
+/***********************************************************
+ * Command definition
+ ***********************************************************/
+
+#include <config_cmd_default.h>
+/* no networking in firmware for U-Boot */
+
+#undef CONFIG_CMD_PING
+#undef CONFIG_CMD_DHCP
+#undef CONFIG_CMD_NET
+
+#undef CONFIG_IDE_PREINIT
+
+
+/* Enable below configure when supporting nand */
+/* #define CONFIG_CMD_NAND */
+/* #define CONFIG_CMD_ENV */
+
+#undef CONFIG_CMD_IMLS
+
+#define CONFIG_BOOTDELAY        3
+
+#define CONFIG_LOADADDR         0x90007FC0      /* loadaddr env var */
+
+#define ENV_UBOOT_ADDR  "0x00000000"
+#define ENV_UBOOT_SIZE  "0x00040000"
+#define ENV_LOADADDR    "0x90007FC0"
+
+/*
+    DDR frequency = 166 MHz:
+    "base_cmd1=pmic 15 0x00400022;mw.l 0x73fa84b8 0xe7 1\0"\
+    
+    DDR frequency = 200 MHz:
+    "base_cmd1=pmic 15 0x00400022;mw.l 0x73fa84b8 0xe7 1;mw.l 0x73fd4014 0x59239100 1\0"\
+*/
+
+/*
+ * Miscellaneous configurable options
+ */
+#define CONFIG_SYS_LONGHELP             /* undef to save memory */
+
+#define CONFIG_SYS_PROMPT               "EfikaMX > "
+
+#define CONFIG_AUTO_COMPLETE
+#define CONFIG_SYS_CBSIZE               256                     /* Console I/O Buffer Size */
+/* Print Buffer Size */
+#define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
+#define CONFIG_SYS_MAXARGS              16                      /* max number of command args */
+#define CONFIG_SYS_BARGSIZE             CONFIG_SYS_CBSIZE       /* Boot Argument Buffer Size */
+
+
+#define CONFIG_SYS_MEMTEST_START        0x98000000              /* memtest works on */
+#define CONFIG_SYS_MEMTEST_END          0xAFFFF000              /* change from 0xA1FFFFFC */
+#define CONFIG_SYS_ALT_MEMTEST          1
+#define PHYS_SDRAM_SIZE                         0x20000000
+#define CONFIG_SYS_MEMTEST_SCRATCH      0xAFFFF000
+#undef  CONFIG_SYS_CLKS_IN_HZ                                   /* everything, incl board info, in Hz */
+
+#define CONFIG_SYS_LOAD_ADDR            CONFIG_LOADADDR
+
+#define CONFIG_SYS_HZ                           CONFIG_MX51_CLK32       /* use 32kHz clock as source */
+

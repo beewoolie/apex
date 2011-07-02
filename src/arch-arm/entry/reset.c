@@ -136,7 +136,8 @@ void __naked __section (.reset) reset (void)
      linked in with the mmu code so that everything necessary is done.
 
      It's also not clear how much of this code needs to be
-     architecture specific.
+     architecture specific.  For the most part it seems to be core
+     agnostic.
 
      The ARMv6 implementation of this function has the MMU disable
      after the flushes/invalidates.  I think that the ARMv4 (or

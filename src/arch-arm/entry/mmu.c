@@ -135,6 +135,10 @@ void mmu_init (void)
 		    "orr %0, %0, #(1<<12)\n\t"		/* I-cache */
 /* RR doesn't appear to make the boot faster. */
 //		    "orr %0, %0, #(1<<14)\n\t"		/* RR, predictable */
+
+// *** FIXME: we can enable Z bit (1<<11) for processors that support
+//     it.  Probably, it should be something we configure to make it
+//     obvious to users.
 		    "mcr p15, 0, %0, c1, c0, 0\n\t"
 		    : "=&r" (l));
   }

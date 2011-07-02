@@ -51,6 +51,7 @@
 #define PHYS_GPIO2              (0x73f88000)
 #define PHYS_GPIO3              (0x73f8c000)
 #define PHYS_GPIO4              (0x73f90000)
+#define PHYS_GPIOX(i)		(0x73840000 + ((i) - 1)*0x4000)
 #define PHYS_KPP                (0x73f94000)
 #define PHYS_WDOG1              (0x73f98000)
 #define PHYS_WDOG2              (0x73f9c000)
@@ -70,10 +71,12 @@
 #define PHYS_DPLLIP1            (0x83f80000)
 #define PHYS_DPLLIP2            (0x83f84000)
 #define PHYS_DPLLIP3            (0x83f88000)
+#define PHYS_DPLLIPX(i)         (0x83f80000 + ((i) - 1)*0x4000)
 #define PHYS_AHBMAX             (0x83f94000)
 #define PHYS_IIM                (0x83f98000)
 #define PHYS_CSU                (0x83f9c000)
 #define PHYS_TIGERP_PLATFORM_NE_32K_256K (0x83fa0000)
+#define PHYS_ARM_PLATFORM	(0x83fa0000) /* Lacking documentation */
 #define PHYS_OWIRE		(0x83fa4000)
 #define PHYS_FIRI               (0x83fa8000)
 #define PHYS_eCSPI2             (0x83fac000)
@@ -108,6 +111,40 @@
 #define PHYS_GPU2S		(0xd0000000)
 #define PHYS_TZIC		(0xe0000000)
 
+#define BOOT_ROM_SI_REV		__REG (PHYS_BOOT_ROM + 0x48)
+
+// page 226
+#define CCM_CCR			__REG (PHYS_CCM + 0x00)
+#define CCM_CCDR		__REG (PHYS_CCM + 0x04)
+#define CCM_CSR			__REG (PHYS_CCM + 0x08)
+#define CCM_CCSR		__REG (PHYS_CCM + 0x0c)
+#define CCM_CACRR		__REG (PHYS_CCM + 0x10)
+#define CCM_CBCDR		__REG (PHYS_CCM + 0x14)
+#define CCM_CBCMR		__REG (PHYS_CCM + 0x18)
+#define CCM_CSCMR1		__REG (PHYS_CCM + 0x1c)
+#define CCM_CSCMR2		__REG (PHYS_CCM + 0x20)
+#define CCM_CSCDR1		__REG (PHYS_CCM + 0x24)
+#define CCM_CDHIPR		__REG (PHYS_CCM + 0x48)
+#define CCM_CCOSR		__REG (PHYS_CCM + 0x60)
+#define CCM_CCGR0		__REG (PHYS_CCM + 0x68)
+#define CCM_CCGR1		__REG (PHYS_CCM + 0x6c)
+#define CCM_CCGR2		__REG (PHYS_CCM + 0x70)
+#define CCM_CCGR3		__REG (PHYS_CCM + 0x74)
+#define CCM_CCGR4		__REG (PHYS_CCM + 0x78)
+#define CCM_CCGR5		__REG (PHYS_CCM + 0x7c)
+#define CCM_CCGR6		__REG (PHYS_CCM + 0x80)
+
+#define ARM_PLATFORM_ICGC	__REG (PHYS_ARM_PLATFORM + 0x14)
+
+#define DPLLX_DP_CTL(i)		__REG (PHYS_DPLLIPX(i) + 0x00)
+#define DPLLX_DP_CONFIG(i)	__REG (PHYS_DPLLIPX(i) + 0x04)
+#define DPLLX_DP_OP(i)		__REG (PHYS_DPLLIPX(i) + 0x08)
+#define DPLLX_DP_MFD(i)		__REG (PHYS_DPLLIPX(i) + 0x0c)
+#define DPLLX_DP_MFN(i)		__REG (PHYS_DPLLIPX(i) + 0x10)
+#define DPLLX_DP_HFS_OP(i)	__REG (PHYS_DPLLIPX(i) + 0x1c)
+#define DPLLX_DP_HFS_MFD(i)	__REG (PHYS_DPLLIPX(i) + 0x20)
+#define DPLLX_DP_HFS_MFN(i)	__REG (PHYS_DPLLIPX(i) + 0x24)
+
 #define SDRAM_BANK0_PHYS	(PHYS_CSD0)
 #define SDRAM_BANK1_PHYS	(PHYS_CSD1)
 #define SDRAM_BANK_SIZE		(0x10000000)
@@ -126,6 +163,41 @@
 #define ESDCTL_ESDGPR_		(PHYS_ESDCTL + 0x34)
 #define ESDCTL_ESDPRCT0_	(PHYS_ESDCTL + 0x38)
 #define ESDCTL_ESDPRCT1_	(PHYS_ESDCTL + 0x3c)
+
+
+/* Assuming 24MHz input clock with doubler ON */
+/*                            MFI         PDF */
+#define DPLL_OP_850       ((8 << 4) + ((1 - 1)  << 0))
+#define DPLL_MFD_850      (48 - 1)
+#define DPLL_MFN_850      41
+
+#define DPLL_OP_800       ((8 << 4) + ((1 - 1)  << 0))
+#define DPLL_MFD_800      (3 - 1)
+#define DPLL_MFN_800      1
+
+#define DPLL_OP_700       ((7 << 4) + ((1 - 1)  << 0))
+#define DPLL_MFD_700      (24 - 1)
+#define DPLL_MFN_700      7
+
+#define DPLL_OP_665       ((6 << 4) + ((1 - 1)  << 0))
+#define DPLL_MFD_665      (96 - 1)
+#define DPLL_MFN_665      89
+
+#define DPLL_OP_532       ((5 << 4) + ((1 - 1)  << 0))
+#define DPLL_MFD_532      (24 - 1)
+#define DPLL_MFN_532      13
+
+#define DPLL_OP_400       ((8 << 4) + ((2 - 1)  << 0))
+#define DPLL_MFD_400      (3 - 1)
+#define DPLL_MFN_400      1
+
+#define DPLL_OP_216       ((6 << 4) + ((3 - 1)  << 0))
+#define DPLL_MFD_216      (4 - 1)
+#define DPLL_MFN_216      3
+
+#define GPIOX_DR(i)	__REG (PHYS_GPIOX(i) + 0x00)
+#define GPIOX_GDIR(i)	__REG (PHYS_GPIOX(i) + 0x04)
+#define GPIOX_PSR(i)	__REG (PHYS_GPIOX(i) + 0x08)
 
 
 #endif  /* MX51_H_INCLUDED */

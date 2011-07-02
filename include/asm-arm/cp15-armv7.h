@@ -24,7 +24,7 @@
 	/* ---- Cache control */
 
 #define INVALIDATE_ICACHE\
-  __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0))
+  __asm volatile ("mcr p15, 0, %0, c7, c5, 0\n\t" :: "r" (0)) // ok
 #define INVALIDATE_ICACHE_VA(a)\
   __asm volatile ("mcr p15, 0, %0, c7, c5, 1\n\t" :: "r" (a))
 #define INVALIDATE_ICACHE_I(i)\
@@ -83,7 +83,7 @@
 	/* ---- TLB control */
 
 #define INVALIDATE_TLB\
-  __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))
+  __asm volatile ("mcr p15, 0, %0, c8, c7, 0\n\t" :: "r" (0))  // ok
 #define INVALIDATE_ITLB\
   __asm volatile ("mcr p15, 0, %0, c8, c5, 0\n\t" :: "r" (0))
 #define INVALIDATE_ITLB_VA(a)\
