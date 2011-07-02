@@ -83,7 +83,7 @@ struct dcd_trailer {
     need it since it is given an entry point in the DCD header.  */
 void __naked __section (.header.entry) header_entry (void)
 {
-  __asm volatile ("b header_exit\n\t");
+  __asm volatile ("b reset\n\t");
 }
 
 void header_exit (void);
@@ -161,9 +161,10 @@ const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
 
 extern char APEX_VMA_START[];
 extern char APEX_VMA_COPY_SIZE[];
+void reset (void);
 
 const __section (.header.rodata.0) struct dcd_header header_ = {
-  header_exit,
+  reset,
   .barker = 0xb1,
   0,
   &header_.dcd_pointer,
@@ -177,11 +178,3 @@ const __section (.header.rodata.0) struct dcd_header header_ = {
 const __section (.header.rodata.2) struct dcd_trailer trailer = {
   (u32) APEX_VMA_COPY_SIZE,
 };
-
-void __naked __section (.header.exit) header_exit (void)
-{
-  while (1)
-    ;
-}
-
-

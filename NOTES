@@ -5,6 +5,14 @@ APEX Boot Loader
 
 TODO:
 
+  o 2011.jul,1
+    o For the imx5x, we don't need to initialize SDRAM or test whether
+      or not we're running from SDRAM in most cases because the boot
+      ROM does this for us.  In fact, we don't even need to be able to
+      relocate ourselves at all.  We can elminiate the code that
+      detects whether we're already running in the right place if we
+      want. 
+
   o 2009.jan.4
 
     o Handling extended partitions and large drives.  The problems of

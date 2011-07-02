@@ -791,6 +791,12 @@ config RELOCATE_ONENAND
 
 config INLINE_PLATFORM_INITIALIZATION
 	bool
+	help
+	  This is defined by for a platform where the bootstrap is
+	  severely memory constrained.  In these cases, there is no
+	  RAM for a stack and as much of the code as possible must be
+	  executed in line.  Generally, it is safe to define inline
+	  initialization even when a stack is available.
 
 config INLINE_PLATFORM_INITIALIZATION_SDRAM_PRE_OVERRIDE
 	bool

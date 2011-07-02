@@ -199,6 +199,9 @@ void __naked __section (.reset.exit) reset_exit (void)
 #if defined (CONFIG_INLINE_PLATFORM_INITIALIZATION)
 
 # if !defined (CONFIG_INLINE_PLATFORM_INITIALIZATION_SDRAM_PRE_OVERRIDE)
+/** determine whether or not we're already running from SDRAM.  r0 has
+    a boolean value of true if we're executing from anywhere in
+    SDRAM.  This is used to bypass SDRAM initialization. */
 void __naked __section (.bootstrap.sdram.pre) bootstrap_sdram_pre (void)
 {
   __asm volatile ("bl 0f\n\t"
