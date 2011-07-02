@@ -46,6 +46,7 @@
 #define PHYS_SLM		(0x70034000)
 #define PHYS_HSI2C		(0x70038000)
 #define PHYS_SPBA		(0x7003c000)
+#define PHYS_AIPS1		(0x73f00000)
 //#define PHYS_USBOH3             (0x73f80000)
 #define PHYS_GPIO1              (0x73f84000)
 #define PHYS_GPIO2              (0x73f88000)
@@ -68,6 +69,7 @@
 #define PHYS_SRC                (0x73fd0000)
 #define PHYS_CCM                (0x73fd4000)
 #define PHYS_GPC                (0x73fd8000)
+#define PHYS_AIPS2		(0x83f00000)
 #define PHYS_DPLLIP1            (0x83f80000)
 #define PHYS_DPLLIP2            (0x83f84000)
 #define PHYS_DPLLIP3            (0x83f88000)
@@ -90,6 +92,7 @@
 #define PHYS_SSI1               (0x83fcc000)
 #define PHYS_AUDMUX             (0x83fd0000)
 #define PHYS_EMI1               (0x83fd8000)
+#define PHYS_M4IF		(0x83fd8000)
 #define PHYS_ESDCTL		(0x83fd9000)
 #define PHYS_PATA_PIO           (0x83fe0000)
 #define PHYS_SIM                (0x83fe4000)
@@ -199,5 +202,8 @@
 #define GPIOX_GDIR(i)	__REG (PHYS_GPIOX(i) + 0x04)
 #define GPIOX_PSR(i)	__REG (PHYS_GPIOX(i) + 0x08)
 
+
+#define M4IF_FBPM0	__REG (PHYS_M4IF + 0x40)
+#define M4IF_FIDBP	__REG (PHYS_M4IF + 0x48)
 
 #endif  /* MX51_H_INCLUDED */

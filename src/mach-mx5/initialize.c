@@ -23,6 +23,30 @@
    We're not enabling the L2 cache until we find documentation
    explaining the registers.
 
+/ *
+ * L2CC Cache setup/invalidation/disable
+ * /
+.macro init_l2cc
+	/ * explicitly disable L2 cache * /
+        mrc 15, 0, r0, c1, c0, 1
+        bic r0, r0, #0x2
+        mcr 15, 0, r0, c1, c0, 1
+
+        / * reconfigure L2 cache aux control reg * /
+        mov r0, #0xC0                   / * tag RAM * /
+        add r0, r0, #0x4                / * data RAM * /
+        orr r0, r0, #(1 << 24)          / * disable write allocate delay * /
+        orr r0, r0, #(1 << 23)          / * disable write allocate combine * /
+        orr r0, r0, #(1 << 22)          / * disable write allocate * /
+
+	ldr r1, =0x00000000
+	ldr r3, [r1, #ROM_SI_REV]
+	cmp r3, #0x10    / * r3 contains the silicon rev * /
+	orrls r0, r0, #(1 << 25)    / * disable write combine for TO 2 and lower revs * /
+
+	mcr 15, 1, r0, c9, c0, 2
+.endm / * init_l2cc * /
+
 */
 
 #include <config.h>
@@ -168,93 +192,19 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
 static void target_init (void)
 {
-#if 0
-#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
-  IOMUX_PIN_CONFIG_GPIO  (PIN_ILLUMINATION_EN1);
-  GPIO_PIN_CONFIG_OUTPUT (PIN_ILLUMINATION_EN1);
-  GPIO_PIN_CLEAR	 (PIN_ILLUMINATION_EN1);
+  /* MPROTx set to non-bufferable, trusted for r/w and not forced to
+     user-mode */
+  __REG(PHYS_AIPS1 + 0) = 0x77777777;
+  __REG(PHYS_AIPS1 + 4) = 0x77777777;
+  __REG(PHYS_AIPS2 + 0) = 0x77777777;
+  __REG(PHYS_AIPS2 + 4) = 0x77777777;
 
-  IOMUX_PIN_CONFIG_GPIO  (PIN_ILLUMINATION_EN2);
-  GPIO_PIN_CONFIG_OUTPUT (PIN_ILLUMINATION_EN2);
-  GPIO_PIN_CLEAR	 (PIN_ILLUMINATION_EN2);
-
-  IOMUX_PIN_CONFIG_GPIO  (PIN_BOARD_ID1);
-  GPIO_PIN_CONFIG_INPUT  (PIN_BOARD_ID1);
-  IOMUX_PIN_CONFIG_GPIO  (PIN_BOARD_ID2);
-  GPIO_PIN_CONFIG_INPUT  (PIN_BOARD_ID2);
-
-#endif
-
-#if !defined (NO_INIT)
-  /* Initialize AIPS (AHB to IP bus) */
-  AIPS1_MPR1 = 0x77777777;
-  AIPS1_MPR2 = 0x77777777;
-  AIPS2_MPR1 = 0x77777777;
-  AIPS2_MPR2 = 0x77777777;
-  AIPS1_OPACR1 = 0;
-  AIPS1_OPACR2 = 0;
-  AIPS1_OPACR3 = 0;
-  AIPS1_OPACR4 = 0;
-  AIPS1_OPACR5 &= ~0xff000000;
-  AIPS2_OPACR1 = 0;
-  AIPS2_OPACR2 = 0;
-  AIPS2_OPACR3 = 0;
-  AIPS2_OPACR4 = 0;
-  AIPS2_OPACR5 &= ~0xff000000;
-
-  /* Initialize MAX (Multi-layer AHB Crossbar Switch) */
-  MAX_MPR0 = 0x00302154;
-  MAX_MPR1 = 0x00302154;
-  MAX_MPR2 = 0x00302154;
-  MAX_MPR3 = 0x00302154;
-  MAX_MPR4 = 0x00302154;
-  MAX_SGPCR0 = 0x10;
-  MAX_SGPCR1 = 0x10;
-  MAX_SGPCR2 = 0x10;
-  MAX_SGPCR3 = 0x10;
-  MAX_SGPCR4 = 0x10;
-  MAX_MGPCR0 = 0;
-  MAX_MGPCR1 = 0;
-  MAX_MGPCR2 = 0;
-  MAX_MGPCR3 = 0;
-  MAX_MGPCR4 = 0;
-
-  /* Initialize M3IF (Multi-Master Memory Interface) */
-  M3IF_CTL = (1<<M3IF_M_IPU1);
-#endif
-
-#if defined (CONFIG_USES_DM9000)
-
-	/* Configure the DM9000 for Asynchronous level sensitive DTACK mode */
-  WEIM_UCR(DM_WEIM_CS) = 0
-    | (3<<14)                   /* CNC, AHB clock width minimum CS pulse */
-    | (3<<8)                    /* WSC */
-    | (1<<7)                    /* EW, DTACK level sensitive */
-    | (2<<4)                    /* WWS, two extra clocks for write setup */
-	/* DM9000 needs 2 clocks @20ns each to recover from a transaction */
-    | (6<<0)                    /* EDC, 6 cycles between transactions */
-    ;
-
-  WEIM_LCR(DM_WEIM_CS) = 0
-	/* DM9000 needs a slight delay within CS for nOE */
-    | (4<<28)                   /* OEA, 1/2 AHB clock delay til assert OE */
-    | (4<<24)                   /* OEN, 1/2 AHB clock delay til deassert OE */
-    | (5<<8)                    /* DSZ, 16 bit bus width */
-    | (1<<0)                    /* CSEN, enable CS */
-    ;
-
-  WEIM_ACR(DM_WEIM_CS) = 0
-	/* DM9000 needs a slight delay within CS for R_Wn */
-	/* Karma needs a delay so that the address, which passes
-           through a buffer, is ready before the R_Wn signal is
-           asserted.  Rosencrantz doesn't need this, but it doesn't
-           really hurt. */
-    | (4<<20)                   /* RWA, 1/2 AHB clock delay til assert RW */
-    | (4<<16)                   /* RWN, 1/2 AHB clock delay til deassert RW */
-    | (3<<4)                    /* DCT, AHB clock delay til nDTACK check */
-    ;
-#endif
-#endif
+  /* VPU and IPU given higher priority (0x4) IPU accesses with ID=0x1
+     given highest priority (=0xA) */
+  M4IF_FBPM0 = 0x203;
+  __REG (PHYS_M4IF + 0x44) = 0;
+  __REG (PHYS_M4IF + 0x9c) = 0x00120125;
+  __REG (PHYS_M4IF + 0x48) = 0x001901A3;
 }
 
 

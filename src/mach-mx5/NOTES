@@ -9,6 +9,8 @@ o 2011.jul.02
     o What is the PLATFORM block?  It's used to initialize some clock
       dividers.  There is a field called ICGC to set the dividers and
       it is set to 0x725 on our Efika and 0x124 on the EVK.
+    o What is cp15 c0 c1 2,  L1NEON bit set based on ARM errata?
+    o Where are the AIPS[0] and AIPS[4] registers documented?
 
 
 o 2011.jul.01
