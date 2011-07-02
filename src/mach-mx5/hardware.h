@@ -24,7 +24,7 @@
 #include <config.h>
 
 #if defined (CONFIG_MACH_GENESI_EFIKA)
-//# include "genesi-efika.h"
+# include "genesi-efika.h"
 #endif
 
 #include "mx51.h"

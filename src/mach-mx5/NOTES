@@ -1,3 +1,13 @@
+TODO
+====
+
+o UART
+o Timer
+o Test on target
+o MMC
+o IDE
+o Go!
+
 NOTES
 =====
 
@@ -11,6 +21,8 @@ o 2011.jul.02
       it is set to 0x725 on our Efika and 0x124 on the EVK.
     o What is cp15 c0 c1 2,  L1NEON bit set based on ARM errata?
     o Where are the AIPS[0] and AIPS[4] registers documented?
+
+
 
 
 o 2011.jul.01

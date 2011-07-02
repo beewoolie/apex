@@ -14,6 +14,8 @@
    DESCRIPTION
    -----------
 
+   The mx51 UART seem to be a replica of the mx31 UART IP block.
+
 */
 
 #if !defined (__UART_H__)
@@ -29,10 +31,8 @@
 
 /* ----- Prototypes */
 
-#if defined (CONFIG_MX31_UART1)
+#if defined (CONFIG_MX51_UART1)
 # define UART PHYS_UART1
-//# define UARTB PHYS_UART2
-//# define UARTB PHYS_UART3
 #endif
 
 #define UART_RXD		0x00
@@ -52,6 +52,7 @@
 #define UART_ONEMS		0xb0
 #define UART_TEST		0xb4
 
+#define UART_RXD_CHARRDY	(1<<15)
 #define UART_RXD_ERR		(1<<14)
 #define UART_RXD_OVRRUN		(1<<13)
 #define UART_RXD_FRMERR		(1<<12)
@@ -81,50 +82,31 @@
 #define UART_SR2_TXDC		(1<<3)		/* Transmission complete */
 #define UART_SR2_RDR		(1<<0)		/* Receive Data Ready */
 
-#define UART_BMR_115200		(5968 - 1)
-#define UART_BIR_115200		(1000 - 0)
+/* *** FIXME: these settings yield a rate of 115.052 Kbaud, a weak effort */
+#define UART_BMR_115200		(289 - 1)
+#define UART_BIR_115200		(16 - 1)
+#define UART_RFDIV		(4) /* UART_CLK /2 */
 
-#if defined (CPLD_CTRL1_CLR)
-# define INITIALIZE_CONSOLE_UART_MX31ADS \
-     CPLD_CTRL1_CLR = 1<<4; CPLD_CTRL2_SET = 1<<2;
-#else
-# define INITIALIZE_CONSOLE_UART_MX31ADS
-#endif
+/*** FIXME: no modem control lines being driven.  OK?  See CR3. */
 
 # define INITIALIZE_CONSOLE_UART\
-  ({ MASK_AND_SET (__REG (0x43fac080), 0xffff, 0x1210); /* txd1/rxd1 */\
-     __REG (UART + UART_CR1) = 0;\
-     __REG (UART + UART_CR2) = UART_CR2_IRTS | UART_CR2_CTSC | UART_CR2_WS\
-			     | UART_CR2_TXEN | UART_CR2_RXEN;\
-     __REG (UART + UART_CR3) = UART_CR3_RXDMUXSEL;\
-     __REG (UART + UART_CR4) = (32<<UART_CR4_CTSTL_SH)\
-			     | UART_CR4_LPBYP | UART_CR4_DREN;\
-     __REG (UART + UART_FCR) = (16<<UART_FCR_RXTL_SH)\
-			     | ( 0<<UART_FCR_RFDIV_SH)\
-			     | (16<<UART_FCR_TXTL_SH);\
-     __REG (UART + UART_SR1) = ~0;\
-     __REG (UART + UART_SR2) = ~0;\
-     __REG (UART + UART_BIR) = UART_BIR_115200;\
-     __REG (UART + UART_BMR) = UART_BMR_115200;\
-     __REG (UART + UART_CR1) = UART_CR1_EN;\
-     INITIALIZE_CONSOLE_UART_MX31ADS;\
-   })
-
-# define INITIALIZE_UARTB\
-  ({ __REG (UARTB + UART_CR1) = 0;\
-     __REG (UARTB + UART_CR2) = UART_CR2_IRTS | UART_CR2_CTSC | UART_CR2_WS\
-			     | UART_CR2_TXEN | UART_CR2_RXEN;\
-     __REG (UARTB + UART_CR3) = UART_CR3_RXDMUXSEL;\
-     __REG (UARTB + UART_CR4) = (32<<UART_CR4_CTSTL_SH)\
-			     | UART_CR4_LPBYP | UART_CR4_DREN;\
-     __REG (UARTB + UART_FCR) = (16<<UART_FCR_RXTL_SH)\
-			     | ( 0<<UART_FCR_RFDIV_SH)\
-			     | (16<<UART_FCR_TXTL_SH);\
-     __REG (UARTB + UART_SR1) = ~0;\
-     __REG (UARTB + UART_SR2) = ~0;\
-     __REG (UARTB + UART_BIR) = UART_BIR_115200;\
-     __REG (UARTB + UART_BMR) = UART_BMR_115200;\
-     __REG (UARTB + UART_CR1) = UART_CR1_EN;\
-   })
+  ({ /* GPIO setup? */                                                    \
+    __REG (UART + UART_CR1) = 0;                                          \
+    __REG (UART + UART_CR2) = UART_CR2_IRTS /*| UART_CR2_CTSC */          \
+                            | UART_CR2_WS                                 \
+      		            | UART_CR2_TXEN | UART_CR2_RXEN               \
+                            | UART_CR2_NSRST;                             \
+    __REG (UART + UART_CR3) = UART_CR3_RXDMUXSEL;                         \
+    __REG (UART + UART_CR4) = (32<<UART_CR4_CTSTL_SH)                     \
+                            | UART_CR4_LPBYP /* | UART_CR4_DREN */ ;      \
+    __REG (UART + UART_FCR) = (16<<UART_FCR_RXTL_SH)                      \
+                            | ((UART_RFDIV)<<UART_FCR_RFDIV_SH)           \
+                            | (16<<UART_FCR_TXTL_SH);                     \
+    __REG (UART + UART_SR1) = ~0;                                         \
+    __REG (UART + UART_SR2) = ~0;                                         \
+    __REG (UART + UART_BIR) = UART_BIR_115200;                            \
+    __REG (UART + UART_BMR) = UART_BMR_115200;                            \
+    __REG (UART + UART_CR1) = UART_CR1_EN;                                \
+  })
 
 #endif  /* __UART_H__ */

@@ -167,7 +167,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   CCM_CCGR5 = 0xffffffff;
   CCM_CCGR6 = 0xffffffff;
 
-  CCM_CSCMR1 = 0xA5A2A020;      /* UART clk <= PLL2, divid to 66.5 MHz */
+  CCM_CSCMR1 = 0xA5A2A020;      /* UART clk <= PLL2, divided to 66.5 MHz */
   CCM_CSCDR1 = 0x00C30321;
 
   /* Wait for handshake to complete */
