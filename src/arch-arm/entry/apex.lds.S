@@ -21,6 +21,11 @@ SECTIONS
 #endif
 	  : {
 		*(.header)
+		*(.header.rodata)
+		*(.header.rodata.0)
+		*(.header.rodata.1)
+		*(.header.rodata.2)
+		*(.header.rodata.3)
 		*(.header.exit)
 	}
 	.entry : {		/* First code to execute */
@@ -188,6 +193,7 @@ SECTIONS
 	}
 	APEX_DATA_END = .;
 	APEX_VMA_COPY_END = .;
+	APEX_VMA_COPY_SIZE = APEX_VMA_COPY_END - APEX_VMA_COPY_START;
 	. = ALIGN (4);
 	APEX_VMA_PROBE_END = .;
 	/* The next word is the location we'll be writing to when

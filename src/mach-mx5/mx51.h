@@ -87,6 +87,7 @@
 #define PHYS_SSI1               (0x83fcc000)
 #define PHYS_AUDMUX             (0x83fd0000)
 #define PHYS_EMI1               (0x83fd8000)
+#define PHYS_ESDCTL		(0x83fd9000)
 #define PHYS_PATA_PIO           (0x83fe0000)
 #define PHYS_SIM                (0x83fe4000)
 #define PHYS_SSI3               (0x83fe8000)
@@ -110,6 +111,21 @@
 #define SDRAM_BANK0_PHYS	(PHYS_CSD0)
 #define SDRAM_BANK1_PHYS	(PHYS_CSD1)
 #define SDRAM_BANK_SIZE		(0x10000000)
+
+#define ESDCTL_ESDCTL0_		(PHYS_ESDCTL + 0x00)
+#define ESDCTL_ESDCFG0_		(PHYS_ESDCTL + 0x04)
+#define ESDCTL_ESDCTL1_		(PHYS_ESDCTL + 0x08)
+#define ESDCTL_ESDCFG1_		(PHYS_ESDCTL + 0x0c)
+#define ESDCTL_ESDMISC_		(PHYS_ESDCTL + 0x10)
+#define ESDCTL_ESDSCR_		(PHYS_ESDCTL + 0x14)
+#define ESDCTL_ESDCDLY1_	(PHYS_ESDCTL + 0x20)
+#define ESDCTL_ESDCDLY2_	(PHYS_ESDCTL + 0x24)
+#define ESDCTL_ESDCDLY3_	(PHYS_ESDCTL + 0x28)
+#define ESDCTL_ESDCDLY4_	(PHYS_ESDCTL + 0x2c)
+#define ESDCTL_ESDCDLY5_	(PHYS_ESDCTL + 0x30)
+#define ESDCTL_ESDGPR_		(PHYS_ESDCTL + 0x34)
+#define ESDCTL_ESDPRCT0_	(PHYS_ESDCTL + 0x38)
+#define ESDCTL_ESDPRCT1_	(PHYS_ESDCTL + 0x3c)
 
 
 #endif  /* MX51_H_INCLUDED */
