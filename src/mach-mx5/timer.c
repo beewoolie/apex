@@ -14,6 +14,9 @@
    DESCRIPTION
    -----------
 
+   The mx51 GPT IP block is essentially the same as the mx31 version.
+   Clock gating is different.
+
 */
 
 #include <service.h>
@@ -21,30 +24,27 @@
 
 static void mx5x_timer_init (void)
 {
-#if 0
-  CCM_CGR0 |= CCM_CGR_RUN << CCM_CGR0_GPT_SH;	/* Enable GPT clock  */
-  GPT_PR = 32 - 1;		/* 32000/32 -> 1.00 ms/cycle */
-  GPT_CR = GPT_CR_EN | GPT_CR_CLKSRC_32K | GPT_CR_FREERUN;
-#endif
+	/* Enable GPT clock  */
+  MASK_AND_SET (                 CCM_CCGR2,
+                CCM_CCGR_MASK << CCM_CCGR2_GPT_IPG_CLK_SH,
+                CCM_CCGR_RUN  << CCM_CCGR2_GPT_IPG_CLK_SH);
+  GPT_PR    = 32 - 1;                           /* 32000/32 -> 1.00 ms/cycle */
+  GPT_CR    = GPT_CR_EN | GPT_CR_CLKSRC_32K | GPT_CR_FREERUN;
 }
 
 static void mx5x_timer_release (void)
 {
-  //  GPT_CR = 0;
+  GPT_CR = 0;
 }
 
 unsigned long timer_read (void)
 {
-//  return GPT_CNT;
-  return 0;
+  return GPT_CNT;
 }
 
 
-/* timer_delta
-
-   returns the difference in time in milliseconds.
-
- */
+/** compute the difference between two read timer values and return the
+   difference in milliseconds. */
 
 unsigned long timer_delta (unsigned long start, unsigned long end)
 {

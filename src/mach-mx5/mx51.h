@@ -137,6 +137,15 @@
 #define CCM_CCGR5		__REG (PHYS_CCM + 0x7c)
 #define CCM_CCGR6		__REG (PHYS_CCM + 0x80)
 
+#define CCM_CCGR_OFF		(0x00)
+#define CCM_CCGR_RUN		(0x01)
+#define CCM_CCGR_RUNWAIT	(0x02)
+#define CCM_CCGR_ALL		(0x03)
+#define CCM_CCGR_MASK           (0x03)
+#define CCM_CCGR1_UART1_IPG_CLK_SH (3*2)
+#define CCM_CCGR1_UART1_PER_CLK_SH (4*2)
+#define CCM_CCGR2_GPT_IPG_CLK_SH   (9*2)
+
 #define ARM_PLATFORM_ICGC	__REG (PHYS_ARM_PLATFORM + 0x14)
 
 #define DPLLX_DP_CTL(i)		__REG (PHYS_DPLLIPX(i) + 0x00)
@@ -147,6 +156,27 @@
 #define DPLLX_DP_HFS_OP(i)	__REG (PHYS_DPLLIPX(i) + 0x1c)
 #define DPLLX_DP_HFS_MFD(i)	__REG (PHYS_DPLLIPX(i) + 0x20)
 #define DPLLX_DP_HFS_MFN(i)	__REG (PHYS_DPLLIPX(i) + 0x24)
+
+#define GPT_CR			__REG (PHYS_GPT + 0x00)
+#define GPT_PR			__REG (PHYS_GPT + 0x04)
+#define GPT_SR			__REG (PHYS_GPT + 0x08)
+#define GPT_IR			__REG (PHYS_GPT + 0x0c)
+#define GPT_0CR1		__REG (PHYS_GPT + 0x10)
+#define GPT_0CR2		__REG (PHYS_GPT + 0x14)
+#define GPT_0CR3		__REG (PHYS_GPT + 0x18)
+#define GPT_ICR1		__REG (PHYS_GPT + 0x1c)
+#define GPT_ICR2		__REG (PHYS_GPT + 0x20)
+#define GPT_CNT			__REG (PHYS_GPT + 0x24)
+
+#define GPT_CR_EN		(1<<0)
+#define GPT_CR_CLKSRC_SH	(6)
+#define GPT_CR_CLKSRC_MSK	(0x7<<6)
+#define GPT_CR_CLKSRC_32K	(0x4<<6)
+#define GPT_CR_CLKSRC_HIGH	(0x2<<6)
+#define GPT_CR_CLKSRC_LOW	(0x1<<6)
+#define GPT_CR_FREERUN		(1<<9)
+
+#define GPT_SR_ROV		(1<<5) /* Roll-over */
 
 #define SDRAM_BANK0_PHYS	(PHYS_CSD0)
 #define SDRAM_BANK1_PHYS	(PHYS_CSD1)
