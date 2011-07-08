@@ -52,7 +52,7 @@
 #define PHYS_GPIO2              (0x73f88000)
 #define PHYS_GPIO3              (0x73f8c000)
 #define PHYS_GPIO4              (0x73f90000)
-#define PHYS_GPIOX(i)		(0x73840000 + ((i) - 1)*0x4000)
+#define PHYS_GPIOX(i)		(0x73f84000 + ((i) - 1)*0x4000)
 #define PHYS_KPP                (0x73f94000)
 #define PHYS_WDOG1              (0x73f98000)
 #define PHYS_WDOG2              (0x73f9c000)

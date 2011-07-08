@@ -376,9 +376,9 @@ enum {
 	((_GPIO_DR(_PIN_GPIO_R (p)) & (1 << _PIN_GPIO_P (p))) != 0)
 
 #define GPIO_CONFIG_PAD(p,v) \
-  (__REG(_PIN_PAD_R(p)) = (v))
+  (__REG(PHYS_IOMUXC + _PIN_PAD_R(p)) = (v))
 #define GPIO_CONFIG_FUNC(p,v) \
-  (__REG(_PIN_MUX_R(p)) = (v))
+  (__REG(PHYS_IOMUXC + _PIN_MUX_R(p)) = (v))
 
 
 #endif  /* MX51_PINS_H_INCLUDED */

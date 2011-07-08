@@ -48,8 +48,10 @@ void init_services (void)
     PUTHEX_LL (&service->init);
     PUTC_LL ('\r');
     PUTC_LL ('\n');
+
     if (service->init)
       service->init ();
+
     PUTC_LL ('#');
     PUTC_LL ('\r');
     PUTC_LL ('\n');

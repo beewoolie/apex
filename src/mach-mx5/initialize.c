@@ -169,16 +169,16 @@ void spi1_select (int slave)
 }
 
 
-
 /** bootstrap iniitialization function.  The iMX5 boot ROM performs
     the SDRAM setup before copying the loader to SDRAM.  The return
     value is always true because of the loader is always already in
-    SDRAM.
-
-*/
+    SDRAM. */
 
 void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
+  unsigned long lr;
+  __asm volatile ("mov %0, lr" : "=r" (lr));
+
 	/* Tune memory timings *** FIXME: verify*/
   __REG (ESDCTL_ESDMISC_) = 0xcaaaf6d0;
 
@@ -277,8 +277,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 
   CCM_CCOSR = 0x000a0000 + 0xf0;  /* cko <= for ARM /8 */
 
-
-  __asm volatile ("mov r0, #-1\n\t");
+  __asm volatile ("mov r0, #-1\t\n"
+		  "bx %0" : : "r" (lr));
 }
 
 

@@ -19,7 +19,11 @@
 #include <config.h>
 #include <asm/cp15.h>
 
+#if defined (CLEANALL_DCACHE)
+
 void cleanall_dcache (void)
 {
   CLEANALL_DCACHE;
 }
+
+#endif

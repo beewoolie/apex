@@ -79,7 +79,7 @@ int cmd_help (int argc, const char** argv)
   }
 
 #if defined (CONFIG_ALPHABETIZE_COMMANDS)
-  printf ("sorting %d\n", cCommands);
+//  printf ("sorting %d\n", cCommands);
   sort (rgc, cCommands, sizeof (struct command_d*), compare_commands, NULL);
 #endif
 
