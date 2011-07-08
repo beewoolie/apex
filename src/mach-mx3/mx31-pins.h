@@ -413,7 +413,7 @@ enum {
 #define _GPIO_IMR(r)	__REG(_GPIO_BASE(r) + 0x14)
 #define _GPIO_ISR(r)	__REG(_GPIO_BASE(r) + 0x18)
 
-  /* Configure ping as GPIO. */
+  /* Configure pin as GPIO. */
 #define IOMUX_PIN_CONFIG_GPIO(p)\
 	MASK_AND_SET(_SW_MUX_CTL(_PIN_MUX_R (p)),\
 		     (0x7f<<(_PIN_MUX_F (p)*8)),\

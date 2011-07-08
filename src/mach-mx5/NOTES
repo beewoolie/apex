@@ -1,16 +1,22 @@
 TODO
 ====
 
-o UART
-o efikamx.c initialization yikes!
-o Timer
-o Test on target
+x UART
+x Timer
+x mx51-pins
+x efikamx.c initialization yikes!
+o MMU, interrupts, cache initializations
+o Test on target to working console.
 o MMC
 o IDE
 o Go!
 
 NOTES
 =====
+
+o 2011.jul.06
+  o GPIO implementations complete.
+  o Missing some cache initialization, especially l2
 
 o 2011.jul.02
   o B3.12 CP15 registers for VMSA implementation, p B3-64 p1337 (really), p1339
@@ -22,6 +28,12 @@ o 2011.jul.02
       it is set to 0x725 on our Efika and 0x124 on the EVK.
     o What is cp15 c0 c1 2,  L1NEON bit set based on ARM errata?
     o Where are the AIPS[0] and AIPS[4] registers documented?
+    o This is in the efikamx.c initialization after some of the GPIO
+      inits are done.  What does it do? 
+	/* Setup GPIO group 2 */
+	writel(0x01025200, 0x73f88000);
+	/* Setup GPIO group 1 */
+	writel(0x00000020, 0x73f84000);
 
 
 o 2011.jul.01
