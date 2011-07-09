@@ -113,7 +113,7 @@ void mmu_init (void)
       | (2<<0);			/* type(section) */
   }
 
-  STORE_TTB (ttbl);
+  STORE_TTB ( ((u32) ttbl) | TTB_FLAGS);
   STORE_DOMAIN (0xffffffff);
 
   CLEANALL_DCACHE;

@@ -30,14 +30,16 @@
 static void cpuinfo_report (void)
 {
   unsigned long id;
-  unsigned long cache;
+  unsigned long ctr;
   unsigned long ctrl;
   unsigned long cpsr;
   unsigned long ttbl;
   unsigned long domain;
+  unsigned long ccsidr;
+  unsigned long clidr;
 //  unsigned long csc = (CSC_PWRSR>>CSC_PWRSR_CHIPID_SHIFT);
   unsigned long test;
-  char* sz = "iMX31";
+  char* sz = "iMX51";
 
 //  switch (csc & 0xf0) {
 //  default  : sz = "lh?";     break;
@@ -46,7 +48,9 @@ static void cpuinfo_report (void)
 //  }
 
   __asm volatile ("mrc p15, 0, %0, c0, c0, 0" : "=r" (id));
-  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (cache));
+  __asm volatile ("mrc p15, 0, %0, c0, c0, 1" : "=r" (ctr));
+  __asm volatile ("mrc p15, 1, %0, c0, c0, 0" : "=r" (ccsidr));
+  __asm volatile ("mrc p15, 1, %0, c0, c0, 1" : "=r" (clidr));
   __asm volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r" (ctrl));
   __asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbl));
   __asm volatile ("mrc p15, 0, %0, c3, c0, 0" : "=r" (domain));
@@ -54,10 +58,12 @@ static void cpuinfo_report (void)
   __asm volatile ("mrs %0, cpsr"	   : "=r" (cpsr));
   printf ("  cpu:      id 0x%08lx   cache 0x%08lx    cpsr 0x%08lx\n"
 	  "          ttbl 0x%08lx  domain 0x%08lx  chipid %s\n"
+          "        ccsidr 0x%08lx   clidr 0x%08lx\n"
           "          ctrl 0x%08lx (%s)\n"
 	  "          cp15test 0x%04lx\n",
-	  id, cache, cpsr,
+	  id, ctr, cpsr,
 	  ttbl, domain, sz,
+          ccsidr, clidr,
           ctrl, cp15_ctrl (ctrl),
           test & 0xffff);
 

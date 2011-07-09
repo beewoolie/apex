@@ -103,6 +103,10 @@
 # define CP15_WAIT
 #endif
 
+#if !defined (TTB_FLAGS)
+# define TTB_FLAGS      (0)
+#endif
+
 extern void cleanall_dcache (void);
 extern void cp15_wait (void);
 extern void invalidate_dcache_va (uint32_t);
