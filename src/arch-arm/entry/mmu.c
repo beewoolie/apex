@@ -232,6 +232,9 @@ void mmu_release (void)
                     ")\n\t"
 		    "bic %0, %0, #("
                     "(1<<12)|(1<<8)"		       /* ...i ...s .... .... */
+#if defined (CONFIG_HAVE_BRANCH_PREDICTION)
+                    "|(1<<11)"			       /* .... z... .... .... */
+#endif
                     ")\n\t"
 		    "mcr p15, 0, %0, c1, c0, 0" : "=&r" (l));
   }
