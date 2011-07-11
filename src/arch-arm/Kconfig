@@ -31,9 +31,11 @@ config CPU_ARMV6
 
 config CPU_ARMV7
 	bool
+	select HAVE_BRANCH_PREDICTION
 
 config CPU_XSCALE
 	bool
+	select HAVE_BRANCH_PREDICTION
 
 config CPU_ARM7
 	bool
@@ -819,3 +821,7 @@ config CLEAR_STACKS
 
 config ALIASES
 	bool
+
+config HAVE_BRANCH_PREDICTION
+        bool
+	default n

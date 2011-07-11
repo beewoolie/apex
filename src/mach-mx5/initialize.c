@@ -35,68 +35,32 @@
    Initialization Sequence
    -----------------------
 
-   arch_cpu_init,          / * basic arch cpu dependent setup * /
-     icache_enable
-     dcache_enable
-//     l2_cache_disable
-     l2_cache_enable  // 0, c1, c1, 1 |= 2
+// From the kernel
+
+	/ *   AT
+	 *  TFR   EV X F   I D LR    S
+	 * .EEE ..EE PUI. .T.T 4RVI ZWRS BLDP WCAM
+	 * rxxx rrxx xxx0 0101 xxxx xxxx x111 xxxx < forced
+	 *    1    0 110       0011 1100 .111 1101 < we want
+	 * /
+	.type	v7_crval, #object
+v7_crval:
+	crval	clear=0x0120c302, mmuset=0x10c03c7d, ucset=0x00c01c7c
+
+From kernel, setup of r6 so that we can determine which errata apply:
+		see arch/arm/mm/proc-v7.S
+
+	mrc	p15, 0, r0, c0, c0, 0		@ read main ID register
+	and	r10, r0, #0xff000000		@ ARM?
+	teq	r10, #0x41000000
+	bne	3f
+	and	r5, r0, #0x00f00000		@ variant
+	and	r6, r0, #0x0000000f		@ revision
+	orr	r6, r6, r5, lsr #20-4		@ combine variant and revision
+	ubfx	r0, r0, #4, #12			@ primary part number
+
 
 #endif
-x  board_init,             / * basic board dependent setup * /
-#if defined(CONFIG_USE_IRQ)
-   interrupt_init,         / * set up exceptions * /
-#endif
-   timer_init,             / * initialize timer * /
-   env_init,               / * initialize environment * /
-   init_baudrate,          / * initialze baudrate settings * /
-   serial_init,            / * serial communications setup * /
-   console_init_f,         / * stage 1 init of console * /
-   display_banner,         / * say that we are here * /
-#if defined(CONFIG_DISPLAY_CPUINFO)
-   print_cpuinfo,          / * display cpu info (and speed) * /
-#endif
-#if defined(CONFIG_DISPLAY_BOARDINFO)
-   checkboard,             / * display board info * /
-#endif
-#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
-   init_func_i2c,
-#endif
-   dram_init,              / * configure available RAM banks * /
-#if defined(CONFIG_CMD_PCI) || defined (CONFIG_PCI)
-   arm_pci_init,
-#endif
-   display_dram_config,
-
-   L2 cache
-   --------
-
-   We're not enabling the L2 cache until we find documentation
-   explaining the registers.
-
-/ *
- * L2CC Cache setup/invalidation/disable
- * /
-.macro init_l2cc
-	/ * explicitly disable L2 cache * /
-        mrc 15, 0, r0, c1, c0, 1
-        bic r0, r0, #0x2
-        mcr 15, 0, r0, c1, c0, 1
-
-        / * reconfigure L2 cache aux control reg * /
-        mov r0, #0xC0                   / * tag RAM * /
-        add r0, r0, #0x4                / * data RAM * /
-        orr r0, r0, #(1 << 24)          / * disable write allocate delay * /
-        orr r0, r0, #(1 << 23)          / * disable write allocate combine * /
-        orr r0, r0, #(1 << 22)          / * disable write allocate * /
-
-	ldr r1, =0x00000000
-	ldr r3, [r1, #ROM_SI_REV]
-	cmp r3, #0x10    / * r3 contains the silicon rev * /
-	orrls r0, r0, #(1 << 25)    / * disable write combine for TO 2 and lower revs * /
-
-	mcr 15, 1, r0, c9, c0, 2
-.endm / * init_l2cc * /
-
 
 */
 
@@ -171,8 +135,9 @@ void spi1_select (int slave)
 
 /** bootstrap iniitialization function.  The iMX5 boot ROM performs
     the SDRAM setup before copying the loader to SDRAM.  The return
-    value is always true because of the loader is always already in
-    SDRAM. */
+    value here is always true because of the loader is always already
+    in SDRAM.  When this function is called, caches must be
+    disabled. */
 
 void __naked __section (.bootstrap) initialize_bootstrap (void)
 {
@@ -192,7 +157,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   // relegate peripherap setups to the target_init code once we're all
   // in SDRAM.  So, l2cc, clocks, m4if?
 
-  /* Drive GPIO1.23 high, LED perhaps? */
+  /* Drive GPIO1.23 high, LED perhaps? ...I don't believe so... */
   GPIO_SET           (MX51_PIN_UART3_TXD);
   GPIO_CONFIG_OUTPUT (MX51_PIN_UART3_TXD);
 //  GPIOX_DR(1)   |= (1<<23);
@@ -276,6 +241,26 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   CCM_CCDR = 0;
 
   CCM_CCOSR = 0x000a0000 + 0xf0;  /* cko <= for ARM /8 */
+
+  {                             /* Configure L2 cache */
+    unsigned long l = (0
+                       | ( 4<<0)  /* Data RAM latency 3 clocks */
+                       | ( 3<<6)  /* Tag RAM latency 4 clocks */
+                       | (1<<22)  /* Write allocate disable (ARM Errata 460075?) */
+                       | (1<<23)  /* Write allocate combine disable */
+                       | (1<<24)  /* Write allocate delay disable */
+                       );
+    if (ROM_SI_REV <= 0x10)
+      l |= (1<<25);        	  /* Write combine disable (TO 2 and older) */
+    __asm volatile ("mcr p15, 1, %0, c9, c0, 2" :: "r" (l));
+  }
+  {                             /* Enable L2 cache, data cache disabled in control register */
+    unsigned long l;
+    __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t"
+		    "orr %0, %0, #(1<<1)\n\t"
+		    "mcr p15, 0, %0, c1, c0, 1\n\t"
+		    : "=&r" (l));
+  }
 
   __asm volatile ("mov r0, #-1\t\n"
 		  "bx %0" : : "r" (lr));

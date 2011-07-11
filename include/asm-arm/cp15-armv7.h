@@ -359,6 +359,13 @@ ENDPROC(v7_flush_dcache_all)
 #define FLUSH_DCACHE_ALL \
   CLEAN_INVALIDATE_DCACHE_
 
-#define TTB_FLAGS      ((1 << 0) | (1 << 6) | (3 << 3))
+#define TTB_FLAGS (0)
+//                   | (1 << 0) 		/* inner cacheable */
+//                   | (3 << 3))		/* write-back, no allocate on write */
+
+#undef STORE_TTB
+#define STORE_TTB(a) \
+  __asm volatile ("mcr p15, 0, %0, c2, c0, 0\n\t"                       \
+                  "mcr p15, 0, %1, c2, c0, 2" :: "r" (((u32)a) | TTB_FLAGS), "r" (0));
 
 #endif  /* __CP15_ARMV7_H__ */

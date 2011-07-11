@@ -47,8 +47,10 @@
   ({ unsigned long l;\
      __asm volatile ("mrs %0, cpsr" : "=r" (l)); l; })
 
-#define STORE_TTB(a)\
-  __asm volatile ("mcr p15, 0, %0, c2, c0, 0\n\t" :: "r" (a))
+#if !defined (STORE_TTB)
+# define STORE_TTB(a)\
+   __asm volatile ("mcr p15, 0, %0, c2, c0, 0\n\t" :: "r" (a))
+#endif
 #define LOAD_TTB\
   ({ unsigned long l;\
      __asm volatile ("mrc p15, 0, %0, c2, c0, 0\n\t" :  "=r" (l)); l; })
@@ -101,10 +103,6 @@
 
 #if !defined (CP15_WAIT)
 # define CP15_WAIT
-#endif
-
-#if !defined (TTB_FLAGS)
-# define TTB_FLAGS      (0)
 #endif
 
 extern void cleanall_dcache (void);

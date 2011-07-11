@@ -77,9 +77,10 @@ unsigned long __xbss(ttbl) ttbl[C_PTE];
 #define Icr   (1<<12)
 #define Bcr   (1<<3)
 #define Dcr   (1<<2)
+#define MMUEN (1<<0)
+
 #define Btt   (1<<2)
 #define Ctt   (1<<3)
-#define MMUEN (1<<0)
 
 
 /* mmu_init
@@ -113,7 +114,7 @@ void mmu_init (void)
       | (2<<0);			/* type(section) */
   }
 
-  STORE_TTB ( ((u32) ttbl) | TTB_FLAGS);
+  STORE_TTB (ttbl);
   STORE_DOMAIN (0xffffffff);
 
   CLEANALL_DCACHE;
@@ -131,17 +132,18 @@ void mmu_init (void)
 #if defined (CONFIG_HAVE_BCR) && !defined (CONFIG_FORCE_WRITETHROUGH_DCACHE)
 		    "(1<<3)|"
 #endif
-		    "(1<<2)|(1<<0))\n\t"		/* D-cache, MMU-EN */
-		    "orr %0, %0, #(1<<12)\n\t"		/* I-cache */
+		    "(1<<2)|(1<<0))\n\t"		/* D, enable D-cache; M, MMU enable */
+		    "orr %0, %0, #(1<<12)\n\t"		/* I, enable I-cache */
 /* RR doesn't appear to make the boot faster. */
 //		    "orr %0, %0, #(1<<14)\n\t"		/* RR, predictable */
 
-// *** FIXME: we can enable Z bit (1<<11) for processors that support
-//     it.  Probably, it should be something we configure to make it
-//     obvious to users.
+#if defined (CONFIG_HAVE_BRANCH_PREDICTION)
+                    "orr %0, %0, #(1<<11)\n\t" 		/* Z, enable branch prediction */
+#endif
 		    "mcr p15, 0, %0, c1, c0, 0\n\t"
 		    : "=&r" (l));
   }
+
   CP15_WAIT;
 }
 
@@ -211,7 +213,6 @@ void mmu_map_segment (void* physical, void* virtual,
 
 void mmu_release (void)
 {
-
   CLEANALL_DCACHE;
   DRAIN_WRITE_BUFFER;
 
