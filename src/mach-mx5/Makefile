@@ -9,9 +9,11 @@
 #   Please refer to the file debian/copyright for further details.
 #
 
-obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o # env.o cmd-sleep.o
+obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o env.o
+# cmd-sleep.o
 obj-y += header.o
-#obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o
+
+obj-$(CONFIG_MX51_UART1)	+= serial-mx51.o
+obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o
 #obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 #obj-$(CONFIG_IPU_TEST)		+= ipu.o
-obj-$(CONFIG_MX51_UART1)	+= serial-mx51.o
