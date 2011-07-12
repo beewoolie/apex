@@ -14,18 +14,6 @@
    DESCRIPTION
    -----------
 
-   *** FIXME: these macros have not been edited for the platform
-
-   We need:
-
-    CLEANALL_DCACHE;
-    INVALIDATE_ICACHE;
-    INVALIDATE_DCACHE;
-    INVALIDATE_TLB;
-    DRAIN_WRITE_BUFFER;
-    CP15_WAIT;
-
-
    Kernel Snippets
    ---------------
 
@@ -271,25 +259,29 @@ ENDPROC(v7_flush_dcache_all)
 */
 
 #define CLEAN_INVALIDATE_DCACHE_ \
-  do { u32 clidr; u32 csidr; u32 loc; u32 level;                           \
-    __asm volatile ("dmb\n\t" "mrc p15, 1, %0, c0, c0, 1" : "=r" (clidr)); \
-    loc = (clidr >> 24) & 7; \
-    for (level = 0; level < loc; ++level) { \
-      u32 r2; u32 r4; u32 r5; s32 r7;       \
-      u32 ctype = (clidr >> (level*3)) & 7; \
-      if ((ctype & 2) == 0) continue; \
-      __asm volatile ("mcr p15, 2, %0, c0, c0, 0" :: "r" (level << 1)); /* select dcache in csselr */ \
-      __asm volatile ("isb\n\t" "mrc p15, 1, %0, c0, c0, 0" : "=r" (csidr)); /* read csidr */ \
-      r2 = (csidr & 7) + 4; \
-      r4 = 0x3ff & (csidr >> 3);              /* ways */ \
-      __asm volatile ("clz %0, %1" : "=r" (r5) : "r" (r4)); \
-      r7 = 0x7fff & (csidr >> 13);            /* indexes */ \
-      for (; r7 >= 0; --r7) { \
-        s32 way; for (way = r4; way >= 0; --way) { \
-          u32 v = (level<<1) | (way<<r5) | (r7<<r2); \
-          __asm volatile ("mcr p15, 0, %0, c7, c14, 2" :: "r" (v)); \
-    } } } \
-    __asm volatile ("mcr p15, 2, %0, c0, c0, 0" :: "r" (0)); /* Restore level 0->csselr */ \
+  do { u32 clidr; u32 csidr; u32 loc; u32 level;                        \
+    __asm volatile ("dmb");                                             \
+    __asm volatile ("mrc p15, 1, %0, c0, c0, 1" : "=r" (clidr));        \
+    loc = (clidr >> 24) & 7;                                            \
+    for (level = 0; level < loc; ++level) {                             \
+      u32 width; 			/* cache line width in bits */  \
+      u32 ways; u32 r5; u32 index;                                      \
+      u32 ctype = (clidr >> (level*3)) & 7;                             \
+      if (ctype < 2) continue; 			 /* I-cache only? */    \
+      __asm volatile ("mcr p15, 2, %0, c0, c0, 0" :: "r" (level << 1)); \
+      __asm volatile ("isb");                                           \
+      __asm volatile ("mrc p15, 1, %0, c0, c0, 0" : "=r" (csidr));      \
+      width = (csidr & 7) + 4;                                          \
+      ways = (0x3ff & (csidr >> 3));          	 /* ways */             \
+      __asm volatile ("clz %0, %1" : "=r" (r5) : "r" (ways));           \
+      ++ways;                                                           \
+      index = (0x7fff & (csidr >> 13)) + 1;      /* indexes */          \
+      while (index--) {                                                 \
+        s32 way; for (way = ways; way--;) {                             \
+          u32 v = (level<<1) | (way<<r5) | (index<<width);              \
+          __asm volatile ("mcr p15, 0, %0, c7, c14, 2" :: "r" (v));     \
+        } } }                                                           \
+    __asm volatile ("mcr p15, 2, %0, c0, c0, 0" :: "r" (0));            \
     __asm volatile ("dsb\n\t" "isb"); } while (0)
 
 
