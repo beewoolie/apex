@@ -45,7 +45,7 @@ config DCD_OFFSET
 	hex "Loader DCD Offset"
 	default "0x400"
 	help
-	  The boot image used by the iMX51 has a header that must be
+	  The boot image used by the iMX5 has a header that must be
 	  0x400 (1KiB) bytes offset from the beginning of the image.
 	  This header is called a DCD.  This offset is the number of
 	  bytes from the beginning of the image to the DCD.  It
@@ -97,10 +97,10 @@ config SDRAM_BANK1
 
 choice
 	prompt "Console UART"
-	default MX51_UART1
+	default MX5_UART1
 
-config MX51_UART1
-	bool "MX51 internal UART1"
+config MX5_UART1
+	bool "MX5 internal UART1"
 
 endchoice
 

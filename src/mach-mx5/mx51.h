@@ -81,7 +81,7 @@
 #define PHYS_ARM_PLATFORM	(0x83fa0000) /* Lacking documentation */
 #define PHYS_OWIRE		(0x83fa4000)
 #define PHYS_FIRI               (0x83fa8000)
-#define PHYS_eCSPI2             (0x83fac000)
+#define PHYS_ECSPI2             (0x83fac000)
 #define PHYS_SDMA               (0x83fb0000)
 #define PHYS_SCC                (0x83fb4000)
 #define PHYS_ROMCP              (0x83fb8000)
@@ -260,5 +260,18 @@
   __REG(PHYS_IOMUXC + 0x9b8)
 #define IOMUXC_I2C2_IPP_SDA_IN_SELECT_INPUT \
   __REG(PHYS_IOMUXC + 0x9bc)
+
+#define PHYS_ECSPIX(b)\
+  ((b < 0 || b > 1) ? 0 : ((b == 1) ? PHYS_ECSPI1 : PHYS_ECSPI2))
+#define ECSPIX_RXD(b)		__REG (PHYS_ECSPIX(b) + 0x00)
+#define ECSPIX_TXD(b)		__REG (PHYS_ECSPIX(b) + 0x04)
+#define ECSPIX_CONTROL(b)	__REG (PHYS_ECSPIX(b) + 0x08)
+#define ECSPIX_CONFIG(b)	__REG (PHYS_ECSPIX(b) + 0x0c)
+#define ECSPIX_INT(b)		__REG (PHYS_ECSPIX(b) + 0x10)
+#define ECSPIX_DMA(b)		__REG (PHYS_ECSPIX(b) + 0x14)
+#define ECSPIX_STATUS(b)	__REG (PHYS_ECSPIX(b) + 0x18)
+#define ECSPIX_PERIOD(b)	__REG (PHYS_ECSPIX(b) + 0x1c)
+#define ECSPIX_TEST(b)		__REG (PHYS_ECSPIX(b) + 0x20)
+#define ECSPIX_MSGDATA(b)	__REG (PHYS_ECSPIX(b) + 0x40)
 
 #endif  /* MX51_H_INCLUDED */

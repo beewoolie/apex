@@ -110,10 +110,22 @@ void spi1_select (int slave)
 {
   switch (slave) {
 
+  default:                      /* Disable all */
+    GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
+    GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
+                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       | GPIO_PAD_SLEW_FAST);
+    GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS0);
+    GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
+                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       | GPIO_PAD_SLEW_FAST);
+    break;
+
   case 0:
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_SLEW_FAST);
+                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       | GPIO_PAD_SLEW_FAST);
     GPIO_CONFIG_FUNC  (MX51_PIN_CSPI1_SS0, 0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
                        GPIO_PAD_HYST_EN | GPIO_PAD_PKE
@@ -123,7 +135,8 @@ void spi1_select (int slave)
   case 1:
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_SLEW_FAST);
+                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       | GPIO_PAD_SLEW_FAST);
     GPIO_CONFIG_FUNC  (MX51_PIN_CSPI1_SS1, 0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
                        GPIO_PAD_HYST_EN

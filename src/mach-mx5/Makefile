@@ -12,8 +12,9 @@
 obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o env.o
 # cmd-sleep.o
 obj-y += header.o
+obj-y += drv-mx5-ecspi.o
 
-obj-$(CONFIG_MX51_UART1)	+= serial-mx51.o
+obj-$(CONFIG_MX5_UART1)	+= serial-mx5.o
 obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o
 #obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 #obj-$(CONFIG_IPU_TEST)		+= ipu.o

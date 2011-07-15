@@ -31,7 +31,7 @@
 
 /* ----- Prototypes */
 
-#if defined (CONFIG_MX51_UART1)
+#if defined (CONFIG_MX5_UART1)
 # define UART PHYS_UART1
 #endif
 

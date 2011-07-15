@@ -14,6 +14,89 @@ o Go!
 NOTES
 =====
 
+o 2011.jul.14
+
+  From uboot
+
+    JEDEC ID: 0xbf:0x25:0x4a
+    Reading SPI NOR flash 0x40000 [0x10000 bytes] -> ram 0x975f06e8
+
+U-Boot# md 0x70010000
+70010000: 00000000 00000000 00000000 00000000    ................
+70010010: 00000000 00000000 00000003 00000000    ................
+
+  Using bdi2000, the control and config registers receive
+  0x00042020 and 0x00220022
+  0x01f42021
+
+  Control
+  1 Channel select
+  0 DRCTRL
+  2 Pre-divider
+  0 Post-divider
+  2 Channel mode
+  0 SMC
+  0 XCH
+  0 HW
+  0 EN
+
+  Control, later
+  1f Burst length
+  1 EN
+
+  Control, later
+  1 XCH
+
+  Config
+  0 HT length
+  2 SCLK CTL (inactive low)
+  2 DATA CTL (inactive low)
+  0 SSB POL  (active low)
+  0 SSB CTL  (single burst)
+  2 SCLK POL (active low, idle high)
+  2 SCLK PHA (phase 1 operation)
+
+
+
+o 2011.jul.12
+  o Boot mode switches
+
+   +---+---+---+---+
+   | 3 | 2 | 1 | 0 |
+   +---+---+---+---+
+     |   |   |   |
+     |   |   |   +-- BT_SRC[0]            
+     |   |   +------ BUS_WIDTH
+     |   +---------- BT_MEM_TYPE[0]
+     +-------------- BT_MEM_TYPE[1]
+
+    o The normal system boot has the value 1110.  This boots to the
+      SPI flash.
+    o Normal boot is SPI Flash BT_MEM_TYPE 11 and 3 address
+      BT_BUS_WIDTH 1.
+    o SD memory card boot has the value 0000 on the most recent
+      boards.  Earlier designs used the second SDHC device so on those
+      boards the value is 0001.  SDHC boot has BT_MEM_TYPE 00 and
+      BT_BUS_WIDTH 0.  The BT_SRC is 0 for SDHC1 and 1 for SDHC2.
+
+/*
+ * SPI Configs
+ * */
+#define CONFIG_FSL_SF                   1
+#define CONFIG_CMD_SPI
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_IMX_SST
+#define CONFIG_SPI_FLASH_CS             1
+#define CONFIG_IMX_ECSPI
+#define IMX_CSPI_VER_2_3
+#define CONFIG_IMX_SPI_PMIC
+#define CONFIG_IMX_SPI_PMIC_CS  0
+
+#define MAX_SPI_BYTES           (64 * 4)
+
+
+
+
 o 2011.jul.06
   o GPIO implementations complete.
   o Missing some cache initialization, especially l2
