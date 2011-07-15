@@ -306,10 +306,7 @@ static void target_init_i2c (void)
 }
 
 
-/** performs remaining hardware initialization that didn't have to be
-   performed during the bootstrap phase and isn't done in a driver. */
-
-static void target_init (void)
+static void target_init_mprot (void)
 {
   /* MPROTx set to non-bufferable, trusted for r/w and not forced to
      user-mode */
@@ -317,21 +314,21 @@ static void target_init (void)
   __REG(PHYS_AIPS1 + 4) = 0x77777777;
   __REG(PHYS_AIPS2 + 0) = 0x77777777;
   __REG(PHYS_AIPS2 + 4) = 0x77777777;
+}
 
+static void target_init_m4if (void)
+{
   /* VPU and IPU given higher priority (0x4) IPU accesses with ID=0x1
      given highest priority (=0xA) */
   M4IF_FBPM0 = 0x203;
   __REG (PHYS_M4IF + 0x44) = 0;
   __REG (PHYS_M4IF + 0x9c) = 0x00120125;
   __REG (PHYS_M4IF + 0x48) = 0x001901A3;
+}
 
-  CCM_CCDR = 0x00060000;        /* Mask IPU clock handshake */
 
-  /* Disable IPU and HSC dividers */
-  /* Clock Controller Module (CCM) page6.6 */
-
-//  writel(0x60000, CCM_BASE_ADDR + CLKCTL_CCDR);
-
+static void target_init_gpio (void)
+{
   /* initialize GPIO1 */
 
   GPIO_CLEAR         (MX51_PIN_GPIO1_5);
@@ -485,7 +482,11 @@ static void target_init (void)
   /* Output 'magic' value on GPIO1 and GPIO2 */
   GPIOX_DR(2) = 0x01025200;
   GPIOX_DR(1) = 0x00000020;
+}
 
+
+void target_init_board_id (void)
+{
   /* Read board revision */
 
   board_id = 0;
@@ -504,9 +505,25 @@ static void target_init (void)
   GPIO_CONFIG_PAD    (MX51_PIN_NANDF_RB3, GPIO_PAD_PU_100K);
   GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_RB3);
   board_id |= GPIO_VALUE (MX51_PIN_NANDF_RB3) ? (1<<2) : 0;
+}
+
+
+/** performs remaining hardware initialization that didn't have to be
+   performed during the bootstrap phase and isn't done in a driver. */
+
+static void target_init (void)
+{
+  target_init_mprot ();
+  target_init_m4if ();
+
+  CCM_CCDR = 0x00060000;        /* Mask IPU clock handshake */
+
+  target_init_gpio ();
+
+  target_init_board_id ();
 
   /* Select a device for SPI1  */
-  spi1_select (SPI1_SS_FLASH);
+//  spi1_select (SPI1_SS_FLASH);
 
   target_init_i2c ();
 }
