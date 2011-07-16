@@ -23,12 +23,6 @@
 
 #include "hardware.h"
 
-#define WDOG_WCR	__REG16 (PHYS_WDOG1 + 0x00)
-#define WDOG_WSR	__REG16 (PHYS_WDOG1 + 0x02)
-#define WDOG_WRSR	__REG16 (PHYS_WDOG1 + 0x04)
-#define WDOG_WICR	__REG16 (PHYS_WDOG1 + 0x06)
-#define WDOG_WMCR	__REG16 (PHYS_WDOG1 + 0x08)
-
 #define WDOG_WCR_WDE	(1<<2)	/* WDE, watchdog enable */
 #define WDOG_WCR_WT_SH	(8)
 
@@ -39,8 +33,11 @@ static void cmd_reset (int argc, const char** argv)
 {
   release_services ();
 
-  MASK_AND_SET (SRC_SCR, 0xf<<7, 0x5<<7); 	   /* Enable watchdog reset */
-  WDOG_WCR = WDOG_WCR_WDE | (0 << WDOG_WCR_WT_SH); /* Reset in 0.5 seconds */
+  // *** FIXME: the following *breaks* the watchdog reset.  Check the
+  // *** register definition.
+//  MASK_AND_SET (SRC_SCR, 0xf<<7, 0x5<<7); 	   /* Enable watchdog reset */
+
+  WDOGx_WCR(1) = WDOG_WCR_WDE | (0 << WDOG_WCR_WT_SH); /* Reset in 0.5s */
 
   while (1)
     ;

@@ -5,7 +5,9 @@ x UART
 x Timer
 x mx51-pins
 x efikamx.c initialization yikes!
-o MMU, interrupts, cache initializations
+x MMU, interrupts, cache initializations
+o Add AAI mode to write.  Not critical, but we'll probably appreciate
+  it if we write Apex to SPI flash.  
 o Test on target to working console.
 o MMC
 o IDE
@@ -13,6 +15,41 @@ o Go!
 
 NOTES
 =====
+
+o 2011.jul.18
+  x spi flash driver needs to cope with small reads.  A read of 1
+    bytes doesn't yield any data.  In fact, if the read is anything
+    less than an even number of words the result won't be read at
+    all.  I believe that the problem is that the odd sized write
+    occurs in the first transaction.  It may be worthwhile special
+    casing this first exchange as the read as well as the write are
+    likely to be misaligned.
+  o Preparing erase and program logic.
+  o Write working though it is not using the AAI mode.
+  o Erase working well.
+  o Still need AAI version of write for better performance.
+
+o 2011.jul.17
+  x Need to restrict the number of bytes in a single SPI transaction
+    to the extent of the field within the SPI control register that
+    defines in.
+  x May want to have a secondary limit based on the size of the FIFO
+    s.t. we write in one go all of the bytes that we can write to the
+    transmit FIFO and let the receive FIFO hold the received bytes.
+    Then we read them all at once.
+
+o 2011.jul.16
+  o Worked through a lot of IOMUX differences.  Seems to be OK except
+    for some entries that we don't have documentation to explain.
+  o SPI driver working.  Able to reliably read ID and data.
+  o Fixed bug in dump that caused infinite dump when size wasn't a
+    multiple of 16 bytes.
+  o Pushed dump fix to remotes
+  o Discovered that flash read to RAM isn't reliable.  Copying from
+    RAM to RAM is OK.  copy flash:0+512 0x90000000 doesn't copy the
+    first four bytes.  Dump is always OK.  Even checksum appears to
+    work because it uses the same region_ functions that copy uses.
+    The FIFO is 64 words.
 
 o 2011.jul.14
 

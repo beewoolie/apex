@@ -73,6 +73,29 @@ static void cpuinfo_report (void)
           auxctrl, l2cacheaux,
           test & 0xffff);
 
+#if 0
+  {
+    u16 wcr = __REG16 (PHYS_WDOG1 + 0x00);
+    u16 wcr2 = __REG16 (PHYS_WDOG2 + 0x00);
+    printf ("  wdog:    wcr 0x%04x  wcr 0x%04x\n", wcr, wcr2);
+  }
+#endif
+
+#if 1
+  {
+    u32 dr[4]   = { GPIOx_DR(1),  GPIOx_DR(2),  GPIOx_DR(3),  GPIOx_DR(4) };
+    u32 gdir[4] = { GPIOx_GDIR(1),GPIOx_GDIR(2),GPIOx_GDIR(3),GPIOx_GDIR(4) };
+    printf ("  gpio:    1: dr 0x%08x   gdir 0x%08x\n"
+            "           2: dr 0x%08x   gdir 0x%08x\n"
+            "           3: dr 0x%08x   gdir 0x%08x\n"
+            "           4: dr 0x%08x   gdir 0x%08x\n",
+            dr[0], gdir[0],
+            dr[1], gdir[1],
+            dr[2], gdir[2],
+            dr[3], gdir[3]);
+  }
+#endif
+
 #if defined (CPLD_VERSION)
   {
     unsigned char v = CPLD_VERSION;

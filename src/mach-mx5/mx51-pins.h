@@ -363,10 +363,17 @@ enum {
 
 #define GPIO_PIN_FUNC_SION	(1<<4)
 
+#define GPIO_CONFIG_PAD(p,v) \
+  (__REG(PHYS_IOMUXC + _PIN_PAD_R(p)) = (v))
+#define GPIO_CONFIG_FUNC(p,v) \
+  (__REG(PHYS_IOMUXC + _PIN_MUX_R(p)) = (v))
+
 #define GPIO_CONFIG_OUTPUT(p)\
-  	(_GPIO_GDIR(_PIN_GPIO_R (p)) |=  (1 << _PIN_GPIO_P (p)))
+  (GPIO_CONFIG_FUNC(p, _PIN_GPIO_A(p)),                         \
+   _GPIO_GDIR(_PIN_GPIO_R (p)) |=  (1 << _PIN_GPIO_P (p)))
 #define GPIO_CONFIG_INPUT(p)\
-	(_GPIO_GDIR(_PIN_GPIO_R (p)) &= ~(1 << _PIN_GPIO_P (p)))
+  (GPIO_CONFIG_FUNC(p, _PIN_GPIO_A(p)),                         \
+   _GPIO_GDIR(_PIN_GPIO_R (p)) &= ~(1 << _PIN_GPIO_P (p)))
 
 #define GPIO_SET(p)\
 	(_GPIO_DR(_PIN_GPIO_R (p))   |=   1 << _PIN_GPIO_P (p))
@@ -374,11 +381,5 @@ enum {
 	(_GPIO_DR(_PIN_GPIO_R (p))   &= ~(1 << _PIN_GPIO_P (p)))
 #define GPIO_VALUE(p)\
 	((_GPIO_DR(_PIN_GPIO_R (p)) & (1 << _PIN_GPIO_P (p))) != 0)
-
-#define GPIO_CONFIG_PAD(p,v) \
-  (__REG(PHYS_IOMUXC + _PIN_PAD_R(p)) = (v))
-#define GPIO_CONFIG_FUNC(p,v) \
-  (__REG(PHYS_IOMUXC + _PIN_MUX_R(p)) = (v))
-
 
 #endif  /* MX51_PINS_H_INCLUDED */

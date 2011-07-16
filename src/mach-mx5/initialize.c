@@ -24,12 +24,19 @@
    NANDF_RB3 from least significant bit to most significant.  The
    mapping of IDs to board revisions so far, are,
 
-   NANDF_RB3	NANDF_CS1	NANDF_CS0	Board Revision
-   ---------	---------	---------	--------------
-       1	    1		    1		     1.1
-       1	    1		    0		     1.2
-       1	    0		    1		     1.3
-       1	    0		    0		     1.4
+   NANDF_RB3  NANDF_CS1	 NANDF_CS0  Board Revision
+   ---------  ---------	 ---------  --------------
+       1	  1	     1	         1.1
+       1	  1	     0	         1.2
+       1	  0	     1           1.3
+       1	  0	     0           1.4
+
+
+   IOMUX of Working SPI Flash
+   --------------------------
+
+   The inactive SS is set to GPIO input to, apparently, work around a
+   problem with the ECSPI module.
 
 
    Initialization Sequence
@@ -69,6 +76,9 @@ From kernel, setup of r6 so that we can determine which errata apply:
 #include <service.h>
 #include <sdramboot.h>
 #include <asm/cp15.h>
+#include <apex.h>       /* *** printf */
+
+#include "mx5-spi.h"
 
 #include "hardware.h"
 #include <debug_ll.h>
@@ -84,20 +94,20 @@ int board_id;
 static inline void __section (.bootstrap)
   setup_dpll (int idx, u32 op, u32 mfd, u32 mfn)
 {
-  DPLLX_DP_CTL(idx) = 0x1232;   /* DPLL on */
-  DPLLX_DP_CONFIG(idx) = 2;     /* AREN */
+  DPLLx_DP_CTL(idx) = 0x1232;   /* DPLL on */
+  DPLLx_DP_CONFIG(idx) = 2;     /* AREN */
 
-  DPLLX_DP_OP(idx) = op;
-  DPLLX_DP_HFS_OP(idx) = op;
+  DPLLx_DP_OP(idx) = op;
+  DPLLx_DP_HFS_OP(idx) = op;
 
-  DPLLX_DP_MFD(idx) = mfd;
-  DPLLX_DP_HFS_MFD(idx) = mfd;
+  DPLLx_DP_MFD(idx) = mfd;
+  DPLLx_DP_HFS_MFD(idx) = mfd;
 
-  DPLLX_DP_MFN(idx) = mfn;
-  DPLLX_DP_HFS_MFN(idx) = mfn;
+  DPLLx_DP_MFN(idx) = mfn;
+  DPLLx_DP_HFS_MFN(idx) = mfn;
 
-  DPLLX_DP_CTL(idx) = 0x1232;
-  while (DPLLX_DP_CTL (idx) & 1)
+  DPLLx_DP_CTL(idx) = 0x1232;
+  while (DPLLx_DP_CTL (idx) & 1)
     ;
 }
 
@@ -106,17 +116,22 @@ static inline void __section (.bootstrap)
     ***FIXME: need to make sure that this call is idempotent.  We may
     ***need to keep track of the currently selected device. */
 
-void spi1_select (int slave)
+void spi_select (const struct mx5_spi* spi)
 {
+  int slave = spi ? spi->slave : -1;
+
+  if (spi && spi->bus != 1)     /* Only BUS 1 implemented */
+    return;
+
   switch (slave) {
 
   default:                      /* Disable all */
-    GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
-    GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
-                       | GPIO_PAD_SLEW_FAST);
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
+                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       | GPIO_PAD_SLEW_FAST);
+    GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
+    GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
                        GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
                        | GPIO_PAD_SLEW_FAST);
     break;
@@ -173,8 +188,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   /* Drive GPIO1.23 high, LED perhaps? ...I don't believe so... */
   GPIO_SET           (MX51_PIN_UART3_TXD);
   GPIO_CONFIG_OUTPUT (MX51_PIN_UART3_TXD);
-//  GPIOX_DR(1)   |= (1<<23);
-//  GPIOX_GDIR(1) |= (1<<23);
+//  GPIOx_DR(1)   |= (1<<23);
+//  GPIOx_GDIR(1) |= (1<<23);
 
   /* ARM errata ID #468414 */
   {
@@ -280,31 +295,6 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 }
 
 
-/** initializes the I2C IO lines.  This code should perhaps be part of
-    a driver, though it may simply be necessary to boot the kernel. */
-
-static void target_init_i2c (void)
-{
-  GPIO_CONFIG_FUNC (MX51_PIN_I2C1_CLK, 0 | GPIO_PIN_FUNC_SION);
-  GPIO_CONFIG_PAD  (MX51_PIN_I2C1_CLK, 0x1e4);
-  GPIO_CONFIG_FUNC (MX51_PIN_I2C1_DAT, 0 | GPIO_PIN_FUNC_SION);
-  GPIO_CONFIG_PAD  (MX51_PIN_I2C1_CLK, 0x1e4);
-
-  GPIO_CONFIG_FUNC (MX51_PIN_KEY_COL5, 3 | GPIO_PIN_FUNC_SION); /* I2C2 SDA */
-  IOMUXC_I2C2_IPP_SDA_IN_SELECT_INPUT = 1;                      /* KEY_COL5 */
-  GPIO_CONFIG_PAD  (MX51_PIN_KEY_COL5,
-                    GPIO_PAD_SLEW_FAST | GPIO_PAD_OPEN_DRAIN
-                    | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PU_100K
-                    | GPIO_PAD_HYST_EN);
-
-  GPIO_CONFIG_FUNC (MX51_PIN_KEY_COL4, 4 | GPIO_PIN_FUNC_SION);
-  IOMUXC_I2C2_IPP_SCL_IN_SELECT_INPUT = 1;			/* KEY_COL4 */
-  GPIO_CONFIG_PAD  (MX51_PIN_KEY_COL4,
-                    GPIO_PAD_SLEW_FAST | GPIO_PAD_OPEN_DRAIN
-                    | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PU_100K
-                    | GPIO_PAD_HYST_EN);
-}
-
 
 static void target_init_mprot (void)
 {
@@ -333,17 +323,11 @@ static void target_init_gpio (void)
 
   GPIO_CLEAR         (MX51_PIN_GPIO1_5);
   GPIO_CONFIG_OUTPUT (MX51_PIN_GPIO1_5);
-  GPIO_CONFIG_INPUT  (PIN_PMIC_IRQ);
-
-//  writel(0x00000020, 0x73f84004);
-//  writel(0x00000000, 0x73f84000);
-//  writel(0x00, IOMUXC_BASE_ADDR + 0x3dc);
-//  writel(0x00, IOMUXC_BASE_ADDR + 0x3e0);
-
+  GPIO_CONFIG_FUNC   (MX51_PIN_GPIO1_7, GPIO_PIN_FUNC_SION | 6);
 
   /* initialize GPIO2 */
 
-  GPIO_CLEAR (MX51_PIN_EIM_D27);	/* GPIO2_9 */
+  GPIO_CLEAR (MX51_PIN_EIM_D27);    /* GPIO2_9 */
   GPIO_CLEAR (MX51_PIN_EIM_A16);    /* GPIO2_10 */
   GPIO_CLEAR (MX51_PIN_EIM_A17);    /* GPIO2_11 */
   GPIO_SET   (MX51_PIN_EIM_A18);    /* GPIO2_12 */
@@ -352,7 +336,7 @@ static void target_init_gpio (void)
   GPIO_SET   (MX51_PIN_EIM_A23);    /* GPIO2_17 */
   GPIO_SET   (MX51_PIN_EIM_OE);     /* GPIO2_24 */
 
-  GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_D27);	/* GPIO2_9 */
+  GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_D27);    /* GPIO2_9 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_A16);    /* GPIO2_10 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_A17);    /* GPIO2_11 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_A18);    /* GPIO2_12 */
@@ -362,17 +346,43 @@ static void target_init_gpio (void)
   GPIO_CONFIG_OUTPUT (MX51_PIN_EIM_OE);     /* GPIO2_24 */
   GPIO_CONFIG_INPUT  (PIN_PWR_SW_REQ);      /* GPIO2_31 */
 
-//  writel(0x01035e00, 0x73f88004); /* DIR   9,10,11,12,14,16,17,24 */
-//  writel(0x01025000, 0x73f88000); /* DATA          12,14,   17,24 */
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x9c);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xa0);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xa4);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xac);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xdc);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xb4);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xb8);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0xf8);
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x88);
+  /* Not sure what these do. */
+  //  GPIO_CONFIG_INPUT (MX51_PIN_EIM_CS0);
+//  GPIO_CONFIG_INPUT (MX51_PIN_EIM_CS1);
+//  __REG(PHYS_IOMUXC + 0x980) = 1;
+
+  /* Deduced from reading IOMUXC */
+#if 0
+
+   Differences between APEX bare and APEX booted after uboot *and* SPI
+   flash works:
+
+  MX51_PIN_EIM_CS0        0x0e0: 0x00000000 -> 0x00000001 /* GPIO2_25 */
+  MX51_PIN_EIM_CS1        0x0e4: 0x00000000 -> 0x00000001 /* GPIO2_26 */
+  MX51_PIN_CSI1_VSYNC     0x1c4: 0x00000000 -> 0x00000003 /* GPIO3_14 */
+  MX51_PIN_CSI1_HSYNC     0x1c8: 0x00000000 -> 0x00000003 /* GPIO3_15 */
+
+                          0x3e4: 0x00000016 -> 0x00000000
+                          0x3e8: 0x00000016 -> 0x00000000
+                          0x4ac: 0x000000e3 -> 0x000000e5
+                          0x4b0: 0x000000e3 -> 0x000000e5
+                          0x4b4: 0x000000e3 -> 0x000000e5
+                          0x4cc: 0x000000e3 -> 0x000000e5
+                          0x50c: 0x000020c3 -> 0x000020c5
+                          0x510: 0x000020c3 -> 0x000020c5
+
+  MX51_PIN_CSPI1_SS0      0x608: 0x00000085 -> 0x00000185 /* ignore */
+  MX51_PIN_EIM_DA0        0x7a8: 0x000020d6 -> 0x000020d4
+  MX51_PIN_EIM_DA4        0x7ac: 0x000020d6 -> 0x000020d4
+  MX51_PIN_EIM_DA8        0x7b0: 0x000020d6 -> 0x000020c4
+  MX51_PIN_EIM_DA12       0x7bc: 0x000020d6 -> 0x000020dc
+
+                          0x83c: 0x00000002 -> 0x00000004
+                          0x848: 0x00000002 -> 0x00000004
+                          0x8a0: 0x00000200 -> 0x00000000
+                          0x9b0: 0x00000001 -> 0x00000000
+                          0x9b4: 0x00000001 -> 0x00000000
+#endif
 
   /* initialize GPIO3 */
 
@@ -402,30 +412,6 @@ static void target_init_gpio (void)
   GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS1);      /* GPIO3_17 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_NANDF_D15);      /* GPIO3_25 */
 
-//  writel(0x02003064, 0x73f8c004); /* DIR  2,5,6,12,13,25  */
-//  writel(0x00000024, 0x73f8c000); /* DATA 2,5 */
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x994);
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2c8); /* 3.8 */
-
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x134); /* 3.17 */
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2a8); /* 3.0 */
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2b0); /* 3.2 */
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2b4); /* 3.3 */
-
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x988);
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2bc); /* 3.5 */
-
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x998);
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x194); /* 3.12 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x198); /* 3.13 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x154); /* 3.25 */
-
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x978);
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2ac); /* 3.1 */
-
-//  writel(0x01, IOMUXC_BASE_ADDR + 0x98c);
-//  writel(0x04, IOMUXC_BASE_ADDR + 0x2c0); /* 3.6 */
-
   /* initialize GPIO group4 */
 
   GPIO_CLEAR (MX51_PIN_CSI2_D13);
@@ -441,25 +427,7 @@ static void target_init_gpio (void)
   GPIO_CONFIG_OUTPUT (MX51_PIN_CSI2_HSYNC);     /* GPIO4_14 */
   GPIO_CONFIG_INPUT  (MX51_PIN_CSI2_PIXCLK);    /* GPIO4_15 */
 
-//  writel(0x00007c00, 0x73f90004); /* DIR  10,11,12,13,14 */
-//  writel(0x00001000, 0x73f90000); /* DATA       12 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1d0); /* 4.10 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1e4); /* 4.11 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1e8); /* 4.12 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1ec); /* 4.13 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1f0); /* 4.14 */
-//  writel(0x03, IOMUXC_BASE_ADDR + 0x1f4); /* 4.15 */
-
-  GPIO_CONFIG_PAD (PIN_PWR_SW_REQ, GPIO_PAD_PKE | GPIO_PAD_PU_100K);
-  GPIO_CONFIG_PAD (PIN_PMIC_IRQ,
-                   GPIO_PAD_SLEW_SLOW
-                   | GPIO_PAD_HYST_EN
-                   | GPIO_PAD_DRIVE_MED      /* ***FIXME: input? */
-                   | GPIO_PAD_DRIVE_HIGHVOLT /* ***FIXME: input? */
-                   );
-
-  /* Partially claimed pin */
-//  mxc_request_iomux(MX51_PIN_GPIO1_9, IOMUX_CONFIG_ALT4);
+  GPIO_CONFIG_FUNC (MX51_PIN_GPIO1_9, 4); /* CLKO from CCM */
 
   GPIO_CONFIG_PAD  (MX51_PIN_CSPI1_MOSI,
                     GPIO_PAD_SLEW_FAST | GPIO_PAD_DRIVE_HIGH
@@ -479,10 +447,186 @@ static void target_init_gpio (void)
                     | GPIO_PAD_HYST_EN);
   GPIO_CONFIG_FUNC (MX51_PIN_CSPI1_SCLK, 0);
 
+  /* workaround for ss0 */
+  spi_select (NULL);
+
+  /* PWR_SW_REQ# <= EIM_DTACK */
+  GPIO_CONFIG_INPUT (PIN_PWR_SW_REQ);
+  GPIO_CONFIG_PAD   (PIN_PWR_SW_REQ,
+                     GPIO_PAD_PKE | GPIO_PAD_PU_100K);
+
+  /* PMIC_IRQ <= GPIO1_6 */
+  GPIO_CONFIG_INPUT (PIN_PMIC_IRQ);
+  GPIO_CONFIG_FUNC  (PIN_PMIC_IRQ,
+                    _PIN_GPIO_A(PIN_PMIC_IRQ) | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD   (PIN_PMIC_IRQ,
+                     GPIO_PAD_SLEW_SLOW
+                     | GPIO_PAD_DRIVE_MED
+                     | GPIO_PAD_PU_100K
+                     | GPIO_PAD_HYST_EN
+                     | GPIO_PAD_DRIVE_HIGHVOLT
+                     );
+
   /* Output 'magic' value on GPIO1 and GPIO2 */
-  GPIOX_DR(2) = 0x01025200;
-  GPIOX_DR(1) = 0x00000020;
+  GPIOx_DR(2) = 0x01025200;
+  GPIOx_DR(1) = 0x00000020;
 }
+
+/** initializes the I2C IO lines.  This code should perhaps be part of
+    a driver, though it may simply be necessary to boot the kernel. */
+
+static void target_init_i2c (void)
+{
+  GPIO_CONFIG_FUNC (MX51_PIN_I2C1_CLK, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD  (MX51_PIN_I2C1_CLK, 0x1e4);
+  GPIO_CONFIG_FUNC (MX51_PIN_I2C1_DAT, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD  (MX51_PIN_I2C1_DAT, 0x1a4);
+
+  GPIO_CONFIG_FUNC (MX51_PIN_KEY_COL5, 3 | GPIO_PIN_FUNC_SION); /* I2C2 SDA */
+  IOMUXC_I2C2_IPP_SDA_IN_SELECT_INPUT = 1;                      /* KEY_COL5 */
+  GPIO_CONFIG_PAD  (MX51_PIN_KEY_COL5,
+                    GPIO_PAD_SLEW_FAST | GPIO_PAD_OPEN_DRAIN
+                    | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PU_100K
+                    | GPIO_PAD_HYST_EN);
+
+  GPIO_CONFIG_FUNC (MX51_PIN_KEY_COL4, 3 | GPIO_PIN_FUNC_SION);
+  IOMUXC_I2C2_IPP_SCL_IN_SELECT_INPUT = 1;			/* KEY_COL4 */
+  GPIO_CONFIG_PAD  (MX51_PIN_KEY_COL4,
+                    GPIO_PAD_SLEW_FAST | GPIO_PAD_OPEN_DRAIN
+                    | GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PU_100K
+                    | GPIO_PAD_HYST_EN);
+}
+
+static void target_init_sdhc (void)
+{
+  GPIO_CONFIG_INPUT (PIN_SDHC1_CD);
+  GPIO_CONFIG_FUNC (PIN_SDHC1_CD, 0);
+  GPIO_CONFIG_PAD  (PIN_SDHC1_CD,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_100K
+                    | GPIO_PAD_SLEW_FAST);
+
+  GPIO_CONFIG_FUNC (PIN_SDHC1_WP, 0);
+  GPIO_CONFIG_PAD  (PIN_SDHC1_WP,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_100K
+                    | GPIO_PAD_SLEW_FAST);
+
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CMD,   0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CLK,   0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA0, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA1, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA2, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA3, 0);
+
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_CMD,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST
+                    | GPIO_PAD_OPEN_DRAIN);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_CLK,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT | GPIO_PAD_PUE
+                    | GPIO_PAD_PD_47K | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA0,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA1,
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA2,
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA3,
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+
+  GPIO_CONFIG_INPUT (PIN_SDHC2_CD);
+  GPIO_CONFIG_FUNC (PIN_SDHC2_CD, 6| GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD  (PIN_SDHC2_CD,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                    | GPIO_PAD_PU_100K
+                    | GPIO_PAD_SLEW_FAST);
+
+  GPIO_CONFIG_FUNC (PIN_SDHC2_WP, 6| GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD  (PIN_SDHC2_WP,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                    | GPIO_PAD_PU_100K
+                    | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_CMD,   0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_CLK,   0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_DATA0, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_DATA1, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_DATA2, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD2_DATA3, 0);
+
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_CMD,
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_CLK,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT | GPIO_PAD_PUE
+                    | GPIO_PAD_PD_47K | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA0,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA1,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA2,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA3,
+                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_100K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+}
+
+static void target_init_ata (void)
+{
+#define __(p) ({ GPIO_CONFIG_FUNC ((p), 1);                 \
+                 GPIO_CONFIG_PAD  ((p), GPIO_PAD_DRIVE_HIGH \
+                                      | GPIO_PAD_DRIVE_HIGHVOLT); })
+
+  __(MX51_PIN_NANDF_ALE);
+  __(MX51_PIN_NANDF_CS2);
+  __(MX51_PIN_NANDF_CS3);
+  __(MX51_PIN_NANDF_CS4);
+  __(MX51_PIN_NANDF_CS5);
+  __(MX51_PIN_NANDF_CS6);
+  __(MX51_PIN_NANDF_RE_B);
+  __(MX51_PIN_NANDF_WE_B);
+  __(MX51_PIN_NANDF_CLE);
+  __(MX51_PIN_NANDF_RB0);
+  __(MX51_PIN_NANDF_WP_B);
+  __(MX51_PIN_GPIO_NAND);
+  __(MX51_PIN_NANDF_RB1);
+  __(MX51_PIN_NANDF_D0);
+  __(MX51_PIN_NANDF_D1);
+  __(MX51_PIN_NANDF_D2);
+  __(MX51_PIN_NANDF_D3);
+  __(MX51_PIN_NANDF_D4);
+  __(MX51_PIN_NANDF_D5);
+  __(MX51_PIN_NANDF_D6);
+  __(MX51_PIN_NANDF_D7);
+  __(MX51_PIN_NANDF_D8);
+  __(MX51_PIN_NANDF_D9);
+  __(MX51_PIN_NANDF_D10);
+  __(MX51_PIN_NANDF_D11);
+  __(MX51_PIN_NANDF_D12);
+  __(MX51_PIN_NANDF_D13);
+  __(MX51_PIN_NANDF_D14);
+  __(MX51_PIN_NANDF_D15);
+
+#undef __
+}
+
 
 
 void target_init_board_id (void)
@@ -507,9 +651,8 @@ void target_init_board_id (void)
   board_id |= GPIO_VALUE (MX51_PIN_NANDF_RB3) ? (1<<2) : 0;
 }
 
-
 /** performs remaining hardware initialization that didn't have to be
-   performed during the bootstrap phase and isn't done in a driver. */
+    performed during the bootstrap phase and isn't done in a driver. */
 
 static void target_init (void)
 {
@@ -526,11 +669,35 @@ static void target_init (void)
 //  spi1_select (SPI1_SS_FLASH);
 
   target_init_i2c ();
+  target_init_sdhc ();
+  target_init_ata ();
+
+  /* Clear power-down watchdog */
+  WDOGx_WMCR(1) = 0;
+  WDOGx_WMCR(2) = 0;
+
+  /* ***FIXME: should enable a system managed timeout at this point if
+     we want to keep using a watchdog timer at all. */
 }
 
 
 static void target_release (void)
 {
+  /* workaround for ENGcm09397 - Fix SPI NOR reset issue*/
+#if 0
+  /* de-select SS0 of instance: eCSPI1 */
+  __REG (PHYS_IOMUXC + 0x218) = 3;
+//  writel(0x3, IOMUXC_BASE_ADDR + 0x218);
+  __REG (PHYS_IOMUXC + 0x608) = 0x85;
+//  writel(0x85, IOMUXC_BASE_ADDR + 0x608);
+  /* de-select SS1 of instance: ecspi1 */
+  __REG (PHYS_IOMUXC + 0x21c) = 3;
+//  writel(0x3, IOMUXC_BASE_ADDR + 0x21C);
+  __REG (PHYS_IOMUXC + 0x60c) = 0x85;
+//  writel(0x85, IOMUXC_BASE_ADDR + 0x60C);
+#endif
+
+  spi_select (NULL);
 }
 
 static __service_0 struct service_d mx3x_target_service = {

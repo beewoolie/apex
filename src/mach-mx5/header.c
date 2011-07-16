@@ -90,6 +90,8 @@ void header_exit (void);
 
 const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
 
+  { 4, PHYS_IOMUXC + 0x3d8, 0x0002 }, /* Activate power-down watchdog*/
+
   /* Configure IOMUX for DDR2 */
   { 4, PHYS_IOMUXC + 0x8a0, 0x0200 },
   { 4, PHYS_IOMUXC + 0x50c, 0x20c3 },
@@ -108,7 +110,7 @@ const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
   { 4, PHYS_IOMUXC + 0x4b0, 0x00e3 },
   { 4, PHYS_IOMUXC + 0x4b4, 0x00e3 },
   { 4, PHYS_IOMUXC + 0x4cc, 0x00e3 },
-  { 4, PHYS_IOMUXC + 0x4d0, 0x00e2 },
+  { 4, PHYS_IOMUXC + 0x4d0, 0x00e4 }, // DRAM_CS1, drive strength e2 -> e4
 
   /* Configure IO line drive strength to maximum */
   { 4, PHYS_IOMUXC + 0x82c, 0x0004 },

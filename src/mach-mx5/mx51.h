@@ -53,9 +53,11 @@
 #define PHYS_GPIO3              (0x73f8c000)
 #define PHYS_GPIO4              (0x73f90000)
 #define PHYS_GPIOX(i)		(0x73f84000 + ((i) - 1)*0x4000)
+#define PHYS_GPIOx(i)		(0x73f84000 + ((i) - 1)*0x4000)
 #define PHYS_KPP                (0x73f94000)
 #define PHYS_WDOG1              (0x73f98000)
 #define PHYS_WDOG2              (0x73f9c000)
+#define PHYS_WDOGx(i)		((i == 2) ? 0x73f9c000 : 0x73f98000)
 #define PHYS_GPT                (0x73fa0000)
 #define PHYS_SRTC               (0x73fa4000)
 #define PHYS_IOMUXC             (0x73fa8000)
@@ -73,7 +75,7 @@
 #define PHYS_DPLLIP1            (0x83f80000)
 #define PHYS_DPLLIP2            (0x83f84000)
 #define PHYS_DPLLIP3            (0x83f88000)
-#define PHYS_DPLLIPX(i)         (0x83f80000 + ((i) - 1)*0x4000)
+#define PHYS_DPLLIPx(i)         (0x83f80000 + ((i) - 1)*0x4000)
 #define PHYS_AHBMAX             (0x83f94000)
 #define PHYS_IIM                (0x83f98000)
 #define PHYS_CSU                (0x83f9c000)
@@ -150,14 +152,14 @@
 
 #define ARM_PLATFORM_ICGC	__REG (PHYS_ARM_PLATFORM + 0x14)
 
-#define DPLLX_DP_CTL(i)		__REG (PHYS_DPLLIPX(i) + 0x00)
-#define DPLLX_DP_CONFIG(i)	__REG (PHYS_DPLLIPX(i) + 0x04)
-#define DPLLX_DP_OP(i)		__REG (PHYS_DPLLIPX(i) + 0x08)
-#define DPLLX_DP_MFD(i)		__REG (PHYS_DPLLIPX(i) + 0x0c)
-#define DPLLX_DP_MFN(i)		__REG (PHYS_DPLLIPX(i) + 0x10)
-#define DPLLX_DP_HFS_OP(i)	__REG (PHYS_DPLLIPX(i) + 0x1c)
-#define DPLLX_DP_HFS_MFD(i)	__REG (PHYS_DPLLIPX(i) + 0x20)
-#define DPLLX_DP_HFS_MFN(i)	__REG (PHYS_DPLLIPX(i) + 0x24)
+#define DPLLx_DP_CTL(i)		__REG (PHYS_DPLLIPx(i) + 0x00)
+#define DPLLx_DP_CONFIG(i)	__REG (PHYS_DPLLIPx(i) + 0x04)
+#define DPLLx_DP_OP(i)		__REG (PHYS_DPLLIPx(i) + 0x08)
+#define DPLLx_DP_MFD(i)		__REG (PHYS_DPLLIPx(i) + 0x0c)
+#define DPLLx_DP_MFN(i)		__REG (PHYS_DPLLIPx(i) + 0x10)
+#define DPLLx_DP_HFS_OP(i)	__REG (PHYS_DPLLIPx(i) + 0x1c)
+#define DPLLx_DP_HFS_MFD(i)	__REG (PHYS_DPLLIPx(i) + 0x20)
+#define DPLLx_DP_HFS_MFN(i)	__REG (PHYS_DPLLIPx(i) + 0x24)
 
 #define GPT_CR			__REG (PHYS_GPT + 0x00)
 #define GPT_PR			__REG (PHYS_GPT + 0x04)
@@ -230,10 +232,9 @@
 #define DPLL_MFD_216      (4 - 1)
 #define DPLL_MFN_216      3
 
-#define GPIOX_DR(i)	__REG (PHYS_GPIOX(i) + 0x00)
-#define GPIOX_GDIR(i)	__REG (PHYS_GPIOX(i) + 0x04)
-#define GPIOX_PSR(i)	__REG (PHYS_GPIOX(i) + 0x08)
-
+#define GPIOx_DR(i)	__REG (PHYS_GPIOx(i) + 0x00)
+#define GPIOx_GDIR(i)	__REG (PHYS_GPIOx(i) + 0x04)
+#define GPIOx_PSR(i)	__REG (PHYS_GPIOx(i) + 0x08)
 
 #define M4IF_FBPM0	__REG (PHYS_M4IF + 0x40)
 #define M4IF_FIDBP	__REG (PHYS_M4IF + 0x48)
@@ -261,6 +262,7 @@
 #define IOMUXC_I2C2_IPP_SDA_IN_SELECT_INPUT \
   __REG(PHYS_IOMUXC + 0x9bc)
 
+
 #define PHYS_ECSPIX(b)\
   ((b < 0 || b > 1) ? 0 : ((b == 1) ? PHYS_ECSPI1 : PHYS_ECSPI2))
 #define ECSPIX_RXD(b)		__REG (PHYS_ECSPIX(b) + 0x00)
@@ -273,5 +275,11 @@
 #define ECSPIX_PERIOD(b)	__REG (PHYS_ECSPIX(b) + 0x1c)
 #define ECSPIX_TEST(b)		__REG (PHYS_ECSPIX(b) + 0x20)
 #define ECSPIX_MSGDATA(b)	__REG (PHYS_ECSPIX(b) + 0x40)
+
+#define WDOGx_WCR(i)	__REG16 (PHYS_WDOGx(i) + 0x00)
+#define WDOGx_WSR(i)	__REG16 (PHYS_WDOGx(i) + 0x02)
+#define WDOGx_WRSR(i)	__REG16 (PHYS_WDOGx(i) + 0x04)
+#define WDOGx_WICR(i)	__REG16 (PHYS_WDOGx(i) + 0x06)
+#define WDOGx_WMCR(i)	__REG16 (PHYS_WDOGx(i) + 0x08)
 
 #endif  /* MX51_H_INCLUDED */
