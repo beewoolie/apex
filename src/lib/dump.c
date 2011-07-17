@@ -36,9 +36,12 @@ void dumpw (const void* pv, size_t cb, unsigned long index, int width)
   }
 
   while (cb > 0) {
+    size_t available = 16;
+    if (available > cb)
+      available = cb;
     printf ("%08lx: ", index);
     for (i = 0; i < 16; ++i) {
-      if (i < cb) {
+      if (i < available) {
 	switch (width) {
 	default:
 	case 1:
@@ -62,13 +65,13 @@ void dumpw (const void* pv, size_t cb, unsigned long index, int width)
     for (i = 0; i < 16; ++i) {
       if (i == 8)
 	putchar (' ');
-      putchar ( (i < cb) ? (isascii (rgb[i]) && isprint (rgb[i])
-			    ? rgb[i] : '.') : ' ');
+      putchar ( (i < available) ? (isascii (rgb[i]) && isprint (rgb[i])
+                                   ? rgb[i] : '.') : ' ');
     }
     printf ("\n");
 
-    cb -= 16;
-    index += 16;
-    rgb += 16;
+    cb    -= available;
+    index += available;
+    rgb   += available;
   }
 }

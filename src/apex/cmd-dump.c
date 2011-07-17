@@ -79,7 +79,13 @@ int cmd_dump (int argc, const char** argv)
 
   while (index < d.start + d.length) {
     char __aligned rgb[16];
-    int cb = d.driver->read (&d, rgb, sizeof (rgb));
+    size_t available = sizeof (rgb);
+    int cb;
+
+    if (available > d.start + d.length - index)
+      available = d.start + d.length - index;
+
+    cb = d.driver->read (&d, rgb, available);
 
     if (cb < 0)
       goto fail;
