@@ -22,9 +22,6 @@
 #include <arch-arm.h>
 #include "hardware.h"
 
-#define PIN_BOARD_ID1		MX31_PIN_GPIO1_4
-#define PIN_BOARD_ID2		MX31_PIN_GPIO1_6
-
 #if !defined (CONFIG_SMALL)
 
 static void cpuinfo_report (void)
@@ -85,30 +82,16 @@ static void cpuinfo_report (void)
   {
     u32 dr[4]   = { GPIOx_DR(1),  GPIOx_DR(2),  GPIOx_DR(3),  GPIOx_DR(4) };
     u32 gdir[4] = { GPIOx_GDIR(1),GPIOx_GDIR(2),GPIOx_GDIR(3),GPIOx_GDIR(4) };
-    printf ("  gpio:    1: dr 0x%08x   gdir 0x%08x\n"
-            "           2: dr 0x%08x   gdir 0x%08x\n"
-            "           3: dr 0x%08x   gdir 0x%08x\n"
-            "           4: dr 0x%08x   gdir 0x%08x\n",
+    printf ("  gpio:   1: dat 0x%08x  dir 0x%08x"
+            "  3: dat 0x%08x  dir 0x%08x\n"
+            "          2: dat 0x%08x  dir 0x%08x"
+            "  4: dat 0x%08x  dir 0x%08x\n",
             dr[0], gdir[0],
-            dr[1], gdir[1],
             dr[2], gdir[2],
+            dr[1], gdir[1],
             dr[3], gdir[3]);
   }
 #endif
-
-#if defined (CPLD_VERSION)
-  {
-    unsigned char v = CPLD_VERSION;
-    printf ("  cpld:   version 0x%x, PCB %c\n", v, 'A' + ((v >> 8) & 0xff));
-    printf ("          stat1 0x%x  stat2 0x%x\n", CPLD_STATUS1, CPLD_STATUS2);
-  }
-#endif
-
-#if defined (CONFIG_MACH_EXBIBLIO_ROSENCRANTZ)
-  printf ("  board:  %s\n",
-	  IS_ROSENCRANTZ_FF ? "form-factor" : "non-form-factor");
-#endif
-
 }
 
 static __service_7 struct service_d cpuinfo_service = {

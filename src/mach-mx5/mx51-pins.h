@@ -348,7 +348,7 @@ enum {
 #define GPIO_PAD_PKE	    (1<<7)
 #define GPIO_PAD_PUE	    (1<<6)
 #define GPIO_PAD_PD_100K    (0<<4)
-#define GPIO_PAD_PD_47K     (1<<4)
+#define GPIO_PAD_PU_47K     (1<<4)
 #define GPIO_PAD_PU_100K    (2<<4)
 #define GPIO_PAD_PU_22K     (3<<4)
 #define GPIO_PAD_SLEW_SLOW  (0<<0)

@@ -249,7 +249,7 @@ static void mx5_ecspi_setup (const struct mx5_spi* spi, int bytes)
   ECSPIX_CONFIG (spi->bus) = v;
 
   {
-    u32 clock = CSPI_CLK;
+    u32 clock = cspi_clk ();
     int prediv;
     int postdiv = 0;
     while (clock/spi->sclk_frequency > 16 && postdiv < 0xf) {

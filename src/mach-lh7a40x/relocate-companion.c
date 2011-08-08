@@ -81,7 +81,8 @@
 #include <config.h>
 #include <apex.h>
 #include <asm/bootstrap.h>
-#include <mmc.h>
+//#include <mmc.h>
+#include <mach/drv-mmc.h>
 #include "hardware.h"
 
 #include <debug_ll.h>

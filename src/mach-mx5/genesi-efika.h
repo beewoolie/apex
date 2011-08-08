@@ -31,11 +31,6 @@
 
 /* ----- Constants */
 
-#define IPG_CLK		 66500000	/*  66.5 MHz */
-#define IPG_PER_CLK	665000000	/* 665   MHz */
-#define UART_CLK	 66500000	/*  66.5 MHz */
-#define CSPI_CLK	 54000000	/*  54   MHz */
-
 #define PIN_PWR_SW_REQ	(MX51_PIN_EIM_DTACK)
 #define PIN_PMIC_IRQ    (MX51_PIN_GPIO1_6)
 #define PIN_WDG         (MX51_PIN_DI1_PIN13)

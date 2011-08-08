@@ -82,3 +82,44 @@ static __command struct command_d c_wait = {
 "  e.g.  wait 50 Press a key to cancel the automatic boot process.\n"
   )
 };
+
+
+#if 0
+
+int cmd_sleep (int argc, const char** argv)
+{
+  int timeout;
+
+  if (argc < 2)
+    return ERROR_PARAM;
+
+  timeout = simple_strtoul (argv[1], NULL, 0);
+
+  {
+    unsigned long time = timer_read ();
+    unsigned long end;
+
+    usleep (timeout);
+
+    end = timer_read ();
+    printf ("%ld ms elapsed\n", timer_delta (time, end));
+  }
+
+  return 0;
+}
+
+static __command struct command_d c_sleep = {
+  .command = "sleep",
+  .func = cmd_sleep,
+  COMMAND_DESCRIPTION ("sleep before continuing")
+  COMMAND_HELP(
+"sleep TIMEOUT\n"
+"  Tests the accuracy of the usleep() function.  TIMEOUT\n"
+"  is a count of microseconds.  The main timer is polled before\n"
+"  and after the sleep and the difference printed to evaluate\n"
+"  the accuracy of the sleep timer.\n"
+"  To sleep one second, e.g. sleep 1000000.\n"
+  )
+};
+
+#endif

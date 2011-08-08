@@ -28,6 +28,7 @@
 #endif
 
 #include "mx51.h"
+#include "clocks.h"
 
 /* ----- Types */
 

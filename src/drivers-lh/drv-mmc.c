@@ -62,7 +62,7 @@
    Block Caching
    -------------
 
-   The driver caches one block from the card and copied data from the
+   The driver caches one block from the card and copies data from the
    cached block to the caller's buffer.  This is done because the
    callers aren't expected to be efficient about reading large blocks
    of data.  This is a convenience for the upper layers as the command
@@ -161,6 +161,7 @@
 #include <debug_ll.h>
 
 #include <mmc.h>
+#include <mach/drv-mmc.h>
 
 //#define TALK 1
 

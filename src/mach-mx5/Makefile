@@ -13,6 +13,8 @@ obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o env.o
 # cmd-sleep.o
 obj-y += header.o
 obj-y += drv-mx5-ecspi.o
+obj-y += drv-mx5-esdhc.o
+obj-y += clocks.o
 
 obj-$(CONFIG_MX5_UART1)	+= serial-mx5.o
 obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o

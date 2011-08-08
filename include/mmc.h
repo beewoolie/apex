@@ -14,6 +14,7 @@
    DESCRIPTION
    -----------
 
+   Generic SD/MMC definitions.
 */
 
 #if !defined (__MMC_H__)
@@ -21,63 +22,70 @@
 
 /* ----- Includes */
 
-#include "driver.h"
-
 /* ----- Constants */
 
   /* MMC codes cribbed from the Linux MMC driver */
 
 /* Standard MMC commands (3.1)           type  argument     response */
    /* class 1 */
-#define	MMC_GO_IDLE_STATE         0   /* bc                          */
-#define MMC_SEND_OP_COND          1   /* bcr  [31:0]  OCR        R3  */
-#define MMC_ALL_SEND_CID          2   /* bcr                     R2  */
-#define MMC_SET_RELATIVE_ADDR     3   /* ac   [31:16] RCA        R1  */
-#define MMC_SET_DSR               4   /* bc   [31:16] RCA            */
-#define MMC_SELECT_CARD           7   /* ac   [31:16] RCA        R1  */
-#define MMC_SEND_CSD              9   /* ac   [31:16] RCA        R2  */
-#define MMC_SEND_CID             10   /* ac   [31:16] RCA        R2  */
+#define	MMC_GO_IDLE_STATE         0   /* bc                      R1 / 0   */
+#define MMC_SEND_OP_COND          1   /* bcr  [31:0]  OCR        R3 / R3  */
+#define MMC_ALL_SEND_CID          2   /* bcr                     R2 / R2  */
+#define MMC_SET_RELATIVE_ADDR     3   /* ac   [31:16] RCA        R1 / R6  */
+#define MMC_SET_DSR               4   /* bc   [31:16] RCA        0  / 0   */
+#define SDIO_SEND_OP_COND         5   /* bc   [31:0]  OCR        R4       */
+#define SD_SWITCH_FUNC            6   /* adtc args               -  / R1  */
+#define MMC_SWITCH                6   /* adtc args               R1b / -  */
+#define MMC_SELECT_CARD           7   /* ac   [31:16] RCA        R1b / R1b */
+#define MMC_SEND_EXT_CSD          8   /* adtc                    R1       */
+#define SD_SEND_IF_COND           8   /* bcr  [11:8]  VHS        -  / R7  */
+#define MMC_SEND_CSD              9   /* ac   [31:16] RCA        R2 / R2  */
+#define MMC_SEND_CID             10   /* ac   [31:16] RCA        R2 / R2  */
 /* Deprecated */
-//#define MMC_READ_DAT_UNTIL_STOP  11   /* adtc [31:0]  dadr       R1  */
-#define MMC_STOP_TRANSMISSION    12   /* ac                      R1b */
-#define MMC_SEND_STATUS	         13   /* ac   [31:16] RCA        R1  */
-#define MMC_GO_INACTIVE_STATE    15   /* ac   [31:16] RCA            */
+//#define MMC_READ_DAT_UNTIL_STOP 11  /* adtc [31:0]  dadr       R1  */
+#define MMC_STOP_TRANSMISSION    12   /* ac                      R1b / R1b */
+#define MMC_SEND_STATUS	         13   /* ac   [31:16] RCA        R1 / R1  */
+#define MMC_GO_INACTIVE_STATE    15   /* ac   [31:16] RCA        0  / 0    */
 
   /* class 2 */
-#define MMC_SET_BLOCKLEN         16   /* ac   [31:0]  block len  R1  */
-#define MMC_READ_SINGLE_BLOCK    17   /* adtc [31:0]  data addr  R1  */
-#define MMC_READ_MULTIPLE_BLOCK  18   /* adtc [31:0]  data addr  R1  */
+#define MMC_SET_BLOCKLEN         16   /* ac   [31:0]  block len  R1 / R1  */
+#define MMC_READ_SINGLE_BLOCK    17   /* adtc [31:0]  data addr  R1 / R1  */
+#define MMC_READ_MULTIPLE_BLOCK  18   /* adtc [31:0]  data addr  R1 / R1  */
 
   /* class 3 */
-#define MMC_WRITE_DAT_UNTIL_STOP 20   /* adtc [31:0]  data addr  R1  */
+#define MMC_WRITE_DAT_UNTIL_STOP 20   /* adtc [31:0]  data addr  R1 / R1  */
 
   /* class 4 */
-#define MMC_SET_BLOCK_COUNT      23   /* adtc [31:0]  data addr  R1  */
-#define MMC_WRITE_BLOCK          24   /* adtc [31:0]  data addr  R1  */
-#define MMC_WRITE_MULTIPLE_BLOCK 25   /* adtc                    R1  */
-#define MMC_PROGRAM_CID          26   /* adtc                    R1  */
-#define MMC_PROGRAM_CSD          27   /* adtc                    R1  */
+#define MMC_SET_BLOCK_COUNT      23   /* adtc [31:0]  data addr  R1 / -   */
+#define MMC_WRITE_BLOCK          24   /* adtc [31:0]  data addr  R1 / R1  */
+#define MMC_WRITE_MULTIPLE_BLOCK 25   /* adtc                    R1 / R1  */
+#define MMC_PROGRAM_CID          26   /* adtc                    R1 / -   */
+#define MMC_PROGRAM_CSD          27   /* adtc                    R1 / R1  */
 
-  /* class 6 */
-#define MMC_SET_WRITE_PROT       28   /* ac   [31:0]  data addr  R1b */
-#define MMC_CLR_WRITE_PROT       29   /* ac   [31:0]  data addr  R1b */
-#define MMC_SEND_WRITE_PROT      30   /* adtc [31:0]  wpdata addr R1  */
+  /* class 6/4 */
+#define MMC_SET_WRITE_PROT       28   /* ac   [31:0]  data addr  R1b / R1b */
+#define MMC_CLR_WRITE_PROT       29   /* ac   [31:0]  data addr  R1b / R1b */
+#define MMC_SEND_WRITE_PROT      30   /* adtc [31:0]  wpdata adr R1  / R1  */
 
-  /* class 5 */
-#define MMC_ERASE_GROUP_START    35   /* ac   [31:0]  data addr  R1  */
-#define MMC_ERASE_GROUP_END      36   /* ac   [31:0]  data addr  R1  */
-#define MMC_ERASE                37   /* ac                      R1b */
+  /* class 5/6 */
+#define SD_ERASE_WR_BLK_START    32   /* ac   [31:0]  data addr  -   / R1  */
+#define SD_ERASE_WR_BLK_END      33   /* ac   [31:0]  data addr  -   / R1  */
+#define SD_ERASE                 38   /* ac                      -   / R1  */
+
+#define MMC_ERASE_GROUP_START    35   /* ac   [31:0]  data addr  R1  / -   */
+#define MMC_ERASE_GROUP_END      36   /* ac   [31:0]  data addr  R1  / -   */
+#define MMC_ERASE                37   /* ac                      R1b / -   */
 
   /* class 9 */
-#define MMC_FAST_IO              39   /* ac   <Complex>          R4  */
-#define MMC_GO_IRQ_STATE         40   /* bcr                     R5  */
+#define MMC_FAST_IO              39   /* ac   args               R4  / -   */
+#define MMC_GO_IRQ_STATE         40   /* bcr                     R5  / -   */
 
   /* class 7 */
-#define MMC_LOCK_UNLOCK          42   /* adtc                    R1b */
+#define MMC_LOCK_UNLOCK          42   /* adtc                    R1b / R1  */
 
   /* class 8 */
-#define MMC_APP_CMD              55   /* ac   [31:16] RCA        R1  */
-#define MMC_GEN_CMD              56   /* adtc [0]     RD/WR      R1b */
+#define MMC_APP_CMD              55   /* ac   [31:16] RCA        R1  / R1  */
+#define MMC_GEN_CMD              56   /* adtc [0]     RD/WR      R1b / R1  */
 
 /* SD commands                           type  argument     response */
   /* class 8 */
@@ -86,8 +94,67 @@
 
   /* Application commands */
 #define SD_APP_SET_BUS_WIDTH      6   /* ac   [1:0]   bus width  R1	  */
-#define SD_APP_OP_COND           41   /* bcr  [31:0]  OCR        R1 (R4)  */
+#define SD_APP_STATUS            13   /* adtc                    R1	  */
+#define SD_APP_OP_COND           41   /* bcr  [31:0]  OCR        R3       */
 #define SD_APP_SEND_SCR          51   /* adtc                    R1	  */
+
+#define CMD_BIT_APP		 (1<<23)
+#define CMD_BIT_INIT		 (1<<22)
+#define CMD_BIT_BUSY		 (1<<21)
+#define CMD_BIT_LS		 (1<<20) /* Low speed, used during acquire */
+#define CMD_BIT_DATA		 (1<<19)
+#define CMD_BIT_WRITE		 (1<<18)
+#define CMD_BIT_STREAM		 (1<<17)
+#define CMD_BIT_RESPWAIT         (1<<16) /* Busy wait after command */
+#define CMD_BIT_RESPCRC          (1<<15)
+#define CMD_BIT_RESPOPCODE       (1<<14)
+#define CMD_MASK_RESPLEN	 (0x03)
+#define CMD_SHIFT_RESPLEN	 (28)
+#define CMD_MASK_RESPR           (0x0f)
+#define CMD_SHIFT_RESPR          (24)
+#define CMD_MASK_CMD		 (0xff)
+#define CMD_SHIFT_CMD		 (0)
+#define CMD_RESP_NONE            (0)
+#define CMD_RESP_136             (1)
+#define CMD_RESP_48              (2)
+
+#define CMD(c,r)		(  ((c) &  CMD_MASK_CMD)\
+				 | CMD_RESP_##r \
+				 )
+
+#define CMD_RESP_(w,r)    ((CMD_RESP_##w << CMD_SHIFT_RESPLEN)  \
+                           | (r << CMD_SHIFT_RESPR))
+#define CMD_RESP_X(w,r)   ((CMD_RESP_##w << CMD_SHIFT_RESPLEN)  \
+                           | CMD_BIT_RESPCRC                    \
+                           | CMD_BIT_RESPOPCODE                 \
+                           | (r << CMD_SHIFT_RESPR))
+#define CMD_RESP_0	  (0)
+#define CMD_RESP_R1       CMD_RESP_X(48, 1)
+#define CMD_RESP_R1b      (CMD_RESP_R1 | CMD_BIT_RESPWAIT)
+#define CMD_RESP_R2       CMD_RESP_(136, 2)
+#define CMD_RESP_R3       CMD_RESP_(48, 3)
+#define CMD_RESP_R6       CMD_RESP_X(48, 6)
+#define CMD_RESP_R7	  CMD_RESP_X(48, 7)
+
+#define CMD_IDLE          CMD(MMC_GO_IDLE_STATE,       0) | CMD_BIT_LS | CMD_BIT_INIT
+#define CMD_SD_OP_COND    CMD(SD_APP_OP_COND,         R3) | CMD_BIT_LS | CMD_BIT_APP
+#define CMD_SD_IF_COND    CMD(SD_SEND_IF_COND,        R7) | CMD_BIT_LS
+#define CMD_MMC_OP_COND   CMD(MMC_SEND_OP_COND,       R3) | CMD_BIT_LS | CMD_BIT_INIT
+#define CMD_ALL_SEND_CID  CMD(MMC_ALL_SEND_CID,       R2) | CMD_BIT_LS
+#define CMD_MMC_SET_RCA   CMD(MMC_SET_RELATIVE_ADDR,  R6) | CMD_BIT_LS
+#define CMD_SD_SEND_RCA   CMD(SD_SEND_RELATIVE_ADDR,  R6) | CMD_BIT_LS
+#define CMD_SEND_CSD      CMD(MMC_SEND_CSD,           R2)
+#define CMD_DESELECT_CARD CMD(MMC_SELECT_CARD,        0)
+#define CMD_SELECT_CARD   CMD(MMC_SELECT_CARD,        R1b)
+#define CMD_SET_BLOCKLEN  CMD(MMC_SET_BLOCKLEN,       R1)
+#define CMD_READ_SINGLE   CMD(MMC_READ_SINGLE_BLOCK,  R1) | CMD_BIT_DATA
+#define CMD_READ_MULTIPLE CMD(MMC_READ_MULTIPLE_BLOCK,R1) | CMD_BIT_DATA
+#define CMD_SD_SET_WIDTH  CMD(SD_APP_SET_BUS_WIDTH,   R1) | CMD_BIT_APP
+#define CMD_STOP          CMD(MMC_STOP_TRANSMISSION,  R1) | CMD_BIT_BUSY
+#define CMD_WRITE_SINGLE  CMD(MMC_WRITE_BLOCK,        R1) | CMD_BIT_DATA | CMD_BIT_WRITE
+#define CMD_APP           CMD(MMC_APP_CMD,            R1)
+#define CMD_SD_SEND_SCR   CMD(SD_APP_SEND_SCR,	      R1) | CMD_BIT_APP
+
 
 /*
   MMC status in R1
@@ -196,141 +263,16 @@
 #define CSD_SPEC_VER_3      3           /* Implements system spec 3.1 */
 
 
-
-/* *** These clock values aren't used at the moment.  They should be
-   held as upper limits on the rate and determined from HCLK and the
-   predivisor. */
-#define CLOCK_DETECT		(300*1024)	 /* Clock rate during detect */
-#define CLOCK_DATA		(20*1024*1024)	 /* Clock rate during I/O */
-
-#define MMC_CLKC_START_CLK	(1<<1)
-#define MMC_CLKC_STOP_CLK	(1<<0)
-
-#define MMC_STATUS_ENDRESP	(1<<13)
-#define MMC_STATUS_DONE		(1<<12)
-#define MMC_STATUS_TRANDONE	(1<<11)
-#define MMC_STATUS_CLK_DIS	(1<<8)
-#define MMC_STATUS_FIFO_FULL	(1<<7)
-#define MMC_STATUS_FIFO_EMPTY	(1<<6)
-#define MMC_STATUS_CRC		(1<<5)
-#define MMC_STATUS_CRCREAD	(1<<3)
-#define MMC_STATUS_CRCWRITE	(1<<2)
-#define MMC_STATUS_TORES	(1<<1)
-#define MMC_STATUS_TOREAD	(1<<0)
-#define MMC_STATUS_TIMED_OUT	(1<<16)	/* Synthetic status */
-
-#define MMC_PREDIV_APB_RD_EN	(1<<5)
-#define MMC_PREDIV_MMC_EN	(1<<4)
-#define MMC_PREDIV_MMC_PREDIV_SHIFT	(0)
-#define MMC_PREDIV_MMC_PREDIV_MASK	(0xf)
-
-#define MMC_CMDCON_ABORT	(1<<13)
-#define MMC_CMDCON_SET_READ_WRITE (1<<12)
-#define MMC_CMDCON_MULTI_BLK4_INTEN (1<<11)
-#define MMC_CMDCON_READ_WAIT_EN	(1<<10)
-#define MMC_CMDCON_SDIO_EN	(1<<9)
-#define MMC_CMDCON_BIG_ENDIAN	(1<<8)
-#define MMC_CMDCON_WIDE		(1<<7)
-#define MMC_CMDCON_INITIALIZE	(1<<6)
-#define MMC_CMDCON_BUSY		(1<<5)
-#define MMC_CMDCON_STREAM	(1<<4)
-#define MMC_CMDCON_WRITE	(1<<3)
-#define MMC_CMDCON_DATA_EN	(1<<2)
-#define MMC_CMDCON_RESPONSE_FORMAT_SHIFT (0)
-#define MMC_CMDCON_RESPONSE_FORMAT_MASK (0x3)
-
-#define MMC_CMDCON_RESPONSE_NONE (0 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //   0
-#define MMC_CMDCON_RESPONSE_R1	 (1 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //  48
-#define MMC_CMDCON_RESPONSE_R2	 (2 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) // 136
-#define MMC_CMDCON_RESPONSE_R3	 (3 << MMC_CMDCON_RESPONSE_FORMAT_SHIFT) //  48
-
-/*  HCLK is usually 99993600 */
-
-#define MMC_RATE_IO_V		(0)			/* 0 -> MCLK/1  */
-#define MMC_RATE_ID_V		(6)			/* 6 -> MCLK/64 */
-//#define MMC_RATE_ID_V		(5)			/* 5 -> MCLK/32 */
-//#define MMC_PREDIV_V		(4)
-#define MMC_PREDIV_V		(8)			/* HCLK/N */
-#define MMC_RES_TO_V		(0x7f)
-//#define MMC_RES_TO_V		(64)
-//#define MMC_READ_TO_V		(0x7fff)
-#define MMC_READ_TO_V		(0xffff)
-
-#define MS_ACQUIRE_DELAY	(10)
-
-
-#define MMC_OCR_ARG_MAX		(0x00ffff00)
-
-#define CMD_BIT_APP		 (1<<23)
-#define CMD_BIT_INIT		 (1<<22)
-#define CMD_BIT_BUSY		 (1<<21)
-#define CMD_BIT_LS		 (1<<20) /* Low speed, used during acquire */
-#define CMD_BIT_DATA		 (1<<19)
-#define CMD_BIT_WRITE		 (1<<18)
-#define CMD_BIT_STREAM		 (1<<17)
-#define CMD_MASK_RESP		 (3)
-#define CMD_SHIFT_RESP		 (24)
-#define CMD_MASK_CMD		 (0xff)
-#define CMD_SHIFT_CMD		 (0)
-
-#define CMD(c,r)		(  ((c) &  CMD_MASK_CMD)\
-				 | ((r) << CMD_SHIFT_RESP)\
-				 )
-
-#define CMD_IDLE	 CMD(MMC_GO_IDLE_STATE,0) | CMD_BIT_LS	 | CMD_BIT_INIT
-#define CMD_SD_OP_COND	 CMD(SD_APP_OP_COND,1)      | CMD_BIT_LS | CMD_BIT_APP
-#define CMD_MMC_OP_COND	 CMD(MMC_SEND_OP_COND,3)    | CMD_BIT_LS | CMD_BIT_INIT
-#define CMD_ALL_SEND_CID CMD(MMC_ALL_SEND_CID,2)    | CMD_BIT_LS
-#define CMD_MMC_SET_RCA	 CMD(MMC_SET_RELATIVE_ADDR,1) | CMD_BIT_LS
-#define CMD_SD_SEND_RCA	 CMD(SD_SEND_RELATIVE_ADDR,1) | CMD_BIT_LS
-#define CMD_SEND_CSD	 CMD(MMC_SEND_CSD,2)
-#define CMD_DESELECT_CARD CMD(MMC_SELECT_CARD,0)
-#define CMD_SELECT_CARD	 CMD(MMC_SELECT_CARD,1)
-#define CMD_SET_BLOCKLEN CMD(MMC_SET_BLOCKLEN,1)
-#define CMD_READ_SINGLE  CMD(MMC_READ_SINGLE_BLOCK,1) | CMD_BIT_DATA
-#define CMD_READ_MULTIPLE CMD(MMC_READ_MULTIPLE_BLOCK,1) | CMD_BIT_DATA
-#define CMD_SD_SET_WIDTH CMD(SD_APP_SET_BUS_WIDTH,1)| CMD_BIT_APP
-#define CMD_STOP	 CMD(MMC_STOP_TRANSMISSION,1) | CMD_BIT_BUSY
-#define CMD_WRITE_SINGLE CMD(MMC_WRITE_BLOCK,1) | CMD_BIT_DATA | CMD_BIT_WRITE
-
-#define MMC_SECTOR_SIZE 512	/* *** FIXME: should come from card */
-
-/* ----- Types */
-
-struct mmc_info {
-  char response[20];		/* Most recent response */
-  char cid[16];			/* CID of acquired card  */
-  char csd[16];			/* CSD of acquired card */
-  int acquire_time;		/* Count of delays to acquire card */
-  int cmdcon_sd;		/* cmdcon bits for data IO */
-  int rca;			/* Relative address assigned to card */
-  int acquired;                 /* Boolean for marking that card has been acquired */
-
-  int c_size;
-  int c_size_mult;
-  int read_bl_len;
-  int mult;
-  int blocknr;
-  int block_len;
-  unsigned long device_size;
-
-		/* *** FIXME: should be in .xbss section */
-//  char rgb[512*2];		/* Sector buffer(s) */
-  unsigned long ib;		/* Index of cached data */
+enum {
+  MMC_RES_OK        =    0,
+  MMC_RES_FAILURE   = 1<<0,
+  MMC_RES_CMD_ERR   = 1<<1,
+  MMC_RES_TIMEOUT   = 1<<2,
+  MMC_RES_FIFO_FULL = 1<<3,
+  MMC_RES_CRC_ERR   = 1<<4,
 };
 
-/* ----- Globals */
+bool mmc_card_acquired (void);
 
-extern struct mmc_info mmc;	/* Single, global context structure */
-
-
-/* ----- Prototypes */
-
-static inline int mmc_card_acquired (void) {
-  return mmc.acquired != 0; }
-
-void mmc_init (void);
-void mmc_acquire (void);
-ssize_t mmc_read (struct descriptor_d* d, void* pv, size_t cb);
 
 #endif  /* __MMC_H__ */

@@ -16,6 +16,53 @@ o Go!
 NOTES
 =====
 
+o 2011.aug.12
+  o SD read working
+  o Error detection should be enabled in most cases.
+
+o 2011.aug.10
+  o SD identify working
+
+o 2011.aug.08
+  o Thoughts on MMC driver
+  o It would be clever to separate an MMC interface that meets the
+    'driver' model and a hardware interface that presents a normalized
+    view of the essential MMC/SD functionality.
+    o Command execute.
+    o Setup, clocking, IO path width
+
+o 2011.aug.06
+  o clocks derive as shown below...unsatisfactorily
+  o The CCM module allows, for example, the derivation of peripheral
+    clocks from any of the PLLs.  The ESDHC defaults to PLL3, but it
+    could come from PLL1 or PLL2.  This should not be assumed.
+
+unsigned int mxc_get_clock(enum mxc_clock clk)
+{
+        switch (clk) {
+        case MXC_ARM_CLK:
+                return __get_mcu_main_clk();
+        case MXC_AHB_CLK:
+                break;
+        case MXC_IPG_CLK:
+                return __get_ipg_clk();
+        case MXC_IPG_PERCLK:
+                return __get_ipg_per_clk();
+        case MXC_UART_CLK:
+                return __get_uart_clk();
+        case MXC_CSPI_CLK:
+                return __get_cspi_clk();
+        case MXC_FEC_CLK:
+                return __decode_pll(PLL1_CLK, CONFIG_MX51_HCLK_FREQ);
+        case MXC_ESDHC_CLK:
+                return __decode_pll(PLL3_CLK, CONFIG_MX51_HCLK_FREQ);
+        default:
+                break;
+        }
+        return -1;
+}
+
+
 o 2011.jul.18
   x spi flash driver needs to cope with small reads.  A read of 1
     bytes doesn't yield any data.  In fact, if the read is anything

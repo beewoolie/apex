@@ -497,61 +497,62 @@ static void target_init_i2c (void)
                     | GPIO_PAD_HYST_EN);
 }
 
-static void target_init_sdhc (void)
+static void target_init_esdhc (void)
 {
   GPIO_CONFIG_INPUT (PIN_SDHC1_CD);
-  GPIO_CONFIG_FUNC (PIN_SDHC1_CD, 0);
-  GPIO_CONFIG_PAD  (PIN_SDHC1_CD,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_100K
-                    | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_FUNC  (PIN_SDHC1_CD, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_PAD   (PIN_SDHC1_CD,
+                     GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                     | GPIO_PAD_HYST_EN | GPIO_PAD_PU_100K
+                     | GPIO_PAD_SLEW_FAST);
 
-  GPIO_CONFIG_FUNC (PIN_SDHC1_WP, 0);
+  GPIO_CONFIG_FUNC (PIN_SDHC1_WP, 0 | GPIO_PIN_FUNC_SION);
   GPIO_CONFIG_PAD  (PIN_SDHC1_WP,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
+                    GPIO_PAD_DRIVE_HIGH
                     | GPIO_PAD_HYST_EN | GPIO_PAD_PU_100K
                     | GPIO_PAD_SLEW_FAST);
 
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CMD,   0);
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CLK,   0);
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA0, 0);
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA1, 0);
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA2, 0);
-  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA3, 0);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CMD,   0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_CLK,   0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA0, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA1, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA2, 0 | GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (MX51_PIN_SD1_DATA3, 0 | GPIO_PIN_FUNC_SION);
 
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_CMD,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST
-                    | GPIO_PAD_OPEN_DRAIN);
+                    );
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_CLK,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT | GPIO_PAD_PUE
-                    | GPIO_PAD_PD_47K | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_PU_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA0,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA1,
                     GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA2,
                     GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD1_DATA3,
                     GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
 
   GPIO_CONFIG_INPUT (PIN_SDHC2_CD);
-  GPIO_CONFIG_FUNC (PIN_SDHC2_CD, 6| GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (PIN_SDHC2_CD, 6 | GPIO_PIN_FUNC_SION);
   GPIO_CONFIG_PAD  (PIN_SDHC2_CD,
                     GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
                     | GPIO_PAD_PU_100K
                     | GPIO_PAD_SLEW_FAST);
 
-  GPIO_CONFIG_FUNC (PIN_SDHC2_WP, 6| GPIO_PIN_FUNC_SION);
+  GPIO_CONFIG_FUNC (PIN_SDHC2_WP, 6 | GPIO_PIN_FUNC_SION);
   GPIO_CONFIG_PAD  (PIN_SDHC2_WP,
                     GPIO_PAD_DRIVE_HIGH | GPIO_PAD_PKE
                     | GPIO_PAD_PU_100K
@@ -565,25 +566,26 @@ static void target_init_sdhc (void)
 
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_CMD,
                     GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_CLK,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT | GPIO_PAD_PUE
-                    | GPIO_PAD_PD_47K | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_PU_47K
+                    | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA0,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA1,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA2,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
-                    | GPIO_PAD_HYST_EN | GPIO_PAD_PD_47K
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
+                    | GPIO_PAD_HYST_EN | GPIO_PAD_PU_47K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_PAD  (MX51_PIN_SD2_DATA3,
-                    GPIO_PAD_DRIVE_HIGH | GPIO_PAD_DRIVE_HIGHVOLT
+                    GPIO_PAD_DRIVE_MAX | GPIO_PAD_DRIVE_HIGHVOLT
                     | GPIO_PAD_HYST_EN | GPIO_PAD_PD_100K
                     | GPIO_PAD_PUE | GPIO_PAD_PKE | GPIO_PAD_SLEW_FAST);
 }
@@ -669,7 +671,7 @@ static void target_init (void)
 //  spi1_select (SPI1_SS_FLASH);
 
   target_init_i2c ();
-  target_init_sdhc ();
+  target_init_esdhc ();
   target_init_ata ();
 
   /* Clear power-down watchdog */
