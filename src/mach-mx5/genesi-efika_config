@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Aug 12 23:24:55 2011
+# Sat Aug 13 07:10:18 2011
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV7=y
@@ -81,7 +81,7 @@ CONFIG_CMD_DUMP=y
 CONFIG_CMD_ENV=y
 CONFIG_CMD_IMAGE=y
 CONFIG_CMD_IMAGE_APEX=y
-# CONFIG_CMD_IMAGE_UBOOT is not set
+CONFIG_CMD_IMAGE_UBOOT=y
 CONFIG_CMD_IMAGE_SHOW=y
 CONFIG_CMD_SETENV=y
 CONFIG_CMD_ERASE=y
@@ -96,7 +96,7 @@ CONFIG_CMD_XRECEIVE=y
 # CONFIG_CMD_MEMLIMIT is not set
 # CONFIG_CMD_MEMSCAN is not set
 # CONFIG_CMD_MEMTEST is not set
-# CONFIG_CRC32_LSB is not set
+CONFIG_CRC32_LSB=y
 
 #
 # Generic Drivers
