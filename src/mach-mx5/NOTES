@@ -9,16 +9,23 @@ x MMU, interrupts, cache initializations
 o Add AAI mode to write.  Not critical, but we'll probably appreciate
   it if we write Apex to SPI flash.  
 o Test on target to working console.
-o MMC
+x MMC, adequate for booting
 o IDE
 o Go!
+o Linking FAT and EXT2 drivers to MMC.  This ought to work as the
+  underlying driver has a simple block interface
+o Fix writing of APEX image to SD card as to skip the partition
+  table.  Need to make a partition table with room for APEX.
+o Construct a kernel image that we can use to boot.
 
 NOTES
 =====
 
 o 2011.aug.12
-  o SD read working
-  o Error detection should be enabled in most cases.
+  o SD/MMC read working, no DMA and 512 block only 
+  o Still, SD/MMC is working and should be adequate for booting.
+  o Need to make sure that the DOS driver and such can work.
+
 
 o 2011.aug.10
   o SD identify working
@@ -36,32 +43,6 @@ o 2011.aug.06
   o The CCM module allows, for example, the derivation of peripheral
     clocks from any of the PLLs.  The ESDHC defaults to PLL3, but it
     could come from PLL1 or PLL2.  This should not be assumed.
-
-unsigned int mxc_get_clock(enum mxc_clock clk)
-{
-        switch (clk) {
-        case MXC_ARM_CLK:
-                return __get_mcu_main_clk();
-        case MXC_AHB_CLK:
-                break;
-        case MXC_IPG_CLK:
-                return __get_ipg_clk();
-        case MXC_IPG_PERCLK:
-                return __get_ipg_per_clk();
-        case MXC_UART_CLK:
-                return __get_uart_clk();
-        case MXC_CSPI_CLK:
-                return __get_cspi_clk();
-        case MXC_FEC_CLK:
-                return __decode_pll(PLL1_CLK, CONFIG_MX51_HCLK_FREQ);
-        case MXC_ESDHC_CLK:
-                return __decode_pll(PLL3_CLK, CONFIG_MX51_HCLK_FREQ);
-        default:
-                break;
-        }
-        return -1;
-}
-
 
 o 2011.jul.18
   x spi flash driver needs to cope with small reads.  A read of 1
