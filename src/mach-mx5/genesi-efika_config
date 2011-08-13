@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Mon Jul 18 18:01:43 2011
+# Fri Aug 12 20:53:47 2011
 #
 CONFIG_ARM=y
 CONFIG_CPU_ARMV7=y
@@ -100,11 +100,14 @@ CONFIG_CMD_XRECEIVE=y
 # Generic Drivers
 #
 CONFIG_DRIVER_CONSOLE_DEVICE="serial"
-# CONFIG_DRIVER_FAT is not set
-# CONFIG_DRIVER_EXT2 is not set
+CONFIG_DRIVER_FAT=y
+CONFIG_DRIVER_FAT_BLOCKDEVICE="mmc"
+CONFIG_DRIVER_EXT2=y
+CONFIG_DRIVER_EXT2_BLOCKDEVICE="mmc"
 # CONFIG_DRIVER_JFFS2 is not set
 # CONFIG_DRIVER_FIS is not set
 # CONFIG_DRIVER_ONENAND is not set
+CONFIG_USES_PATHNAME_PARSER=y
 
 #
 # Environment
