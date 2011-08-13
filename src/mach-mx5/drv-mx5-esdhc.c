@@ -1126,7 +1126,7 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
 
 
 static __driver_5 struct driver_d mx5_esdhc_driver = {
-  .name		= "mmc-mx5-esdhc",
+  .name		= "mmc-esdhc-mx5",
   .description	= "MMC/SD card driver",
   .flags	= DRIVER_READPROGRESS(2),
   .open		= mx5_esdhc_open,
