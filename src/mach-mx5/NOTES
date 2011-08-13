@@ -11,12 +11,12 @@ o Add AAI mode to write.  Not critical, but we'll probably appreciate
 o Test on target to working console.
 x MMC, adequate for booting
 o IDE
-o Go!
-o Linking FAT and EXT2 drivers to MMC.  This ought to work as the
+x Linking FAT and EXT2 drivers to MMC.  This ought to work as the
   underlying driver has a simple block interface
-o Fix writing of APEX image to SD card as to skip the partition
+x Fix writing of APEX image to SD card as to skip the partition
   table.  Need to make a partition table with room for APEX.
 o Construct a kernel image that we can use to boot.
+o Go!
 
 NOTES
 =====
@@ -25,7 +25,9 @@ o 2011.aug.12
   o SD/MMC read working, no DMA and 512 block only 
   o Still, SD/MMC is working and should be adequate for booting.
   o Need to make sure that the DOS driver and such can work.
+  o ubuntu boots with
 
+    console=tty1 root=/dev/sda2 rootwait rw quiet splash
 
 o 2011.aug.10
   o SD identify working

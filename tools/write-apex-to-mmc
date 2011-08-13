@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# write-apex-to-mmc apex.bin device
+#
+
+apex=$1
+dev=$2
+
+usage () {
+    echo "usage: write-apex-to-mmc APEX.BIN DEV"
+    echo "  writes imx51 image of APEX to an SD card so that the MCU"
+    echo "  boot ROM can load it."
+    exit 1
+}
+ 
+
+[ -z "$dev"    ] && usage
+[ ! -f "$apex" ] && { echo "File '$apex' does not exist" ; exit 1; }
+[ ! -b "$dev"  ] && { echo "Device '$dev' does not exist" ; exit 1; }
+
+dd if=$apex of=$dev bs=1024 skip=1 seek=1 && sync
