@@ -232,7 +232,7 @@ static struct descriptor parse_region (const char* sz)
   struct descriptor d;
   memset (&d, 0, sizeof (d));
 
-  char* pch;
+  const char* pch;
   if ((pch = index (sz, ':'))) {
     ssize_t c = pch - sz;
     if (c > ssize_t (sizeof (d.driver) - 1))

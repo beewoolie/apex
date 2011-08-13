@@ -803,20 +803,20 @@ struct argp argp = {
   "\v"
   "  The program attempts to guess the mode of operation.  If there is\n"
   "only one file argument and no metadata switches, it will display the\n"
-  "metadata for the image file.  The distinction between a create or an\n"
+  "metadata for the image file.  The distinction between a create and an\n"
   "update is the completeness of the arguments and whether or not the\n"
   "final file argument is an image.  The automatic mode detection may\n"
   "be overriden by specifying one of the mode switches.\n"
-  "  The order or switches and files is significant.  Metadata switches\n"
-  "must preceede the source file they modify.  The last argument is output\n"
-  "file name for creating images or the name of the image to update when\n"
-  "updating an existing image.\n"
+  "  The order of switches and files is significant.  Metadata switches\n"
+  "must preceede the source file they modify.  The last argument is the\n"
+  "output file name for creating images or the name of the image to update\n"
+  "when modifying an existing image.\n"
   "  The CRC of the header is a simple CRC of the header data, from the\n"
   "signature to the last byte before the CRC.  The CRC that protects each\n"
   "payload is computed the same way that the POSIX cksum command computes\n"
   "the CRC.  This makes it easy to verify the identity of a payload."
   "\n"
-  "  ADDR is a 32 bit number in decimal or hexadecimal if prefixed with 0x\n"
+  "  ADDR is a 32 bit number in decimal or in hexadecimal if prefixed with 0x\n"
   "  TYPE is one of: kernel, initrd\n"
   "  FILE is either a filename, or possibly '.' when updating an image.\n"
   "\n  e.g.\n"
@@ -1149,7 +1149,7 @@ void Image::describe (struct arguments& args)
   }
 
   if (description)
-    printf ("Image Description:       '%s' (%d bytes)\n", description,
+    printf ("Image Description:       '%s' (%zd bytes)\n", description,
             strlen (description) + 1);
   if (timeCreation)
     printf ("Image Creation Date:     %s", asctime (localtime (&timeCreation)));
