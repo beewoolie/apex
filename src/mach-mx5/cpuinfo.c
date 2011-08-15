@@ -70,6 +70,9 @@ static void cpuinfo_report (void)
           auxctrl, l2cacheaux,
           test & 0xffff);
 
+  printf ("  rev: 0x%x  %s\n",
+          board_revision (), describe_board_revision ());
+
 #if 0
   {
     u16 wcr = __REG16 (PHYS_WDOG1 + 0x00);

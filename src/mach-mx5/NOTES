@@ -8,7 +8,7 @@ x efikamx.c initialization yikes!
 x MMU, interrupts, cache initializations
 o Add AAI mode to write.  Not critical, but we'll probably appreciate
   it if we write Apex to SPI flash.  
-o Test on target to working console.
+x Test on target to working console.
 x MMC, adequate for booting
 o IDE
 x Linking FAT and EXT2 drivers to MMC.  This ought to work as the
@@ -16,10 +16,15 @@ x Linking FAT and EXT2 drivers to MMC.  This ought to work as the
 x Fix writing of APEX image to SD card as to skip the partition
   table.  Need to make a partition table with room for APEX.
 o Construct a kernel image that we can use to boot.
+o Initialize PMIC
 o Go!
 
 NOTES
 =====
+
+o 2011.aug.13
+  o Started on PMIC.  May need to power-up before reading ID?  Really?
+  o Verified the PMIC interface setup.
 
 o 2011.aug.12
   o SD/MMC read working, no DMA and 512 block only 

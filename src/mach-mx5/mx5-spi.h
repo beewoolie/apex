@@ -34,6 +34,7 @@ struct mx5_spi {
   bool sclk_polarity;                   /* initial 0, rising; 1, falling edge */
   bool sclk_phase;                      /* sample on 0, first; 1, second edge */
   void (*select) (const struct mx5_spi*); /* Platform speciic slave select */
+  bool talk;
 };
 
 /* ----- Globals */

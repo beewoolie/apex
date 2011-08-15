@@ -21,6 +21,7 @@
 
 /* ----- Includes */
 
+#include <linux/types.h>
 #include "mx51-pins.h"
 
 /* ----- Types */
@@ -74,6 +75,30 @@
 
 //#define SPI1_SS_PMIC            (0)
 //#define SPI1_SS_FLASH           (1)
+
+enum {
+  CHIP_ID_MASK   = 0xffff,
+  CHIP_ID_SHIFT  = 0,
+  CHIP_1_0       = 0x100 |   0,
+  CHIP_1_1       = 0x100 | 100,
+  CHIP_2_0       = 0x200 |   0,
+  CHIP_2_5       = 0x200 |  50,
+  CHIP_3_0       = 0x300 |   0,
+
+  BOARD_ID_MASK  =  7,
+  BOARD_ID_SHIFT = 16,
+  BOARD_ID_1_1   =  0,
+  BOARD_ID_1_2   =  1,
+  BOARD_ID_1_3   =  2,
+  BOARD_ID_1_4   =  3,
+};
+
+#define BOARD_ID_MAJOR	(1)
+#define BOARD_ID_MINOR	\
+  (((board_revision () >> BOARD_ID_SHIFT) & BOARD_ID_MASK) + 1)
+
+u32 board_revision (void);
+const char* describe_board_revision (void);
 
 
 #endif  /* GENESI_EFIKA_H_INCLUDED */

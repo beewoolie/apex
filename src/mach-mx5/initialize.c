@@ -83,13 +83,10 @@ From kernel, setup of r6 so that we can determine which errata apply:
 #include "hardware.h"
 #include <debug_ll.h>
 
-int board_id;
 //static int spi1_slave = SPI1_SS_FLASH;
 
-#define BOARD_ID_MAJOR() (1)
-#define BOARD_ID_MINOR() ((board_id ^ 0x7) + 1)
 #define ESDHC_INTERFACE()\
-  ((BOARD_ID_MAJOR() == 1 && BOARD_ID_MINOR() == 1) ? 1 : 0)
+  ((BOARD_ID_MAJOR == 1 && BOARD_ID_MINOR == 1) ? 1 : 0)
 
 static inline void __section (.bootstrap)
   setup_dpll (int idx, u32 op, u32 mfd, u32 mfn)
@@ -112,6 +109,62 @@ static inline void __section (.bootstrap)
 }
 
 
+u32 board_revision (void)
+{
+  static u32 revision;
+
+  if (!revision) {
+
+    /* SOC revision */
+    switch (BOOT_ROM_SI_REV) {
+    default:
+      revision |= CHIP_1_0;
+      break;
+    case 0x02:
+      revision |= CHIP_1_1;
+      break;
+    case 0x10:
+      revision |= (GPIOx_DR(1) && (1<<22)) ? CHIP_2_0 : CHIP_2_5;
+      break;
+    case 0x20:
+      revision |= CHIP_3_0;
+      break;
+    }
+
+    /* Board revision */
+    GPIO_SET           (MX51_PIN_NANDF_CS0);
+    GPIO_CONFIG_OUTPUT (MX51_PIN_NANDF_CS0); /* Charge capacitance, rev1.1 */
+
+    GPIO_CONFIG_PAD    (MX51_PIN_NANDF_CS0, GPIO_PAD_PU_100K);
+    GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS0);
+    revision |= GPIO_VALUE (MX51_PIN_NANDF_CS0) ? (1<<BOARD_ID_SHIFT) : 0;
+
+    GPIO_CONFIG_PAD    (MX51_PIN_NANDF_CS1, GPIO_PAD_PU_100K);
+    GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS1);
+    revision |= GPIO_VALUE (MX51_PIN_NANDF_CS1) ? (2<<BOARD_ID_SHIFT) : 0;
+
+    GPIO_CONFIG_PAD    (MX51_PIN_NANDF_RB3, GPIO_PAD_PU_100K);
+    GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_RB3);
+    revision |= GPIO_VALUE (MX51_PIN_NANDF_RB3) ? (4<<BOARD_ID_SHIFT) : 0;
+
+    revision ^= BOARD_ID_MASK << BOARD_ID_SHIFT; /* Invert board ID bits */
+  }
+
+  return revision;
+}
+
+const char* describe_board_revision (void)
+{
+  static char sz[80];
+  u32 revision = board_revision ();
+  snprintf (sz, sizeof (sz), "soc %d.%02d  board 1.%d",
+            ((revision >> CHIP_ID_SHIFT) & CHIP_ID_MASK) >> 8,
+            (((revision >> CHIP_ID_SHIFT) & CHIP_ID_MASK) && 0xff)/10,
+            ((revision >> BOARD_ID_SHIFT) & BOARD_ID_MASK) + 1);
+  return sz;
+}
+
+
 /** activate the SS line for the given slave on the SPI1 port.
     ***FIXME: need to make sure that this call is idempotent.  We may
     ***need to keep track of the currently selected device. */
@@ -128,19 +181,23 @@ void spi_select (const struct mx5_spi* spi)
   default:                      /* Disable all */
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       GPIO_PAD_PKE | GPIO_PAD_PKE | GPIO_PAD_PD_100K
+                       | GPIO_PAD_DRIVE_HIGH
                        | GPIO_PAD_SLEW_FAST);
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       GPIO_PAD_PKE | GPIO_PAD_PKE | GPIO_PAD_PU_100K
+                       | GPIO_PAD_DRIVE_HIGH
                        | GPIO_PAD_SLEW_FAST);
     break;
 
   case 0:
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS1);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       GPIO_PAD_PKE | GPIO_PAD_PKE | GPIO_PAD_PU_100K
+                       | GPIO_PAD_DRIVE_HIGH
                        | GPIO_PAD_SLEW_FAST);
+    GPIO_CONFIG_FUNC  (MX51_PIN_CSPI1_SS0, 3); /* jolen workaround?  */
     GPIO_CONFIG_FUNC  (MX51_PIN_CSPI1_SS0, 0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
                        GPIO_PAD_HYST_EN | GPIO_PAD_PKE
@@ -150,7 +207,8 @@ void spi_select (const struct mx5_spi* spi)
   case 1:
     GPIO_CONFIG_INPUT (MX51_PIN_CSPI1_SS0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS0,
-                       GPIO_PAD_PKE | GPIO_PAD_DRIVE_HIGH
+                       GPIO_PAD_PKE | GPIO_PAD_PKE | GPIO_PAD_PD_100K
+                       | GPIO_PAD_DRIVE_HIGH
                        | GPIO_PAD_SLEW_FAST);
     GPIO_CONFIG_FUNC  (MX51_PIN_CSPI1_SS1, 0);
     GPIO_CONFIG_PAD   (MX51_PIN_CSPI1_SS1,
@@ -630,29 +688,6 @@ static void target_init_ata (void)
 }
 
 
-
-void target_init_board_id (void)
-{
-  /* Read board revision */
-
-  board_id = 0;
-
-  GPIO_SET           (MX51_PIN_NANDF_CS0);
-  GPIO_CONFIG_OUTPUT (MX51_PIN_NANDF_CS0); /* Charge capacitance, rev1.1 */
-
-  GPIO_CONFIG_PAD    (MX51_PIN_NANDF_CS0, GPIO_PAD_PU_100K);
-  GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS0);
-  board_id |= GPIO_VALUE (MX51_PIN_NANDF_CS0) ? (1<<0) : 0;
-
-  GPIO_CONFIG_PAD    (MX51_PIN_NANDF_CS1, GPIO_PAD_PU_100K);
-  GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS1);
-  board_id |= GPIO_VALUE (MX51_PIN_NANDF_CS1) ? (1<<1) : 0;
-
-  GPIO_CONFIG_PAD    (MX51_PIN_NANDF_RB3, GPIO_PAD_PU_100K);
-  GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_RB3);
-  board_id |= GPIO_VALUE (MX51_PIN_NANDF_RB3) ? (1<<2) : 0;
-}
-
 /** performs remaining hardware initialization that didn't have to be
     performed during the bootstrap phase and isn't done in a driver. */
 
@@ -665,7 +700,7 @@ static void target_init (void)
 
   target_init_gpio ();
 
-  target_init_board_id ();
+  board_revision ();
 
   /* Select a device for SPI1  */
 //  spi1_select (SPI1_SS_FLASH);

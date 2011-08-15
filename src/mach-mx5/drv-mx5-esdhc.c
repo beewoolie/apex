@@ -600,7 +600,7 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
       if (cmd & CMD_BIT_WRITE)
         wml <<= 16;
       ESDHCx_WML(1) = wml;
-      MASK_AND_SET (ESDHCx_SYSCTL(1), 0xf<<16, 14); /* Timeout of 2^27 clocks */
+      MASK_AND_SET (ESDHCx_SYSCTL(1), 0xf<<16, 14); /* Timeout 2^27 clocks */
       ESDHCx_BLKATTR(1) = (1<<16) | mmc.block_len;
 
 #if defined (USE_WIDE)
@@ -748,12 +748,12 @@ void mx5_esdhc_init (void)
 
 int mmc_acquire (void)
 {
-  int state = 0;
-  int tries = 0;
-  u32 command = 0;
-  int status;
-  u32 ocr = 0;
-  u32 r;
+  int           state   = 0;
+  int           tries   = 0;
+  u32           command = 0;
+  int           status;
+  u32           ocr     = 0;
+  u32           r;
   unsigned long time;
 
   mmc_clear ();
@@ -779,16 +779,16 @@ int mmc_acquire (void)
 
     case 0:
       mmc.acquired = false;
-      command = CMD_SD_OP_COND;
-      tries = 10;
-      mmc.sd = true;
+      command      = CMD_SD_OP_COND;
+      tries        = 10;
+      mmc.sd       = true;
       ++state;
       break;
 
     case 10:
       command = CMD_MMC_OP_COND;
-      tries = 10;
-      mmc.sd = false;
+      tries   = 10;
+      mmc.sd  = false;
       ++state;
       break;
 
@@ -825,9 +825,9 @@ int mmc_acquire (void)
 
     case 4:
     case 14:
-      time = timer_read ();
-      tries = C_ACQUIRE_TRIES;
-      ocr &= ocr_host ();
+      time   = timer_read ();
+      tries  = C_ACQUIRE_TRIES;
+      ocr   &= ocr_host ();
       do {
         mdelay (MS_ACQUIRE_DELAY);
         status = mx5_esdhc_execute (command, ocr, 0);
@@ -1122,8 +1122,6 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
 
   return cbRead;
 }
-
-
 
 static __driver_5 struct driver_d mx5_esdhc_driver = {
   .name		= "mmc-esdhc-mx5",
