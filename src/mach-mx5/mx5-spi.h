@@ -41,6 +41,10 @@ struct mx5_spi {
 
 /* ----- Prototypes */
 
+extern void mx5_ecspi_transfer (const struct mx5_spi* spi,
+                                void* rgb, size_t cbOut,
+                                size_t cbIn, size_t cbInSkip);
+extern void mx5_spi_select (const struct mx5_spi*);
 
 
 #endif  /* MX5_SPI_H_INCLUDED */

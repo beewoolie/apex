@@ -169,7 +169,7 @@ const char* describe_board_revision (void)
     ***FIXME: need to make sure that this call is idempotent.  We may
     ***need to keep track of the currently selected device. */
 
-void spi_select (const struct mx5_spi* spi)
+void mx5_spi_select (const struct mx5_spi* spi)
 {
   int slave = spi ? spi->slave : -1;
 
@@ -506,7 +506,7 @@ static void target_init_gpio (void)
   GPIO_CONFIG_FUNC (MX51_PIN_CSPI1_SCLK, 0);
 
   /* workaround for ss0 */
-  spi_select (NULL);
+  mx5_spi_select (NULL);
 
   /* PWR_SW_REQ# <= EIM_DTACK */
   GPIO_CONFIG_INPUT (PIN_PWR_SW_REQ);
@@ -734,7 +734,7 @@ static void target_release (void)
 //  writel(0x85, IOMUXC_BASE_ADDR + 0x60C);
 #endif
 
-  spi_select (NULL);
+  mx5_spi_select (NULL);
 }
 
 static __service_0 struct service_d mx3x_target_service = {

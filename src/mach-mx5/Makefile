@@ -11,6 +11,8 @@
 
 obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o env.o
 obj-y += header.o
+obj-y += drv-mx5-spi-pmic.o
+obj-y += drv-mx5-spi-flash.o
 obj-y += drv-mx5-ecspi.o
 obj-y += drv-mx5-esdhc.o
 obj-y += clocks.o
