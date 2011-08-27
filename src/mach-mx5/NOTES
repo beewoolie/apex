@@ -22,6 +22,66 @@ o Go!
 NOTES
 =====
 
+o 2011.aug.26
+  o Received replacement device and debug board.  SD slot works again.
+  o Booting Linux from uboot yields the following atags:
+
+90000100 : 00000005 54410001 00000000 00000000  ......AT........
+90000110 : 00000000 00000003 54410007 00051030  ..........AT0...
+90000120 : 00000004 54410002 20000000 90000000  ......AT... ....
+90000130 : 00000010 54410009 736e6f63 3d656c6f  ......ATconsole=
+90000140 : 31797474 6f6f7220 642f3d74 732f7665  tty1 root=/dev/s
+90000150 : 20326164 746f6f72 74696177 20777220  da2 rootwait rw 
+90000160 : 65697571 70732074 6873616c 000ca500  quiet splash....
+90000170 : 00000004 54420005 92000040 00653919  ......BT@....9e.
+90000180 : 00000000 00000000 08106182 b6418040  .........a..@.A.
+
+ 5 w, ATAG_CORE		zeroes
+ 3 w, ATAG_REVISION	rev: 0x00051030
+ 4 w, ATAG_MEM		size: 0x20000000, start: 0x90000000
+16 w, ATAG_CMDLINE	console=tty1 root=/dev/sda2 rootwait rw quiet splash
+ 4 w, ATAG_INITRD2	start: 0x92000040, size: 0x00653919
+ 0 w, ATAG_NONE
+
+    Registers:
+    r0: 0x00000000
+    r1: 0x00000920
+    r2: 0x90000100
+
+  o We're using the following ATAGS.
+
+90000100 : 00000002 54410001 00000004 54410002  ......AT......AT
+90000110 : 10000000 90000000 00000004 54410002  ..............AT
+90000120 : 10000000 a0000000 00000012 54410009  ..............AT
+90000130 : 736e6f63 3d656c6f 6d797474 2c306378  console=ttymxc0,
+90000140 : 31797474 6f6f7220 642f3d74 732f7665  tty1 root=/dev/s
+90000150 : 20326164 746f6f72 74696177 20777220  da2 rootwait rw 
+90000160 : 65697571 70732074 6873616c 000ca500  quiet splash....
+90000170 : 00000003 54410007 00000000 00000004  ......AT........
+90000180 : 54410006 00000000 00000000 00000004  ..AT............
+90000190 : 54420005 94000000 00800000 00000000  ..BT............
+900001a0 : 00000000 1c401800 99404090 087f3218  ......@..@@..2..
+
+ 2 w, ATAG_CORE
+ 4 w, ATAG_MEM		size: 0x10000000, 0x90000000
+ 4 w, ATAG_MEM		size: 0x10000000, 0xa0000000
+18 w, ATAG_CMDLINE	console=ttymxc0,tty1 root=/dev/sda2 rootwait rw quiet splash
+ 3 w, ATAG_REVISION	rev: 0
+ 4 w, ATAG_SERIAL	low: 0, high: 0
+ 4 w, ATAG_INITRD2	start: 0x94000000, size: 0x00800000
+ 0 w, ATAG_NONE
+
+    Registers:
+    r0: 0x00000000
+    r1: 0x00000920
+    r2: 0x90000100
+
+  o The kernel halts in a loop at 0x80014138
+
+  o We have MMU enbled and we're getting into the calibration loop and
+    crashing.  It may be the case that we're taking an interrupt withint
+    being ready for it.
+
 o 2011.aug.13
   o Started on PMIC.  May need to power-up before reading ID?  Really?
   o Verified the PMIC interface setup.

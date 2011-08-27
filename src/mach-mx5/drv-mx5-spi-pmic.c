@@ -22,6 +22,10 @@
   NOTES
   =====
 
+  The PMIC used in the Freescale development boards is a Freescale
+  part.  Genesi settled on another part that is not programmable.
+  This PMIC code isn't necessary for the Genesi boards.
+
 */
 
 #include <config.h>

@@ -14,6 +14,18 @@
    DESCRIPTION
    -----------
 
+   NOTES
+   =====
+
+   ATAG_CORE
+   ---------
+
+   Older releases of the kernel wanted to see that ATAG_CORE had no
+   payload.  This appears to have changed.  The #define
+   USE_EMPTY_ATAG_CORE forced this old behavior.  If we find that
+   there is a need to maintain this old behavior we could add a
+   configuration option.
+
 */
 
 #include <atag.h>
@@ -46,9 +58,12 @@ void build_atags (void)
 struct tag* atag_header (struct tag* p)
 {
 	p->hdr.tag = ATAG_CORE;
-	p->hdr.size = 2;	/* As documented. */
-//	p->hdr.size = tag_size (tag_core);
-//	memzero (&p->u.core, sizeof (p->u.core));
+#if defined (USE_EMPTY_ATAG_CORE)
+	p->hdr.size = 2;	/* As documented in older kernels. */
+#else
+	p->hdr.size = tag_size (tag_core);
+	memzero (&p->u.core, sizeof (p->u.core));
+#endif
 
 # if !defined (CONFIG_SMALL)
 	printf ("ATAG_HEADER\n");

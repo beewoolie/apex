@@ -113,7 +113,7 @@
 
 #include <debug_ll.h>
 
-#define TALK 1
+//#define TALK 1
 //#define TALK 3
 //#define NOISY                   /* Use when CFI not detecting properly */
 
