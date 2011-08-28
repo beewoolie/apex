@@ -93,11 +93,22 @@ enum {
   BOARD_ID_1_4   =  3,
 };
 
+/** Kernel compatible SOC revision IDs. */
+enum {
+  MXC_CHIP_MX51     = 0x51000,
+  MXC_CHIP_REV_1_0  = 0x10,
+  MXC_CHIP_REV_1_1  = 0x11,
+  MXC_CHIP_REV_2_0  = 0x20,
+  MXC_CHIP_REV_2_5  = 0x25,
+  MXC_CHIP_REV_3_0  = 0x30,
+};
+
 #define BOARD_ID_MAJOR	(1)
 #define BOARD_ID_MINOR	\
   (((board_revision () >> BOARD_ID_SHIFT) & BOARD_ID_MASK) + 1)
 
 u32 board_revision (void);
+u32 target_hardware_revision (void);
 const char* describe_board_revision (void);
 
 

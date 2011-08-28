@@ -23,13 +23,14 @@
 #include <config.h>
 #include <apex.h>
 #include <lookup.h>
+#include "hardware.h"
 
 struct tag* atag_revision (struct tag* p)
 {
 	p->hdr.tag = ATAG_REVISION;
 	p->hdr.size = tag_size (tag_revision);
 
-        p->u.revision.rev = 0;
+        p->u.revision.rev = target_hardware_revision ();
 
 # if !defined (CONFIG_SMALL)
 	printf ("ATAG_REVISION: %d (0x%08x)\n",

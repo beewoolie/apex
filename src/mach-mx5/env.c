@@ -28,7 +28,7 @@
 __env struct env_d e_cmdline = {
   .key = "cmdline",
 //  .default_value = "console=ttymxc0,115200 root=/dev/sda2 rootwait rw quiet splash",
-  .default_value = "console=ttymxc0,115200 root=/dev/sda2 rootwait rw",
+  .default_value = "console=ttymxc0,115200 root=/dev/sda2 rootwait rw jtag=on",
   .description = "Linux kernel command line",
 };
 

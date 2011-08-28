@@ -173,9 +173,9 @@
 #define GPT_PR			__REG (PHYS_GPT + 0x04)
 #define GPT_SR			__REG (PHYS_GPT + 0x08)
 #define GPT_IR			__REG (PHYS_GPT + 0x0c)
-#define GPT_0CR1		__REG (PHYS_GPT + 0x10)
-#define GPT_0CR2		__REG (PHYS_GPT + 0x14)
-#define GPT_0CR3		__REG (PHYS_GPT + 0x18)
+#define GPT_OCR1		__REG (PHYS_GPT + 0x10)
+#define GPT_OCR2		__REG (PHYS_GPT + 0x14)
+#define GPT_OCR3		__REG (PHYS_GPT + 0x18)
 #define GPT_ICR1		__REG (PHYS_GPT + 0x1c)
 #define GPT_ICR2		__REG (PHYS_GPT + 0x20)
 #define GPT_CNT			__REG (PHYS_GPT + 0x24)
@@ -184,8 +184,10 @@
 #define GPT_CR_CLKSRC_SH	(6)
 #define GPT_CR_CLKSRC_MSK	(0x7<<6)
 #define GPT_CR_CLKSRC_32K	(0x4<<6)
+#define GPT_CR_CLKSRC_CLKIN	(0x3<<6)
 #define GPT_CR_CLKSRC_HIGH	(0x2<<6)
 #define GPT_CR_CLKSRC_LOW	(0x1<<6)
+#define GPT_CR_SWR              (1<<15)
 #define GPT_CR_FREERUN		(1<<9)
 
 #define GPT_SR_ROV		(1<<5) /* Roll-over */

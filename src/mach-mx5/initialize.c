@@ -109,6 +109,39 @@ static inline void __section (.bootstrap)
 }
 
 
+/** return hardware revision that can be used by the kernel to
+    properly operate the system.  For example, some IC revisions use
+    different base addresses for some IP blocks. */
+
+u32 target_hardware_revision (void)
+{
+  static u32 revision;
+
+  if (!revision) {
+
+    revision = MXC_CHIP_MX51;
+
+    /* SOC revision */
+    switch (BOOT_ROM_SI_REV) {
+    default:
+      revision |= MXC_CHIP_REV_1_0;
+      break;
+    case 0x02:
+      revision |= MXC_CHIP_REV_1_1;
+      break;
+    case 0x10:
+      revision |= (GPIOx_DR(1) && (1<<22))
+        ? MXC_CHIP_REV_2_0 : MXC_CHIP_REV_2_5;
+      break;
+    case 0x20:
+      revision |= MXC_CHIP_REV_3_0;
+      break;
+    }
+  }
+
+  return revision;
+}
+
 u32 board_revision (void)
 {
   static u32 revision;
