@@ -14,25 +14,31 @@ TODO:
     o === TODO
       o Move MXC drivers to src/drivers-mxc/
       o Support image load address change on loading images to allow
-	loading images with bogus or unusuable for some reason.  This
+	loading images with bogus or unusable for some reason.  This
 	should only be necessary for uboot images but we never really
 	know.
       x Fix environment set on mx51.  Was a bug in the flash read.
       o Add directory listing on fat.
-      o Move driver info calls to seperate entry points s.t. version
+      o Move driver info calls to separate entry points s.t. version
 	only shows the most basic data.
       o Implement a list or show command on regions that can be used
 	to show directory contents.
       o Figure out if and why image show doesn't work when reading
 	directly from media.
-      o Move alias to 'set' and allow set alone to show environment as
+      x Move alias to 'set' and allow set alone to show environment as
 	well as set parameters.
+      o Write mapping command to allow addresses to be remapped from
+        the command line.  It could be useful when loading a uboot
+        image where we cannot change the load address.  May be
+        interesting in other cases.  This also means we need to be
+        able to show the mappings, especially when they are not one to
+        one. 
 
   o 2011.jul,1
     o For the imx5x, we don't need to initialize SDRAM or test whether
       or not we're running from SDRAM in most cases because the boot
       ROM does this for us.  In fact, we don't even need to be able to
-      relocate ourselves at all.  We can elminiate the code that
+      relocate ourselves at all.  We can eliminate the code that
       detects whether we're already running in the right place if we
       want.
 
@@ -243,7 +249,7 @@ TODO:
       is a redundancy.  The length is represented in the source region
       as well as the variable for the size.  It would be ideal if the
       source region simple referred to the size and it was expanded when
-      the region is referenced.  We may live with the redundance for a
+      the region is referenced.  We may live with the redundancy for a
       while.
     o It would be good to merge the environment and the aliases into a
       single environment.  Doing so requires that we allow the program
@@ -268,7 +274,7 @@ TODO:
   o 2008.mar.19
 
     o Discovered that there is a bug in the ext2 driver.  A filesystem
-      with deletect files and directories doesn't show up correctly.
+      with deleted files and directories doesn't show up correctly.
 
   o 2007.jul.23
     o UBOOT annoyances
