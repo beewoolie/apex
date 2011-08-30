@@ -51,7 +51,7 @@
 #include <linux/kernel.h>
 #include <environment.h>
 //#include <service.h>
-#include <alias.h>
+#include <variables.h>
 #include <lookup.h>
 #include <driver.h>
 #include "region-copy.h"
@@ -416,33 +416,33 @@ int handle_load_uboot_image (struct descriptor_d* d, struct image_info* info,
     addrLoadInitrd = info->initrd_relocation;
   }
 
-#if defined (CONFIG_ALIASES)
+#if defined (CONFIG_VARIABLES)
   if (header->image_type == typeKernel && addrEntry != ~0) {
-    unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+    unsigned addr = lookup_variable_or_env_unsigned ("bootaddr", ~0);
     if (addr != addrEntry)
-      alias_set_hex ("bootaddr", addrEntry);
+      variable_set_hex ("bootaddr", addrEntry);
   }
   if (header->image_type == typeRamdisk) {
-    size_t size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+    size_t size = lookup_variable_or_env_unsigned ("ramdisksize", ~0);
     if (size != cb)
-      alias_set_hex ("ramdisksize", cb);
+      variable_set_hex ("ramdisksize", cb);
     if (addrLoad != ~0) {
-      unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+      unsigned addr = lookup_variable_or_env_unsigned ("ramdiskaddr", ~0);
       if (addr != addrLoad)
-        alias_set_hex ("ramdiskaddr", addrLoad);
+        variable_set_hex ("ramdiskaddr", addrLoad);
     }
   }
   if (header->image_type == typeMulti && addrEntry != ~0) {
-    unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+    unsigned addr = lookup_variable_or_env_unsigned ("bootaddr", ~0);
     if (addr != addrEntry)
-      alias_set_hex ("bootaddr", addrEntry);
+      variable_set_hex ("bootaddr", addrEntry);
     if (g_cPayloads > 1) {      /* We have an initrd as well */
-      size_t   size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
-      unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+      size_t   size = lookup_variable_or_env_unsigned ("ramdisksize", ~0);
+      unsigned addr = lookup_variable_or_env_unsigned ("ramdiskaddr", ~0);
       if (size != swabl (g_rgSizes[1]))
-        alias_set_hex ("ramdisksize", swabl (g_rgSizes[1]));
+        variable_set_hex ("ramdisksize", swabl (g_rgSizes[1]));
       if (addr != addrLoadInitrd)
-        alias_set_hex ("ramdiskaddr", addrLoadInitrd);
+        variable_set_hex ("ramdiskaddr", addrLoadInitrd);
     }
   }
 #endif

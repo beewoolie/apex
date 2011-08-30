@@ -27,22 +27,22 @@
 
 /* ----- Prototypes */
 
-#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
+#if defined (CONFIG_VARIABLES) || defined (CONFIG_ENV)
 
-int lookup_alias_or_env_int (const char* szKey, int valueDefault);
-unsigned lookup_alias_or_env_unsigned (const char* szKey,
-                                       unsigned valueDefault);
-const char* lookup_alias_or_env (const char* szKey, const char* szDefault);
+int lookup_variable_or_env_int (const char* szKey, int valueDefault);
+unsigned lookup_variable_or_env_unsigned (const char* szKey,
+                                          unsigned valueDefault);
+const char* lookup_variable_or_env (const char* szKey, const char* szDefault);
 
 #else
 
-inline int lookup_alias_or_env_int (const char* szKey, int valueDefault) {
+inline int lookup_variable_or_env_int (const char* szKey, int valueDefault) {
   return valueDefault; }
-inline unsigned lookup_alias_or_env_unsigned (const char* szKey,
-                                              unsigned valueDefault) {
+inline unsigned lookup_variable_or_env_unsigned (const char* szKey,
+                                                 unsigned valueDefault) {
   return valueDefault; }
-inline const char* lookup_alias_or_env (const char* szKey,
-                                        const char* szDefault) {
+inline const char* lookup_variable_or_env (const char* szKey,
+                                           const char* szDefault) {
   return szDefault; }
 
 #endif

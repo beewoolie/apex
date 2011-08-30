@@ -51,22 +51,22 @@ extern char host_mac_address[];
 #define MS_TIMEOUT	(1*1000)
 
 
-static void set_aliases (void)
+static void set_variables (void)
 {
-#if defined (CONFIG_CMD_ALIAS)
+#if defined (CONFIG_CMD_SET)
   char sz[80];
   sprintf (sz, "%d.%d.%d.%d",
 	   host_ip_address[0], host_ip_address[1],
 	   host_ip_address[2], host_ip_address[3]);
-  alias_set ("hostip", sz);
+  variable_set ("hostip", sz);
   sprintf (sz, "%d.%d.%d.%d",
 	   server_ip_address[0], server_ip_address[1],
 	   server_ip_address[2], server_ip_address[3]);
-  alias_set ("serverip", sz);
+  variable_set ("serverip", sz);
   sprintf (sz, "%d.%d.%d.%d",
 	   gw_ip_address[0], gw_ip_address[1],
 	   gw_ip_address[2], gw_ip_address[3]);
-  alias_set ("gatewayip", sz);
+  variable_set ("gatewayip", sz);
 #endif
 }
 
@@ -168,7 +168,7 @@ static int rarp_receiver (struct descriptor_d* d,
 		      1);
     memcpy (server_ip_address, ARP_F (frame)->sender_protocol_address, 4);
     memcpy (gw_ip_address, ARP_F (frame)->sender_protocol_address, 4);
-    set_aliases ();
+    set_variables ();
     break;
   }
 
@@ -302,7 +302,7 @@ int cmd_ipconfig (int argc, const char** argv)
 #if defined (CONFIG_CMD_IPCONFIG_STATIC)
     result = getaddr (argv[1], host_ip_address);
     if (!result) {
-      set_aliases ();
+      set_variables ();
       goto show;
     }
 #endif

@@ -24,8 +24,8 @@
 #include <service.h>
 #include <debug_ll.h>
 
-#if defined (CONFIG_ALIASES)
-#include <alias.h>
+#if defined (CONFIG_VARIABLES)
+#include <variables.h>
 #endif
 extern int cmd_version (int, const char**);
 
@@ -34,17 +34,17 @@ void init (void)
   PUTC_LL ('I');
   init_services ();
 
-#if defined (CONFIG_ALIASES)
+#if defined (CONFIG_VARIABLES)
   {
-    extern char APEX_VMA_COPY_START;
-    extern char APEX_VMA_COPY_END;
+    extern char APEX_VMA_COPY_START[];
+    extern char APEX_VMA_COPY_END[];
     char sz[60];
     snprintf (sz, sizeof (sz), "mem:0x%p+0x%lx",
-	     (void*) &APEX_VMA_COPY_START,
-	     (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
-    alias_set ("apex", sz);
+	     (void*) APEX_VMA_COPY_START,
+	     (unsigned long )(APEX_VMA_COPY_END - APEX_VMA_COPY_START));
+    variable_set ("apex", sz);
 # if defined (CONFIG_ENV_REGION)
-    alias_set ("env", CONFIG_ENV_REGION);
+    variable_set ("env", CONFIG_ENV_REGION);
 # endif
   }
 #endif

@@ -22,25 +22,25 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <environment.h>
-#include <alias.h>
+#include <variables.h>
 
-int lookup_alias_or_env_int (const char* szKey, int valueDefault)
+int lookup_variable_or_env_int (const char* szKey, int valueDefault)
 {
-  const char* sz = lookup_alias_or_env (szKey, NULL);
+  const char* sz = lookup_variable_or_env (szKey, NULL);
   if (sz)
     valueDefault = simple_strtoul (sz, NULL, 0);
   return valueDefault;
 }
 
-unsigned lookup_alias_or_env_unsigned (const char* szKey, unsigned valueDefault)
+unsigned lookup_variable_or_env_unsigned (const char* szKey, unsigned valueDefault)
 {
-  const char* sz = lookup_alias_or_env (szKey, NULL);
+  const char* sz = lookup_variable_or_env (szKey, NULL);
   if (sz)
     valueDefault = simple_strtoul (sz, NULL, 0);
   return valueDefault;
 }
 
-const char* lookup_alias_or_env (const char* szKey,
+const char* lookup_variable_or_env (const char* szKey,
 				 const char* szDefault)
 {
   const char* sz = NULL;
@@ -49,8 +49,8 @@ const char* lookup_alias_or_env (const char* szKey,
   const char* szAlt = NULL;
   static char szKeyAlt[80];
 
-# if defined (CONFIG_ALIASES)
-  szAlt = alias_lookup ("variation");
+# if defined (CONFIG_VARIABLES)
+  szAlt = variable_lookup ("variation");
 # endif
 
 # if defined (CONFIG_ENV)
@@ -62,9 +62,9 @@ const char* lookup_alias_or_env (const char* szKey,
     int cch = strlcpy (szKeyAlt, szKey, sizeof (szKeyAlt));
     strlcpy (szKeyAlt + cch, szAlt, sizeof (szKeyAlt) - cch);
 
-# if defined (CONFIG_ALIASES)
+# if defined (CONFIG_VARIABLES)
     if (!sz)
-      sz = alias_lookup (szKeyAlt);
+      sz = variable_lookup (szKeyAlt);
 # endif
 # if defined (CONFIG_ENV)
     if (!sz)
@@ -73,9 +73,9 @@ const char* lookup_alias_or_env (const char* szKey,
   }
 #endif
 
-#if defined (CONFIG_ALIASES)
+#if defined (CONFIG_VARIABLES)
   if (!sz)
-    sz = alias_lookup (szKey);
+    sz = variable_lookup (szKey);
 #endif
 #if defined (CONFIG_ENV)
   if (!sz)

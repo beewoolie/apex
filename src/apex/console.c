@@ -167,7 +167,7 @@ void console_init (void)
 {
   int result;
   struct descriptor_d d;
-  const char* sz = lookup_alias_or_env ("console-drv", "serial");
+  const char* sz = lookup_variable_or_env ("console-drv", "serial");
   result =  parse_descriptor (sz, &d);
   if (result)
     return;

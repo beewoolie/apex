@@ -95,15 +95,6 @@ config TIME_COMMANDS
 	  time for every command entered at the prompt.  It is
 	  useful for debugging and profiling.
 
-config CMD_ALIAS
-        bool "Define Alias Commands"
-	default y
-	select ALIASES
-	help
-	  Aliases are a lighter-weight form of environment-like variable.
-	  Aliases are not saved to flash and nor are they limited to
-	  pre-defined keys as environment variables are.
-
 config CMD_CHECKSUM
 	bool "Define Checksum Region Command"
 	default y
@@ -214,6 +205,12 @@ config CMD_FILL
 	bool "Define Fill Region Command"
 	default y
 
+config CMD_FLASHUSAGE
+	bool "Define Flash Usage Command"
+	default n
+	help
+	  Show the usage of erase blocks within a NOR flash device.
+
 config CMD_GO
 	bool "Define Go Command"
 	default y
@@ -238,11 +235,14 @@ config CMD_PAUSE
 	bool "Define Pause Command"
 	default n
 
-config CMD_FLASHUSAGE
-	bool "Define Flash Usage Command"
-	default n
+config CMD_SETUNSET
+        bool "Define Set/Unset Commands"
+	default y
+	select VARIABLES
 	help
-	  Show the usage of erase blocks within a NOR flash device.
+	  Variables are a lighter-weight form of environment-like variable.
+	  Variables are not saved to flash nor are they limited to
+	  pre-defined keys as environment variables are.
 
 config CMD_WAIT
 	bool "Define Wait Command"

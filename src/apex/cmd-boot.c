@@ -54,7 +54,7 @@ int cmd_boot (int argc, const char** argv)
 {
   unsigned long address
 #if defined (CONFIG_ENV)
-    = lookup_alias_or_env_int ("bootaddr", 0xffffffff)
+    = lookup_variable_or_env_int ("bootaddr", 0xffffffff)
 #else
     = CONFIG_KERNEL_LMA		/* There can be, only one.  */
 #endif
@@ -82,7 +82,7 @@ int cmd_boot (int argc, const char** argv)
 
   /* Pull architecture ID from environment or alias */
   {
-    const char* sz = lookup_alias_or_env ("arch-number", NULL);
+    const char* sz = lookup_variable_or_env ("arch-number", NULL);
     if (sz)
       arch_number = simple_strtoul (sz, NULL, 10);
   }
@@ -93,7 +93,7 @@ int cmd_boot (int argc, const char** argv)
 
   /* Pull architecture ID from environment or alias */
   {
-    const char* sz = lookup_alias_or_env ("arch-number", NULL);
+    const char* sz = lookup_variable_or_env ("arch-number", NULL);
     if (sz)
       arch_number = simple_strtoul (sz, NULL, 10);
   }
@@ -154,7 +154,7 @@ static __command struct command_d c_boot = {
 #if defined (CONFIG_ATAG)
 struct tag* atag_commandline (struct tag* p)
 {
-  const char* szCommandEnv = lookup_alias_or_env ("cmdline", NULL);
+  const char* szCommandEnv = lookup_variable_or_env ("cmdline", NULL);
 
   int cb = 0;
   p->u.cmdline.cmdline[0] = '\0';

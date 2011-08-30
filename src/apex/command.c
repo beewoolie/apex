@@ -55,7 +55,7 @@ const char* error_description;
 #define TIMECMD_REPORT
 #endif
 
-#if defined (CONFIG_ALIASES) || defined (CONFIG_ENV)
+#if defined (CONFIG_VARIABLES) || defined (CONFIG_ENV)
 # define USE_EXPAND_VARIABLES
 #endif
 
@@ -97,7 +97,7 @@ static char* _expand_variables (const char* rgbSrc,
 	break;
       *pch = 0;                 /* Terminate string so lookup can succeed */
       {
-        const char* value = lookup_alias_or_env (pchKey + 1, 0);
+        const char* value = lookup_variable_or_env (pchKey + 1, 0);
         const char* value_expanded;
         if (value) {
           if (pchKey + strlen (value) >= rgbExpand + cbExpand - 1)
@@ -286,7 +286,7 @@ int call_command (int argc, const char** argv)
 
 void exec_monitor (void)
 {
-  const char* szStartup = lookup_alias_or_env ("startup", NULL);
+  const char* szStartup = lookup_variable_or_env ("startup", NULL);
 
 //  printf ("exec_monitor\n");
 //  printf (" startup %s\n", szStartup);

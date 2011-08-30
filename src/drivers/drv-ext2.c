@@ -353,7 +353,7 @@ static __env struct env_d e_ext2_drv = {
 
 static inline const char* block_driver (void)
 {
-  return lookup_alias_or_env ("ext2-drv", CONFIG_DRIVER_EXT2_BLOCKDEVICE);
+  return lookup_variable_or_env ("ext2-drv", CONFIG_DRIVER_EXT2_BLOCKDEVICE);
 }
 
 static void clear_ok_by_crc (void)

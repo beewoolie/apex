@@ -8,17 +8,18 @@ key/value pairs as part of the configuration of the boot loader in
 non-volatile storage.  The only configuration option that can never be
 stored in the environment is the location of the environment itself.
 
-Aliases
--------
+Simple Variables
+----------------
 
-APEX also supports aliases which are key/value pairs, but there are
-several important differences.  Aliases are not stored in non-volatile
-memory.  Aliases resolve before environment variables, thus overriding
-the environment.  Aliases have no default value.  When unset, aliases
-are empty whereas undefined environment variables will have the
-default that is compiled into APEX.  Finally, aliases may be assigned
-to any key.  The environment can only store keys that are compiled
-into APEX.
+APEX also supports simple variables (referred to as variables) which
+are key/value pairs, but there are several important differences
+between environment variables and simple variables.  Variables are not
+stored in non-volatile memory.  Variables resolve before environment
+variables, thus overriding the environment.  Variables have no default
+value.  When unset, variables are empty whereas undefined environment
+variables will have the default that is compiled into APEX.  Finally,
+variables may be assigned using any key.  The environment can only
+store keys that are compiled into APEX.
 
 
 The Environment Region

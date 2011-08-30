@@ -1,4 +1,4 @@
-/* alias.c
+/* variables.c
 
    written by Marc Singer
    14 Jun 2005
@@ -14,8 +14,8 @@
    DESCRIPTION
    -----------
 
-   Simple alias association library.  This library handles the
-   essentials of alias setting, enumeration, and substitution.
+   Simple variable association library.  This library handles the
+   essentials of variable setting, enumeration, and substitution.
 
 */
 
@@ -27,27 +27,27 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 //#include <driver.h>
-#include <alias.h>
+#include <variables.h>
 #include <error.h>
 
-#define CB_ALIAS_HEAP_MAX	(4*1024)
+#define CB_VARIABLE_HEAP_MAX	(4*1024)
 
-static unsigned char __xbss(alias) rgbAlias[CB_ALIAS_HEAP_MAX];
+static unsigned char __xbss(variables) rgbVariables[CB_VARIABLE_HEAP_MAX];
 
-size_t ibAlias;
+size_t ibVariables;
 
 struct entry {
   unsigned short cb;		/* Length of this whole node. */
   char rgb[];
 };
 
-static struct entry* _alias_find (const char* szKey)
+static struct entry* _variable_find (const char* szKey)
 {
   struct entry* entry;
   size_t ib = 0;
 
-  for (; ib < ibAlias; ib += entry->cb) {
-    entry = (struct entry*) (rgbAlias + ib);
+  for (; ib < ibVariables; ib += entry->cb) {
+    entry = (struct entry*) (rgbVariables + ib);
     if (!entry->rgb[0])		/* Deleted */
       continue;
 //    printf ("  compare '%s' '%s'\n", szKey, entry->rgb);
@@ -58,18 +58,18 @@ static struct entry* _alias_find (const char* szKey)
   return NULL;
 }
 
-void* alias_enumerate (void* pv, const char** pszKey, const char** pszValue)
+void* variables_enumerate (void* pv, const char** pszKey, const char** pszValue)
 {
   struct entry* entry;
 
   if (!pv)
-    entry = (struct entry*) rgbAlias;
+    entry = (struct entry*) rgbVariables;
   else {
     entry = (struct entry*) pv;
     entry = (struct entry*) ((unsigned char*) pv + entry->cb);
   }
 
-  for (; ((unsigned char*) entry - rgbAlias) < ibAlias;
+  for (; ((unsigned char*) entry - rgbVariables) < ibVariables;
        entry = (struct entry*) ((unsigned char*) entry + entry->cb)) {
 
     if (!entry->rgb[0])
@@ -83,35 +83,35 @@ void* alias_enumerate (void* pv, const char** pszKey, const char** pszValue)
   return 0;
 }
 
-const char* alias_lookup (const char* szKey)
+const char* variable_lookup (const char* szKey)
 {
   struct entry* entry;
 
   if (!szKey)
     return NULL;
 
-  entry = _alias_find (szKey);
+  entry = _variable_find (szKey);
   return entry ? (entry->rgb + strlen (entry->rgb) + 1) : NULL;
 }
 
-int alias_set_hex (const char* szKey, unsigned value)
+int variable_set_hex (const char* szKey, unsigned value)
 {
   char sz[60];
   snprintf (sz, sizeof (sz), "0x%x", value);
-  return alias_set (szKey, sz);
+  return variable_set (szKey, sz);
 }
 
-int alias_set (const char* szKey, const char* szValue)
+int variable_set (const char* szKey, const char* szValue)
 {
   size_t cbKey = szKey ? strlen (szKey) : 0;
   size_t cbValue = szValue ? strlen (szValue) : 0;
   size_t cbEntry = (sizeof (struct entry)
 		    + cbKey + 1 + cbValue + 1 + 0x3) & ~0x3;
-  struct entry* entry = (struct entry*) &rgbAlias[ibAlias];
+  struct entry* entry = (struct entry*) &rgbVariables[ibVariables];
 
   if (cbKey == 0 || cbValue == 0)
     return ERROR_PARAM;
-  if (ibAlias + cbEntry > CB_ALIAS_HEAP_MAX)
+  if (ibVariables + cbEntry > CB_VARIABLE_HEAP_MAX)
     return ERROR_OUTOFMEMORY;
 
   memset (entry, 0, sizeof (struct entry));
@@ -119,19 +119,19 @@ int alias_set (const char* szKey, const char* szValue)
   memcpy (entry->rgb, szKey, cbKey + 1);
   memcpy (entry->rgb + cbKey + 1, szValue, cbValue + 1);
 
-  ibAlias += cbEntry;
+  ibVariables += cbEntry;
 
   return 0;
 }
 
-int alias_unset (const char* szKey)
+int variable_unset (const char* szKey)
 {
   struct entry* entry;
 
   if (!szKey)
     return ERROR_PARAM;
 
-  entry = _alias_find (szKey);
+  entry = _variable_find (szKey);
   if (entry)
     entry->rgb[0] = 0;		/* Delete */
   return entry ? 0 : ERROR_FALSE;

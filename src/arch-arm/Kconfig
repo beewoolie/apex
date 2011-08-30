@@ -462,13 +462,13 @@ config ENV_CHECK_LEN
 config VARIATIONS
 	bool "Enable environment variations"
 	default n
-	select ALIASES
+	select VARIABLES
 	help
 	  Variations refer to variable variations that are selected by
 	  the special variable 'variation'.  When defined, reference
-	  to environment variables or aliases will first be satisfied
-	  by the original name with the variation suffix.  If that
-	  value is not present, the original name is checked.
+	  to environment variables will first be satisfied by the
+	  original name with the variation suffix.  If that value is
+	  not present, the original name is checked.
 
 	  The motive for this feature is to allow for boot-time
 	  selection of alternative operating system parameters.
@@ -819,7 +819,7 @@ config ALIGNMENT_TRAP
 config CLEAR_STACKS
 	bool
 
-config ALIASES
+config VARIABLES
 	bool
 
 config HAVE_BRANCH_PREDICTION

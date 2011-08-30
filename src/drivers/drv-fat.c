@@ -232,7 +232,7 @@ static __env struct env_d e_fat_drv = {
 
 static const char* block_driver (void)
 {
-  return lookup_alias_or_env ("fat-drv", CONFIG_DRIVER_FAT_BLOCKDEVICE);
+  return lookup_variable_or_env ("fat-drv", CONFIG_DRIVER_FAT_BLOCKDEVICE);
 }
 
 static void clear_ok_by_crc (void)

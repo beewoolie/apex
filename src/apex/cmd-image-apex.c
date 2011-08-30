@@ -66,7 +66,7 @@
 #include <linux/kernel.h>
 #include <environment.h>
 //#include <service.h>
-#include <alias.h>
+#include <variables.h>
 #include <lookup.h>
 #include <driver.h>
 #include "region-copy.h"
@@ -332,20 +332,20 @@ int handle_load_apex_image (int field,
       if (d->driver->read (d, &crc, 1) != 1)
         ERROR_RETURN (ERROR_IOFAILURE, "payload padding missing");
     }
-#if defined (CONFIG_ALIASES)
+#if defined (CONFIG_VARIABLES)
     if (info->type == typeLinuxKernel && info->addrEntry != ~0) {
-      unsigned addr = lookup_alias_or_env_unsigned ("bootaddr", ~0);
+      unsigned addr = lookup_variable_or_env_unsigned ("bootaddr", ~0);
       if (addr != info->addrEntry)
-        alias_set_hex ("bootaddr", info->addrEntry);
+        variable_set_hex ("bootaddr", info->addrEntry);
     }
     if (info->type == typeLinuxInitrd) {
-      unsigned size = lookup_alias_or_env_unsigned ("ramdisksize", ~0);
+      unsigned size = lookup_variable_or_env_unsigned ("ramdisksize", ~0);
       if (size != info->length)
-        alias_set_hex ("ramdisksize", info->length);
+        variable_set_hex ("ramdisksize", info->length);
       if (info->addrLoad != ~0) {
-        unsigned addr = lookup_alias_or_env_unsigned ("ramdiskaddr", ~0);
+        unsigned addr = lookup_variable_or_env_unsigned ("ramdiskaddr", ~0);
         if (addr != info->addrLoad)
-          alias_set_hex ("ramdiskaddr", info->addrLoad);
+          variable_set_hex ("ramdiskaddr", info->addrLoad);
       }
     }
 #endif
@@ -472,7 +472,7 @@ int apex_image (int (*pfn) (int, struct descriptor_d*,
     case fieldPayloadLength:
       /* Make sure we have a good load address */
       if (info.addrLoad == ~0 && info.type == typeLinuxKernel)
-        info.addrLoad = lookup_alias_or_env_int ("bootaddr", info.addrLoad);
+        info.addrLoad = lookup_variable_or_env_int ("bootaddr", info.addrLoad);
       if (info.addrLoad == ~0 && info.type == typeLinuxInitrd)
         ;                       /* *** FIXME: we should have a place */
 

@@ -34,10 +34,10 @@ struct tag* atag_initrd (struct tag* p)
 	p->hdr.tag = ATAG_INITRD2;
 	p->hdr.size = tag_size (tag_initrd);
 
-	p->u.initrd.start = lookup_alias_or_env_unsigned ("ramdiskaddr",
-                                                          CONFIG_RAMDISK_LMA);
-	p->u.initrd.size  = lookup_alias_or_env_unsigned ("ramdisksize",
-                                                          CONFIG_RAMDISK_SIZE);
+	p->u.initrd.start = lookup_variable_or_env_unsigned ("ramdiskaddr",
+                                                             CONFIG_RAMDISK_LMA);
+	p->u.initrd.size  = lookup_variable_or_env_unsigned ("ramdisksize",
+                                                             CONFIG_RAMDISK_SIZE);
 
         if (p->u.initrd.size == 0) {
                 memset (p, 0, sizeof (*p));

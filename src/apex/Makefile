@@ -17,7 +17,6 @@ obj-$(CONFIG_COMMAND_HISTORY)   += command-history.o
 
 obj-$(CONFIG_ENV)		+= env.o
 
-obj-$(CONFIG_CMD_ALIAS)		+= cmd-alias.o
 obj-$(CONFIG_CMD_CHECKSUM)	+= cmd-checksum.o
 obj-$(CONFIG_CMD_COMPARE)	+= cmd-compare.o
 obj-$(CONFIG_CMD_COPY)		+= cmd-copy.o
@@ -32,6 +31,7 @@ obj-$(CONFIG_CMD_INFO)		+= cmd-info.o
 obj-$(CONFIG_CMD_MEMTEST)	+= cmd-memtest.o
 obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
 obj-$(CONFIG_CMD_PARSE)		+= cmd-parse.o
+obj-$(CONFIG_CMD_SETUNSET)	+= cmd-setunset.o
 obj-$(CONFIG_CMD_WAIT)		+= cmd-wait.o
 obj-$(CONFIG_CMD_XRECEIVE)	+= cmd-xreceive.o
 obj-$(CONFIG_CMD_IMAGE)		+= cmd-image.o

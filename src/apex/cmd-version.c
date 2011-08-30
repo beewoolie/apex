@@ -22,10 +22,10 @@
 #include <command.h>
 #include <service.h>
 #include <environment.h>
-#include <alias.h>
+#include <variables.h>
 
-extern char APEX_VMA_COPY_START;
-extern char APEX_VMA_COPY_END;
+extern char APEX_VMA_COPY_START[];
+extern char APEX_VMA_COPY_END[];
 
 int cmd_version (int argc, const char** argv)
 {
@@ -50,10 +50,10 @@ int cmd_version (int argc, const char** argv)
   {
     char sz[40];
     snprintf (sz, sizeof (sz), "mem:0x%p+0x%lx",
-	      (void*) &APEX_VMA_COPY_START,
-	      (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+	      (void*) APEX_VMA_COPY_START,
+	      (unsigned long )(APEX_VMA_COPY_END - APEX_VMA_COPY_START));
     printf ("  apex => %-23.23s (%ld bytes)\n",
-	    sz, (unsigned long )(&APEX_VMA_COPY_END - &APEX_VMA_COPY_START));
+	    sz, (unsigned long )(APEX_VMA_COPY_END - APEX_VMA_COPY_START));
   }
 #if defined (CONFIG_CMD_SETENV)
   printf ("  env  => %-23.23s (", CONFIG_ENV_REGION);
@@ -75,9 +75,9 @@ int cmd_version (int argc, const char** argv)
   printf (")\n");
 #endif
 
-#if defined (CONFIG_ALIASES) && defined (CONFIG_VARIATIONS)
+#if defined (CONFIG_VARIABLES) && defined (CONFIG_VARIATIONS)
   {
-    const char* sz = alias_lookup ("variation");
+    const char* sz = variable_lookup ("variation");
     if (sz)
       printf ("  variation => %s\n", sz);
   }
@@ -87,14 +87,14 @@ int cmd_version (int argc, const char** argv)
 
   if (argc >= 0) {
 #if !defined (CONFIG_SMALL)
-    extern char APEX_SERVICE_START;
-    extern char APEX_SERVICE_END;
+    extern char APEX_SERVICE_START[];
+    extern char APEX_SERVICE_END[];
     struct service_d* service;
 
     putchar ('\n');
 
-    for (service = (struct service_d*) &APEX_SERVICE_START;
-	 service < (struct service_d*) &APEX_SERVICE_END;
+    for (service = (struct service_d*) APEX_SERVICE_START;
+	 service < (struct service_d*) APEX_SERVICE_END;
 	 ++service)
       if (service->report)
 	service->report ();
