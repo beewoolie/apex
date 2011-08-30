@@ -16,11 +16,25 @@ x Linking FAT and EXT2 drivers to MMC.  This ought to work as the
 x Fix writing of APEX image to SD card as to skip the partition
   table.  Need to make a partition table with room for APEX.
 o Construct a kernel image that we can use to boot.
-o Initialize PMIC
+x Initialize PMIC. No need to since we cannot control it on the most
+  recent hardware.
 o Go!
 
 NOTES
 =====
+
+o 2011.aug.30
+  o Working OK.  Fixed environment write which was an error in flash read. 
+
+o 2011.aug.29
+  o First boot!  Not reproducible, though.
+  o apex load commands:
+
+im load ext2://3/uInitrd
+im load ext2://3/uImage-2.6.31.14.24-efikamx
+boot console=tty1 root=/dev/sda2 rootwait rw splash
+
+
 
 o 2011.aug.26
   o Received replacement device and debug board.  SD slot works again.

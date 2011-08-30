@@ -42,7 +42,7 @@ void __naked __section (.vector.0) exception_vectors (void)
 	 "ldr pc, =undef_handler\n\t"		/* undefined instruction */
 	 "ldr pc, =exception_error_handler\n\t"	/* software interrupt (SWI) */
 	 "ldr pc, =prefetch_handler\n\t"	/* prefetch abort */
-	 "ldr pc, =abort_handler\n\t"		/* data abort */
+	 "ldr pc, =data_abort_handler\n\t"      /* data abort */
 	 "ldr pc, =exception_error_handler\n\t"	/* (reserved) */
 	 "ldr pc, =irq_handler\n\t"		/* irq (interrupt) */
 	 "ldr pc, =exception_error_handler\n\t"	/* fiq (fast interrupt) */
@@ -88,7 +88,7 @@ void __naked prefetch_handler (void)
     ;
 }
 
-void __naked abort_handler (void)
+void __naked data_abort_handler (void)
 {
   unsigned long addr;
 //  unsigned long far;
@@ -101,6 +101,8 @@ void __naked abort_handler (void)
   __asm volatile ("mov lr, %0" : "=r" (addr));
   PUTHEX_LL (addr);
 
+//  __asm volatile ("mrc p15, 0, r0, c5, c0");
+//  __asm volatile ("mrc p15, 0, r1, c6, c0");
 //  __asm volatile ("mrc p15, 0, %0, c5, c0" : "=r" (fsr));
 //  __asm volatile ("mrc p15, 0, %0, c6, c0" : "=r" (far));
 //  PUTC_LL (':');

@@ -93,6 +93,7 @@
 #include <driver.h>
 #include <service.h>
 #include <linux/string.h>
+#include <linux/ctype.h>
 #include <linux/kernel.h>
 #include <error.h>
 #include <command.h>
@@ -272,22 +273,41 @@ static ssize_t mx5_spi_flash_read (struct descriptor_d* d, void* pv, size_t cb)
     if (available > CBIT_BURST_MAX/8 - 4)
       available = CBIT_BURST_MAX/8 - 4;
 
-    {
+    DBG (3,"%s: 0x%p 0x%08lx %d\n", __FUNCTION__, pv, index, available);
+
+    if (available >= 4) {
       char* rgb = pv;
-//      printf ("index %ld (0x%lx)\n", index, index);
+      //      printf ("index %ld (0x%lx)\n", index, index);
       rgb[0] = Read;
       rgb[1] = (index >> 16) & 0xff;
       rgb[2] = (index >>  8) & 0xff;
       rgb[3] = (index >>  0) & 0xff;
+
+      mx5_ecspi_transfer (&mx5_spi_flash, pv, 4, available, 4);
+    }
+    else {
+      /* If there isn't room in the caller's buffer for the Read
+         command and address, we use an auxiliary buffer and copy the
+         result into the caller's buffer.  The other path is more
+         efficient so we let it be ok that there are two
+         invocations. */
+      char rgb[4];
+      rgb[0] = Read;
+      rgb[1] = (index >> 16) & 0xff;
+      rgb[2] = (index >>  8) & 0xff;
+      rgb[3] = (index >>  0) & 0xff;
+
+      mx5_ecspi_transfer (&mx5_spi_flash, rgb, 4, available, 4);
+      memcpy (pv, rgb, available);
     }
 
-    mx5_ecspi_transfer (&mx5_spi_flash, pv, 4, available, 4);
+//    dumpw (pv, available, 0, 0);
 
     d->index += available;
     cb -= available;
     cbRead += available;
 
-    //    printf ("nor: 0x%p 0x%08lx %d\n", pv, index, available);
+//    DBG (3,"%s: 0x%p 0x%08lx %d\n", __FUNCTION__, pv, index, available);
 
     pv += available;
   }
@@ -326,10 +346,17 @@ static ssize_t mx5_spi_flash_write (struct descriptor_d* d,
 {
   size_t cbWrote = 0;
 
+  DBG(2,"%s: writing\n", __FUNCTION__);
+//  dumpw (pv, cb, d->start + d->index, 0);
+
   while (cb) {
     unsigned long index = d->start + d->index;
     unsigned long status = 0;
     int step = 1;
+
+    DBG(3,"%s: index %ld (0x%lx) <- %x '%c'\n", __FUNCTION__,
+        index, index, *(u8*) pv,
+        isprint (*(u8*) pv) ? *(u8*) pv : '.');
 
 #if defined (NO_WRITE)
 //    printf ("write [0x%lx]<-0x%0*lx  page 0x%lx  step %d  cb 0x%x\n",

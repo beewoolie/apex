@@ -93,6 +93,8 @@
 
 */
 
+//#define TALK 2
+
 #include <config.h>
 #include <apex.h>		/* printf */
 #include <linux/types.h>
@@ -100,23 +102,10 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <driver.h>
+#include <talk.h>
 
-//#define TALK 2
-
-#if defined (TALK)
-#define PRINTF(f...)		printf (f)
-#define ENTRY(l)		printf ("%s\n", __FUNCTION__)
-#define DBG(l,f...)		do { if (TALK >= l) printf (f); } while (0)
-#else
-#define PRINTF(f...)		do {} while (0)
-#define ENTRY(l)		do {} while (0)
-#define DBG(l,f...)		do {} while (0)
-#endif
-
-extern char APEX_ENV_START;
-extern char APEX_ENV_END;
-extern char APEX_VMA_START;
-extern char APEX_VMA_END;
+extern char APEX_ENV_START[];
+extern char APEX_ENV_END[];
 
 #define C_ENV_CHECK_READ	(64)
 #define ENV_CHECK_LEN	(CONFIG_ENV_CHECK_LEN)
@@ -127,10 +116,10 @@ extern char APEX_VMA_END;
 #define ENV_ID(m)	((int)((m) & 0x7f))
 #define ENV_END		(0xff)
 #define ENV_IS_DELETED(m) (((m) & ENV_MASK_DELETED) == ENV_VAL_DELETED)
-#define C_ENV_KEYS	(((unsigned int) &APEX_ENV_END \
-			- (unsigned int) &APEX_ENV_START)\
+#define C_ENV_KEYS	(((unsigned int) APEX_ENV_END \
+			- (unsigned int) APEX_ENV_START)\
 			/sizeof (struct env_d))
-#define ENVLIST(i)	(((struct env_d*) &APEX_ENV_START)[i])
+#define ENVLIST(i)	(((struct env_d*) APEX_ENV_START)[i])
 
 struct descriptor_d d_env;	/* Environment storage region */
 struct descriptor_d d_envmem;	/* Environment storage region in memory */
@@ -164,8 +153,9 @@ static ssize_t _env_read (void* pv, size_t cb)
 
 static ssize_t _env_seek (ssize_t ib, int whence)
 {
-  DBG (2, "%s: %d %d\n", __FUNCTION__, ib, whence);
-  return pd_env->driver->seek (pd_env, ib, whence);
+  ssize_t ibResult = pd_env->driver->seek (pd_env, ib, whence);
+  DBG (2, "%s: %d %d -> %d\n", __FUNCTION__, ib, whence, ibResult);
+  return ibResult;
 }
 
 #if defined (CONFIG_CMD_SETENV)
@@ -173,13 +163,11 @@ static ssize_t _env_seek (ssize_t ib, int whence)
 static ssize_t _env_write (const void* pv, size_t cb)
 {
   ssize_t result;
-//  dumpw ((char*) pd_env->start, 32, 0, 0);
-//  dumpw ((char*) pv, 32, 0, 0);
   DBG (2, "%s: (%d) %p [%x %x]\n", __FUNCTION__,
        cb, pv, ((char*)pv)[0], ((char*)pv)[1]);
-  DBG (2, "  %lx %d %ld\n", pd_env->start, pd_env->index, pd_env->length);
+  DBG (2, "  st 0x%x  in %d  len %d\n",
+       (int) pd_env->start, pd_env->index, (int) pd_env->length);
   result = pd_env->driver->write (pd_env, pv, cb);
-//  dumpw ((char*) pd_env->start, 32, 0, 0);
   return result;
 }
 
@@ -237,6 +225,8 @@ static char _env_locate (int i)
 {
   char ch;
 
+  DBG(1,"%s: i %d\n", __FUNCTION__, i);
+
   while ((ibLastFlag = _env_seek (0, SEEK_CUR), _env_read (&ch, 1) == 1)
 	 && ch != ENV_END) {
     int id = ENV_ID (ch);
@@ -250,7 +240,9 @@ static char _env_locate (int i)
       *pb = 0;
       ++idNext;
 
+//      dumpw (rgb, pb - rgb + 1, 0, 0);
       rgId[id] = _env_index (rgb) & 0x7f;
+      DBG(2,"%s: rgId[%d] %d (rgb %p)\n", __FUNCTION__, id, rgId[id], rgb);
     }
 
     if (!ENV_IS_DELETED (ch) && rgId[id] == i)
@@ -348,6 +340,8 @@ static const char* _env_find (int i)
 {
   static char rgb[ENV_CB_MAX];
 
+  DBG(1,"%s: i %d\n", __FUNCTION__, i);
+
   if (!is_descriptor_open (pd_env))
     return NULL;
 
@@ -376,7 +370,8 @@ static const char* _env_find (int i)
 
 static int _env_fetch (const char* szKey, const char** pszValue)
 {
-  int i = _env_index (szKey);;
+  int i = _env_index (szKey);
+  DBG(1,"%s: key %s  index %d\n", __FUNCTION__, szKey, i);
   if (i != -1)
     *pszValue = _env_find (i);
   return i;
@@ -495,8 +490,8 @@ void env_erase (const char* szKey)
 
 int env_store (const char* szKey, const char* szValue)
 {
-  int i = _env_index (szKey);
-  int   cch = strlen (szValue);
+  int  i   = _env_index (szKey);
+  int  cch = strlen (szValue);
   char ch;
 
   ENTRY (0);

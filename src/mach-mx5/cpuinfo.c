@@ -70,7 +70,7 @@ static void cpuinfo_report (void)
           auxctrl, l2cacheaux,
           test & 0xffff);
 
-  printf ("  rev: 0x%x  %s  (system_revision 0x%x)\n",
+  printf ("  rev:    0x%x  %s  (system_revision 0x%x)\n",
           board_revision (), describe_board_revision (),
           target_hardware_revision ());
 

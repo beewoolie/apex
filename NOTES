@@ -5,13 +5,36 @@ APEX Boot Loader
 
 TODO:
 
+  o 2011.aug.29
+    o imx51 boot successful.  Boot to linux successful, but video
+      output broken probably caused by an incompatibility between
+      hardware and kernel.  In fact, uboot booting doesn't make the
+      video work. Genesi is working on a solution.
+
+    o === TODO
+      o Move MXC drivers to src/drivers-mxc/
+      o Support image load address change on loading images to allow
+	loading images with bogus or unusuable for some reason.  This
+	should only be necessary for uboot images but we never really
+	know.
+      x Fix environment set on mx51.  Was a bug in the flash read.
+      o Add directory listing on fat.
+      o Move driver info calls to seperate entry points s.t. version
+	only shows the most basic data.
+      o Implement a list or show command on regions that can be used
+	to show directory contents.
+      o Figure out if and why image show doesn't work when reading
+	directly from media.
+      o Move alias to 'set' and allow set alone to show environment as
+	well as set parameters.
+
   o 2011.jul,1
     o For the imx5x, we don't need to initialize SDRAM or test whether
       or not we're running from SDRAM in most cases because the boot
       ROM does this for us.  In fact, we don't even need to be able to
       relocate ourselves at all.  We can elminiate the code that
       detects whether we're already running in the right place if we
-      want. 
+      want.
 
   o 2009.jan.4
 
@@ -78,7 +101,7 @@ TODO:
     o Startup that doesn't use copy.  Originally, we only supported a
       copy when loading data into memory.  With aImages, there could
       be an "im load" instead.  How should this be integrated into
-      APEX? 
+      APEX?
 
   o 2008.nov.18
 
@@ -95,12 +118,12 @@ TODO:
       the proper place in RAM.  Alternatively, we could put the
       exception vectors (aligned) anywhere in the APEX image and map
       those.  The advantage of the first is that we *can* have
-      exception vectors without the MMU if NOR flash maps to 0. 
+      exception vectors without the MMU if NOR flash maps to 0.
 
   o 2008.nov.9
 
     o Detecting SATA.  Absent SATA drives must not break the ATA
-      driver. 
+      driver.
 
     o dump command.  The ASCII output doesn't change byte order with
       the hex output data.  So, in the case of a little-endian dump,
@@ -136,14 +159,14 @@ TODO:
     o mv2120
 
       o Kernel wont' boot.  Need to look at the booting code in uboot
-        to see what they're doing before the pass control to the kernel.
+	to see what they're doing before the pass control to the kernel.
       o Environment.  Need to place an environment for APEX into flash
-        so that we can customize it once the system is running.  We
-        can probably get away with a simple default, but I know we'll
-        want to be able to modify it once the system is running.
+	so that we can customize it once the system is running.  We
+	can probably get away with a simple default, but I know we'll
+	want to be able to modify it once the system is running.
       o MMU makes the IO much faster, but the cmd-reset doesn't work
-        any more.  Not sure why since none of the peripherals would
-        work if the caching were broken...I thought.
+	any more.  Not sure why since none of the peripherals would
+	work if the caching were broken...I thought.
 
       o Timing with newly formatted ext3 partition.  The second set of
 	numbers in parenthesis comes from enabling the MMU and cache
@@ -153,7 +176,7 @@ TODO:
 	uImage-big	111s		9s (3s)		22s (3s)
 
 
-    o generic ata driver. 
+    o generic ata driver.
 
       There are a lot of details to get right in order to let this
       driver be sufficiently generic to be useful.  The old CF driver
@@ -209,7 +232,7 @@ TODO:
       to make sure that a particular symbol is smaller than a known
       value.  This would make it possible to detect when the bootstrap
       is too long, and therefore, unable to execute because it will
-      not be available in RAM when it needs to be. 
+      not be available in RAM when it needs to be.
 
   o 2008.jul.9
     o Fixed ext2 to use inode_size.
@@ -221,7 +244,7 @@ TODO:
       as well as the variable for the size.  It would be ideal if the
       source region simple referred to the size and it was expanded when
       the region is referenced.  We may live with the redundance for a
-      while.  
+      while.
     o It would be good to merge the environment and the aliases into a
       single environment.  Doing so requires that we allow the program
       and user to distinguish between immediately saved environment
@@ -254,37 +277,37 @@ TODO:
       o units conversion is vague, hex numbers don't need 0x prefix
       o No measurable progress long-running commands, just spinner
       o help is vague.  bootm, for example, claims that there could be
-        more than two arguments, but that isn't really the case. 
+	more than two arguments, but that isn't really the case.
       o Allowing enter to redo a previous command is dangerous and
-        annoying since there is no ability to cancel a command while
-        it executes.
+	annoying since there is no ability to cancel a command while
+	it executes.
       o Multiple code paths for common functions. e.g. booting linux
-        has more than one code path and the ARM path doesn't include a
-        ramdisk
+	has more than one code path and the ARM path doesn't include a
+	ramdisk
       o image format has data in it that doesn't belong there.  The
-        load address for a ramdisk isn't really the purview of the
-        ramdisk creator but the boot loader.  Moreover, since uboot
+	load address for a ramdisk isn't really the purview of the
+	ramdisk creator but the boot loader.  Moreover, since uboot
 	won't load a ramdisk as part of the bootm command, we have to
-        do it by hand.  what is the point of the header?
+	do it by hand.  what is the point of the header?
       o Rampant #ifdef's based on the targets.  There is code in the
-        arm specific Linux command for several different targets to
-        copy the ramdisk to RAM.  This makes for very poor
+	arm specific Linux command for several different targets to
+	copy the ramdisk to RAM.  This makes for very poor
 	maintainability.
 
   o 2007.jul.22
     o Slug is having problems at 128MiB of RAM
       o we could use a memory test command, just for grins.  The code
-        is there but there is no command.  This also requires us to
-        have a way to determine where APEX memory resides.
+	is there but there is no command.  This also requires us to
+	have a way to determine where APEX memory resides.
     o Fix the memscan command to not be destructive.
 
   o 2007.jun.5
     o checksum verification.
       o Use cases include copy to flash with checksum.
-        copy from xmodem to memory and then to flash.
+	copy from xmodem to memory and then to flash.
 	Copy from running version to flash.
       o What do we do if there is already a checksum?  Can we detect
-        it?  Should this be automatic in the copy?  Probably a good
+	it?  Should this be automatic in the copy?  Probably a good
 	idea because we make sure there are no errors anywhere.  Note
 	that we would need to leave space after the binary for this,
 	for APEX.
@@ -333,14 +356,14 @@ TODO:
       o there is likely to be little reason to stick with their
 	implementation as it doesn't yield smaller or faster code.
       o We need to decide if we want to
-        a) use a header for the CRC, or at a minimum, a header to
+	a) use a header for the CRC, or at a minimum, a header to
 	   define that there is a CRC.
-        b) this header couple include room for a jump, 1 ARM instruction
-        c) or we can use a trailer.  Trouble with a trailer is that
+	b) this header couple include room for a jump, 1 ARM instruction
+	c) or we can use a trailer.  Trouble with a trailer is that
 	   the cksum program cannot be used directly to append this.
-        d) use a magic number anywhere to cope with finding the
+	d) use a magic number anywhere to cope with finding the
 	   checksum.
-        e) trailer/header could be a 16 byte structure.  Perhaps more.
+	e) trailer/header could be a 16 byte structure.  Perhaps more.
 	f) could fall back on uboot header, but disinclined due to
 	   excessive complexity.
 
@@ -363,37 +386,37 @@ TODO:
       Perhaps, I'm better off using the exact algorithm in the Ethernet
       standard.
 
-        The default CRC used is based on the polynomial used for CRC error
+	The default CRC used is based on the polynomial used for CRC error
 	check-checking ing in the networking standard ISO/IEC
 	8802-3:1989.  The CRC checksum encoding is defined by the
 	generating polynomial:
 
-           G(x) = x^32 + x^26 + x^23 + x^22 + x^16 + x^12 +
-                x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1
+	   G(x) = x^32 + x^26 + x^23 + x^22 + x^16 + x^12 +
+		x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1
 
-        Mathematically, the CRC value corresponding to a given file is
+	Mathematically, the CRC value corresponding to a given file is
 	defined by  the following procedure:
 
-           The n bits to be evaluated are considered to be the
+	   The n bits to be evaluated are considered to be the
 	   coefficients of a mod 2 polynomial M(x) of degree n-1.
 	   These n bits are the bits from the file, with the most
 	   significant bit being the most significant bit
 	   of the first octet of the file and the last bit being the
-           least significant bit of the last octet, padded with zero
+	   least significant bit of the last octet, padded with zero
 	   bits (if necessary) to achieve an integral number of
 	   octets, followed by one or more octets representing the
 	   length of the file as a binary value, least significant
 	   octet first.  The smallest number of octets capable of
 	   representing this integer are used.
 
-           M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and
+	   M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and
 	   divided by G(x) using mod 2 division, producing a remainder
 	   R(x) of degree <= 31.
 
 	   The coefficients of R(x) are considered to be a 32-bit
 	   sequence.
 
-           The bit sequence is complemented and the result is the CRC.
+	   The bit sequence is complemented and the result is the CRC.
 
   o 2007.may.17
 
@@ -411,11 +434,11 @@ TODO:
 	copy until the crc goes to zero.
       o This was confirmed by Abdul as he's done it.
       o This would allow us to do something like
-          copy nand:0+* $bootaddr
+	  copy nand:0+* $bootaddr
 	where the * means copy until we find that the CRC has been
 	met.
       o May need to revise the syntax so that we know the upper limit.
-          copy nand:0+2m* $bootaddr
+	  copy nand:0+2m* $bootaddr
 	This way we know to copy no more than 2m, but report an error
 	if we get to the end of the block and the CRC fails.
 
@@ -462,7 +485,7 @@ TODO:
   o 2007.may.11
     o Need to move *all* configurable parameters to the Kconfig.
     o Need to move bootstrap into segments so that we can properly
-      initialize when we don't have access to a stack. 
+      initialize when we don't have access to a stack.
     o Should allow the initialization code, after SDRAM init, to setup
       an early stack.  It could even be the _correct_ stack address
       since we don't really care.  This may make some portions of the
@@ -554,7 +577,7 @@ TODO:
 
   o descriptor_d.width
     o annotates a descriptor, telling the driver what width the caller
-      would like used.  
+      would like used.
     o Force 1 byte width for CF interfaces.
     o Force 2 byte width for 16 bit only access
     o Force 4 byte width for unforgiving CPU registers, e.g. IXP
@@ -564,7 +587,7 @@ TODO:
       driver does the right thing.
 
   o Need to fix the envmagic script because it it a significant
-    portion of the time it takes to build on the nslu2. 
+    portion of the time it takes to build on the nslu2.
 
   o Driver enhacements
 
@@ -590,7 +613,7 @@ TODO:
     drivers for the filesystem and partition drivers.  This may mean
     that we need to move these drivers such that the init's follow the
     environment initialization.  At the moment, this isn't the case
-    since none of them do anything at init time. 
+    since none of them do anything at init time.
 
   o Implement uniform driver basis in environment.  There is no reason
     not to use an environment variable for the default driver for each
@@ -614,13 +637,13 @@ TODO:
   o Support for arrow keys
     o I believe that the only hitch is that we need to cope with the
       multi-byte-ness of the codes.
-    o Perhaps a simple state machine will do. 
+    o Perhaps a simple state machine will do.
       ESC [ A
     o The [ will be suppressed as will the next character.
 
   o If the loader is small, the relocation code performs adequately.
     I haven't measured the performance, but it seem to be reasonably
-    quick to start.  
+    quick to start.
 
     However, if the loader were substantially larger because, say, it
     included a splash image, we would probably want to do something
@@ -636,7 +659,7 @@ TODO:
     instruction cache while uncompressing the kernel.  I suspect that
     the gzip decompression would be noticeably faster with the
     instruction cache.  However, we don't know if the kernel will
-    tolerate the presence of the I-cache once it boots.  
+    tolerate the presence of the I-cache once it boots.
 
     o There is now code to do so, but it doesn't appear to make a
       different on the ARM9.
@@ -673,7 +696,7 @@ TODO:
     + Implemented
 
   o There is an error in the dump code.  It doesn't dump the CLCD
-    registers correctly.  This is not excusable. 
+    registers correctly.  This is not excusable.
 
   o Improving network responsiveness
 
@@ -698,7 +721,7 @@ TODO:
       want it to be overly sensitive.  It would be good to have some
       defined keystrokes for for break and cancel.  ESC isn't a good
       choice because we're like to be able to use arrows at some
-      point.  ^C is better. 
+      point.  ^C is better.
       + Implemented in the console code.
     o We can probably get away with a Kconfig option and no UI to
       change it.
@@ -707,8 +730,8 @@ TODO:
     o Looks like there is a problem transmitting when packets are
       received.
     o Need to get a better picture of the network traffic.  ethereal
-      shows that tftp is fine in a full-duplex switch situation. 
-    o In half-duplex as I have, there are lots of problems 
+      shows that tftp is fine in a full-duplex switch situation.
+    o In half-duplex as I have, there are lots of problems
       transmitting when there is traffic on the wire.  Need to
       instrument.
     o BTW, the SMC91x has no problem with this.  In fact, as far as I
@@ -719,7 +742,7 @@ TODO:
 
   o Network traffic, continued
     o I've created an ethernet_service function with a user supplied
-      termination function. 
+      termination function.
     o The user can let the receives continue until an arbtrary set of
       conditions are met.
     o The only pieces missing is a way to hook the receive so that the
@@ -798,7 +821,7 @@ TODO:
     for writing.  There is nothing in the interfaces to support this at
     the moment.  Either we cache the file-open data, or we let it all
     be lazy and perform the open when the first read or write call is
-    made.  
+    made.
     + Reading works fine at the moment.
 
   o descriptors really need to allow drivers to define a
@@ -811,7 +834,7 @@ TODO:
     source devices.  Perhaps it would be best to use aliases so that
     we can control it at runtime.
 
-  o The adc test driver needs to be able to check for touch events.  
+  o The adc test driver needs to be able to check for touch events.
 
   o Do we want to be able to show all variables, env and aliases in
     the same command?
@@ -841,7 +864,7 @@ TODO:
     list.  If the user clobbers it, the host_ip_address isn't
     clobbered.  The user might think that erasing the alias removes
     the IP address setting.  We need to either detect the loss of the
-    alias, or we need to no store the IP address in an array. 
+    alias, or we need to no store the IP address in an array.
 
   o Need a default command line setting in the config file.  It should
     completely override the platform default, when present.
@@ -849,7 +872,7 @@ TODO:
   o Pipes should work for streaming between drivers.  [g2] wants to be
     able to specify a list of drivers/regions to try.  This may mean
     I'll have to combine the parse and the open methods so that the
-    open can continue until it succeeds.  
+    open can continue until it succeeds.
       E.g. nor:128k+1m|(ext2,vfat):/boot/zImage
     Trouble ensues when the options are more complex, NxM.
   * Aliases can be simple text substitutions.
@@ -865,7 +888,7 @@ TODO:
     + We have a splash command that reads from a region but doesn't
       write to one.  In other words, we *could* do as suggested, but
       there isn't much reason for it from the POV of simplicity.
-  o Aliases mean we can have references to 
+  o Aliases mean we can have references to
       alias env nor:128k+32k
       alias apex mem:...
     aliases must match exactly.  Always.  I'd like to make the
@@ -889,7 +912,7 @@ TODO:
       issue.  Without reads from system memory, the chip select
       doesn't toggle and the CF fails to return a different memory
       location.  Thus the real problem is that the memcpy performs too
-      many transfers at one time.    
+      many transfers at one time.
     o Finally, I don't know what the right solution to the problem
       should be.
     o Dump could be made to do the right thing with a switch to read
@@ -1033,7 +1056,7 @@ TODO:
       precautionary words for the user.
 
   o Dump command needs a MORE mode.  Or, we need to limit the extent
-    of the dump. 
+    of the dump.
 
   o Let's add a driver alias function.
     o once we get into the thick of driver-land, we may have some
@@ -1044,7 +1067,7 @@ TODO:
       interoperation, but it might make things difficult for the user.
     o So, alias fat.mmc.spi mc
     o Then  ls mc:/  will do the right thing.
-    o Cake   
+    o Cake
     o Also, we may need to pass parameters to a driver.
     o ls fat(1).mmc.spi:/ might be a reference to the first partition
     o ls mc(1):/ would be equivalent
@@ -1053,7 +1076,7 @@ TODO:
     o This also suggests that region spec's will have a qualifier
       about the compatible formats.  Filespecs and memory region specs
       may not be compatible.  Or not. :-)
-    o This aliasing could be used to refer to regions.  
+    o This aliasing could be used to refer to regions.
       o alias apex: is the region of memory where apex is executing
       o alias env: is the region where the environment is stored.
 
@@ -1068,7 +1091,7 @@ TODO:
       driver hook so that the environment can report describe it's
       descriptor.
     o started.
-    o hook removed, switched to a service entry point 
+    o hook removed, switched to a service entry point
     o Completed, except that it displays through the version command.
   o look for more unused symbols
   o Doc on XIP kernel?  We *can* linux run completely from flash
@@ -1079,10 +1102,10 @@ TODO:
     o Should be little else since there is only one memory device
     o Not much incentive to be small with 80k of SRAM
   o CONFIG_ENV_SAFE_ERASE to allow user to erase whole
-    environment...there is already a configuration option for this. 
+    environment...there is already a configuration option for this.
 
   o Exception vectors at the start of the loader probably don't make
-    sense.  
+    sense.
     o If we every enable interrupts, we won't be running this loader
       from the start of addressable memory.  I suppose we could, but
       that hasn't been the way.  The kernel needs to load at
@@ -1096,14 +1119,14 @@ TODO:
     o 32 entry function table
     o irq disabled if the function is empty.
     o no priorities
-    o partially implemented, but non-functional 
+    o partially implemented, but non-functional
 
   o Need to regularize the sdram and nor flash config parameters.  The
     arch determines some of these parameters.  Config should only
     enable.  For example, CONFIG_SDRAM_BANK0=y and the rest comes from
     the platform.  Perhaps the config should specify info on the SDRAM
     chip(s).
-    o The SDRAM part has been done.  
+    o The SDRAM part has been done.
     o Problem with flash is that we probably needto continue letting
       the config specify the base address.  The arch does know where
       flash can be, and there is one bank that is likely to always be
@@ -1122,14 +1145,14 @@ Goals
   o Driver self-discovery when relevent
   o Small image, less than 16K for basic loader
     o This will be hard when using the kernel's printf
-    o CONFIG_SMALL helps 
+    o CONFIG_SMALL helps
   o Reasonably configurable at ./configure time
   o Good command line support
   o Code sharing among targets is *not* of the highest priority
   o No assembler files
     o There is some hand assembly in the start-up, but that's probably
       unavoidable.
-    o Still, no .s files 
+    o Still, no .s files
   o No external dependencies aside from a tool chain
   o Staged execution (see below)
   o Support for over-the-wire and NAND booting--teeny tiny bootstrap
@@ -1190,10 +1213,10 @@ Parameters
 
 Symbols
 
-  o init () - driver initialization and then loader exec () 
+  o init () - driver initialization and then loader exec ()
   o reset () - initial entry point
   o exception_error () - function called for unused exceptions
-  o relocate_apex () - move loader into RAM from...whereever 
+  o relocate_apex () - move loader into RAM from...whereever
   o initialize_bootstrap () - pre-relocate initialization
   o initialize_target () - completion of target (non-driver) initialization
   o setup_c () - prepare C exection environment
@@ -1349,8 +1372,8 @@ NAND Flash Drivers
     is a new problem, or if this has always been the case.  The
     datasheet gives me the impression that this is a problem with the
     chip enable.
-    o This was a problem with the math 
-  o relocate_apex for NAND flash 
+    o This was a problem with the math
+  o relocate_apex for NAND flash
     o This is finally working reliably.  It really won't work without
     the CPLD, but it close.
   o At this point, the relocate_nand function (should) work regardless
@@ -1399,13 +1422,13 @@ UART Initialization
 
 Interrupt Handling
 
-  o It should be possible to catch interrupts in the boot loader. 
+  o It should be possible to catch interrupts in the boot loader.
   o Most of the code is implemented (for one platform) and enabled
     with CONFIG_INTERRUPTS.
   o The key piece missing is that the interrupt vectors must either be
     written to flash, or the MMU must be enabled so that the page with
     the vectors is available at address zero.
-  o Untrue, we can use the RCPC to put SDRAM (or SRAM) at 0x00000000. 
+  o Untrue, we can use the RCPC to put SDRAM (or SRAM) at 0x00000000.
 
 Console
 
@@ -1417,13 +1440,13 @@ Console
 Ethernet
 
   o There is an underlying driver interface
-    o send/receive ... poll? 
+    o send/receive ... poll?
     o prefer not to have to implement interrupts for the sake of
       complexity
   o Protocol handler will have a discriminator?  Or will there be only
     one available at a time.
   o Need to support multiple streams since we will eventually support
-    telnet.  
+    telnet.
   o Select style interface will be best to handle console as well as
     network streams.
   o Handler will bind with some sort of discriminator.  Could be a
@@ -1450,4 +1473,3 @@ Ethernet
   o I prefer a very simple dispatch so that there is little admin.
     -> slow call structure for packet dispatch
     -> polling for packets
-

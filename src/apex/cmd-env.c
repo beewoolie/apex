@@ -56,6 +56,8 @@
 */
 
 
+//#define TALK 1
+
 #include <config.h>
 #include <linux/string.h>
 #include <apex.h>
@@ -63,6 +65,7 @@
 #include <error.h>
 #include <environment.h>
 #include <driver.h>
+#include <talk.h>
 
 /* cmd_printenv
 
@@ -117,6 +120,8 @@ static int cmd_setenv (int argc, const char** argv)
 
   if (argc < 3)
     return ERROR_PARAM;
+
+  DBG(1,"%s: argc %d\n", __FUNCTION__, argc);
 
   for (i = 2; i < argc; ++i) {
     cb = strlen (argv[i]);
