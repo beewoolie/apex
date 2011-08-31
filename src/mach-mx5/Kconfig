@@ -5,7 +5,7 @@ choice
 	default MACH_GENESI_EFIKA
 
 config MACH_GENESI_EFIKA
-	bool "Genesi Efika Smarttop"
+	bool "Genesi Efikamx Smarttop"
 	select ARCH_MX51
 
 endchoice
