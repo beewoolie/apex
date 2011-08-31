@@ -47,6 +47,8 @@ static void cpuinfo_report (void)
 }
 
 static __service_7 struct service_d cpuinfo_service = {
+  .name        = "cpu-ixp42x",
+  .description = "Intel iXP42x SoC service",
   .report = cpuinfo_report,
 };
 

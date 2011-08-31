@@ -1171,22 +1171,24 @@ static void ext2_report (void)
 #endif
 
 static __driver_6 struct driver_d ext2_driver = {
-  .name = DRIVER_NAME,
+  .name        = DRIVER_NAME,
   .description = "Ext2 filesystem driver",
-  .flags = DRIVER_DESCRIP_FS,
-  .open = ext2_open,
-  .close = ext2_close,
-  .read = ext2_read,
-//  .write = cf_write,
-//  .erase = cf_erase,
-  .seek = seek_helper,
+  .flags       = DRIVER_DESCRIP_FS,
+  .open        = ext2_open,
+  .close       = ext2_close,
+  .read        = ext2_read,
+//  .write       = cf_write,
+//  .erase       = cf_erase,
+  .seek        = seek_helper,
 #if defined CONFIG_CMD_INFO
-  .info = ext2_info,
+  .info        = ext2_info,
 #endif
 };
 
 static __service_6 struct service_d ext2_service = {
 #if !defined (CONFIG_SMALL)
-  .report = ext2_report,
+  .name        = DRIVER_NAME,
+  .description = "Ext2 filesystem service",
+  .report      = ext2_report,
 #endif
 };

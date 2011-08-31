@@ -13,18 +13,18 @@ TODO:
 
     o === TODO
       o Move MXC drivers to src/drivers-mxc/
-      o Support image load address change on loading images to allow
+      x Support image load address change on loading images to allow
 	loading images with bogus or unusable for some reason.  This
 	should only be necessary for uboot images but we never really
 	know.
       x Fix environment set on mx51.  Was a bug in the flash read.
       o Add directory listing on fat.
-      o Move driver info calls to separate entry points s.t. version
+      x Move driver info calls to separate entry points s.t. version
 	only shows the most basic data.
-      o Implement a list or show command on regions that can be used
-	to show directory contents.
-      o Figure out if and why image show doesn't work when reading
-	directly from media.
+      x Implement a list or show command on regions that can be used
+	to show directory contents.  Now, separate commands.
+      x Figure out if and why image show doesn't work when reading
+	directly from media.  Seems to work OK.
       x Move alias to 'set' and allow set alone to show environment as
 	well as set parameters.
       o Write mapping command to allow addresses to be remapped from
@@ -33,6 +33,7 @@ TODO:
         interesting in other cases.  This also means we need to be
         able to show the mappings, especially when they are not one to
         one. 
+      o Switch to protothreads for background service, e.g. ethernet.
 
   o 2011.jul,1
     o For the imx5x, we don't need to initialize SDRAM or test whether

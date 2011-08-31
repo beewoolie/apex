@@ -22,7 +22,8 @@
 
 struct image_info {
   bool fRegionCanExpand;
-  uint32_t initrd_relocation;
+  uint32_t initrd_relocate;
+  uint32_t load_address_override;
 };
 
 typedef int (*pfn_handle_image) (int, struct descriptor_d*, struct image_info*);

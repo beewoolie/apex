@@ -100,7 +100,7 @@
 
 #include <config.h>
 #include <driver.h>
-#include <service.h>
+//#include <service.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <error.h>

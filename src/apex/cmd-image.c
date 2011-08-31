@@ -46,7 +46,8 @@ int cmd_image (int argc, const char** argv)
 
 
   memset (&info, 0, sizeof (info));
-  info.initrd_relocation = ~0;
+  info.initrd_relocate = ~0;
+  info.load_address_override = ~0;
 
   if (argc < 2)
     return ERROR_PARAM;
@@ -58,10 +59,19 @@ int cmd_image (int argc, const char** argv)
       case 'r':
         if (argc < 3)
           return ERROR_PARAM;
-        info.initrd_relocation = simple_strtoul (argv[2], NULL, 0);
+        info.initrd_relocate = simple_strtoul (argv[2], NULL, 0);
         argc -= 2;
         argv += 2;
         break;
+
+      case 'l':
+        if (argc < 3)
+          return ERROR_PARAM;
+        info.load_address_override = simple_strtoul (argv[2], NULL, 0);
+        argc -= 2;
+        argv += 2;
+        break;
+
       default:
         return ERROR_PARAM;
       }
@@ -145,7 +155,12 @@ static __command struct command_d c_image = {
 #endif
 "    check    - check the integrity of the image including payload CRCs\n"
 "  Options:\n"
-"    -r ADDR  - Relocate ramdisk to ADDR on load.  Important for uImages.\n"
+"    -r ADDR  - Relocate ramdisk to ADDR after load.  Useful for uImages.\n"
+"    -l ADDR  - Override load address.  Useful for uImages.\n"
+"  The -r and -l options are intended for use with UBoot images\n"
+"  because some uImages will not be completely compatible with APEX.  It\n"
+"  is always better to modify images to carry correct parameters instead\n"
+"  of depending on fixups in the loader.\n\n"
 "  In some cases, the region length may be omitted and the command\n"
 "  will infer the length from the image header.\n"
 "  e.g.  image check 0xc1000000\n"

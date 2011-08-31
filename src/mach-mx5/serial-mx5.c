@@ -21,24 +21,24 @@
    stability.
 
 
-EfikaSB# md 0x73fbc080 1                             
-73fbc080: 00000001    ....                           
+EfikaSB# md 0x73fbc080 1
+73fbc080: 00000001    ....
 EfikaSB#                       md 0x73fbc080 1
-73fbc080: 00000001    ....                    
-EfikaSB# md 0x73fbc084 1                 
-73fbc084: 00004027    '@..               
-EfikaSB# md 0x73fbc088 1                 
-73fbc088: 00000704    ....               
-EfikaSB# md 0x73fbc08c 1                 
-73fbc08c: 00008000    ....               
-EfikaSB# md 0x73fbc0a4 1                 
-73fbc0a4: 0000000f    ....               
-EfikaSB# md 0x73fbc0a8 1                 
+73fbc080: 00000001    ....
+EfikaSB# md 0x73fbc084 1
+73fbc084: 00004027    '@..
+EfikaSB# md 0x73fbc088 1
+73fbc088: 00000704    ....
+EfikaSB# md 0x73fbc08c 1
+73fbc08c: 00008000    ....
+EfikaSB# md 0x73fbc0a4 1
+73fbc0a4: 0000000f    ....
+EfikaSB# md 0x73fbc0a8 1
 73fbc0a8: 00000120     ...
-EfikaSB# md 0x73fbc0ac 1                                    
-73fbc0ac: 00000004    ....                   
-EfikaSB#    md 0x73fbc090 1              
-73fbc090: 00000200    ....               
+EfikaSB# md 0x73fbc0ac 1
+73fbc0ac: 00000004    ....
+EfikaSB#    md 0x73fbc090 1
+73fbc090: 00000200    ....
 
 
 */
@@ -50,6 +50,8 @@ EfikaSB#    md 0x73fbc090 1
 #include "hardware.h"
 
 #include "uart.h"
+
+#define DRIVER_NAME "serial-mx5"
 
 
 void mx5_serial_init (void)
@@ -126,7 +128,7 @@ ssize_t mx5_serial_write (struct descriptor_d* d, const void* pv, size_t cb)
 }
 
 static __driver_0 struct driver_d mx5_serial_driver = {
-  .name        = "serial-mx5",
+  .name        = DRIVER_NAME,
   .description = "mx5 serial driver",
   .flags       = DRIVER_SERIAL | DRIVER_CONSOLE,
   .open        = open_helper,   /* Always succeed */
@@ -137,6 +139,8 @@ static __driver_0 struct driver_d mx5_serial_driver = {
 };
 
 static __service_3 struct service_d mx5_serial_service = {
+  .name        = DRIVER_NAME,
+//  .description = "Freescale iMX51x serial service",
   .init        = mx5_serial_init,
   .release     = mx5_serial_release,
 };

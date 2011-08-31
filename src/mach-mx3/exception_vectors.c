@@ -184,22 +184,10 @@ static void mx31_exception_init (void)
   }
 #endif
 
-//  local_irq_enable ();
 #endif
-}
-
-static void mx31_exception_release (void)
-{
-//  local_irq_disable ();
-}
-
-static void mx31_exception_report (void)
-{
 }
 
 /* Must follow MMU service */
 static __service_2 struct service_d mx31_exception_service = {
   .init    = mx31_exception_init,
-  .release = mx31_exception_release,
-  .report  = mx31_exception_report,
 };

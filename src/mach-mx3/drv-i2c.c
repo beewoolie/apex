@@ -29,6 +29,8 @@
 //#define TALK 1
 #include <talk.h>
 
+#define DRIVER_NAME "i2c-mx3"
+
 #include "hardware.h"
 
 #define I2C_IFDR_V		(0x3f)			/* Divisor of 2048 */
@@ -278,20 +280,22 @@ static void i2c_report (void)
 
 
 static __driver_4 struct driver_d i2c_driver = {
-  .name = "i2c-mx3",
+  .name        = DRIVER_NAME,
   .description = "I2C driver for Freescale MX3x",
-  .flags = DRIVER_DESCRIP_FS,
-  .open = i2c_open,
-  .close = close_helper,
-  .read = i2c_read,
-  .write = i2c_write,
-  .seek = seek_helper,
+  .flags       = DRIVER_DESCRIP_FS,
+  .open        = i2c_open,
+  .close       = close_helper,
+  .read        = i2c_read,
+  .write       = i2c_write,
+  .seek        = seek_helper,
 };
 
 static __service_6 struct service_d i2c_service = {
-  .init = i2c_init,
-  .release = i2c_release,
+  .name        = DRIVER_NAME,
+  .description = "Freescale iMX3x i2c service",
+  .init        = i2c_init,
+  .release     = i2c_release,
 #if !defined (CONFIG_SMALL)
-  .report = i2c_report,
+  .report      = i2c_report,
 #endif
 };

@@ -72,19 +72,19 @@ static int find_driver (struct descriptor_d* d)
 {
   size_t cb = strlen (d->driver_name);
 
-  extern char APEX_DRIVER_START;
-  extern char APEX_DRIVER_END;
+  extern char APEX_DRIVER_START[];
+  extern char APEX_DRIVER_END[];
   struct driver_d* driver;
   struct driver_d* driver_match = NULL;
 
-  for (driver = (struct driver_d*) &APEX_DRIVER_START;
-       driver < (struct driver_d*) &APEX_DRIVER_END;
+  for (driver = (struct driver_d*) APEX_DRIVER_START;
+       driver < (struct driver_d*) APEX_DRIVER_END;
        ++driver) {
     if (driver->name && strnicmp (d->driver_name, driver->name, cb) == 0) {
 	if (driver_match)
 	  return ERROR_AMBIGUOUS;
 	driver_match = driver;
-	if (d->driver_name[cb] == 0)
+	if (d->driver_name[cb] == 0) /* Exact match */
 	  break;
     }
   }

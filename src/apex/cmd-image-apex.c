@@ -474,12 +474,14 @@ int apex_image (int (*pfn) (int, struct descriptor_d*,
       if (info.addrLoad == ~0 && info.type == typeLinuxKernel)
         info.addrLoad = lookup_variable_or_env_int ("bootaddr", info.addrLoad);
       if (info.addrLoad == ~0 && info.type == typeLinuxInitrd)
-        ;                       /* *** FIXME: we should have a place */
-
+        info.addrLoad = lookup_variable_or_env_int ("ramdiskaddr",
+                                                    info.addrLoad);
       info.length = info.v;
       break;
     case fieldPayloadLoadAddress:
       info.addrLoad = info.v;
+      if (im_info->load_address_override != ~0)
+        info.addrLoad = im_info->load_address_override;
       break;
     case fieldPayloadEntryPoint:
       info.addrLoad = info.v;

@@ -186,22 +186,10 @@ static void mx51_exception_init (void)
   }
 #endif
 
-//  local_irq_enable ();
 #endif
 }
 
-static void mx51_exception_release (void)
-{
-//  local_irq_disable ();
-}
-
-static void mx51_exception_report (void)
-{
-}
-
-/* Must follow MMU service */
+/* Must follow MMU service if MMU is used. */
 static __service_2 struct service_d mx51_exception_service = {
   .init    = mx51_exception_init,
-  .release = mx51_exception_release,
-  .report  = mx51_exception_report,
 };

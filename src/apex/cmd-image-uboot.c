@@ -364,6 +364,9 @@ int handle_load_uboot_image (struct descriptor_d* d, struct image_info* info,
   size_t cbCheck = swabl (header->size);
   size_t cb = cbCheck;
 
+  if (info->load_address_override != ~0)
+    addrLoad = info->load_address_override;
+
   if (header->image_type == typeMulti)
     cb -= (g_cPayloads + 1)*sizeof (*g_rgSizes); /* Correct data_size */
 
@@ -388,7 +391,7 @@ int handle_load_uboot_image (struct descriptor_d* d, struct image_info* info,
     d->length = d->index + cb;
 
   parse_descriptor_simple ("memory", addrLoad, cb, &dout);
-  result = region_copy (&dout, d, regionCopySpinner);
+  result = region_copy (&dout, d, regionCopySpinner); /* Perform load */
   if (result >= 0) {
     parse_descriptor_simple ("memory", addrLoad, cb, &dout);
     if (header->image_type == typeMulti)
@@ -407,13 +410,13 @@ int handle_load_uboot_image (struct descriptor_d* d, struct image_info* info,
     ERROR_RETURN (ERROR_CRCFAILURE, "payload CRC error");
   }
 
-  if (addrLoadInitrd != ~0 && info->initrd_relocation != ~0) {
+  if (addrLoadInitrd != ~0 && info->initrd_relocate != ~0) {
     printf ("# Initrd (%s) mem:0x%08x+0x%08x [relocation]\n",
             describe_uboot_image_type (header->image_type),
-            info->initrd_relocation, swabl (g_rgSizes[1]));
-    memcpy ((void*) info->initrd_relocation, (void*) addrLoadInitrd,
+            info->initrd_relocate, swabl (g_rgSizes[1]));
+    memcpy ((void*) info->initrd_relocate, (void*) addrLoadInitrd,
             swabl (g_rgSizes[1]));
-    addrLoadInitrd = info->initrd_relocation;
+    addrLoadInitrd = info->initrd_relocate;
   }
 
 #if defined (CONFIG_VARIABLES)

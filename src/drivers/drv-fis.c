@@ -129,6 +129,8 @@
 
 */
 
+//#define TALK
+
 #include <config.h>
 #include <apex.h>
 #include <driver.h>
@@ -140,17 +142,12 @@
 #include <environment.h>
 #include <lookup.h>
 #include <sort.h>
+#include <talk.h>
 
 //#define FAKE
-//#define TALK
 
-#if defined (TALK)
-# define PRINTF(v...)	printf (v)
-#else
-# define PRINTF(v...)	do {} while (0)
-#endif
+#define DRIVER_NAME "fis-part"
 
-#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
 struct fis_descriptor {
   char name[16];		/* Image name, null terminated */
   unsigned long start;		/* Physical memory address of image */
@@ -538,18 +535,20 @@ static void fis_report (void)
 #endif
 
 static __driver_6 struct driver_d fis_driver = {
-  .name		= "fis-part",
-  .description	= "FIS partition driver",
-  .flags	= DRIVER_DESCRIP_FS,
-  .open		= fis_open,
-  .close	= fis_close,
-  .read		= fis_read,
+  .name	       = DRIVER_NAME,
+  .description = "FIS partition driver",
+  .flags       = DRIVER_DESCRIP_FS,
+  .open	       = fis_open,
+  .close       = fis_close,
+  .read	       = fis_read,
   /* Write and erase could be implemented to cope with skips. */
-  .seek		= seek_helper,
+  .seek	       = seek_helper,
 };
 
 static __service_6 struct service_d fis_service = {
 #if !defined (CONFIG_SMALL)
-  .report = fis_report,
+  .name        = DRIVER_NAME,
+  .description = "FIS partition service",
+  .report      = fis_report,
 #endif
 };

@@ -510,19 +510,21 @@ static void cf_report (void)
 #endif
 
 static __driver_3 struct driver_d cf_driver = {
-  .name = DRIVER_NAME,
-  .description = "CompactFlash flash driver",
-  .flags = DRIVER_WRITEPROGRESS(6),
-  .open = cf_open,
-  .close = close_helper,
-  .read = cf_read,
-//  .write = cf_write,
-//  .erase = cf_erase,
-  .seek = seek_helper,
+  .name        = DRIVER_NAME,
+  .description = "CompactFlash driver",
+  .flags       = DRIVER_WRITEPROGRESS(6),
+  .open        = cf_open,
+  .close       = close_helper,
+  .read        = cf_read,
+//  .write       = cf_write,
+//  .erase       = cf_erase,
+  .seek        = seek_helper,
 };
 
 static __service_6 struct service_d lpd79524_cf_service = {
 #if !defined (CONFIG_SMALL)
-  .report = cf_report,
+  .name        = DRIVER_NAME,
+  .description = "CompactFlash service",
+  .report      = cf_report,
 #endif
 };

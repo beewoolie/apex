@@ -93,6 +93,8 @@
 
 */
 
+//#define TALK
+
 #include <config.h>
 #include <apex.h>
 #include <driver.h>
@@ -104,17 +106,9 @@
 #include <error.h>
 #include <environment.h>
 #include <lookup.h>
+#include <talk.h>
 
-//#define TALK
-
-#if defined TALK
-# define PRINTF(v...)	printf (v)
-#else
-# define PRINTF(v...)	do {} while (0)
-#endif
-
-#define ENTRY(l) PRINTF ("%s\n", __FUNCTION__)
-
+#define DRIVER_NAME     "fatfs"
 
 #define FAT_READONLY	(1<<0)
 #define FAT_HIDDEN	(1<<1)
@@ -747,23 +741,25 @@ static void fat_report (void)
 #endif
 
 static __driver_6 struct driver_d fat_driver = {
-  .name = "fatfs",
+  .name        = DRIVER_NAME,
   .description = "FAT filesystem driver",
-  .flags = DRIVER_DESCRIP_FS,
-  .open = fat_open,
-  .close = fat_close,
-  .read = fat_read,
-//  .write = cf_write,
-//  .erase = cf_erase,
-  .seek = seek_helper,
+  .flags       = DRIVER_DESCRIP_FS,
+  .open        = fat_open,
+  .close       = fat_close,
+  .read        = fat_read,
+//  .write       = cf_write,
+//  .erase       = cf_erase,
+  .seek        = seek_helper,
 #if defined (CONFIG_CMD_INFO) && 0
-  .info = fat_info,
+  .info        = fat_info,
 #endif
 };
 
 static __service_6 struct service_d fat_service = {
 //  .init = fat_init,
 #if !defined (CONFIG_SMALL)
-  .report = fat_report,
+  .name        = DRIVER_NAME,
+  .description = "FAT filesystem service",
+  .report      = fat_report,
 #endif
 };

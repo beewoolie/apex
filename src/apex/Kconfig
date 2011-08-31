@@ -221,7 +221,14 @@ config CMD_INFO
 	bool "Define Info Command"
 	default y
 	help
-	  Show information about a region descriptor.  Use this command
+	  Show information about services.  Services include drivers and
+	  essential system components such as the CPU.
+
+config CMD_LIST
+	bool "Define List Command"
+	default y
+	help
+	  List information about a region descriptor.  Use this command
 	  to list the contents of a filesystem directory.
 
 config CMD_PARSE

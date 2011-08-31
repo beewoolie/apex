@@ -546,6 +546,8 @@ static __driver_3 struct driver_d mx5_spi_flash_driver = {
 };
 
 static __service_9 struct service_d mx5_spi_flash_service = {
+  .name	       = "flash-spi-mx5",
+  .description = "Freescale iMX5x SPI flash service",
   .init	       = mx5_spi_flash_init,
   .release     = mx5_spi_flash_release,
 #if !defined (CONFIG_SMALL)

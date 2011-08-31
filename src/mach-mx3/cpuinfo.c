@@ -77,8 +77,9 @@ static void cpuinfo_report (void)
 }
 
 static __service_7 struct service_d cpuinfo_service = {
+  .name        = "cpu-imx31",
+  .description = "Freescale iMX31 SoC service",
   .report = cpuinfo_report,
-
 };
 
 #endif

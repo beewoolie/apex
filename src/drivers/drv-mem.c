@@ -305,19 +305,21 @@ static ssize_t memory_write (struct descriptor_d* d, const void* pv, size_t cb)
 
 
 static __driver_1 struct driver_d memory_driver = {
-  .name = "memory",
-  .description = "generic RAM driver",
-  .open = open_helper,          /* Always succeed */
-  .close = close_helper,
-  .read = memory_read,
-  .write = memory_write,
-  .seek = seek_helper,
+  .name        = "memory",
+  .description = "generic RAM/memory-mapped driver",
+  .open        = open_helper,   /* Always succeed */
+  .close       = close_helper,
+  .read        = memory_read,
+  .write       = memory_write,
+  .seek        = seek_helper,
 };
 
 static __service_4 struct service_d memory_service = {
-  .init = memory_init,
+  .name        = "memory",
+  .description = "generic RAM/memory-mapped service",
+  .init        = memory_init,
 #if !defined (CONFIG_SMALL)
-  .report = memory_report,
+  .report      = memory_report,
 #endif
 };
 

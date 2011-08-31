@@ -37,7 +37,7 @@ int cmd_version (int argc, const char** argv)
 #endif
 "\n    APEX comes with ABSOLUTELY NO WARRANTY."
 #if defined (CONFIG_SMALL)
-"\n\n"
+"\n"
 #endif
   );
 
@@ -83,27 +83,19 @@ int cmd_version (int argc, const char** argv)
   }
 #endif
 
+  printf ("\n");
+
+#if defined (CONFIG_CMD_INFO)
+  printf ("    Use the command 'info .' to see system details.\n");
 #endif
 
-  if (argc >= 0) {
-#if !defined (CONFIG_SMALL)
-    extern char APEX_SERVICE_START[];
-    extern char APEX_SERVICE_END[];
-    struct service_d* service;
-
-    putchar ('\n');
-
-    for (service = (struct service_d*) APEX_SERVICE_START;
-	 service < (struct service_d*) APEX_SERVICE_END;
-	 ++service)
-      if (service->report)
-	service->report ();
 #endif
-  }
 
 #if defined (CONFIG_ALLHELP)
-  printf ("\n    Use the command 'help help' to get started.\n\n");
+  printf ("    Use the command 'help help' for usage guidance.\n");
 #endif
+
+  printf ("\n");
 
   return 0;
 }

@@ -46,6 +46,8 @@
 #include <service.h>
 #include <network.h>
 
+#define DRIVER_NAME "eth-npe-ix4xx"
+
 struct npe_plat_data {
   const char* name;
   int data_size;
@@ -398,19 +400,21 @@ void npe_report (void)
 }
 
 static __driver_4 struct driver_d eth_driver = {
-  .name = "eth-npe-ix4xx",
+  .name        = DRIVER_NAME,
   .description = "ixp4xx NPE Ethernet driver",
-  .flags = DRIVER_NET,
-  //  .open = eth_open,
+  .flags       = DRIVER_NET,
+//  .open = eth_open,
 //  .close = close_helper,
 //  .read = eth_read,
 //  .write = eth_write,
 };
 
 static __service_6 struct service_d ixp4xx_npe_emac_service = {
-  .init = npe_init,
-  .release = npe_release,
+  .name        = DRIVER_NAME,
+  .description = "Intel iXP42x ethernet service",
+  .init        = npe_init,
+  .release     = npe_release,
 #if !defined (CONFIG_SMALL)
-  .report = npe_report,
+  .report      = npe_report,
 #endif
 };

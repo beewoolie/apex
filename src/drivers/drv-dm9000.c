@@ -665,19 +665,21 @@ static ssize_t dm9000_write (struct descriptor_d* d, const void* pv, size_t cb)
 }
 
 static __driver_4 struct driver_d dm9000_driver = {
-  .name = DRIVER_NAME,
+  .name        = DRIVER_NAME,
   .description = "Davicom DM9000 Ethernet driver",
-  .flags = DRIVER_NET,
-  .open = dm9000_open,
-  .close = close_helper,
-  .read = dm9000_read,
-  .write = dm9000_write,
+  .flags       = DRIVER_NET,
+  .open        = dm9000_open,
+  .close       = close_helper,
+  .read        = dm9000_read,
+  .write       = dm9000_write,
 };
 
 static __service_6 struct service_d dm9000_service = {
-  .init = dm9000_init,
-  //  .release = dm9000_release,
+  .name        = DRIVER_NAME,
+  .description = "Davicom DM9000 Ethernet service",
+  .init        = dm9000_init,
+//  .release     = dm9000_release,
 #if !defined (CONFIG_SMALL)
-  .report = dm9000_report,
+  .report      = dm9000_report,
 #endif
 };

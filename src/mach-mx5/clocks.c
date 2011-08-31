@@ -169,6 +169,8 @@ static void clocks_report (void)
 }
 
 static __service_7 struct service_d clock_service = {
-  .report = clocks_report,
+  .name        = "clocks-imx51",
+  .description = "Freescale iMX51x clock service",
+  .report      = clocks_report,
 };
 

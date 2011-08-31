@@ -26,8 +26,10 @@
 /* ----- Types */
 
 struct service_d {
-  void (*init) (void);
-  void (*report) (void);	/* Informative output from service */
+  const char* name;
+  const char* description;
+  void (*init)    (void);
+  void (*report)  (void);	/* Informative output from service */
   void (*release) (void);
 //  void (*service) (void);	/* Background service */
 };

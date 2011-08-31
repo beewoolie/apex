@@ -30,9 +30,11 @@ int __xbss(init) fSDRAMBoot;
 void sdramboot_report (void)
 {
   if (fSDRAMBoot)
-    printf ("          *** No SDRAM init when APEX executed from SDRAM.\n");
+    printf ("  sdramboot:  *** No SDRAM init when APEX executed from SDRAM.\n");
 }
 
 static __service_0 struct service_d sdramboot_service = {
-  .report = sdramboot_report,
+  .name        = "sdramboot",
+  .description = "SDRAM boot service",
+  .report      = sdramboot_report,
 };

@@ -28,6 +28,7 @@ obj-$(CONFIG_CMD_ERASE)		+= cmd-erase.o
 obj-$(CONFIG_CMD_FILL)		+= cmd-fill.o
 obj-$(CONFIG_CMD_GO)		+= cmd-go.o
 obj-$(CONFIG_CMD_INFO)		+= cmd-info.o
+obj-$(CONFIG_CMD_LIST)		+= cmd-list.o
 obj-$(CONFIG_CMD_MEMTEST)	+= cmd-memtest.o
 obj-$(CONFIG_CMD_PAUSE)		+= cmd-pause.o
 obj-$(CONFIG_CMD_PARSE)		+= cmd-parse.o

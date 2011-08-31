@@ -922,7 +922,7 @@ void mx5_esdhc_report (void)
 //  printf ("  esdhc:  prs 0x%08lx", ESDHCx_PRSSTAT(1));
 //  printf ("  cap 0x%08lx  host 0x%08lx\n",
 //          ESDHCx_HOSTCAPBLT(1), ESDHCx_HOSTVER(1));
-  printf ("  sd/mmc: %s, %s card acquired",
+  printf ("  mmc/sd: %s, %s card acquired",
           mmc_present () ? "card present" : "no card preset",
           mmc.acquired ? (mmc.sd ? "sd" : "mmc") : "no");
   if (mmc.acquired) {
@@ -1135,6 +1135,8 @@ static __driver_5 struct driver_d mx5_esdhc_driver = {
 };
 
 static __service_6 struct service_d mx5_esdhc_service = {
+  .name		= "mmc-esdhc-mx5",
+  .description  = "Freescale iMX51x SD/MMC service",
   .init		= mx5_esdhc_init,
 #if !defined (CONFIG_SMALL)
   .report	= mx5_esdhc_report,

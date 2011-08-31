@@ -98,6 +98,6 @@ static void pci_init (void)
 static __service_6 struct service_d pci_service = {
   .init = pci_init,
 #if !defined (CONFIG_SMALL)
-  //  .report = npe_report,
+  //  .report = pci_report,
 #endif
 };
