@@ -5,6 +5,20 @@ APEX Boot Loader
 
 TODO:
 
+  o 2011.sep.01
+    o === TODO
+      o Move MXC drivers to src/drivers-mxc/
+      o Add directory listing on fat.
+      o Write mapping command to allow addresses to be remapped from
+        the command line.  It could be useful when loading a uboot
+        image where we cannot change the load address.  May be
+        interesting in other cases.  This also means we need to be
+        able to show the mappings, especially when they are not one to
+        one. 
+      o Switch to protothreads for background service, e.g. ethernet.
+      o Support for high-capacity SD cards.  Need this support to
+        mount the armhf card.
+
   o 2011.aug.29
     o imx51 boot successful.  Boot to linux successful, but video
       output broken probably caused by an incompatibility between
@@ -12,13 +26,11 @@ TODO:
       video work. Genesi is working on a solution.
 
     o === TODO
-      o Move MXC drivers to src/drivers-mxc/
       x Support image load address change on loading images to allow
 	loading images with bogus or unusable for some reason.  This
 	should only be necessary for uboot images but we never really
 	know.
       x Fix environment set on mx51.  Was a bug in the flash read.
-      o Add directory listing on fat.
       x Move driver info calls to separate entry points s.t. version
 	only shows the most basic data.
       x Implement a list or show command on regions that can be used
@@ -27,13 +39,6 @@ TODO:
 	directly from media.  Seems to work OK.
       x Move alias to 'set' and allow set alone to show environment as
 	well as set parameters.
-      o Write mapping command to allow addresses to be remapped from
-        the command line.  It could be useful when loading a uboot
-        image where we cannot change the load address.  May be
-        interesting in other cases.  This also means we need to be
-        able to show the mappings, especially when they are not one to
-        one. 
-      o Switch to protothreads for background service, e.g. ethernet.
 
   o 2011.jul,1
     o For the imx5x, we don't need to initialize SDRAM or test whether
