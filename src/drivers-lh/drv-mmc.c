@@ -693,7 +693,7 @@ void SECTION mmc_acquire (void)
 //    case 2:			/* Initial OCR check  */
 //    case 12:
       ocr = response_ocr ();
-      if (ocr & OCR_ALL_READY)
+      if (ocr & MMC_OCR_READY)
 	++state;
       else
 	state += 2;
@@ -703,12 +703,12 @@ void SECTION mmc_acquire (void)
     else if (state == 3 || state == 13) {
 //    case 3:			/* Initial wait for OCR clear */
 //    case 13:
-      while ((ocr & OCR_ALL_READY) && --tries > 0) {
+      while ((ocr & MMC_OCR_READY) && --tries > 0) {
 	mdelay (MS_ACQUIRE_DELAY);
 	status = execute_command (command, 0, 0);
 	ocr = response_ocr ();
       }
-      if (ocr & OCR_ALL_READY)
+      if (ocr & MMC_OCR_READY)
 	state += 6;
       else
 	++state;
@@ -725,8 +725,8 @@ void SECTION mmc_acquire (void)
 	mmc.acquire_time += MS_ACQUIRE_DELAY;
 	status = execute_command (command, ocr, 0);
 	r = response_ocr ();
-      } while (!(r & OCR_ALL_READY) && --tries > 0);
-      if (r & OCR_ALL_READY)
+      } while (!(r & MMC_OCR_READY) && --tries > 0);
+      if (r & MMC_OCR_READY)
 	++state;
       else
 	state += 5;

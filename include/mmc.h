@@ -153,7 +153,7 @@
 #define CMD_STOP          CMD(MMC_STOP_TRANSMISSION,  R1) | CMD_BIT_BUSY
 #define CMD_WRITE_SINGLE  CMD(MMC_WRITE_BLOCK,        R1) | CMD_BIT_DATA | CMD_BIT_WRITE
 #define CMD_APP           CMD(MMC_APP_CMD,            R1)
-#define CMD_SD_SEND_SCR   CMD(SD_APP_SEND_SCR,	      R1) | CMD_BIT_APP
+#define CMD_SD_SEND_SCR   CMD(SD_APP_SEND_SCR,	      R1) | CMD_BIT_APP | CMD_BIT_DATA
 
 
 /*
@@ -219,7 +219,8 @@
 #define MMC_VDD_33_34	0x00200000	/* VDD voltage 3.3 ~ 3.4 */
 #define MMC_VDD_34_35	0x00400000	/* VDD voltage 3.4 ~ 3.5 */
 #define MMC_VDD_35_36	0x00800000	/* VDD voltage 3.5 ~ 3.6 */
-#define OCR_ALL_READY	0x80000000	/* Card Power up status bit */
+#define MMC_OCR_CCS	(1<<30)         /* Card supports CCS command */
+#define MMC_OCR_READY	(1<<31)		/* Card Power up status bit */
 
 /*
  * Card Command Classes (CCC)
@@ -253,15 +254,12 @@
  * CSD field definitions
  */
 
-#define CSD_STRUCT_VER_1_0  0           /* Valid for system spec 1.0 - 1.2 */
-#define CSD_STRUCT_VER_1_1  1           /* Valid for system spec 1.4 - 2.2 */
-#define CSD_STRUCT_VER_1_2  2           /* Valid for system spec 3.1       */
+enum {
+  MMC_CSD_VER_1      = 0,     /* CSD structure version 1.0 */
+  MMC_CSD_VER_2      = 1,     /* CSD structure version 2.0 */
+};
 
-#define CSD_SPEC_VER_0      0           /* Implements system spec 1.0 - 1.2 */
-#define CSD_SPEC_VER_1      1           /* Implements system spec 1.4 */
-#define CSD_SPEC_VER_2      2           /* Implements system spec 2.0 - 2.2 */
-#define CSD_SPEC_VER_3      3           /* Implements system spec 3.1 */
-
+#define MMC_CSD_VER(p)                        ((((uint8_t*)(p))[0] >> 6) & 0x3)
 
 enum {
   MMC_RES_OK        =    0,
@@ -271,6 +269,38 @@ enum {
   MMC_RES_FIFO_FULL = 1<<3,
   MMC_RES_CRC_ERR   = 1<<4,
 };
+
+
+enum {
+  MMC_SCR_VER_1_0		= 0,
+};
+
+enum {
+  MMC_SCR_SPEC_1_0		= 0, /* Card spec 1.0 - 1.01 */
+  MMC_SCR_SPEC_1_1		= 1, /* Card spec 1.10       */
+  MMC_SCR_SPEC_2_0		= 2, /* Card spec 2.0 */
+  MMC_SCR_SPEC_3_0              = 3, /* Card spec 3.0 */
+};
+
+enum {
+  MMC_SCR_SECURITY_NONE		= 0,
+  MMC_SCR_SECURITY_1_01		= 2,
+  MMC_SCR_SECURITY_2_00		= 3,
+};
+
+enum {
+  MMC_SCR_BUS_WIDTH_1		= (1<<0),
+  MMC_SCR_BUS_WIDTH_4		= (1<<2),
+};
+
+/* p is a pointer to the base of the SCR register. */
+#define MMC_SCR_SPEC(p) ({                                              \
+      int spec  = ((((uint8_t*)(p))[0] >> 0) & 0xf);                    \
+      int spec3 = ((((uint8_t*)(p))[2] >> 7) &   1);                    \
+      spec == 2 ? (spec3 ? MMC_SCR_SPEC_3_0 : MMC_SCR_SPEC_2_0) : spec; })
+#define MMC_SCR_DATA_STATUS_AFTER_ERASE(p)     ((((uint8_t*)(p))[1] >> 7) & 1)
+#define MMC_SCR_SECURITY(p)                    ((((uint8_t*)(p))[1] >> 4) & 7)
+#define MMC_SCR_BUS_WIDTH(p)                   ((((uint8_t*)(p))[1] >> 0) & 0xf)
 
 bool mmc_card_acquired (void);
 

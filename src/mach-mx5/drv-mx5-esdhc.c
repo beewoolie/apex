@@ -35,13 +35,29 @@
    reaches the final block.  The DMA address is at the full extent of
    the transfer.  Yet, the second 512B are FFs.
 
+   Card Registers
+   --------------
+
+   FYI, these are the card register names and sizes.
+
+     Name	Bits	Description
+     ----	----	-----------
+     CID	 128	Card Identification Register
+     RCA	  16	Relative Card Address
+     DSR	  16	Driver Stage Register (optional)
+     CSD	 128	Card Specific Data
+     SCR	  64	SD Configuration Register
+     OCR	  32	Operation Conditions Register
+     SSR	 512	SD Status Register
+     CSR	  32	Card Status Register
+
 */
 
-#define USE_WIDE                /* Use 4 bit IO with capable cards */
+#define USE_WIDE4	      /* Permit Use of 4 bit IO with capable cards */
 //#define USE_DMA
 //#define USE_MULTIBLOCK_READ     /* Unimplemented */
 
-//#define TALK 1
+//#define TALK 2
 
 #include <config.h>
 #include <driver.h>
@@ -107,6 +123,7 @@
 #define C_ACQUIRE_TRIES         (40)
 
 #define C_SIZE		csd_short(62, 12)
+#define C_SIZE_2	csd_long(48, 22)
 #define C_SIZE_MULT	csd_byte(47, 3)
 #define NSAC		csd_byte(104, 8)
 #define READ_BL_LEN	csd_byte(80, 4)
@@ -128,25 +145,30 @@
 
 struct mmc_info {
 //  u32 response[4];		/* Most recent response */
-  u8 response[16];              /* Most recent response, MSB order */
-  u8 cid[16];			/* CID of acquired card  */
-  u8 csd[16];			/* CSD of acquired card */
-  int acquire_time;		/* Count of delays to acquire card */
-//  int cmdcon_sd;		/* cmdcon bits for data IO */
-  bool sd;                      /* SD card detected */
-  int rca;			/* Relative address assigned to card */
-  bool acquired;                /* Boolean true when card acquired */
+  uint8_t  response[128/8];	/* Most recent response, MSB order */
+  uint32_t ocr;                 /* OCR of acquired card */
+  uint8_t  cid[128/8];          /* CID of acquired card */
+  uint8_t  csd[128/8];          /* CSD of acquired card */
+  uint8_t  scr[ 64/8];          /* SCR of acquired card */
+  uint8_t  ssr[512/8];          /* SSR of acquired card */
+  uint32_t rca;                 /* Relative address assigned to card */
+  int      version;             /* Card version */
+  int      acquire_time;	/* Count of delays to acquire card */
+  bool     width4;              /* 4 bit IO enabled */
+  bool     sd;                  /* SD card detected */
+  bool     hc;                  /* High capacity version 2.0 card */
+  bool     acquired;            /* Boolean true when card acquired */
 
-  int c_size;
-  int c_size_mult;
-  int read_bl_len;
-  int mult;
-  int blocknr;
-  int block_len;
-  int xfer_len;
-  int cb_cache;
-  unsigned long device_size;
-  unsigned long ib;		/* Index of cached data */
+  int      c_size;
+  int      c_size_mult;
+  int      read_bl_len;
+  int      mult;
+  int      blocknr;
+  int      block_len;
+  int      xfer_len;
+  int      cb_cache;
+  uint32_t block_count;
+  uint32_t ib;                  /* Index of cached data */
 } mmc;
 
 
@@ -156,7 +178,7 @@ struct mmc_info {
 # define CB_CACHE_MAX	(MMC_SECTOR_SIZE_MAX)
 #endif
 
-u8 __xbss(mmc) mmc_rgb[CB_CACHE_MAX];
+uint8_t __xbss(mmc) mmc_rgb[CB_CACHE_MAX];
 
 bool mmc_card_acquired (void) {
   return mmc.acquired; }
@@ -166,8 +188,8 @@ void mmc_clear (void) {
   mmc.ib = -1;
 }
 
-u32 ocr_host (void) {
-  u32 ocr = 0;
+uint32_t ocr_host (void) {
+  uint32_t ocr = MMC_OCR_CCS;        /* We support high-capacity */
   /* Low voltage card selection bit doesn't appear to be supported by
      all cards.  Setting this bit breaks card detection for some
      cards. */
@@ -202,7 +224,7 @@ void mmc_cd_gpio (bool as_gpio)
 
 bool mmc_present (void)
 {
-  u8 present = 0;
+  uint8_t present = 0;
   int i;
   mmc_cd_gpio (true);
   for (i = 0; i < 8; ++i)
@@ -210,7 +232,7 @@ bool mmc_present (void)
 
   mmc_cd_gpio (false);
 
-  return present == (u8) ~0;
+  return present == (uint8_t) ~0;
 }
 
 static uint8_t response_byte (int bit, int length)
@@ -230,7 +252,7 @@ static uint16_t response_short (int bit, int length)
   return v;
 }
 
-static inline u32 response_ocr (void) {
+static inline uint32_t response_ocr (void) {
   return 0
     | (mmc.response[0] << 24)
     | (mmc.response[1] << 16)
@@ -238,12 +260,14 @@ static inline u32 response_ocr (void) {
     |  mmc.response[3];
 }
 
-static inline u32 response_rca (void) {
+static inline uint32_t response_rca (void) {
   return response_short (16, 16);
 }
 
 /** return eight or fewer bits from the CSD register where the bits
-    are present in one or two bytes read from the register. */
+    are present in one or two bytes read from the register.  The
+    register holds field bits in MSB order which means that bit 0 is
+    LSB of the last byte of the register byte array. */
 
 static uint8_t csd_byte (int bit, int length)
 {
@@ -252,6 +276,11 @@ static uint8_t csd_byte (int bit, int length)
     & ((1<<length) - 1);
   return v;
 }
+
+/** return sixteen or fewer bits from the CSD register where the bits
+    are present in no more than three bytes read from the register.
+    The register holds field bits in MSB order which means that bit 0
+    is LSB of the last byte of the register byte array. */
 
 static uint16_t csd_short (int bit, int length)
 {
@@ -262,9 +291,30 @@ static uint16_t csd_short (int bit, int length)
   return v;
 }
 
-static u32 xfertyp_from_cmd (u32 cmd)
+/** return thirty-two or fewer bits from the CSD register where the
+    bits are present in no more than five bytes read from the
+    register.  The register holds field bits in MSB order which means
+    that bit 0 is LSB of the last byte of the register byte array. */
+
+static uint32_t csd_long (int bit, int length)
 {
-  u32 xfertyp = ((cmd >> CMD_SHIFT_CMD) & CMD_MASK_CMD) << 24;
+  uint32_t v = 0
+    |    (uint32_t) (mmc.csd[15 - bit/8 - 0]) >> (     bit%8)
+    |    (uint32_t) (mmc.csd[15 - bit/8 - 1]) << ( 8 - bit%8);
+  if (length + bit%8 > 16)
+    v |= (uint32_t) (mmc.csd[15 - bit/8 - 2]) << (16 - bit%8);
+  if (length + bit%8 > 24)
+    v |= (uint32_t) (mmc.csd[15 - bit/8 - 3]) << (24 - bit%8);
+  if (length + bit%8 > 32)
+    v |= (uint32_t) (mmc.csd[15 - bit/8 - 4]) << (32 - bit%8);
+  v &= (1<<length) - 1;
+
+  return v;
+}
+
+static uint32_t xfertyp_from_cmd (uint32_t cmd)
+{
+  uint32_t xfertyp = ((cmd >> CMD_SHIFT_CMD) & CMD_MASK_CMD) << 24;
 
   switch ((cmd >> CMD_SHIFT_RESPLEN) & CMD_MASK_RESPLEN) {
   default:
@@ -300,7 +350,7 @@ static u32 xfertyp_from_cmd (u32 cmd)
   return xfertyp;
 }
 
-const char* decode_cmd (u32 cmd, u32 arg)
+const char* decode_cmd (uint32_t cmd, uint32_t arg)
 {
   static char sz[128];
   const char* name = 0;
@@ -355,7 +405,7 @@ const char* decode_cmd (u32 cmd, u32 arg)
   return sz;
 }
 
-const char* decode_irq (u32 irq)
+const char* decode_irq (uint32_t irq)
 {
   static char sz[128];
 
@@ -426,7 +476,7 @@ const char* decode_response_r1 (void)
 }
 
 
-void decode_response (u32 cmd)
+void decode_response (uint32_t cmd)
 {
 #define b_(i) ((mmc.response[15 - i/8] >> (i%8)) & 1)
   switch ((cmd >> CMD_SHIFT_RESPR) & CMD_MASK_RESPR) {
@@ -459,16 +509,6 @@ void decode_response (u32 cmd)
 #endif
       break;
     case MMC_SEND_CSD:
-#if 0
-      {
-        int mult        = 1<<(response_byte (47, 3) + 2);
-        int block_len   = 1<<response_byte (80, 4);
-        int block_nr    = (response_short (62, 12) + 1)*mult;
-        int device_size = block_nr*block_len;
-        printf ("  bllen %d  blks %d  size %d\n",
-                block_len, block_nr, device_size);
-      }
-#endif
       break;
     default:
       break;
@@ -525,8 +565,8 @@ void decode_response (u32 cmd)
 
 void mx5_esdhc_setup_clock (int frequency)
 {
-  static u32 frequency_last;
-  u32 clock = esdhcx_clk (1);
+  static uint32_t frequency_last;
+  uint32_t clock = esdhcx_clk (1);
   int sdclkfs = 0;
   int dvs;
 
@@ -561,12 +601,12 @@ void mx5_esdhc_setup_clock (int frequency)
   frequency_last = frequency;
 }
 
-int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
+int mx5_esdhc_execute (uint32_t cmd, uint32_t arg, size_t cb)
 {
   int state   = (cmd & CMD_BIT_APP) ? 99 : 0;
   int status  = MMC_RES_OK;
-  u32 irqstat;
-  u32 xfertyp = 0;
+  uint32_t irqstat;
+  uint32_t xfertyp = 0;
 
   DBG (1, "execute cmd 0x%x 0x%x\n", cmd, arg);
 
@@ -596,23 +636,23 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
 
   case 0:                       /* Send basic command */
     if (cmd & CMD_BIT_DATA) {
-      u32 wml = mmc.xfer_len/4;
+      uint32_t wml = mmc.xfer_len/4;
       if (cmd & CMD_BIT_WRITE)
         wml <<= 16;
+      DBG (2, "wml 0x%x\n", wml);
       ESDHCx_WML(1) = wml;
       MASK_AND_SET (ESDHCx_SYSCTL(1), 0xf<<16, 14); /* Timeout 2^27 clocks */
-      ESDHCx_BLKATTR(1) = (1<<16) | mmc.block_len;
+      ESDHCx_BLKATTR(1) = 0
+        | (1<<16)               /* Block count */
+        | cb;                   /* Block size */
+      DBG (2, "blkattr 0x%lx\n", ESDHCx_BLKATTR(1));
 
-#if defined (USE_WIDE)
       ESDHCx_PROCTL(1) = 0
-        | 0x20                        /* Little endian */
-        | (mmc.sd ? (1<<1) : (0<<1)); /* Width */
-#else
-      ESDHCx_PROCTL(1) = 0x20;        /* Little endian, 1 bit */
-#endif
+        | 0x20                        		/* Little endian */
+        | (mmc.width4 ? (1<<1) : (0<<1));       /* 4/1 bit width */
 
 #if defined (USE_DMA)
-      ESDHCx_DSADDR(1) = (u32) mmc_rgb;
+      ESDHCx_DSADDR(1) = (uint32_t) mmc_rgb;
 #endif
     }
 
@@ -632,7 +672,7 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
   }
 
   {
-    //    u32 irqstat_last;
+    //    uint32_t irqstat_last;
     ESDHCx_IRQSTAT(1)  = ~0;      /* Clear all IRQ status' */
 //    irqstat_last       = ESDHCx_IRQSTAT(1);
     ESDHCx_XFERTYP(1)  = xfertyp;
@@ -643,7 +683,7 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
 
     /* Wait for completion */
     {
-      u32 time = timer_read ();
+      uint32_t time = timer_read ();
       do {
         irqstat = ESDHCx_IRQSTAT (1);
 //        if (irqstat != irqstat_last) {
@@ -673,7 +713,7 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
   case CMD_RESP_136:
     /* Put MSB first */
     {
-      u32 r;
+      uint32_t r;
       r = ESDHCx_CMDRSP0(1);
       mmc.response[15] = 0;
       mmc.response[14] =  r        & 0xff;
@@ -702,7 +742,7 @@ int mx5_esdhc_execute (u32 cmd, u32 arg, size_t cb)
     break;
   case CMD_RESP_48:
     {
-      u32 r = ESDHCx_CMDRSP0(1);
+      uint32_t r = ESDHCx_CMDRSP0(1);
       mmc.response[0] = (r >> 24) & 0xff;
       mmc.response[1] = (r >> 16) & 0xff;
       mmc.response[2] = (r >>  8) & 0xff;
@@ -746,14 +786,53 @@ void mx5_esdhc_init (void)
     ;
 }
 
+
+/** read data from an SD/MMC card register.  Unlike the data read,
+    this command only reads the whole register in one pass.  It will
+    not use DMA even if it is available. */
+
+ssize_t mx5_esdhc_read_register (uint32_t cmd, void* pv, size_t cb)
+{
+  int status;
+
+  status = mx5_esdhc_execute (CMD_DESELECT_CARD, 0, 0);
+  status = mx5_esdhc_execute (CMD_SELECT_CARD, mmc.rca<<16, 0);
+  if (mmc.width4)
+    mx5_esdhc_execute (CMD_SD_SET_WIDTH, 2, 0);	/* SD, 4 bit width */
+
+  status = mx5_esdhc_execute (cmd, 0, cb);
+  DBG (2, "irqstat 0x%lx\n", ESDHCx_IRQSTAT(1));
+  DBG (2, "cb %d  xter_len %d\n", cb, mmc.xfer_len);
+  {
+    int i;
+    uint32_t irqstat;
+    uint8_t* pb = pv;
+    ESDHCx_IRQSTATEN(1) |= IRQ_BRR; /* Probably redundant */
+    while (!((irqstat = ESDHCx_IRQSTAT(1)) & IRQ_BRR))
+      ;           /* *** FIXME: need to check for timeout */
+    for (i = cb/4; i--; ) {
+      uint32_t v = ESDHCx_DATPORT(1);
+      DBG (2, "rr: 0x%x\n", v);
+      *pb++ = (v >>  0) & 0xff;
+      *pb++ = (v >>  8) & 0xff;
+      *pb++ = (v >> 16) & 0xff;
+      *pb++ = (v >> 24) & 0xff;
+    }
+//    dumpw (pv, cb, 0, 0);
+  }
+
+  return cb;
+}
+
+
 int mmc_acquire (void)
 {
   int           state   = 0;
   int           tries   = 0;
-  u32           command = 0;
+  uint32_t      command = 0;
   int           status;
-  u32           ocr     = 0;
-  u32           r;
+  uint32_t      ocr     = 0;
+  uint32_t      r;
   unsigned long time;
 
   mmc_clear ();
@@ -786,9 +865,9 @@ int mmc_acquire (void)
       break;
 
     case 10:
-      command = CMD_MMC_OP_COND;
-      tries   = 10;
-      mmc.sd  = false;
+      command      = CMD_MMC_OP_COND;
+      tries        = 10;
+      mmc.sd       = false;
       ++state;
       break;
 
@@ -804,7 +883,7 @@ int mmc_acquire (void)
     case 2:
     case 12:
       ocr = response_ocr ();
-      if (ocr & OCR_ALL_READY)
+      if (ocr & MMC_OCR_READY)
         ++state;
       else
         state += 2;
@@ -812,12 +891,12 @@ int mmc_acquire (void)
 
     case 3:
     case 13:
-      while ((ocr & OCR_ALL_READY) && --tries > 0) {
+      while ((ocr & MMC_OCR_READY) && --tries > 0) {
         mdelay (MS_ACQUIRE_DELAY);
         status = mx5_esdhc_execute (command, ocr_host (), 0);
         ocr = response_ocr ();
       }
-      if (ocr & OCR_ALL_READY)
+      if (ocr & MMC_OCR_READY)
         state += 6;
       else
         ++state;
@@ -832,9 +911,10 @@ int mmc_acquire (void)
         mdelay (MS_ACQUIRE_DELAY);
         status = mx5_esdhc_execute (command, ocr, 0);
         r = response_ocr ();
-      } while (!(r & OCR_ALL_READY) && --tries > 0
+      } while (!(r & MMC_OCR_READY) && --tries > 0
                && timer_delta (time, timer_read ()) < MS_ACQUIRE_TIMEOUT);
-      if (r & OCR_ALL_READY) {
+      if (r & MMC_OCR_READY) {
+        mmc.ocr = r;
         mmc.acquire_time += timer_delta (time, timer_read ());
         ++state;
         DBG (1, "acquired (%d tries)\n", C_ACQUIRE_TRIES - tries);
@@ -881,6 +961,14 @@ int mmc_acquire (void)
         return status;
       memcpy (mmc.csd, mmc.response, 16);
       mmc.acquired = 1;
+      ++state;
+      break;
+
+    case 8:
+      state = 100;
+      break;
+
+    case 18:
       state = 100;
       break;
 
@@ -896,23 +984,42 @@ int mmc_acquire (void)
     }
   }
 
-  mmc.c_size      = C_SIZE;
-  mmc.c_size_mult = C_SIZE_MULT;
-  mmc.read_bl_len = READ_BL_LEN;
-  mmc.mult        = 1<<(mmc.c_size_mult + 2);
-  mmc.block_len   = 1<<mmc.read_bl_len;
-  mmc.blocknr     = (mmc.c_size + 1)*mmc.mult;
-  mmc.device_size = mmc.blocknr*mmc.block_len;
+  if (MMC_CSD_VER(mmc.csd) == MMC_CSD_VER_1) {
+    mmc.c_size      = C_SIZE;
+    mmc.c_size_mult = C_SIZE_MULT;
+    mmc.mult        = 1<<(mmc.c_size_mult + 2);
+    mmc.read_bl_len = READ_BL_LEN;
+    mmc.block_len   = 1<<mmc.read_bl_len;
+    mmc.blocknr     = (mmc.c_size + 1)*mmc.mult;
+    mmc.block_count = mmc.blocknr*(mmc.block_len/512);
+  }
+  else {
+    mmc.c_size      = C_SIZE_2;
+    mmc.block_count = (mmc.c_size + 1)*1024;
+  }
   mmc.block_len   = 512;        /* Many problems avoided with 512B reads */
   mmc.cb_cache    = mmc.block_len;
   {
-    u32 wml = mmc.block_len/4;
+    uint32_t wml = mmc.block_len/4;
     if (wml > 0x80)
       wml = 0x80;
 //    wml = 4;                  /* *** FIXME: debug */
 //    wml = 16;
     mmc.xfer_len = wml*4;
   }
+
+  if (mmc.sd) {
+    mx5_esdhc_read_register (CMD_SD_SEND_SCR, &mmc.scr, sizeof (mmc.scr));
+    mmc.version = MMC_SCR_SPEC (mmc.scr);
+  }
+
+#if defined (USE_WIDE4)
+  if (MMC_SCR_BUS_WIDTH (mmc.scr) & MMC_SCR_BUS_WIDTH_4)
+    mmc.width4 = true;
+#endif
+
+  if ((mmc.ocr & MMC_OCR_CCS) && MMC_SCR_SPEC (mmc.scr) >= MMC_SCR_SPEC_2_0)
+    mmc.hc = true;
 
   return MMC_RES_OK;
 }
@@ -922,14 +1029,21 @@ void mx5_esdhc_report (void)
 //  printf ("  esdhc:  prs 0x%08lx", ESDHCx_PRSSTAT(1));
 //  printf ("  cap 0x%08lx  host 0x%08lx\n",
 //          ESDHCx_HOSTCAPBLT(1), ESDHCx_HOSTVER(1));
-  printf ("  mmc/sd: %s, %s card acquired",
+  printf ("  mmc/sd: %s, %s%s card acquired (v%d)",
           mmc_present () ? "card present" : "no card preset",
-          mmc.acquired ? (mmc.sd ? "sd" : "mmc") : "no");
+          mmc.acquired ? (mmc.sd ? "sd" : "mmc") : "no",
+          mmc.hc ? "hc" : "",
+          mmc.version);
   if (mmc.acquired) {
     printf (", rca 0x%x (%d ms)", mmc.rca, mmc.acquire_time);
-    printf (", %ld.%02ld MiB\n",
-	    mmc.device_size/(1024*1024),
-	    (((mmc.device_size/1024)%1024)*100)/1024);
+    if (mmc.block_count > 1024*1024*2)
+        printf (", %d.%02d GiB\n",
+                mmc.block_count/(1024*1024*2),
+                (((mmc.block_count/(1024*2))%1024)*100)/1024);
+      else
+        printf (", %d.%02d MiB\n",
+                mmc.block_count/(1024*2),
+                (((mmc.block_count/2)%1024)*100)/1024);
     printf ("          %d B sectors, %d sectors/block, C_SIZE %d,"
             " C_SIZE_MULT %d\n",
             1<<READ_BL_LEN, SECTOR_SIZE + 1,
@@ -937,8 +1051,12 @@ void mx5_esdhc_report (void)
 //    printf ("          TAAC 0x%x  NSAC %d  TRAN_SPEED 0x%x\n",
 //            TAAC, NSAC, TRAN_SPEED);
 //    printf ("          xfer_len %d\n", mmc.xfer_len);
-//    dump (mmc.cid, 16, 0);
-//    dump (mmc.csd, 16, 0);
+//    printf ("cid\n");
+//    dump (mmc.cid, sizeof (mmc.cid), 0);
+//    printf ("csd\n");
+//    dump (mmc.csd, sizeof (mmc.csd), 0);
+//    printf ("scr\n");
+//    dump (mmc.scr, sizeof (mmc.scr), 0);
 //    printf ("\n");
   }
   else
@@ -1027,10 +1145,9 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
       status = mx5_esdhc_execute (CMD_DESELECT_CARD, 0, 0);
       status = mx5_esdhc_execute (CMD_SELECT_CARD, mmc.rca<<16, 0);
 
-#if defined (USE_WIDE)
-      if (mmc.sd)
+      if (mmc.width4)
 	mx5_esdhc_execute (CMD_SD_SET_WIDTH, 2, 0);	/* SD, 4 bit width */
-#endif
+
       status = mx5_esdhc_execute (CMD_SET_BLOCKLEN, mmc.block_len, 0);
 
 		/* Fill the sector cache */
@@ -1046,7 +1163,9 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
 #else
 				 CMD_READ_SINGLE
 #endif
-				 , mmc.ib, mmc.block_len);
+				 ,
+                                 mmc.hc ? mmc.ib/512 : mmc.ib,
+                                 mmc.block_len);
 	  }
 	  else {
 	    DBG (3, "%s: next sector\n", __FUNCTION__);
@@ -1064,21 +1183,21 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
 
 #if defined (USE_DMA)
           {
-            u32 time = timer_read ();
-            u32 irqstat;
+            uint32_t time = timer_read ();
+            uint32_t irqstat;
             while (!((irqstat = ESDHCx_IRQSTAT(1)) & IRQ_DINT)
                    && timer_delta (time, timer_read ()) < 500)
               ;
             DBG (1, "irqstat %x%s  DMAADDR %lx (%x)\n",
                  irqstat, decode_irq (irqstat),
-                 ESDHCx_DSADDR(1), (u32) mmc_rgb);
+                 ESDHCx_DSADDR(1), (uint32_t) mmc_rgb);
           }
 #else
           {
             int xfer;
             int i;
-            u32 irqstat;
-            u8* pb = &mmc_rgb[0];
+            uint32_t irqstat;
+            uint8_t* pb = &mmc_rgb[0];
             ESDHCx_IRQSTATEN(1) |= IRQ_BRR; /* Probably redundant */
             for (xfer = mmc.block_len/mmc.xfer_len; xfer--; ) {
 //              irqstat = ESDHCx_IRQSTAT(1);
@@ -1088,7 +1207,7 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
               while (!((irqstat = ESDHCx_IRQSTAT(1)) & IRQ_BRR))
                 ;           /* *** FIXME: need to check for timeout */
               for (i = mmc.xfer_len/4; i--; ) {
-                u32 v = ESDHCx_DATPORT(1);
+                uint32_t v = ESDHCx_DATPORT(1);
                 *pb++ = (v >>  0) & 0xff;
                 *pb++ = (v >>  8) & 0xff;
                 *pb++ = (v >> 16) & 0xff;
@@ -1122,6 +1241,7 @@ ssize_t mx5_esdhc_read (struct descriptor_d* d, void* pv, size_t cb)
 
   return cbRead;
 }
+
 
 static __driver_5 struct driver_d mx5_esdhc_driver = {
   .name		= "mmc-esdhc-mx5",
