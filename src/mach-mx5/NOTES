@@ -27,6 +27,13 @@ NOTES
 o 2011.sep.02
   o Booting armhf.  Video doesn't initialize.  Ouch.  We do have
     support for HC cards, though.
+  o Interesting observations based on dmesgs.
+    o No ethernet device available when APEX boots
+    o No detection of other USB devices attached to the system such as
+      keyboard and mouse
+    o There is a DMA sound buffer allocation made for armhf that
+      doesn't appear for the APEX boot.
+
 
 im load ext2://1/uImage-2.6.31.14.23-efikamx
 im load -l 0x94000000 ext2://1/uInitrd-2.6.31.14.23-efikamx
