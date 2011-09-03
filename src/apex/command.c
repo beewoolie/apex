@@ -219,6 +219,7 @@ int call_command (int argc, const char** argv)
   struct command_d* command_match = NULL;
   struct command_d* command;
   int result;
+  bool ambiguous = false;
 
   if (!argc)
     return 0;
@@ -229,14 +230,18 @@ int call_command (int argc, const char** argv)
        command < (struct command_d*) &APEX_COMMAND_END;
        ++command) {
     if (strnicmp (argv[0], command->command, cb) == 0) {
-      if (command_match) {
-	printf ("Ambiguous command.  Try 'help'.\n");
-	return ERROR_NOCOMMAND;
-      }
+      if (command_match && command->command[cb] != 0)
+        ambiguous = true;
       command_match = command;
-      if (command->command[cb] == 0) /* Exact match */
+      if (command->command[cb] == 0) { /* Exact match */
+        ambiguous = false;
 	break;
+      }
     }
+  }
+  if (ambiguous) {
+    printf ("Ambiguous command.  Try 'help'.\n");
+    return ERROR_NOCOMMAND;
   }
   error_description = NULL;
   result = command_match

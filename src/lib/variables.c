@@ -114,6 +114,9 @@ int variable_set (const char* szKey, const char* szValue)
   if (ibVariables + cbEntry > CB_VARIABLE_HEAP_MAX)
     return ERROR_OUTOFMEMORY;
 
+  /* Make sure to delete existing copies */
+  variable_unset (szKey);
+
   memset (entry, 0, sizeof (struct entry));
   entry->cb = cbEntry;
   memcpy (entry->rgb, szKey, cbKey + 1);

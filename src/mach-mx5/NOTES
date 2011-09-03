@@ -19,9 +19,19 @@ o Construct a kernel image that we can use to boot.
 x Initialize PMIC. No need to since we cannot control it on the most
   recent hardware.
 o Go!
+x Booting stock and armhf, though armhf doesn't initialize video.
 
 NOTES
 =====
+
+o 2011.sep.02
+  o Booting armhf.  Video doesn't initialize.  Ouch.  We do have
+    support for HC cards, though.
+
+im load ext2://1/uImage-2.6.31.14.23-efikamx
+im load -l 0x94000000 ext2://1/uInitrd-2.6.31.14.23-efikamx
+boot console=ttymxc0,115200 root=/dev/mmcblk0p2 rootwait rw video=imx-ipuv3-fb:1024x600M-16@60 rootfstype=ext4 lpj=3997696
+
 
 o 2011.aug.30
   o Working OK.  Fixed environment write which was an error in flash read. 
