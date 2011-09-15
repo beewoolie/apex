@@ -57,7 +57,7 @@
 #include <service.h>
 #include <network.h>
 #include <ethernet.h>
-#include <alias.h>
+#include <variables.h>
 #include <sort.h>
 #include <console.h>
 

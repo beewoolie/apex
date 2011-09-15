@@ -43,8 +43,8 @@ static __env struct env_d e_wm8955_i2c_drv = {
 
 static inline const char* i2c_driver (void)
 {
-  return lookup_alias_or_env ("wm8955-i2c-drv",
-                              CONFIG_DRIVER_WM8955_I2C_DRIVER);
+  return lookup_variable_or_env ("wm8955-i2c-drv",
+                                 CONFIG_DRIVER_WM8955_I2C_DRIVER);
 }
 
 

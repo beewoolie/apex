@@ -27,7 +27,7 @@
 #include <command.h>
 #include <driver.h>
 #include <error.h>
-#include <alias.h>
+#include <variables.h>
 #include <spinner.h>
 
 #include <network.h>
