@@ -12,6 +12,8 @@ config MACH_MX31ADS
 	select USES_COMPACTFLASH
 	select USES_CS8900
 	select INLINE_PLATFORM_INITIALIZATION
+	select DRIVERS_MXC
+	select HAS_MXC_SERIAL
 
 config MACH_EXBIBLIO_ROSENCRANTZ
 	bool "Exbiblio Rosencrantz Board"
@@ -19,6 +21,8 @@ config MACH_EXBIBLIO_ROSENCRANTZ
 	select USES_DM9000
 	select USES_IPU_TEST
 	select INLINE_PLATFORM_INITIALIZATION
+	select DRIVERS_MXC
+	select HAS_MXC_SERIAL
 
 config MACH_PHYTEC_PCM037
 	bool "PHYTEC PCM037 MX31 Development Board"
@@ -27,6 +31,8 @@ config MACH_PHYTEC_PCM037
 	select USES_NOR_BOOTFLASH
 	select USES_SMC91X
 	select INLINE_PLATFORM_INITIALIZATION
+	select DRIVERS_MXC
+	select HAS_MXC_SERIAL
 
 config MACH_KARMA5
 	bool "Panasonic KarmaV"
@@ -36,6 +42,8 @@ config MACH_KARMA5
 	select USES_NOR_BOOTFLASH
 	select USES_IPU_TEST
 	select INLINE_PLATFORM_INITIALIZATION
+	select DRIVERS_MXC
+	select HAS_MXC_SERIAL
 
 endchoice
 
@@ -133,6 +141,7 @@ choice
 
 config MX31_UART1
 	bool "MX31 internal UART1"
+	select DRIVER_MXC_SERIAL
 
 config MX31ADS_UARTA
 	bool "MX31ADS external UARTA"

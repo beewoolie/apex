@@ -1,9 +1,9 @@
-/* serial-mx31.c
+/* drivers-mxc/drv-mxc-serial.c
 
    written by Marc Singer
-   1 March 2007
+   15 Sep 2011
 
-   Copyright (C) 2007 Marc Singer
+   Copyright (C) 2011 Marc Singer
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -14,7 +14,15 @@
    DESCRIPTION
    -----------
 
-   Serial driver for the internal UART on the MX31 chip.
+   Serial (UART) driver for the internal UART of MX31 and MX51 SoCs.
+   This is probably a workable driver for all iMX parts.  But, it is
+   acceptable for a new port to clone the driver at first until the
+   platform is up.
+
+   UARTB support exists s.t. output is sent to both UART and UARTB.
+   This was added for the sake of a platform that had more than one
+   UART that was typically used to support the console.  It is
+   unlikely to be useful for most designs.
 
 */
 
@@ -22,47 +30,34 @@
 #include <driver.h>
 #include <service.h>
 #include <apex.h>		/* printf, only */
-#include "hardware.h"
+#include "drv-mxc-serial.h"
+#include <mach/drv-mxc-serial.h>
 
-#include "uart.h"
+#if !defined (INITIALIZE_CONSOLE_UARTB)
+# define INITIALIZE_CONSOLE_UARTB
+#endif
 
-
-void mx31_serial_init (void)
+void mxc_serial_init (void)
 {
   INITIALIZE_CONSOLE_UART;
-
-#if defined (UARTB)
-  /* UART2 PinMUX */
-  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_RXD2);
-  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_TXD2);
-  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_RTS2);
-  IOMUX_PIN_CONFIG_FUNC (MX31_PIN_CTS2);
-
-  /* UART3 PinMUX */
-  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_MISO, 1, 1);
-  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_MOSI, 1, 1);
-  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_SCLK, 1, 1);
-  IOMUX_PIN_CONFIG_ALT_IN_OUT (MX31_PIN_CSPI3_SPI_RDY, 1, 1);
-
-  INITIALIZE_UARTB;
-#endif
+  INITIALIZE_CONSOLE_UARTB;     /* May be NOP */
 }
 
-void mx31_serial_release (void)
+void mxc_serial_release (void)
 {
   /* Wait for transmitter to go idle */
   while (!(__REG (UART + UART_SR2) & UART_SR2_TXDC))
     ;
 }
 
-ssize_t mx31_serial_poll (struct descriptor_d* d, size_t cb)
+ssize_t mxc_serial_poll (struct descriptor_d* d, size_t cb)
 {
   return cb
     ? ((__REG (UART + UART_SR2) & UART_SR2_RDR) ? 1 : 0)
     : 0;
 }
 
-ssize_t mx31_serial_read (struct descriptor_d* d, void* pv, size_t cb)
+ssize_t mxc_serial_read (struct descriptor_d* d, void* pv, size_t cb)
 {
   ssize_t cRead = 0;
   unsigned char* pb;
@@ -81,13 +76,12 @@ ssize_t mx31_serial_read (struct descriptor_d* d, void* pv, size_t cb)
   return cRead;
 }
 
-ssize_t mx31_serial_write (struct descriptor_d* d, const void* pv, size_t cb)
+ssize_t mxc_serial_write (struct descriptor_d* d, const void* pv, size_t cb)
 {
   ssize_t cWrote = 0;
   const unsigned char* pb = pv;
   for (pb = (unsigned char*) pv; cb--; ++pb) {
 
-//    while (!(__REG (UART + UART_SR2) & UART_SR2_TXFE))
     while (!(__REG (UART + UART_SR1) & UART_SR1_TRDY))
       ;				/* Wait for room in the FIFO */
 
@@ -102,18 +96,18 @@ ssize_t mx31_serial_write (struct descriptor_d* d, const void* pv, size_t cb)
   return cWrote;
 }
 
-static __driver_0 struct driver_d mx31_serial_driver = {
-  .name = "serial-mx31",
-  .description = "mx31 serial driver",
+static __driver_0 struct driver_d mxc_serial_driver = {
+  .name = "serial-mxc",
+  .description = "mxc serial driver",
   .flags = DRIVER_SERIAL | DRIVER_CONSOLE,
   .open = open_helper,          /* Always succeed */
   .close = close_helper,
-  .read = mx31_serial_read,
-  .write = mx31_serial_write,
-  .poll = mx31_serial_poll,
+  .read = mxc_serial_read,
+  .write = mxc_serial_write,
+  .poll = mxc_serial_poll,
 };
 
-static __service_3 struct service_d mx31_serial_service = {
-  .init = mx31_serial_init,
-  .release = mx31_serial_release,
+static __service_3 struct service_d mxc_serial_service = {
+  .init = mxc_serial_init,
+  .release = mxc_serial_release,
 };

@@ -46,7 +46,8 @@ ifneq ($(CONFIG_MACH),)
 core-y += src/mach-$(CONFIG_MACH)/
 endif
 core-y += src/drivers/ src/net/ src/arch-arm/linux/
-core-$(CONFIG_DRIVERS_LH) +=  src/drivers-lh/
+core-$(CONFIG_DRIVERS_LH)  +=  src/drivers-lh/
+core-$(CONFIG_DRIVERS_MXC) +=  src/drivers-mxc/
 libs-y += src/arch-arm/lib/
 
 ifneq ($(CONFIG_MACH),)

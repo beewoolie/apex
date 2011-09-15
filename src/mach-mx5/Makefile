@@ -19,7 +19,6 @@ obj-y += clocks.o
 obj-y += atag-revision.o
 obj-y += atag-serialnr.o
 
-obj-$(CONFIG_MX5_UART1)		+= serial-mx5.o
 obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o
 #obj-$(CONFIG_DRIVER_ONENAND)	+= cmd-onenand.o
 #obj-$(CONFIG_IPU_TEST)		+= ipu.o

@@ -720,7 +720,6 @@ static void target_init_ata (void)
 #undef __
 }
 
-
 /** performs remaining hardware initialization that didn't have to be
     performed during the bootstrap phase and isn't done in a driver. */
 

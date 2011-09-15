@@ -1,0 +1,20 @@
+if DRIVERS_MXC
+
+menu "Motorola iMX Drivers"
+
+config DRIVER_MXC_SERIAL
+	bool "Serial UART"
+	depends on HAS_MXC_SERIAL
+	default n
+	help
+	  This driver supports the MXC standard UART.
+
+endmenu
+
+config DRIVERS_MXC
+	bool
+
+config HAS_MXC_SERIAL
+       bool
+
+endif

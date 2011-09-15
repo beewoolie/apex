@@ -24,18 +24,11 @@
 #include <config.h>
 #include <asm/reg.h>
 
-#if defined (CONFIG_MX31_UART1)
-#include <mach/uart.h>
+#if defined (CONFIG_MX51_UART1)
+#include <mach/drv-serial.h>
 # define PUTC(c)\
   ({ __REG (UART + UART_TXD) = c; \
      while (!(__REG (UART + UART_SR2) & UART_SR2_TXDC)) ; })
-#endif
-
-#if defined (CONFIG_MX31ADS_UARTA)
-# include "sc16c652.h"
-# define PUTC(c)\
-  ({ SC_UART_HR = c;\
-     while (!(SC_UART_LSR & SC_UART_LSR_TXE)) ; })
 #endif
 
 #endif  /* __DEBUG_LL_H__ */

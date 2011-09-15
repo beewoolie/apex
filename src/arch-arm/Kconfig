@@ -361,6 +361,7 @@ source src/apex/Kconfig
 
 source src/drivers/Kconfig
 source src/drivers-lh/Kconfig
+source src/drivers-mxc/Kconfig
 
 source src/net/Kconfig
 
