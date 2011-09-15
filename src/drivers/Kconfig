@@ -210,6 +210,13 @@ config DRIVER_COMPACTFLASH
 	  This driver implements a CompactFlash driver for the target
 	  platform.
 
+config DRIVER_ATA
+	bool "ATA Driver"
+	depends on USES_ATA=y
+	default n
+	help
+	  This driver implements a generic ATA driver.
+
 config DRIVER_SMC91X
 	bool "SMC91X Integrated Ethernet"
 	depends on USES_SMC91X
@@ -247,6 +254,9 @@ config USES_NAND
 	bool
 
 config USES_COMPACTFLASH
+	bool
+
+config USES_ATA
 	bool
 
 config USES_PATHNAME_PARSER

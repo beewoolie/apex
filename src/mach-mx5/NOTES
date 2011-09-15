@@ -20,9 +20,146 @@ x Initialize PMIC. No need to since we cannot control it on the most
   recent hardware.
 o Go!
 x Booting stock and armhf, though armhf doesn't initialize video.
+x Add IDE driver
+o Fix platform init of IDE driver.
+o Fix baudrate calc for MXC driver.
+
 
 NOTES
 =====
+
+o 2011.sep.13
+
+  DCD init from the version of u-boot in flash.
+
+00000400: 978006e0 000000b1  00000000 97800414  ........ ........
+00000410: 00000000 9780041c  97800000 b17219e9  ........ ......r.
+00000420: 000002a0 00000004  73fa88a0 00000000  ........ ...s....
+00000430: 00000004 73fa850c  000020c5 00000004  .......s . ......
+00000440: 73fa8510 000020c5  00000004 73fa883c  ...s. .. ....<..s
+00000450: 00000005 00000004  73fa8848 00000005  ........ H..s....
+00000460: 00000004 73fa84b8  000000e7 00000004  .......s ........
+00000470: 73fa84bc 00000045  00000004 73fa84c0  ...sE... .......s
+00000480: 00000045 00000004  73fa84c4 00000045  E....... ...sE...
+00000490: 00000004 73fa84c8  00000045 00000004  .......s E.......
+000004a0: 73fa8820 00000000  00000004 73fa84a4   ..s.... .......s
+000004b0: 00000005 00000004  73fa84a8 00000005  ........ ...s....
+000004c0: 00000004 73fa84ac  000000e5 00000004  .......s ........
+000004d0: 73fa84b0 000000e5  00000004 73fa84b4  ...s.... .......s
+000004e0: 000000e5 00000004  73fa84cc 000000e5  ........ ...s....
+000004f0: 00000004 73fa84d0  000000e4 00000004  .......s ........
+00000500: 73fa882c 00000004  00000004 73fa88a4  ,..s.... .......s
+00000510: 00000004 00000004  73fa88ac 00000004  ........ ...s....
+00000520: 00000004 73fa88b8  00000004 00000004  .......s ........
+00000530: 83fd9000 82a20000  00000004 83fd9008  ........ ........
+00000540: 82a20000 00000004  83fd9010 caaaf6d0  ........ ........
+00000550: 00000004 83fd9004  3f3574aa 00000004  ........ .t5?....
+00000560: 83fd900c 3f3574aa  00000004 83fd9014  .....t5? ........
+00000570: 04008008 00000004  83fd9014 0000801a  ........ ........
+00000580: 00000004 83fd9014  0000801b 00000004  ........ ........
+00000590: 83fd9014 00448019  00000004 83fd9014  ......D. ........
+000005a0: 07328018 00000004  83fd9014 04008008  ..2..... ........
+000005b0: 00000004 83fd9014  00008010 00000004  ........ ........
+000005c0: 83fd9014 00008010  00000004 83fd9014  ........ ........
+000005d0: 06328018 00000004  83fd9014 03808019  ..2..... ........
+000005e0: 00000004 83fd9014  00408019 00000004  ........ ..@.....
+000005f0: 83fd9014 00008000  00000004 83fd9014  ........ ........
+00000600: 0400800c 00000004  83fd9014 0000801e  ........ ........
+00000610: 00000004 83fd9014  0000801f 00000004  ........ ........
+00000620: 83fd9014 0000801d  00000004 83fd9014  ........ ........
+00000630: 0732801c 00000004  83fd9014 0400800c  ..2..... ........
+00000640: 00000004 83fd9014  00008014 00000004  ........ ........
+00000650: 83fd9014 00008014  00000004 83fd9014  ........ ........
+00000660: 0632801c 00000004  83fd9014 0380801d  ..2..... ........
+00000670: 00000004 83fd9014  0040801d 00000004  ........ ..@.....
+00000680: 83fd9014 00008004  00000004 83fd9000  ........ ........
+00000690: b2a20000 00000004  83fd9008 b2a20000  ........ ........
+000006a0: 00000004 83fd9010  000ad6d0 00000004  ........ ........
+000006b0: 83fd9034 90000000  00000004 83fd9014  4....... ........
+000006c0: 00000000 000247f8  00000000 00000000  .....G.. ........
+000006d0: 00000000 00000000  00000000 00000000  ........ ........
+
+# 56 entries
+00000004 73fa88a0 00000000	# IOMUXC
+00000004 73fa850c 000020c5	# IOMUXC
+00000004 73fa8510 000020c5	# IOMUXC
+00000004 73fa883c 00000005	# IOMUXC
+00000004 73fa8848 00000005	# IOMUXC
+00000004 73fa84b8 000000e7	# IOMUXC
+00000004 73fa84bc 00000045	# IOMUXC
+00000004 73fa84c0 00000045	# IOMUXC
+00000004 73fa84c4 00000045	# IOMUXC
+00000004 73fa84c8 00000045	# IOMUXC
+00000004 73fa8820 00000000	# IOMUXC
+00000004 73fa84a4 00000005	# IOMUXC
+00000004 73fa84a8 00000005	# IOMUXC
+00000004 73fa84ac 000000e5	# IOMUXC
+00000004 73fa84b0 000000e5	# IOMUXC
+00000004 73fa84b4 000000e5	# IOMUXC
+00000004 73fa84cc 000000e5	# IOMUXC
+00000004 73fa84d0 000000e4	# IOMUXC
+00000004 73fa882c 00000004	# IOMUXC
+00000004 73fa88a4 00000004	# IOMUXC
+00000004 73fa88ac 00000004	# IOMUXC
+00000004 73fa88b8 00000004	# IOMUXC
+00000004 83fd9000 82a20000	# ESDCTL
+00000004 83fd9008 82a20000	# ESDCTL
+00000004 83fd9010 caaaf6d0	# ESDCTL
+00000004 83fd9004 3f3574aa	# ESDCTL
+00000004 83fd900c 3f3574aa	# ESDCTL
+00000004 83fd9014 04008008	# ESDCTL
+00000004 83fd9014 0000801a	# ESDCTL
+00000004 83fd9014 0000801b	# ESDCTL
+00000004 83fd9014 00448019	# ESDCTL
+00000004 83fd9014 07328018	# ESDCTL
+00000004 83fd9014 04008008	# ESDCTL
+00000004 83fd9014 00008010	# ESDCTL
+00000004 83fd9014 00008010	# ESDCTL
+00000004 83fd9014 06328018	# ESDCTL
+00000004 83fd9014 03808019	# ESDCTL
+00000004 83fd9014 00408019	# ESDCTL
+00000004 83fd9014 00008000	# ESDCTL
+00000004 83fd9014 0400800c	# ESDCTL
+00000004 83fd9014 0000801e	# ESDCTL
+00000004 83fd9014 0000801f	# ESDCTL
+00000004 83fd9014 0000801d	# ESDCTL
+00000004 83fd9014 0732801c	# ESDCTL
+00000004 83fd9014 0400800c	# ESDCTL
+00000004 83fd9014 00008014	# ESDCTL
+00000004 83fd9014 00008014	# ESDCTL
+00000004 83fd9014 0632801c	# ESDCTL
+00000004 83fd9014 0380801d	# ESDCTL
+00000004 83fd9014 0040801d	# ESDCTL
+00000004 83fd9014 00008004	# ESDCTL
+00000004 83fd9000 b2a20000	# ESDCTL
+00000004 83fd9008 b2a20000	# ESDCTL
+00000004 83fd9010 000ad6d0	# ESDCTL
+00000004 83fd9034 90000000	# ESDCTL
+00000004 83fd9014 00000000	# ESDCTL
+
+
+o 2011.sep.15
+  o ATA/IDE driver working.
+    o Forked from CF driver.
+    o Work done to integrate ideas form the CF driver.
+    o Need to do more since the CF driver is inherently more complex
+      due to register access limitations.
+    o Still need to move the platform specific initialization out of
+      the driver.
+  o Need to fixup the baudrate calc for the serial driver.  It's
+    staticly defined at the moment.
+
+o 2011.sep.9
+  o Looking into IDE driver
+    o Looks like they use a generic IDE PIO driver
+    o There is a more complex PATA driver that is defined in the code of UB
+    o Seems like a simple thing to use the old CF driver and
+      genericize it a little 
+    o Should do some work to share code on this one since there is
+      some real logic in there  
+  o Also, should move the generic portions of the esdhc driver into a
+    common location so that other platforms can gain access to HC
+    cards
 
 o 2011.sep.02
   o Booting armhf.  Video doesn't initialize.  Ouch.  We do have
@@ -47,9 +184,9 @@ o 2011.aug.29
   o First boot!  Not reproducible, though.
   o apex load commands:
 
-im load ext2://3/uInitrd
-im load ext2://3/uImage-2.6.31.14.24-efikamx
-boot console=tty1 root=/dev/sda2 rootwait rw splash
+im load               ext2://3/uImage-2.6.31.14.24-efikamx
+im load -l 0x92000040 ext2://3/uInitrd-2.6.31.14.24-efikamx
+boot console=ttymxc0,115200 root=/dev/sda2 rootwait rw splash
 
 
 

@@ -1,6 +1,6 @@
 if DRIVERS_MXC
 
-menu "Motorola iMX Drivers"
+menu "Freescale iMX Drivers"
 
 config DRIVER_MXC_SERIAL
 	bool "Serial UART"

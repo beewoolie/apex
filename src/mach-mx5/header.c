@@ -93,11 +93,11 @@ const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
   { 4, PHYS_IOMUXC + 0x3d8, 0x0002 }, /* Activate power-down watchdog*/
 
   /* Configure IOMUX for DDR2 */
-  { 4, PHYS_IOMUXC + 0x8a0, 0x0200 },
-  { 4, PHYS_IOMUXC + 0x50c, 0x20c3 },
-  { 4, PHYS_IOMUXC + 0x510, 0x20c3 },
-  { 4, PHYS_IOMUXC + 0x83c, 0x0002 },
-  { 4, PHYS_IOMUXC + 0x848, 0x0002 },
+  { 4, PHYS_IOMUXC + 0x8a0, 0x0200 }, /* 0: 0, CMOS; 0x200 DDR */
+  { 4, PHYS_IOMUXC + 0x50c, 0x20c3 }, /* 20c5: 0x2 med drive, 0x4 high drive */
+  { 4, PHYS_IOMUXC + 0x510, 0x20c3 }, /* 20c5 */
+  { 4, PHYS_IOMUXC + 0x83c, 0x0002 }, /* 5 */
+  { 4, PHYS_IOMUXC + 0x848, 0x0002 }, /* 5 */
   { 4, PHYS_IOMUXC + 0x4b8, 0x00e7 },
   { 4, PHYS_IOMUXC + 0x4bc, 0x0045 },
   { 4, PHYS_IOMUXC + 0x4c0, 0x0045 },
@@ -106,10 +106,10 @@ const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
   { 4, PHYS_IOMUXC + 0x820, 0x0000 },
   { 4, PHYS_IOMUXC + 0x4a4, 0x0005 },
   { 4, PHYS_IOMUXC + 0x4a8, 0x0005 },
-  { 4, PHYS_IOMUXC + 0x4ac, 0x00e3 },
-  { 4, PHYS_IOMUXC + 0x4b0, 0x00e3 },
-  { 4, PHYS_IOMUXC + 0x4b4, 0x00e3 },
-  { 4, PHYS_IOMUXC + 0x4cc, 0x00e3 },
+  { 4, PHYS_IOMUXC + 0x4ac, 0x00e3 }, /* e5 */
+  { 4, PHYS_IOMUXC + 0x4b0, 0x00e3 }, /* e5 */
+  { 4, PHYS_IOMUXC + 0x4b4, 0x00e3 }, /* e5 */
+  { 4, PHYS_IOMUXC + 0x4cc, 0x00e3 }, /* e5 */
   { 4, PHYS_IOMUXC + 0x4d0, 0x00e4 }, // DRAM_CS1, drive strength e2 -> e4
 
   /* Configure IO line drive strength to maximum */
@@ -123,8 +123,8 @@ const __section (.header.rodata.1) struct dcd_entry dcd_entries[] = {
   { 4, ESDCTL_ESDCTL1_, 0x82a20000 },
   { 4, ESDCTL_ESDMISC_, 0xcaaaf6d0 },
   //  { 4, ESDCTL_ESDMISC_, 0x000ad0d0 },
-  { 4, ESDCTL_ESDCFG0_, 0x333574aa },
-  { 4, ESDCTL_ESDCFG1_, 0x333574aa },
+  { 4, ESDCTL_ESDCFG0_, 0x333574aa }, /* 3f3574aa: slower exit of self-refr */
+  { 4, ESDCTL_ESDCFG1_, 0x333574aa }, /* 3f3574aa */
 
   /* Configure SDRAM bank 0 */
   { 4, ESDCTL_ESDSCR_,  0x04008008 },
