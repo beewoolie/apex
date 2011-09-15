@@ -104,7 +104,7 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <error.h>
-#include <command.h>
+//#include <command.h>
 #include <spinner.h>
 #include <apex.h>
 
