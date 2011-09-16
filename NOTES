@@ -5,18 +5,24 @@ APEX Boot Loader
 
 TODO:
 
+  o 2011.sep 16
+    o Pushed mx51 code to git hosts.  It doesn't initialize properly
+      for USB, but there's no data to support further work at the
+      moment. 
+
   o 2011.sep.01
     o === TODO
       o Move MXC drivers to src/drivers-mxc/
+        o serial moved
       o Add directory listing on fat.
-      o Write mapping command to allow addresses to be remapped from
+      x Write mapping command to allow addresses to be remapped from
         the command line.  It could be useful when loading a uboot
         image where we cannot change the load address.  May be
         interesting in other cases.  This also means we need to be
         able to show the mappings, especially when they are not one to
         one. 
       o Switch to protothreads for background service, e.g. ethernet.
-      o Support for high-capacity SD cards.  Need this support to
+      x Support for high-capacity SD cards.  Need this support to
         mount the armhf card.
 
   o 2011.aug.29
