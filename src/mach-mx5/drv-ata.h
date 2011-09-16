@@ -43,4 +43,7 @@
 //# define ATA_ATTRIB		(1<<9) /* A9 line for attribute access */
 # define ATA_ATTR_BASE          (0xa0)
 
+void mx5_ata_init (void);
+#define ATA_PLATFORM_INIT       ({ mx5_ata_init (); })
+
 #endif  /* __MACH_DRV_ATA_H__ */

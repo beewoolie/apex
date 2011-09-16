@@ -21,38 +21,38 @@
 
 #define CLKIN   (24*1000*1000)
 
-u32 decode_pll (u32 frequency, u32 mfn, u32 mfd, u32 op)
+uint32_t decode_pll (uint32_t frequency, uint32_t mfn, uint32_t mfd, uint32_t op)
 {
-  u32 pd   = (op & 0xf) + 1;
-  u32 mfi  = (op >> 4) & 0xf;
+  uint32_t pd   = (op & 0xf) + 1;
+  uint32_t mfi  = (op >> 4) & 0xf;
   mfi      = (mfi >= 5) ? mfi : 5;
   mfd     += 1;
 
   return ((4*(frequency/1000)*(mfi*mfd + mfn))/(mfd*pd))*1000;
 }
 
-u32 decode_pllx (int index)
+uint32_t decode_pllx (int index)
 {
   return decode_pll (CLKIN, DPLLx_DP_MFN(index), DPLLx_DP_MFD(index),
                      DPLLx_DP_OP(index));
 }
 
-u32 decode_pll1 (void)
+uint32_t decode_pll1 (void)
 {
   return decode_pll (CLKIN, DPLLx_DP_MFN(1), DPLLx_DP_MFD(1), DPLLx_DP_OP(1));
 }
 
-u32 decode_pll2 (void)
+uint32_t decode_pll2 (void)
 {
   return decode_pll (CLKIN, DPLLx_DP_MFN(2), DPLLx_DP_MFD(2), DPLLx_DP_OP(2));
 }
 
-u32 decode_pll3 (void)
+uint32_t decode_pll3 (void)
 {
   return decode_pll (CLKIN, DPLLx_DP_MFN(3), DPLLx_DP_MFD(3), DPLLx_DP_OP(3));
 }
 
-u32 periph_clk (void)
+uint32_t periph_clk (void)
 {
   if ((CCM_CBCDR & (1<<25)) == 0)
     return decode_pll2 ();
@@ -68,19 +68,19 @@ u32 periph_clk (void)
   }
 }
 
-u32 ahb_clk (void)
+uint32_t ahb_clk (void)
 {
   int ahb_podf = ((CCM_CBCDR >> 10) & 0x7) + 1;
   return periph_clk ()/ahb_podf;
 }
 
-u32 ipg_clk (void)
+uint32_t ipg_clk (void)
 {
   int ipg_podf = ((CCM_CBCDR >>  8) & 0x3) + 1;
   return ahb_clk ()/ipg_podf;
 }
 
-u32 ipg_per_clk (void)
+uint32_t ipg_per_clk (void)
 {
   if (CCM_CBCMR & 1)
     return ipg_clk ();
@@ -93,7 +93,7 @@ u32 ipg_per_clk (void)
   }
 }
 
-u32 esdhcx_clk (int index)
+uint32_t esdhcx_clk (int index)
 {
   switch (index) {
   default:
@@ -110,17 +110,34 @@ u32 esdhcx_clk (int index)
   }
 }
 
-u32 cspi_clk (void)
+uint32_t cspi_clk (void)
 {
   int pred = ((CCM_CSCDR2>>25) &    7) + 1;
   int podf = ((CCM_CSCDR2>>19) & 0x3f) + 1;
   return decode_pllx (((CCM_CSCMR1 >> 4) & 3) + 1)/(pred*podf);
 }
 
-static const char* clock_speed (u32 frequency)
+uint32_t uart_clk (void)
+{
+  uint32_t freq = 0;
+
+  switch ((CCM_CSCMR1 >> 24) & 3) {
+  case 0:                       /* pll1 */
+  case 1:                       /* pll2 */
+  case 2:                       /* pll3 */
+    freq = decode_pllx (((CCM_CSCMR1 >> 24) & 3) + 1);
+  case 3:                       /* lp_apm */
+    break;
+  }
+
+  return freq / ( (((CCM_CSCDR1 >> 3) & 7) + 1)
+                 *(((CCM_CSCDR1 >> 0) & 7) + 1));
+}
+
+static const char* clock_speed (uint32_t frequency)
 {
   static char sz[32];
-  u32 fraction   = 0;
+  uint32_t fraction = 0;
   const char* units = "Hz";
 
   if (frequency > 1000*1000) {
@@ -166,6 +183,7 @@ static void clocks_report (void)
   printf ("  ahb %s", clock_speed (ahb_clk ()));
   printf ("  ipg %s", clock_speed (ipg_clk ()));
   printf ("  ipg_per %s\n", clock_speed (ipg_per_clk ()));
+  printf ("          uart %s\n", clock_speed (uart_clk ()));
 }
 
 static __service_7 struct service_d clock_service = {

@@ -24,10 +24,12 @@
 # define UART PHYS_UART1
 #endif
 
-/* *** FIXME: these settings yield a rate of 115.052 Kbaud, a weak effort */
-#define UART_BMR_115200		(289 - 1)
-#define UART_BIR_115200		(16 - 1)
-#define UART_RFDIV		(4) /* UART_CLK /2 */
+#define UART_BAUDRATE_V		(115200)
+#define UART_CLOCK_FREQ		(66500000) /* Static to allow early init */
+#define UART_BIR_V		(16)
+#define UART_BMR_V                                                      \
+  ((UART_CLOCK_FREQ/2/16*UART_BIR_V + UART_BAUDRATE_V/2)/UART_BAUDRATE_V)
+#define UART_RFDIV		(4) /* UART_CLK /2 as above */
 
 /*** FIXME: no modem control lines being driven.  OK?  See CR3. */
 
@@ -65,8 +67,8 @@
       | (16<<UART_FCR_TXTL_SH);                                         \
     __REG (UART + UART_SR1) = ~0;                                       \
     __REG (UART + UART_SR2) = ~0;                                       \
-    __REG (UART + UART_BIR) = UART_BIR_115200;                          \
-    __REG (UART + UART_BMR) = UART_BMR_115200;                          \
+    __REG (UART + UART_BIR) = UART_BIR_V - 1;                           \
+    __REG (UART + UART_BMR) = UART_BMR_V - 1;                           \
     __REG (UART + UART_CR1) = UART_CR1_EN;                              \
   })
 

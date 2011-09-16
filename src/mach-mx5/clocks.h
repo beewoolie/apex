@@ -24,12 +24,13 @@
 
 /* ----- Prototypes */
 
-u32 ahb_clk (void);
-u32 cspi_clk (void);
-u32 esdhcx_clk (int index);
-u32 ipg_clk (void);
-u32 ipg_per_clk (void);
-u32 periph_clk (void);
+uint32_t ahb_clk (void);
+uint32_t cspi_clk (void);
+uint32_t esdhcx_clk (int index);
+uint32_t ipg_clk (void);
+uint32_t ipg_per_clk (void);
+uint32_t periph_clk (void);
+uint32_t uart_clk (void);
 
 
 #endif  /* CLOCKS_H_INCLUDED */

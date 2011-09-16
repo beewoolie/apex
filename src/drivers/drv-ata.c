@@ -148,6 +148,10 @@
 # define REG __REG16
 #endif
 
+#if !defined (ATA_PLATFORM_INIT)
+# define ATA_PLATFORM_INIT
+#endif
+
 #define DRIVER_NAME	"ata-generic"
 
 #define SECTOR_SIZE	512
@@ -453,32 +457,13 @@ static void seek (unsigned sector)
 #endif
 }
 
-static void ata_init (void)
-{
-  ATA_CONTROL      = 0x80;
-  ATA_CONTROL      = 0xc0;
-
-  ATA_TIME_OFF     = 3;
-  ATA_TIME_ON      = 3;
-  ATA_TIME_1       = 2;
-  ATA_TIME_2W      = 5;
-  ATA_TIME_2R      = 5;
-  ATA_TIME_AX      = 6;
-  ATA_TIME_PIO_RDX = 1;
-  ATA_TIME_4       = 1;
-  ATA_TIME_9       = 1;
-
-  ATA_CONTROL      = 0x41;
-  ATA_FIFO_ALARM   = 20;
-}
-
 static int ata_identify (void)
 {
   int status;
 
   ENTRY (0);
 
-  ata_init ();
+  ATA_PLATFORM_INIT;
 
   write8 (ATA_REG_SELECT, 0xe0);
 
@@ -692,7 +677,7 @@ static int cmd_ata (int argc, const char** argv)
 {
   uint8_t status;
 
-  ata_init ();
+  ATA_PLATFORM_INIT;
 
   write8 (ATA_REG_SELECT, 0xe0);
 
