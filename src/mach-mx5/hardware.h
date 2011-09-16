@@ -23,8 +23,8 @@
 
 #include <config.h>
 
-#if defined (CONFIG_MACH_GENESI_EFIKA)
-# include "genesi-efika.h"
+#if defined (CONFIG_MACH_GENESI_EFIKAMX)
+# include "genesi-efikamx.h"
 #endif
 
 #include "mx51.h"

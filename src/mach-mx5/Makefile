@@ -19,6 +19,7 @@ obj-y += clocks.o
 obj-y += atag-revision.o
 obj-y += atag-serialnr.o
 
+obj-$(CONFIG_MACH_GENESI_EFIKAMX) += spinner-efikamx.o
 obj-$(CONFIG_DRIVER_ATA)        += init-ata.o
 
 obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o

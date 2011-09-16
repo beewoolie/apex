@@ -72,6 +72,9 @@
 #define SYS_PWROFF_PIN		MX51_PIN_CSI2_VSYNC
 #define SYS_PWRGD_PIN		MX51_PIN_CSI2_PIXCLK
 
+#define LED_BLUE		MX51_PIN_CSI1_D9
+#define LED_GREEN		MX51_PIN_CSI1_VSYNC
+#define LED_RED			MX51_PIN_CSI1_HSYNC
 
 //#define SPI1_SS_PMIC            (0)
 //#define SPI1_SS_FLASH           (1)

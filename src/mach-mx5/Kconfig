@@ -2,9 +2,9 @@ if ARCH_MX5
 
 choice
 	prompt "Freescale MX51x Implementations"
-	default MACH_GENESI_EFIKA
+	default MACH_GENESI_EFIKAMX
 
-config MACH_GENESI_EFIKA
+config MACH_GENESI_EFIKAMX
 	bool "Genesi Efikamx Smarttop"
 	select ARCH_MX51
 	select USES_ATA

@@ -83,11 +83,6 @@ From kernel, setup of r6 so that we can determine which errata apply:
 #include "hardware.h"
 #include <debug_ll.h>
 
-//static int spi1_slave = SPI1_SS_FLASH;
-
-#define ESDHC_INTERFACE()\
-  ((BOARD_ID_MAJOR == 1 && BOARD_ID_MINOR == 1) ? 1 : 0)
-
 static inline void __section (.bootstrap)
   setup_dpll (int idx, u32 op, u32 mfd, u32 mfn)
 {
@@ -381,11 +376,31 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
 		    : "=&r" (l));
   }
 
+  // Perform UART IOMUX in bootstrap
+#define PAD_ (GPIO_PAD_HYST_EN | GPIO_PAD_PKE | GPIO_PAD_PUE | GPIO_PAD_DRIVE_HIGH)
+  GPIO_CONFIG_FUNC(MX51_PIN_UART1_RXD, 0);
+  GPIO_CONFIG_PAD (MX51_PIN_UART1_RXD, PAD_ | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_FUNC(MX51_PIN_UART1_TXD, 0);
+  GPIO_CONFIG_PAD (MX51_PIN_UART1_RXD, PAD_ | GPIO_PAD_SLEW_FAST);
+  GPIO_CONFIG_FUNC(MX51_PIN_UART1_RTS, 0);
+  GPIO_CONFIG_PAD (MX51_PIN_UART1_RXD, PAD_);
+  GPIO_CONFIG_FUNC(MX51_PIN_UART1_CTS, 0);
+  GPIO_CONFIG_PAD (MX51_PIN_UART1_RXD, PAD_);
+#undef PAD_
+
   __asm volatile ("mov r0, #-1\t\n"
 		  "bx %0" : : "r" (lr));
 }
 
-
+static void target_init_led (void)
+{
+  GPIO_CLEAR(LED_GREEN);
+  GPIO_CONFIG_OUTPUT (LED_GREEN);
+  GPIO_SET(LED_RED);
+  GPIO_CONFIG_OUTPUT (LED_RED);
+  GPIO_SET(LED_BLUE);
+  GPIO_CONFIG_OUTPUT (LED_BLUE);
+}
 
 static void target_init_mprot (void)
 {
@@ -488,7 +503,6 @@ static void target_init_gpio (void)
   GPIO_CLEAR (MX51_PIN_DISPB2_SER_DIO);
   GPIO_CLEAR (MX51_PIN_DISPB2_SER_RS);
   GPIO_CLEAR (MX51_PIN_CSI1_D8);
-  GPIO_CLEAR (MX51_PIN_CSI1_D9);
   GPIO_CLEAR (MX51_PIN_NANDF_D15);
 
   GPIO_CONFIG_INPUT  (MX51_PIN_DI1_PIN11);      /* GPIO3_0 */
@@ -499,7 +513,6 @@ static void target_init_gpio (void)
   GPIO_CONFIG_OUTPUT (MX51_PIN_DISPB2_SER_DIO); /* GPIO3_6 */
   GPIO_CONFIG_INPUT  (MX51_PIN_DISPB2_SER_RS);  /* GPIO3_8 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_CSI1_D8);        /* GPIO3_12 */
-  GPIO_CONFIG_OUTPUT (MX51_PIN_CSI1_D9);        /* GPIO3_13 */
   GPIO_CONFIG_INPUT  (MX51_PIN_NANDF_CS1);      /* GPIO3_17 */
   GPIO_CONFIG_OUTPUT (MX51_PIN_NANDF_D15);      /* GPIO3_25 */
 
@@ -562,6 +575,7 @@ static void target_init_gpio (void)
   GPIOx_DR(2) = 0x01025200;
   GPIOx_DR(1) = 0x00000020;
 }
+
 
 /** initializes the I2C IO lines.  This code should perhaps be part of
     a driver, though it may simply be necessary to boot the kernel. */
@@ -744,6 +758,8 @@ static void target_init (void)
   /* Clear power-down watchdog */
   WDOGx_WMCR(1) = 0;
   WDOGx_WMCR(2) = 0;
+
+  target_init_led ();
 
   /* ***FIXME: should enable a system managed timeout at this point if
      we want to keep using a watchdog timer at all. */
