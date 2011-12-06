@@ -29,7 +29,13 @@
 #define UART_BIR_V		(16)
 #define UART_BMR_V                                                      \
   ((UART_CLOCK_FREQ/2/16*UART_BIR_V + UART_BAUDRATE_V/2)/UART_BAUDRATE_V)
-#define UART_RFDIV		(4) /* UART_CLK /2 as above */
+#define UART_RFDIV_DIV		(2) /* Extra divide by two for freq */
+/* Converting the divider to the encoded value is made awkward by the
+   valid divider value of 7.  All of the other encodings are simply
+   (6-DIV).  Divider seven has the encoding 6.  The expression below
+   coaxes this odd encoding from the divider value. */
+#define UART_RFDIV_V                                                    \
+  (((6 - UART_RFDIV_DIV) & 7) - (((6 - UART_RFDIV_DIV) & 8) >> 3))
 
 /*** FIXME: no modem control lines being driven.  OK?  See CR3. */
 
@@ -63,7 +69,7 @@
     __REG (UART + UART_CR4) = (32<<UART_CR4_CTSTL_SH)                   \
       | UART_CR4_LPBYP /* | UART_CR4_DREN */ ;                          \
     __REG (UART + UART_FCR) = (16<<UART_FCR_RXTL_SH)                    \
-      | ((UART_RFDIV)<<UART_FCR_RFDIV_SH)                               \
+      | ((UART_RFDIV_V)<<UART_FCR_RFDIV_SH)                             \
       | (16<<UART_FCR_TXTL_SH);                                         \
     __REG (UART + UART_SR1) = ~0;                                       \
     __REG (UART + UART_SR2) = ~0;                                       \
