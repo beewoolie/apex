@@ -10,7 +10,6 @@
 #
 
 obj-y += initialize.o timer.o cpuinfo.o cmd-reset.o env.o
-obj-y += header.o
 obj-y += drv-mx5-spi-pmic.o
 obj-y += drv-mx5-spi-flash.o
 obj-y += drv-mx5-ecspi.o
@@ -19,7 +18,8 @@ obj-y += clocks.o
 obj-y += atag-revision.o
 obj-y += atag-serialnr.o
 
-obj-$(CONFIG_MACH_GENESI_EFIKAMX) += spinner-efikamx.o
+obj-$(CONFIG_MACH_GENESI_EFIKAMX) += spinner-efikamx.o header.o
+obj-$(CONFIG_MACH_FREESCALE_MX53_LOWCOST) += header-mx53-lowcost.o
 obj-$(CONFIG_DRIVER_ATA)        += init-ata.o
 
 obj-$(CONFIG_EXCEPTIONS)        += exception_vectors.o

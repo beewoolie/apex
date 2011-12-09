@@ -11,6 +11,13 @@ config MACH_GENESI_EFIKAMX
 	select DRIVERS_MXC
 	select HAS_MXC_SERIAL
 
+config MACH_FREESCALE_MX53_LOWCOST
+	bool "Freescale MX53 Low-cost Board"
+	select ARCH_MX53
+	select USES_ATA
+	select DRIVERS_MXC
+	select HAS_MXC_SERIAL
+
 endchoice
 
 menu "Platform Setup"
@@ -140,6 +147,11 @@ config MACH
 	default "mx5"
 
 config ARCH_MX51
+	bool
+	select CPU_ARMV7
+	select CPU_CORTEX_A8
+
+config ARCH_MX53
 	bool
 	select CPU_ARMV7
 	select CPU_CORTEX_A8

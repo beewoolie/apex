@@ -360,7 +360,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
     unsigned long l = (0
                        | ( 4<<0)  /* Data RAM latency 3 clocks */
                        | ( 3<<6)  /* Tag RAM latency 4 clocks */
-                       | (1<<22)  /* Write allocate disable (ARM Errata 460075?) */
+                       | (1<<22)  /* Write alloc disable (ARM Errata 460075?) */
                        | (1<<23)  /* Write allocate combine disable */
                        | (1<<24)  /* Write allocate delay disable */
                        );
@@ -368,7 +368,7 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
       l |= (1<<25);        	  /* Write combine disable (TO 2 and older) */
     __asm volatile ("mcr p15, 1, %0, c9, c0, 2" :: "r" (l));
   }
-  {                             /* Enable L2 cache, data cache disabled in control register */
+  {               /* Enable L2 cache, data cache disabled in control register */
     unsigned long l;
     __asm volatile ("mrc p15, 0, %0, c1, c0, 1\n\t"
 		    "orr %0, %0, #(1<<1)\n\t"
@@ -377,7 +377,8 @@ void __naked __section (.bootstrap) initialize_bootstrap (void)
   }
 
   // Perform UART IOMUX in bootstrap
-#define PAD_ (GPIO_PAD_HYST_EN | GPIO_PAD_PKE | GPIO_PAD_PUE | GPIO_PAD_DRIVE_HIGH)
+#define PAD_ (GPIO_PAD_HYST_EN | GPIO_PAD_PKE | GPIO_PAD_PUE\
+              | GPIO_PAD_DRIVE_HIGH)
   GPIO_CONFIG_FUNC(MX51_PIN_UART1_RXD, 0);
   GPIO_CONFIG_PAD (MX51_PIN_UART1_RXD, PAD_ | GPIO_PAD_SLEW_FAST);
   GPIO_CONFIG_FUNC(MX51_PIN_UART1_TXD, 0);

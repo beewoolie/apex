@@ -27,6 +27,10 @@
 # include "genesi-efikamx.h"
 #endif
 
+#if defined (CONFIG_MACH_FREESCALE_MX53_LOWCOST)
+# include "freescale-mx53-lowcost.h"
+#endif
+
 #include "mx51.h"
 #include "clocks.h"
 
