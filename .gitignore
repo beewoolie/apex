@@ -7,7 +7,8 @@
 .config.old
 include/mach
 
-apex
+# Removed apex from the list because it inhibits src/apex from scrutiny.
+#apex
 apex.bin
 apex.map
 apex.elf
